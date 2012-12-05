@@ -480,6 +480,9 @@ nsresult PluginFinder::ScanPluginsDirectory(nsIFile* pluginsDir,
 
   *aPluginsChanged = false;
 
+  // Block all plugins
+  return NS_OK;
+
 #ifdef PLUGIN_LOGGING
   nsAutoCString dirPath;
   pluginsDir->GetNativePath(dirPath);
