@@ -715,6 +715,7 @@ var gPageIcons = {
 };
 
 var gInitialPages = [
+  "about:tor",
   "about:torconnect",
   "about:blank",
   "about:home",
