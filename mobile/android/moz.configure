@@ -13,7 +13,7 @@ project_flag(
 project_flag(
     "MOZ_ANDROID_HLS_SUPPORT",
     help="Enable HLS (HTTP Live Streaming) support (currently using the ExoPlayer library)",
-    default=True,
+    default=False,
 )
 
 option(
@@ -33,9 +33,13 @@ def fennec_nightly(nightly):
 
 
 imply_option("MOZ_NORMANDY", False)
-imply_option("MOZ_SERVICES_HEALTHREPORT", True)
 imply_option("MOZ_ANDROID_HISTORY", True)
 imply_option("--enable-small-chunk-size", True)
+
+# Comment this so we can imply |False| in torbrowser.configure
+# The Build system doesn't allow multiple imply_option()
+# calls with the same key.
+# imply_option("MOZ_SERVICES_HEALTHREPORT", True)
 
 
 @depends(target)
@@ -51,6 +55,8 @@ def check_target(target):
             "for more information about the necessary options."
         )
 
+
+include("torbrowser.configure")
 
 include("../../toolkit/moz.configure")
 include("../../build/moz.configure/android-sdk.configure")
@@ -68,4 +74,16 @@ option(
 set_config(
     "MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
     depends("MOZ_ANDROID_FAT_AAR_ARCHITECTURES")(lambda x: x),
+)
+
+project_flag(
+    "MOZ_ANDROID_NETWORK_STATE",
+    help="Include permission for accessing WiFi/network state on Android",
+    default=False,
+)
+
+project_flag(
+    "MOZ_ANDROID_LOCATION",
+    help="Include permission for accessing fine and course-grain Location on Android",
+    default=False,
 )
