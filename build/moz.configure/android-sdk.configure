@@ -48,7 +48,7 @@ def android_sdk_root(value):
 
 @depends("--help")
 def android_sdk_version(_):
-    return namespace(build_tools_version="29.0.3", target_sdk_version="29")
+    return namespace(build_tools_version="29.0.2", target_sdk_version="29")
 
 
 @depends(android_sdk_root, android_sdk_version)
