@@ -10,7 +10,7 @@ project_flag('MOZ_ANDROID_EXCLUDE_FONTS',
 
 project_flag('MOZ_ANDROID_HLS_SUPPORT',
              help='Enable HLS (HTTP Live Streaming) support (currently using the ExoPlayer library)',
-             default=True)
+             default=False)
 
 option(env='FENNEC_NIGHTLY',
        help='Enable experimental code for Fennec Nightly users. NOTE: This is *not* equivalent '
@@ -26,9 +26,12 @@ def fennec_nightly(nightly):
     return bool(nightly)
 
 imply_option('MOZ_NORMANDY', False)
-imply_option('MOZ_SERVICES_HEALTHREPORT', True)
 imply_option('MOZ_ANDROID_HISTORY', True)
 imply_option('--enable-small-chunk-size', True)
+# Comment this so we can imply |False| in torbrowser.configure
+# The Build system doesn't allow multiple imply_option()
+# calls with the same key.
+#imply_option('MOZ_SERVICES_HEALTHREPORT', True)
 
 @depends(target)
 def check_target(target):
@@ -38,6 +41,8 @@ def check_target(target):
         die('See https://developer.mozilla.org/docs/Mozilla/Developer_guide/'
             'Build_Instructions/Simple_Firefox_for_Android_build '
             'for more information about the necessary options.')
+
+include('torbrowser.configure')
 
 include('../../toolkit/moz.configure')
 include('../../build/moz.configure/android-sdk.configure')
@@ -50,3 +55,11 @@ option(env='MOZ_ANDROID_FAT_AAR_ARCHITECTURES',
        help='Comma-separated list of Android CPU architectures like "armeabi-v7a,arm64-v8a,x86,x86_64"')
 
 set_config('MOZ_ANDROID_FAT_AAR_ARCHITECTURES', depends('MOZ_ANDROID_FAT_AAR_ARCHITECTURES')(lambda x: x))
+
+project_flag('MOZ_ANDROID_NETWORK_STATE',
+             help='Include permission for accessing WiFi/network state on Android',
+             default=False)
+
+project_flag('MOZ_ANDROID_LOCATION',
+             help='Include permission for accessing fine and course-grain Location on Android',
+             default=False)
