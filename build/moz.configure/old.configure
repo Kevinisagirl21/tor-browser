@@ -112,6 +112,12 @@ def old_configure_options(*options):
     '--with-user-appdir',
     '--x-includes',
     '--x-libraries',
+
+    # Tor additions.
+    '--with-tor-browser-version',
+    '--enable-tor-browser-update',
+    '--enable-tor-browser-data-outside-app-dir',
+    '--enable-tor-launcher',
 )
 def prepare_configure_options(host, target, all_options, *options):
     # old-configure only supports the options listed in @old_configure_options
