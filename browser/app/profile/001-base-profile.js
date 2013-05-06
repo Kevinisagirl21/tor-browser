@@ -229,7 +229,7 @@ pref("privacy.firstparty.isolate", true); // Always enforce first party isolatio
 pref("privacy.partition.network_state", false); // Disable for now until audit
 pref("network.cookie.cookieBehavior", 1);
 pref("network.cookie.cookieBehavior.pbmode", 1);
-pref("network.http.spdy.allow-push", false); // Disabled for now. See https://bugs.torproject.org/27127
+pref("network.http.http2.allow-push", false); // Disabled for now. See https://bugs.torproject.org/27127
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
 // Bug 40177: Make sure tracker cookie purging is disabled
 pref("privacy.purge_trackers.enabled", false);
@@ -383,6 +383,8 @@ pref("dom.presentation.receiver.enabled", false);
 
 pref("dom.audiochannel.audioCompeting", false);
 pref("dom.audiochannel.mediaControl", false);
+
+#expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
 
 // If we are bundling fonts, whitelist those bundled fonts, and restrict system fonts to a selection.
 
