@@ -1036,6 +1036,87 @@ def relative_profile(value, target):
 set_define("RELATIVE_PROFILE_DIRECTORY", relative_profile)
 
 
+# Tor additions.
+
+option(
+    "--with-tor-browser-version",
+    nargs=1,
+    help="Set Tor Browser version, e.g., 7.0a1"
+)
+
+
+@depends("--with-tor-browser-version")
+def tor_browser_version(value):
+    if not value:
+        die("--with-tor-browser-version is required for Tor Browser.")
+    return value[0]
+
+
+@depends("--with-tor-browser-version")
+def tor_browser_version_quoted(value):
+    if not value:
+        die("--with-tor-browser-version is required for Tor Browser.")
+    return '"{}"'.format(value[0])
+
+
+set_config("TOR_BROWSER_VERSION", tor_browser_version)
+set_define("TOR_BROWSER_VERSION", tor_browser_version)
+set_define("TOR_BROWSER_VERSION_QUOTED", tor_browser_version_quoted)
+
+
+option(
+    "--enable-tor-browser-update",
+    help="Enable Tor Browser update"
+)
+
+
+@depends("--enable-tor-browser-update")
+def tor_browser_update(value):
+    if value:
+        return True
+
+
+set_config("TOR_BROWSER_UPDATE", tor_browser_update)
+set_define("TOR_BROWSER_UPDATE", tor_browser_update)
+add_old_configure_assignment("TOR_BROWSER_UPDATE", tor_browser_update)
+
+
+option(
+    "--enable-tor-browser-data-outside-app-dir",
+    help="Enable Tor Browser data outside of app directory"
+)
+
+
+@depends("--enable-tor-browser-data-outside-app-dir")
+def tor_browser_data_outside_app_dir(value):
+    if value:
+        return True
+
+
+set_define(
+    "TOR_BROWSER_DATA_OUTSIDE_APP_DIR", tor_browser_data_outside_app_dir)
+add_old_configure_assignment(
+    "TOR_BROWSER_DATA_OUTSIDE_APP_DIR", tor_browser_data_outside_app_dir)
+
+
+option(
+    "--disable-tor-launcher",
+    help="Do not include Tor Launcher"
+)
+
+
+@depends("--disable-tor-launcher")
+def tor_browser_disable_launcher(value):
+    if not value:
+        return True
+
+
+set_config("TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
+set_define("TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
+add_old_configure_assignment(
+    "TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
+
+
 # Please do not add configure checks from here on.
 
 # Fallthrough to autoconf-based configure
