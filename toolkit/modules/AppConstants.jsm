@@ -341,6 +341,8 @@ this.AppConstants = Object.freeze({
   MOZ_WIDGET_TOOLKIT: "@MOZ_WIDGET_TOOLKIT@",
   ANDROID_PACKAGE_NAME: "@ANDROID_PACKAGE_NAME@",
 
+  TOR_BROWSER_VERSION: "@TOR_BROWSER_VERSION@",
+
   DEBUG_JS_MODULES: "@DEBUG_JS_MODULES@",
 
   MOZ_BING_API_CLIENTID: "@MOZ_BING_API_CLIENTID@",
@@ -414,6 +416,13 @@ this.AppConstants = Object.freeze({
 
   MOZ_RUST_FXA_CLIENT:
 #ifdef MOZ_RUST_FXA_CLIENT
+    true,
+#else
+    false,
+#endif
+
+  TOR_BROWSER_UPDATE:
+#ifdef TOR_BROWSER_UPDATE
     true,
 #else
     false,
