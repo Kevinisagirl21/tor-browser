@@ -19,9 +19,6 @@ ac_add_options --enable-base-browser-update
 
 ac_add_options --enable-bundled-fonts
 
-# See bug #41587
-ac_add_options --disable-updater
-
 ac_add_options --disable-tests
 ac_add_options --disable-debug
 
@@ -49,5 +46,3 @@ ac_add_options --disable-legacy-profile-creation
 if test -z "$WASI_SYSROOT"; then
     ac_add_options --without-wasm-sandboxed-libraries
 fi
-
-ac_add_options --with-relative-data-dir=BaseBrowser/Data/Browser
