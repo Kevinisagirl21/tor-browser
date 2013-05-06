@@ -375,6 +375,8 @@ pref("dom.presentation.receiver.enabled", false);
 pref("dom.audiochannel.audioCompeting", false);
 pref("dom.audiochannel.mediaControl", false);
 
+#expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
+
 // If we are bundling fonts, whitelist those bundled fonts, and restrict system fonts to a selection.
 
 #ifdef MOZ_BUNDLED_FONTS
