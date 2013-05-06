@@ -32,5 +32,3 @@ ac_add_options --disable-system-policies
 
 # Disable telemetry
 ac_add_options MOZ_TELEMETRY_REPORTING=
-
-ac_add_options --with-relative-profile=BaseBrowser/Data/Browser

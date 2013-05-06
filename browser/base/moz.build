@@ -87,6 +87,9 @@ if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
     # Impacts `/toolkit/content/license.html`.
     DEFINES["MOZ_DEFAULT_BROWSER_AGENT"] = True
 
+if CONFIG["TOR_BROWSER_UPDATE"]:
+    DEFINES["TOR_BROWSER_UPDATE"] = 1
+
 JAR_MANIFESTS += ["jar.mn"]
 
 GeneratedFile(
