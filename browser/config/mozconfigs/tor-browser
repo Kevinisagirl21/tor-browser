@@ -1,0 +1,13 @@
+. $topsrcdir/browser/config/mozconfigs/base-browser
+
+mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
+
+ac_add_options --with-relative-data-dir=TorBrowser/Data/Browser
+# This is not needed with the relative data directory, but it is when you
+# disable it, otherwise it is "Mozilla" (on Windows and macOS) or ".mozilla" on
+# Unix systems.
+# It is used, for example, for GetProductDirectory.
+# ac_add_options --with-user-appdir=TorProject
+# ac_add_options --with-user-appdir=.torproject
+
+ac_add_options --with-distribution-id=org.torproject
