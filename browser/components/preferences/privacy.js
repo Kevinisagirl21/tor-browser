@@ -31,7 +31,7 @@ ChromeUtils.defineModuleGetter(
 );
 XPCOMUtils.defineLazyGetter(this, "L10n", () => {
   return new Localization([
-    "branding/brand.ftl",
+    "branding/tor-browser-brand.ftl",
     "browser/preferences/preferences.ftl",
   ]);
 });
