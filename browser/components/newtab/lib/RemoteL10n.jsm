@@ -67,7 +67,7 @@ class _RemoteL10n {
         "browser/newtab/asrouter.ftl",
         "browser/branding/brandings.ftl",
         "browser/branding/sync-brand.ftl",
-        "branding/brand.ftl",
+        "branding/tor-browser-brand.ftl",
       ],
       false,
       Services.prefs.getBoolPref(USE_REMOTE_L10N_PREF, true)
