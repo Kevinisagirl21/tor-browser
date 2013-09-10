@@ -258,7 +258,7 @@ function getBundleForLocales(newLocales) {
     return L10nRegistry.generateBundles(locales, resourceIds);
   }
   return new Localization(
-    ["browser/preferences/preferences.ftl", "branding/brand.ftl"],
+    ["browser/preferences/preferences.ftl", "branding/tor-browser-brand.ftl"],
     false,
     { generateBundles }
   );
