@@ -61,6 +61,16 @@
   -moz-outline-radius: var(--toolbarbutton-border-radius);
 }
 
+%ifdef MOZ_OFFICIAL_BRANDING
+#identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label {
+  color: #420C5D;
+}
+
+toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label {
+  color: #CC80FF;
+}
+%endif
+
 #identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label,
 .urlbar-label {
   opacity: .6;
