@@ -11,7 +11,7 @@ import { BASE_PARAMS } from "./addUtmParams";
 const TRANSITION_LENGTH = 500;
 
 export const FLUENT_FILES = [
-  "branding/brand.ftl",
+  "branding/tor-browser-brand.ftl",
   "browser/branding/brandings.ftl",
   "browser/branding/sync-brand.ftl",
   "browser/newtab/onboarding.ftl",
