@@ -53,7 +53,17 @@
   border-radius: var(--urlbar-icon-border-radius);
 }
 
+%ifdef MOZ_OFFICIAL_BRANDING
 #identity-box[pageproxystate="valid"].notSecureText #identity-icon-label,
+#identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
+  color: #420C5D;
+}
+
+toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
+  color: #CC80FF;
+}
+%endif
+
 #identity-box[pageproxystate="valid"].chromeUI #identity-icon-label,
 #identity-box[pageproxystate="valid"].extensionPage #identity-icon-label,
 .urlbar-label {
@@ -150,12 +160,7 @@
 }
 
 #identity-box[pageproxystate="valid"].chromeUI #identity-icon {
-  list-style-image: url(chrome://branding/content/icon16.png);
-}
-@media (min-resolution: 1.1dppx) {
-  #identity-box[pageproxystate="valid"].chromeUI #identity-icon {
-    list-style-image: url(chrome://branding/content/icon32.png);
-  }
+  list-style-image: url(chrome://branding/content/identity-icons-brand.svg);
 }
 
 #identity-box[pageproxystate="valid"].localResource #identity-icon {
