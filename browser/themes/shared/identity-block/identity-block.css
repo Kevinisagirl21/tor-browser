@@ -53,6 +53,17 @@
   border-radius: var(--urlbar-icon-border-radius);
 }
 
+%ifdef MOZ_OFFICIAL_BRANDING
+#identity-box[pageproxystate="valid"].notSecureText #identity-icon-label,
+#identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
+  color: #420C5D;
+}
+
+toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
+  color: #CC80FF;
+}
+%endif
+
 #identity-icon-label {
   padding-inline-start: 4px;
 }
