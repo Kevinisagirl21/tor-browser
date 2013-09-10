@@ -1,0 +1,14 @@
+%include ../../tor-styles.inc.css
+
+/* default theme*/
+:root,
+/* light theme*/
+:root:-moz-lwtheme-darktext {
+    --tor-branding-color: var(--purple-60);
+}
+
+/* dark theme */
+:root:-moz-lwtheme-brighttext {
+    --tor-branding-color: var(--purple-30);
+}
+
