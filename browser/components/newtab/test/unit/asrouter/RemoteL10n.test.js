@@ -63,7 +63,7 @@ describe("RemoteL10n", () => {
         "browser/newtab/asrouter.ftl",
         "browser/branding/brandings.ftl",
         "browser/branding/sync-brand.ftl",
-        "branding/brand.ftl",
+        "branding/tor-browser-brand.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.isFunction(args[2].generateBundles);
@@ -81,7 +81,7 @@ describe("RemoteL10n", () => {
         "browser/newtab/asrouter.ftl",
         "browser/branding/brandings.ftl",
         "browser/branding/sync-brand.ftl",
-        "branding/brand.ftl",
+        "branding/tor-browser-brand.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.isEmpty(args[2]);
