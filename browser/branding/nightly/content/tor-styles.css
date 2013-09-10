@@ -1,0 +1,13 @@
+%include ../../tor-styles.inc.css
+
+/* default theme*/
+:root {
+  --tor-branding-color: var(--blue-60);
+}
+
+/* dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tor-branding-color: var(--blue-40);
+  }
+}
