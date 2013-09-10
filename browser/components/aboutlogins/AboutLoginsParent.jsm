@@ -52,7 +52,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 XPCOMUtils.defineLazyGetter(this, "AboutLoginsL10n", () => {
-  return new Localization(["branding/brand.ftl", "browser/aboutLogins.ftl"]);
+  return new Localization(["branding/tor-browser-brand.ftl", "browser/aboutLogins.ftl"]);
 });
 
 const ABOUT_LOGINS_ORIGIN = "about:logins";
@@ -714,7 +714,7 @@ var AboutLogins = {
           );
         },
       ],
-      extraFtl: ["branding/brand.ftl", "browser/branding/sync-brand.ftl"],
+      extraFtl: ["branding/tor-browser-brand.ftl", "browser/branding/sync-brand.ftl"],
     });
   },
 

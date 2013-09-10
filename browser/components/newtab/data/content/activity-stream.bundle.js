@@ -15890,7 +15890,7 @@ var addUtmParams = __webpack_require__(18);
  // Note: should match the transition time on .trailheadCards in _Trailhead.scss
 
 const TRANSITION_LENGTH = 500;
-const FLUENT_FILES = ["branding/brand.ftl", "browser/branding/brandings.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
+const FLUENT_FILES = ["branding/tor-browser-brand.ftl", "browser/branding/brandings.ftl", "browser/branding/sync-brand.ftl", "browser/newtab/onboarding.ftl"];
 const helpers = {
   addFluent(document) {
     FLUENT_FILES.forEach(file => {
