@@ -53,6 +53,10 @@
   border-radius: var(--urlbar-icon-border-radius);
 }
 
+#identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
+  color: var(--tor-branding-color);
+}
+
 #identity-icon-label {
   padding-inline-start: 4px;
 }
@@ -147,12 +151,9 @@
 }
 
 #identity-box[pageproxystate="valid"].chromeUI #identity-icon {
-  list-style-image: url(chrome://branding/content/icon16.png);
-}
-@media (min-resolution: 1.1dppx) {
-  #identity-box[pageproxystate="valid"].chromeUI #identity-icon {
-    list-style-image: url(chrome://branding/content/icon32.png);
-  }
+  list-style-image: url(chrome://branding/content/identity-icons-brand.svg);
+  fill: var(--tor-branding-color);
+  fill-opacity: 1;
 }
 
 #identity-box[pageproxystate="valid"].localResource #identity-icon {
