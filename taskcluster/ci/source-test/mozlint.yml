@@ -168,7 +168,9 @@ lintpref:
         files-changed:
             - 'modules/libpref/init/all.js'
             - 'modules/libpref/init/StaticPrefList.yaml'
+            - 'browser/app/profile/000-tor-browser.js'
             - 'browser/app/profile/firefox.js'
+            - 'mobile/android/app/000-tor-browser-android.js'
             - 'mobile/android/app/mobile.js'
             - 'devtools/client/preferences/debugger.js'
             - 'mobile/android/app/geckoview-prefs.js'
