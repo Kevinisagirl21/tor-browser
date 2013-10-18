@@ -15,6 +15,7 @@
 #include "nsSimpleEnumerator.h"
 #include "prenv.h"
 #include "nsCRT.h"
+#include "nsXPCOMPrivate.h"  // for XPCOM_FILE_PATH_SEPARATOR
 #if defined(MOZ_WIDGET_COCOA)
 #  include <Carbon/Carbon.h>
 #  include "nsILocalFileMac.h"
@@ -26,6 +27,8 @@
 #  include <stdlib.h>
 #  include <sys/param.h>
 #endif
+
+#include "TorFileUtils.h"
 
 // WARNING: These hard coded names need to go away. They need to
 // come from localizable resources
@@ -233,9 +236,14 @@ nsresult nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile) {
 // GetProductDirectory - Gets the directory which contains the application data
 // folder
 //
-// UNIX   : ~/.mozilla/
-// WIN    : <Application Data folder on user's machine>\Mozilla
-// Mac    : :Documents:Mozilla:
+#ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+// UNIX and WIN   : <App Folder>/../TorBrowser-Data/Browser
+// Mac            : <App Folder>/../../../TorBrowser-Data/Browser OR
+//                  ~/Library/Application Support/TorBrowser-Data/Browser
+#else
+// UNIX and WIN   : <App Folder>/TorBrowser/Data/Browser
+// Mac            : <App Folder>/../../TorBrowser/Data/Browser
+#endif
 //----------------------------------------------------------------------------------------
 nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
                                                         bool aLocal) {
@@ -243,53 +251,32 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsresult rv;
+  nsresult rv = NS_ERROR_UNEXPECTED;
   bool exists;
-  nsCOMPtr<nsIFile> localDir;
+  nsCOMPtr<nsIFile> localDir, exeFile;
 
-#if defined(MOZ_WIDGET_COCOA)
-  FSRef fsRef;
-  OSType folderType =
-      aLocal ? (OSType)kCachedDataFolderType : (OSType)kDomainLibraryFolderType;
-  OSErr err = ::FSFindFolder(kUserDomain, folderType, kCreateFolder, &fsRef);
-  if (err) {
-    return NS_ERROR_FAILURE;
-  }
-  NS_NewLocalFile(u""_ns, true, getter_AddRefs(localDir));
-  if (!localDir) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsILocalFileMac> localDirMac(do_QueryInterface(localDir));
-  rv = localDirMac->InitWithFSRef(&fsRef);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-#elif defined(XP_WIN)
-  nsCOMPtr<nsIProperties> directoryService =
-      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  const char* prop = aLocal ? NS_WIN_LOCAL_APPDATA_DIR : NS_WIN_APPDATA_DIR;
-  rv = directoryService->Get(prop, NS_GET_IID(nsIFile),
-                             getter_AddRefs(localDir));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-#elif defined(XP_UNIX)
-  rv = NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")), true,
-                             getter_AddRefs(localDir));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsCOMPtr<nsIProperties> directoryService(
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = directoryService->Get(XRE_EXECUTABLE_FILE, NS_GET_IID(nsIFile),
+                             getter_AddRefs(exeFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = TorBrowser_GetUserDataDir(exeFile, getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+#ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+  rv = localDir->AppendNative("Browser"_ns);
 #else
-#  error dont_know_how_to_get_product_dir_on_your_platform
+  rv = localDir->AppendRelativeNativePath("Data" XPCOM_FILE_PATH_SEPARATOR
+                                          "Browser"_ns);
 #endif
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (aLocal) {
+    rv = localDir->AppendNative("Caches"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
+
   rv = localDir->Exists(&exists);
 
   if (NS_SUCCEEDED(rv) && !exists) {
@@ -308,10 +295,6 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 //----------------------------------------------------------------------------------------
 // GetDefaultUserProfileRoot - Gets the directory which contains each user
 // profile dir
-//
-// UNIX   : ~/.mozilla/
-// WIN    : <Application Data folder on user's machine>\Mozilla\Profiles
-// Mac    : :Documents:Mozilla:Profiles:
 //----------------------------------------------------------------------------------------
 nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
     nsIFile** aLocalFile, bool aLocal) {
@@ -326,23 +309,6 @@ nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
   if (NS_FAILED(rv)) {
     return rv;
   }
-
-#if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
-  // These 3 platforms share this part of the path - do them as one
-  rv = localDir->AppendRelativeNativePath("Profiles"_ns);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  bool exists;
-  rv = localDir->Exists(&exists);
-  if (NS_SUCCEEDED(rv) && !exists) {
-    rv = localDir->Create(nsIFile::DIRECTORY_TYPE, 0775);
-  }
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-#endif
 
   localDir.forget(aLocalFile);
 
