@@ -29,3 +29,5 @@ ac_add_options --enable-proxy-bypass-protection
 
 # Disable telemetry
 ac_add_options MOZ_TELEMETRY_REPORTING=
+
+ac_add_options --with-relative-profile=BaseBrowser/Data/Browser
