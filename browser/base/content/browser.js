@@ -96,6 +96,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
   SiteDataManager: "resource:///modules/SiteDataManager.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   webrtcUI: "resource:///modules/webrtcUI.jsm",
   ZoomUI: "resource:///modules/ZoomUI.jsm",
