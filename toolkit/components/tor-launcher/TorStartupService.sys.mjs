@@ -9,6 +9,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorSettings: "resource:///modules/TorSettings.sys.mjs",
 });
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorDomainIsolator",
+  "resource://gre/modules/TorDomainIsolator.jsm"
+);
+
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
   ProfileAfterChange: "profile-after-change",
@@ -38,11 +44,15 @@ export class TorStartupService {
     lazy.TorSettings.init();
     lazy.TorConnect.init();
 
+    lazy.TorDomainIsolator.init();
+
     gInited = true;
   }
 
   #uninit() {
     Services.obs.removeObserver(this, BrowserTopics.QuitApplicationGranted);
+
+    lazy.TorDomainIsolator.uninit();
 
     lazy.TorProviderBuilder.uninit();
     lazy.TorLauncherUtil.cleanupTempDirectories();
