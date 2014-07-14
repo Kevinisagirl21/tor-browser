@@ -1,5 +1,6 @@
 EXTRA_JS_MODULES += [
     "TorBootstrapRequest.jsm",
+    "TorDomainIsolator.jsm",
     "TorLauncherUtil.jsm",
     "TorMonitorService.jsm",
     "TorParsers.jsm",
