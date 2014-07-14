@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
 });
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -257,6 +258,8 @@ class GeckoViewStartup {
           "GeckoView:SetDefaultPrefs",
           "GeckoView:SetLocale",
         ]);
+
+        lazy.TorDomainIsolator.init();
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
