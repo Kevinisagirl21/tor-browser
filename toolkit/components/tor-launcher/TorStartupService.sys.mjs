@@ -4,6 +4,7 @@ const lazy = {};
 // loading
 ChromeUtils.defineESModuleGetters(lazy, {
   TorConnect: "resource:///modules/TorConnect.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorSettings: "resource:///modules/TorSettings.sys.mjs",
@@ -38,11 +39,15 @@ export class TorStartupService {
     lazy.TorSettings.init();
     lazy.TorConnect.init();
 
+    lazy.TorDomainIsolator.init();
+
     gInited = true;
   }
 
   #uninit() {
     Services.obs.removeObserver(this, BrowserTopics.QuitApplicationGranted);
+
+    lazy.TorDomainIsolator.uninit();
 
     lazy.TorProviderBuilder.uninit();
     lazy.TorLauncherUtil.cleanupTempDirectories();
