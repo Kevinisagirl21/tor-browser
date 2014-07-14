@@ -31,6 +31,11 @@
                 <menuseparator/>
                 <menuitem id="menu_newIdentity"
                           key="new-identity-key" data-l10n-id="menu-new-identity"/>
+                <menuitem id="menu_newCircuit"
+                          accesskey="&torbutton.context_menu.new_circuit_key;"
+                          key="new-circuit-key"
+                          label="&torbutton.context_menu.new_circuit;"
+                          oncommand="TorDomainIsolator.newCircuitForBrowser(gBrowser);"/>
                 <menuseparator/>
                 <menuitem id="menu_openLocation"
                           hidden="true"
