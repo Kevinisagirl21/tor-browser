@@ -90,7 +90,10 @@ if CONFIG["MOZ_WEBRTC"] and CONFIG["COMPILE_ENVIRONMENT"]:
     ]
 
 if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["/testing/specialpowers"]
+    DIRS += [
+        "/testing/specialpowers",
+        "/tbb-tests",
+    ]
 
 DIRS += [
     "/testing/gtest",
