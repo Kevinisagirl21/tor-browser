@@ -30,7 +30,11 @@ int mar_repackage_and_sign(const char* NSSConfigDir,
                            const char* src, const char* dest);
 
 static void print_version() {
+#ifdef TOR_BROWSER_UPDATE
+  printf("Version: %s\n", TOR_BROWSER_VERSION_QUOTED);
+#else
   printf("Version: %s\n", MOZ_APP_VERSION);
+#endif
   printf("Default Channel ID: %s\n", MAR_CHANNEL_ID);
 }
 
@@ -65,7 +69,7 @@ static void print_usage() {
       "signed_input_archive.mar base_64_encoded_signature_file "
       "changed_signed_output.mar\n");
   printf("(i) is the index of the certificate to extract\n");
-#  if defined(XP_MACOSX) || (defined(XP_WIN) && !defined(MAR_NSS))
+#  if (defined(XP_MACOSX) || defined(XP_WIN)) && !defined(MAR_NSS)
   printf("Verify a MAR file:\n");
   printf("  mar [-C workingDir] -D DERFilePath -v signed_archive.mar\n");
   printf(
@@ -125,8 +129,13 @@ static int mar_test(const char* path) {
 
 int main(int argc, char** argv) {
   const char* certNames[MAX_SIGNATURES];
+#ifdef TOR_BROWSER_UPDATE
+  char* MARChannelID = MAR_CHANNEL_ID;
+  char* productVersion = TOR_BROWSER_VERSION_QUOTED;
+#else
   char* MARChannelID = NULL;
   char* productVersion = NULL;
+#endif
   int rv = -1;
 #if !defined(NO_SIGN_VERIFY)
   char* NSSConfigDir = NULL;
@@ -149,7 +158,7 @@ int main(int argc, char** argv) {
   memset((void*)certBuffers, 0, sizeof(certBuffers));
 #endif
 #if !defined(NO_SIGN_VERIFY) && \
-    ((!defined(MAR_NSS) && defined(XP_WIN)) || defined(XP_MACOSX))
+    (!defined(MAR_NSS) && (defined(XP_WIN) || defined(XP_MACOSX)))
   memset(DERFilePaths, 0, sizeof(DERFilePaths));
   memset(fileSizes, 0, sizeof(fileSizes));
 #endif
@@ -181,7 +190,7 @@ int main(int argc, char** argv) {
       argc -= 2;
     }
 #if !defined(NO_SIGN_VERIFY)
-#  if (!defined(MAR_NSS) && defined(XP_WIN)) || defined(XP_MACOSX)
+#  if (!defined(MAR_NSS) && (defined(XP_WIN) || defined(XP_MACOSX)))
     /* -D DERFilePath, also matches -D[index] DERFilePath
        We allow an index for verifying to be symmetric
        with the import and export command line arguments. */
