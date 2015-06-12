@@ -101,13 +101,6 @@ public final class BitmapUtils {
     public static Bitmap decodeUrl(final URL url) {
         InputStream stream = null;
 
-        try {
-            stream = url.openStream();
-        } catch (IOException e) {
-            Log.w(LOGTAG, "decodeUrl: IOException downloading " + url);
-            return null;
-        }
-
         if (stream == null) {
             Log.w(LOGTAG, "decodeUrl: stream not found downloading " + url);
             return null;
