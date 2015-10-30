@@ -11767,7 +11767,7 @@
 
 - name: privacy.window.name.update.enabled
   type: bool
-  value: true
+  value: false
   mirror: always
 
 # By default, the network state isolation is not active when there is a proxy
