@@ -560,6 +560,22 @@ let LEGACY_ACTORS = {
   },
 };
 
+if (AppConstants.TOR_BROWSER_UPDATE) {
+  LEGACY_ACTORS["AboutTBUpdate"] = {
+    child: {
+      module: "resource:///actors/AboutTBUpdateChild.jsm",
+      events: {
+        "AboutTBUpdateLoad": {wantUntrusted: true},
+        "pagehide": {capture: true},
+      },
+      matches: ["about:tbupdate"],
+      messages: [
+        "AboutTBUpdate:Update",
+      ],
+    }
+  };
+}
+
 (function earlyBlankFirstPaint() {
   if (
     AppConstants.platform == "macosx" ||
@@ -745,6 +761,11 @@ if (AppConstants.MOZ_CRASHREPORTER) {
   XPCOMUtils.defineLazyModuleGetters(this, {
     UnsubmittedCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   });
+}
+
+if (AppConstants.TOR_BROWSER_UPDATE) {
+  XPCOMUtils.defineLazyModuleGetter(this, "AboutTBUpdate",
+                                    "resource:///modules/AboutTBUpdate.jsm");
 }
 
 XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
@@ -2198,6 +2219,10 @@ BrowserGlue.prototype = {
         "resource:///modules/AsanReporter.jsm"
       );
       AsanReporter.init();
+    }
+
+    if (AppConstants.TOR_BROWSER_UPDATE) {
+      AboutTBUpdate.init();
     }
 
     Sanitizer.onStartup();
