@@ -658,6 +658,10 @@ var gInitialPages = [
   "about:welcomeback",
 ];
 
+if (AppConstants.TOR_BROWSER_UPDATE) {
+  gInitialPages.push("about:tbupdate");
+}
+
 function isInitialPage(url) {
   if (!(url instanceof Ci.nsIURI)) {
     try {
