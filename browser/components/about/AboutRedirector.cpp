@@ -120,6 +120,12 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS},
     {"pioneer", "chrome://browser/content/pioneer.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+#ifdef TOR_BROWSER_UPDATE
+    {"tbupdate", "chrome://browser/content/abouttbupdate/aboutTBUpdate.xhtml",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+#endif
 };
 
 static nsAutoCString GetAboutModuleName(nsIURI* aURI) {
