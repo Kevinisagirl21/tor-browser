@@ -1,0 +1,14 @@
+<!ENTITY aboutTBUpdate.changelogTitle "Tor Browser Changelog">
+<!ENTITY aboutTBUpdate.updated "Tor Browser has been updated.">
+<!-- LOCALIZATION NOTE: the following entities are used to create the link to
+  -  obtain more information about the latest update.
+  -  The markup on the page looks like this:
+  -  &aboutTBUpdate.linkPrefix;<a href="...">&aboutTBUpdate.linkLabel;</a>&aboutTBUpdate.linkSuffix;
+  -  So, linkPrefix is what precedes the link, linkLabel is the link itself,
+  -  and linkSuffix is a text after the link. -->
+<!ENTITY aboutTBUpdate.linkPrefix "For the most up-to-date information about this release, ">
+<!ENTITY aboutTBUpdate.linkLabel  "visit our website">
+<!ENTITY aboutTBUpdate.linkSuffix ".">
+<!ENTITY aboutTBUpdate.version "Version">
+<!ENTITY aboutTBUpdate.releaseDate "Release Date">
+<!ENTITY aboutTBUpdate.releaseNotes "Release Notes">
