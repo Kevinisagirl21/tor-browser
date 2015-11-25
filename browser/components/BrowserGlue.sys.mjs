@@ -939,6 +939,21 @@ let JSWINDOWACTORS = {
   },
 };
 
+if (AppConstants.BASE_BROWSER_UPDATE) {
+  JSWINDOWACTORS.AboutTBUpdate = {
+    parent: {
+      moduleURI: "resource:///actors/AboutTBUpdateParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/AboutTBUpdateChild.jsm",
+      events: {
+        DOMWindowCreated: { capture: true },
+      },
+    },
+    matches: ["about:tbupdate"],
+  };
+}
+
 XPCOMUtils.defineLazyGetter(
   lazy,
   "WeaveService",
