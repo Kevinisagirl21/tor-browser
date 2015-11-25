@@ -696,6 +696,21 @@ let JSWINDOWACTORS = {
   },
 };
 
+if (AppConstants.TOR_BROWSER_UPDATE) {
+  JSWINDOWACTORS["AboutTBUpdate"] = {
+    parent: {
+      moduleURI: "resource:///actors/AboutTBUpdateParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/AboutTBUpdateChild.jsm",
+      events: {
+        DOMWindowCreated: { capture: true },
+      },
+    },
+    matches: ["about:tbupdate"],
+  };
+}
+
 (function earlyBlankFirstPaint() {
   let startTime = Cu.now();
   if (
