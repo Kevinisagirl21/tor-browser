@@ -202,6 +202,11 @@ let RemotePageAccessManager = {
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
     },
+    "about:tbupdate": {
+      RPMSendQuery: [
+        "FetchUpdateData",
+      ],
+    },
   },
 
   /**
