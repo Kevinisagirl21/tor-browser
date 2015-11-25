@@ -739,6 +739,10 @@ var gInitialPages = [
   "chrome://browser/content/blanktab.html",
 ];
 
+if (AppConstants.BASE_BROWSER_UPDATE) {
+  gInitialPages.push("about:tbupdate");
+}
+
 function isInitialPage(url) {
   if (!(url instanceof Ci.nsIURI)) {
     try {
