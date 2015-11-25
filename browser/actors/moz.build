@@ -87,3 +87,9 @@ FINAL_TARGET_FILES.actors += [
     "WebRTCChild.jsm",
     "WebRTCParent.jsm",
 ]
+
+if CONFIG["TOR_BROWSER_UPDATE"]:
+    FINAL_TARGET_FILES.actors += [
+        "AboutTBUpdateChild.jsm",
+        "AboutTBUpdateParent.jsm",
+    ]
