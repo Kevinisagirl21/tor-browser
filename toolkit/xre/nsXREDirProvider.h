@@ -110,6 +110,12 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
   nsresult GetProfileDir(nsIFile** aResult);
 
   /**
+   * Get the TorBrowser user data directory by calling the
+   * TorBrowser_GetUserDataDir() utility function.
+   */
+  static nsresult GetTorBrowserUserDataDir(nsIFile** aFile);
+
+  /**
    * Get the path to the base application directory.
    *
    * In almost all platforms it is the directory that contains the Firefox
