@@ -27,6 +27,8 @@
 #  include <sys/param.h>
 #endif
 
+#include "TorFileUtils.h"
+
 // WARNING: These hard coded names need to go away. They need to
 // come from localizable resources
 
@@ -247,7 +249,7 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   bool exists;
   nsCOMPtr<nsIFile> localDir;
 
-#if defined(RELATIVE_DATA_DIR)
+#if defined(RELATIVE_DATA_DIR) || defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
   nsCOMPtr<nsIProperties> directoryService(
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -269,9 +271,15 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
     file = appRootDir;
   }
 
+#  ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+  rv = TorBrowser_GetUserDataDir(appRootDir, getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = localDir->AppendNative("Browser"_ns);
+#  else
   localDir = appRootDir;
   nsAutoCString profileDir(RELATIVE_DATA_DIR);
   rv = localDir->SetRelativePath(localDir.get(), profileDir);
+#  endif
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aLocal) {
@@ -318,7 +326,7 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 #  error dont_know_how_to_get_product_dir_on_your_platform
 #endif
 
-#if !defined(RELATIVE_DATA_DIR)
+#if !defined(RELATIVE_DATA_DIR) && !defined(TOR_BROWSER_VERSION)
   rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
   if (NS_FAILED(rv)) {
     return rv;
@@ -359,10 +367,13 @@ nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
 
 #if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
   // These 3 platforms share this part of the path - do them as one
+#  ifndef TOR_BROWSER_VERSION
+  // Legacy: we do not use "Profiles" on Tor Browser.
   rv = localDir->AppendRelativeNativePath("Profiles"_ns);
   if (NS_FAILED(rv)) {
     return rv;
   }
+#  endif
 
   bool exists;
   rv = localDir->Exists(&exists);
