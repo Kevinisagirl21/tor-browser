@@ -56,6 +56,8 @@
 #  include "nsIPK11Token.h"
 #endif
 
+#include "TorFileUtils.h"
+
 #include <stdlib.h>
 
 #ifdef XP_WIN
@@ -1332,7 +1334,13 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
     return gDataDirHome->Clone(aFile);
   }
 
-#if defined(RELATIVE_PROFILE_DIRECTORY)
+#if defined(RELATIVE_PROFILE_DIRECTORY) || \
+    defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
+#  ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+  rv = GetTorBrowserUserDataDir(getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = localDir->AppendNative("Browser"_ns);
+#  else
   RefPtr<nsXREDirProvider> singleton = GetSingleton();
   if (!singleton) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -1342,6 +1350,7 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
   nsAutoCString profileDir(RELATIVE_PROFILE_DIRECTORY);
   rv = localDir->SetRelativePath(localDir.get(), profileDir);
   NS_ENSURE_SUCCESS(rv, rv);
+#endif
   if (aLocal) {
     rv = localDir->AppendNative("Caches"_ns);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1487,6 +1496,18 @@ nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
 
   localDir.forget(aFile);
   return NS_OK;
+}
+
+nsresult nsXREDirProvider::GetTorBrowserUserDataDir(nsIFile** aFile) {
+  NS_ENSURE_ARG_POINTER(aFile);
+  nsCOMPtr<nsIFile> appRootDir;
+  RefPtr<nsXREDirProvider> singleton = GetSingleton();
+  if (!singleton) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  nsresult rv = singleton->GetAppRootDir(getter_AddRefs(appRootDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  return TorBrowser_GetUserDataDir(appRootDir, aFile);
 }
 
 nsresult nsXREDirProvider::GetAppRootDir(nsIFile** aFile) {
