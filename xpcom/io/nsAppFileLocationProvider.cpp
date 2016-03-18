@@ -27,6 +27,8 @@
 #  include <sys/param.h>
 #endif
 
+#include "TorFileUtils.h"
+
 // WARNING: These hard coded names need to go away. They need to
 // come from localizable resources
 
@@ -247,7 +249,8 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   bool exists;
   nsCOMPtr<nsIFile> localDir;
 
-#if defined(RELATIVE_PROFILE_DIRECTORY)
+#if defined(RELATIVE_PROFILE_DIRECTORY) || \
+    defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
   nsCOMPtr<nsIProperties> directoryService(
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -269,9 +272,17 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
     file = appRootDir;
   }
 
+#ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+  rv = TorBrowser_GetUserDataDir(appRootDir, getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = localDir->AppendNative("Browser"_ns);
+#else
   localDir = appRootDir;
   nsAutoCString profileDir(RELATIVE_PROFILE_DIRECTORY);
   rv = localDir->SetRelativePath(localDir.get(), profileDir);
+  NS_ENSURE_SUCCESS(rv, rv);
+#endif
+
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aLocal) {
