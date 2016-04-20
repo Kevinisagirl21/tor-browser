@@ -10,7 +10,6 @@ EXTRA_JS_MODULES += [
 
 UNIFIED_SOURCES += [
     'DeviceProviderHelpers.cpp',
-    'MulticastDNSDeviceProvider.cpp',
 ]
 
 XPCOM_MANIFESTS += [
