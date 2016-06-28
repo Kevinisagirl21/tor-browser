@@ -223,6 +223,7 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
  */
 class nsExternalAppHandler final : public nsIStreamListener,
                                    public nsIHelperAppLauncher,
+                                   public nsIHelperAppWarningLauncher,
                                    public nsIBackgroundFileSaverObserver,
                                    public nsINamed {
  public:
@@ -230,6 +231,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSIHELPERAPPLAUNCHER
+  NS_DECL_NSIHELPERAPPWARNINGLAUNCHER
   NS_DECL_NSICANCELABLE
   NS_DECL_NSIBACKGROUNDFILESAVEROBSERVER
   NS_DECL_NSINAMED
@@ -501,6 +503,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
   nsCOMPtr<nsITransfer> mTransfer;
 
   nsCOMPtr<nsIHelperAppLauncherDialog> mDialog;
+  nsCOMPtr<nsIHelperAppWarningDialog> mWarningDialog;
 
   /**
 
