@@ -22,7 +22,6 @@ EXTRA_COMPONENTS += [
 
 EXTRA_JS_MODULES += [
     "UpdateListener.jsm",
-    "UpdateService.jsm",
     "UpdateServiceStub.jsm",
     "UpdateTelemetry.jsm",
 ]
@@ -43,6 +42,10 @@ if (
     EXTRA_JS_MODULES.backgroundtasks += [
         "BackgroundTask_backgroundupdate.jsm",
     ]
+
+EXTRA_PP_JS_MODULES += [
+    "UpdateService.jsm",
+]
 
 XPCOM_MANIFESTS += [
     "components.conf",
