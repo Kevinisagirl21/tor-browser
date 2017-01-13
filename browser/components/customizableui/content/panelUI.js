@@ -59,6 +59,7 @@ const PanelUI = {
 
   init() {
     this._initElements();
+    this._initUpdaterStrings();
 
     this.menuButton.addEventListener("mousedown", this);
     this.menuButton.addEventListener("keypress", this);
@@ -145,6 +146,27 @@ const PanelUI = {
         return (this[getKey] = document.getElementById(id));
       });
     }
+  },
+
+  _initUpdaterStrings() {
+    // If Torbutton is installed and enabled, replace the "Downloading update"
+    // string with one from torbutton.properties (to facilitate localization).
+    // This function can be removed when Tor Browser is based on Firefox 79
+    // or newer (where the localized string is included in the Firefox
+    // language packs).
+    try {
+      let brands = Services.strings.createBundle(
+                                 "chrome://branding/locale/brand.properties");
+      let stringArgs = [brands.GetStringFromName("brandShortName")];
+      let torbuttonBundle = Services.strings.createBundle(
+                            "chrome://torbutton/locale/torbutton.properties");
+      let label = torbuttonBundle.formatStringFromName(
+                              "updateDownloadingPanelUILabel", stringArgs, 1);
+      let elem = document.getElementById("appMenu-update-banner");
+      if (elem) {
+        elem.setAttribute("label-update-downloading", label);
+      }
+    } catch (e) {}
   },
 
   _eventListenersAdded: false,
