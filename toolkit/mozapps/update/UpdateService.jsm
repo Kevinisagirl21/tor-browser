@@ -33,12 +33,16 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   CertUtils: "resource://gre/modules/CertUtils.jsm",
+#ifdef XP_WIN
   ctypes: "resource://gre/modules/ctypes.jsm",
+#endif
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
+#if !defined(TOR_BROWSER_UPDATE)
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
+#endif
 });
 
 const UPDATESERVICE_CID = Components.ID(
@@ -336,6 +340,7 @@ function testWriteAccess(updateTestFile, createDirectory) {
   updateTestFile.remove(false);
 }
 
+#ifdef XP_WIN
 /**
  * Windows only function that closes a Win32 handle.
  *
@@ -428,6 +433,7 @@ function getPerInstallationMutexName(aGlobal = true) {
     (aGlobal ? "Global\\" : "") + "MozillaUpdateMutex-" + hasher.finish(true)
   );
 }
+#endif
 
 /**
  * Whether or not the current instance has the update mutex. The update mutex
@@ -438,6 +444,7 @@ function getPerInstallationMutexName(aGlobal = true) {
  * @return true if this instance holds the update mutex
  */
 function hasUpdateMutex() {
+#ifdef XP_WIN
   if (AppConstants.platform != "win") {
     return true;
   }
@@ -445,6 +452,9 @@ function hasUpdateMutex() {
     gUpdateMutexHandle = createMutex(getPerInstallationMutexName(true), false);
   }
   return !!gUpdateMutexHandle;
+#else
+  return true;
+#endif
 }
 
 /**
@@ -475,6 +485,11 @@ function areDirectoryEntriesWriteable(aDir) {
  * @return true if elevation is required, false otherwise
  */
 function getElevationRequired() {
+#if defined(TOR_BROWSER_UPDATE)
+  // To avoid potential security holes associated with running the updater
+  // process with elevated privileges, Tor Browser does not support elevation.
+  return false;
+#else
   if (AppConstants.platform != "macosx") {
     return false;
   }
@@ -509,6 +524,7 @@ function getElevationRequired() {
       "not required"
   );
   return false;
+#endif
 }
 
 /**
@@ -558,6 +574,7 @@ function getCanApplyUpdates() {
     return false;
   }
 
+#if !defined(TOR_BROWSER_UPDATE)
   if (AppConstants.platform == "macosx") {
     LOG(
       "getCanApplyUpdates - bypass the write since elevation can be used " +
@@ -573,6 +590,7 @@ function getCanApplyUpdates() {
     );
     return true;
   }
+#endif
 
   try {
     if (AppConstants.platform == "win") {
@@ -1281,6 +1299,9 @@ function handleUpdateFailure(update, errorCode) {
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
     if (AppConstants.platform == "macosx") {
+#if defined(TOR_BROWSER_UPDATE)
+      cleanupActiveUpdate();
+#else
       let osxCancelations = Services.prefs.getIntPref(
         PREF_APP_UPDATE_CANCELATIONS_OSX,
         0
@@ -1304,6 +1325,7 @@ function handleUpdateFailure(update, errorCode) {
           (update.state = STATE_PENDING_ELEVATE)
         );
       }
+#endif
       update.statusText = gUpdateBundle.GetStringFromName("elevationFailure");
     } else {
       writeStatusFile(getUpdatesDir(), (update.state = STATE_PENDING));
@@ -1830,7 +1852,26 @@ function Update(update) {
     this._patches.push(patch);
   }
 
-  if (!this._patches.length && !update.hasAttribute("unsupported")) {
+  if (update.hasAttribute("unsupported")) {
+    this.unsupported = ("true" == update.getAttribute("unsupported"));
+  } else if (update.hasAttribute("minSupportedOSVersion")) {
+    let minOSVersion = update.getAttribute("minSupportedOSVersion");
+    try {
+      let osVersion = Services.sysinfo.getProperty("version");
+      this.unsupported = (Services.vc.compare(osVersion, minOSVersion) < 0);
+    } catch (e) {}
+  }
+  if (!this.unsupported && update.hasAttribute("minSupportedInstructionSet")) {
+    let minInstructionSet = update.getAttribute("minSupportedInstructionSet");
+    if (['MMX', 'SSE', 'SSE2', 'SSE3',
+        'SSE4A', 'SSE4_1', 'SSE4_2'].indexOf(minInstructionSet) >= 0) {
+      try {
+        this.unsupported = !Services.sysinfo.getProperty("has" + minInstructionSet);
+      } catch (e) {}
+    }
+  }
+
+  if (!this._patches.length && !this.unsupported) {
     throw Components.Exception("", Cr.NS_ERROR_ILLEGAL_VALUE);
   }
 
@@ -1868,9 +1909,7 @@ function Update(update) {
       if (!isNaN(attr.value)) {
         this.promptWaitTime = parseInt(attr.value);
       }
-    } else if (attr.name == "unsupported") {
-      this.unsupported = attr.value == "true";
-    } else {
+    } else if (attr.name != "unsupported") {
       switch (attr.name) {
         case "appVersion":
         case "buildID":
@@ -1895,7 +1934,11 @@ function Update(update) {
   }
 
   if (!this.previousAppVersion) {
+#ifdef TOR_BROWSER_UPDATE
+    this.previousAppVersion = AppConstants.TOR_BROWSER_VERSION;
+#else
     this.previousAppVersion = Services.appinfo.version;
+#endif
   }
 
   if (!this.elevationFailure) {
@@ -2278,6 +2321,7 @@ UpdateService.prototype = {
         Services.obs.removeObserver(this, topic);
         Services.prefs.removeObserver(PREF_APP_UPDATE_LOG, this);
 
+#ifdef XP_WIN
         if (AppConstants.platform == "win" && gUpdateMutexHandle) {
           // If we hold the update mutex, let it go!
           // The OS would clean this up sometime after shutdown,
@@ -2285,6 +2329,7 @@ UpdateService.prototype = {
           closeHandle(gUpdateMutexHandle);
           gUpdateMutexHandle = null;
         }
+#endif
         if (this._retryTimer) {
           this._retryTimer.cancel();
         }
@@ -2318,6 +2363,7 @@ UpdateService.prototype = {
         }
         break;
       case "test-close-handle-update-mutex":
+#ifdef XP_WIN
         if (Cu.isInAutomation) {
           if (AppConstants.platform == "win" && gUpdateMutexHandle) {
             LOG("UpdateService:observe - closing mutex handle for testing");
@@ -2325,6 +2371,7 @@ UpdateService.prototype = {
             gUpdateMutexHandle = null;
           }
         }
+#endif
         break;
     }
   },
@@ -2346,6 +2393,9 @@ UpdateService.prototype = {
    */
   _postUpdateProcessing: function AUS__postUpdateProcessing() {
     gUpdateFileWriteInfo = { phase: "startup", failure: false };
+#if defined(TOR_BROWSER_UPDATE) && !defined(XP_MACOSX)
+    this._removeOrphanedTorBrowserFiles();
+#endif
     if (!this.canCheckForUpdates) {
       LOG(
         "UpdateService:_postUpdateProcessing - unable to check for " +
@@ -2592,6 +2642,42 @@ UpdateService.prototype = {
       handleFallbackToCompleteUpdate(update, false);
     }
   },
+
+#if defined(TOR_BROWSER_UPDATE) && !defined(XP_MACOSX)
+  /**
+   * When updating from an earlier version to Tor Browser 6.0 or later, old
+   * update info files are left behind on Linux and Windows. Remove them.
+   */
+  _removeOrphanedTorBrowserFiles: function AUS__removeOrphanedTorBrowserFiles() {
+    try {
+      let oldUpdateInfoDir = getAppBaseDir();  // aka the Browser directory.
+
+#ifdef XP_WIN
+      // On Windows, the updater files were stored under
+      // Browser/TorBrowser/Data/Browser/Caches/firefox/
+      oldUpdateInfoDir.appendRelativePath(
+                                "TorBrowser\\Data\\Browser\\Caches\\firefox");
+#endif
+
+      // Remove the updates directory.
+      let updatesDir = oldUpdateInfoDir.clone();
+      updatesDir.append("updates");
+      if (updatesDir.exists() && updatesDir.isDirectory()) {
+        updatesDir.remove(true);
+      }
+
+      // Remove files: active-update.xml and updates.xml
+      let filesToRemove = [ "active-update.xml", "updates.xml" ];
+      filesToRemove.forEach(function(aFileName) {
+        let f = oldUpdateInfoDir.clone();
+        f.append(aFileName);
+        if (f.exists()) {
+          f.remove(false);
+        }
+      });
+    } catch (e) {}
+  },
+#endif
 
   /**
    * Register an observer when the network comes online, so we can short-circuit
@@ -2950,9 +3036,14 @@ UpdateService.prototype = {
     updates.forEach(function(aUpdate) {
       // Ignore updates for older versions of the application and updates for
       // the same version of the application with the same build ID.
-      if (
-        vc.compare(aUpdate.appVersion, Services.appinfo.version) < 0 ||
-        (vc.compare(aUpdate.appVersion, Services.appinfo.version) == 0 &&
+#ifdef TOR_BROWSER_UPDATE
+      let compatVersion = AppConstants.TOR_BROWSER_VERSION;
+#else
+      let compatVersion = Services.appinfo.version;
+#endif
+      let rc = vc.compare(aUpdate.appVersion, compatVersion);
+      if (rc < 0 ||
+          (rc == 0 &&
           aUpdate.buildID == Services.appinfo.appBuildID)
       ) {
         LOG(
@@ -3348,20 +3439,32 @@ UpdateService.prototype = {
     // current application's version or the update's version is the same as the
     // application's version and the build ID is the same as the application's
     // build ID.
+#ifdef TOR_BROWSER_UPDATE
+      let compatVersion = AppConstants.TOR_BROWSER_VERSION;
+#else
+      let compatVersion = Services.appinfo.version;
+#endif
     if (
       update.appVersion &&
-      (Services.vc.compare(update.appVersion, Services.appinfo.version) < 0 ||
+      (Services.vc.compare(update.appVersion, compatVersion) < 0 ||
         (update.buildID &&
           update.buildID == Services.appinfo.appBuildID &&
-          update.appVersion == Services.appinfo.version))
+          update.appVersion == compatVersion))
     ) {
       LOG(
         "UpdateService:downloadUpdate - canceling download of update since " +
           "it is for an earlier or same application version and build ID.\n" +
+#ifdef TOR_BROWSER_UPDATE
+          "current Tor Browser version: " +
+          compatVersion +
+          "\n" +
+          "update Tor Browser version : " +
+#else
           "current application version: " +
-          Services.appinfo.version +
+          compatVersion +
           "\n" +
           "update application version : " +
+#endif
           update.appVersion +
           "\n" +
           "current build ID: " +
@@ -3994,6 +4097,7 @@ Checker.prototype = {
    */
   _callback: null,
 
+#if !defined(TOR_BROWSER_UPDATE)
   _getCanMigrate: function UC__getCanMigrate() {
     if (AppConstants.platform != "win") {
       return false;
@@ -4063,6 +4167,7 @@ Checker.prototype = {
     LOG("Checker:_getCanMigrate - no registry entries for this installation");
     return false;
   },
+#endif // !defined(TOR_BROWSER_UPDATE)
 
   /**
    * The URL of the update service XML file to connect to that contains details
@@ -4091,9 +4196,11 @@ Checker.prototype = {
       url += (url.includes("?") ? "&" : "?") + "force=1";
     }
 
+#if !defined(TOR_BROWSER_UPDATE)
     if (this._getCanMigrate()) {
       url += (url.includes("?") ? "&" : "?") + "mig64=1";
     }
+#endif
 
     LOG("Checker:getUpdateURL - update URL: " + url);
     return url;
