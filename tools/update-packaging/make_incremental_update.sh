@@ -78,7 +78,11 @@ if [ $# = 0 ]; then
   exit 1
 fi
 
-requested_forced_updates='Contents/MacOS/firefox'
+# Firefox uses requested_forced_updates='Contents/MacOS/firefox' due to
+# 770996 but in Tor Browser we do not need that fix.
+requested_forced_updates=""
+directories_to_remove=""
+extra_files_to_remove=""
 
 while getopts "hqf:" flag
 do
@@ -114,6 +118,28 @@ workdir="$(mktemp -d)"
 updatemanifestv3="$workdir/updatev3.manifest"
 archivefiles="updatev3.manifest"
 
+# TODO When TOR_BROWSER_DATA_OUTSIDE_APP_DIR is used on all platforms,
+# we should remove the following lines:
+# If the NoScript extension has changed between
+# releases, add it to the "force updates" list.
+ext_path='TorBrowser/Data/Browser/profile.default/extensions'
+if [ -d "$newdir/$ext_path" ]; then
+  noscript='{73a6fe31-595d-460b-a920-fcc0f8843232}.xpi'
+
+  # NoScript is a packed extension, so we simply compare the old and the new
+  # .xpi files.
+  noscript_path="$ext_path/$noscript"
+  diff -a "$olddir/$noscript_path" "$newdir/$noscript_path" > /dev/null
+  rc=$?
+  if [ $rc -gt 1 ]; then
+    notice "Unexpected exit $rc from $noscript_path diff command"
+    exit 2
+  elif [ $rc -eq 1 ]; then
+    requested_forced_updates="$requested_forced_updates $noscript_path"
+  fi
+fi
+# END TOR_BROWSER_DATA_OUTSIDE_APP_DIR removal
+
 mkdir -p "$workdir"
 
 # Generate a list of all files in the target directory.
@@ -124,6 +150,7 @@ fi
 
 list_files oldfiles
 list_dirs olddirs
+list_symlinks oldsymlinks oldsymlink_targets
 
 popd
 
@@ -141,6 +168,7 @@ fi
 
 list_dirs newdirs
 list_files newfiles
+list_symlinks newsymlinks newsymlink_targets
 
 popd
 
@@ -150,6 +178,22 @@ notice "Adding type instruction to update manifests"
 > $updatemanifestv3
 notice "       type partial"
 echo "type \"partial\"" >> $updatemanifestv3
+
+# TODO When TOR_BROWSER_DATA_OUTSIDE_APP_DIR is used on all platforms,
+# we should remove the following lines:
+# If removal of any old, existing directories is desired, emit the appropriate
+# rmrfdir commands.
+notice ""
+notice "Adding directory removal instructions to update manifests"
+for dir_to_remove in $directories_to_remove; do
+  # rmrfdir requires a trailing slash, so add one if missing.
+  if ! [[ "$dir_to_remove" =~ /$ ]]; then
+    dir_to_remove="${dir_to_remove}/"
+  fi
+  echo "rmrfdir \"$dir_to_remove\"" >> "$updatemanifestv3"
+done
+# END TOR_BROWSER_DATA_OUTSIDE_APP_DIR removal
+
 
 notice ""
 notice "Adding file patch and add instructions to update manifests"
@@ -242,6 +286,23 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
   fi
 done
 
+# Remove and re-add symlinks
+notice ""
+notice "Adding symlink remove/add instructions to update manifests"
+num_oldsymlinks=${#oldsymlinks[*]}
+for ((i=0; $i<$num_oldsymlinks; i=$i+1)); do
+  link="${oldsymlinks[$i]}"
+  verbose_notice "        remove: $link"
+  echo "remove \"$link\"" >> "$updatemanifestv3"
+done
+
+num_newsymlinks=${#newsymlinks[*]}
+for ((i=0; $i<$num_newsymlinks; i=$i+1)); do
+  link="${newsymlinks[$i]}"
+  target="${newsymlink_targets[$i]}"
+  make_addsymlink_instruction "$link" "$target" "$updatemanifestv3"
+done
+
 # Newly added files
 notice ""
 notice "Adding file add instructions to update manifests"
@@ -285,6 +346,14 @@ done
 notice ""
 notice "Adding file and directory remove instructions from file 'removed-files'"
 append_remove_instructions "$newdir" "$updatemanifestv3"
+
+# TODO When TOR_BROWSER_DATA_OUTSIDE_APP_DIR is used on all platforms,
+# we should remove the following lines:
+for f in $extra_files_to_remove; do
+  notice "     remove \"$f\""
+  echo "remove \"$f\"" >> "$updatemanifestv3"
+done
+# END TOR_BROWSER_DATA_OUTSIDE_APP_DIR removal
 
 notice ""
 notice "Adding directory remove instructions for directories that no longer exist"
