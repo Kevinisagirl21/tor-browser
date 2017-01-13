@@ -7,7 +7,6 @@
 // Disable initial homepage notifications
 pref("browser.search.update", false);
 pref("browser.rights.3.shown", true);
-pref("browser.startup.homepage_override.mstone", "ignore");
 pref("startup.homepage_welcome_url", "");
 pref("startup.homepage_welcome_url.additional", "");
 
@@ -20,9 +19,17 @@ pref("startup.homepage_override_url", "https://blog.torproject.org/category/tags
 
 // Try to nag a bit more about updates: Pop up a restart dialog an hour after the initial dialog
 pref("app.update.promptWaitTime", 3600);
+pref("app.update.notifyDuringDownload", true);
+pref("app.update.url.manual", "https://www.torproject.org/download/languages/");
+pref("app.update.url.details", "https://www.torproject.org/download/");
+pref("app.update.badgeWaitTime", 0);
+pref("app.releaseNotesURL", "about:blank");
 
-#ifdef XP_WIN
-// For now, disable staged updates on Windows (see #18292).
+#ifndef XP_MACOSX
+// Disable staged updates on platforms other than macOS.
+// Staged updates do not work on Windows due to #18292.
+// Also, on Windows and Linux any changes that are made to the browser profile
+// or Tor data after an update is staged will be lost.
 pref("app.update.staging.enabled", false);
 #endif
 
@@ -82,6 +89,7 @@ pref("datareporting.policy.dataSubmissionEnabled", false);
 // Make sure Unified Telemetry is really disabled, see: #18738.
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
+pref("toolkit.telemetry.updatePing.enabled", false); // Make sure updater telemetry is disabled; see #25909.
 #ifdef XP_WIN
 // Defense-in-depth: ensure that the Windows default browser agent will
 // not ping Mozilla if it is somehow present (we omit it at build time).
