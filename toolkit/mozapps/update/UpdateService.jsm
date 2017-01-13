@@ -12,6 +12,19 @@ const { AppConstants } = ChromeUtils.import(
 const { AUSTLMY } = ChromeUtils.import(
   "resource://gre/modules/UpdateTelemetry.jsm"
 );
+
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
+);
+
+function _shouldRegisterBootstrapObserver(errorCode) {
+  return (
+    errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
+    !TorMonitorService.isBootstrapDone &&
+    TorMonitorService.ownsTorDaemon
+  );
+}
+
 const {
   Bits,
   BitsRequest,
@@ -245,6 +258,7 @@ const SERVICE_ERRORS = [
 // Custom update error codes
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
 const NETWORK_ERROR_OFFLINE = 111;
+const PROXY_SERVER_CONNECTION_REFUSED = 2152398920;
 
 // Error codes should be < 1000. Errors above 1000 represent http status codes
 const HTTP_ERROR_OFFSET = 1000;
@@ -662,6 +676,11 @@ function areDirectoryEntriesWriteable(aDir) {
  * @return true if elevation is required, false otherwise
  */
 function getElevationRequired() {
+  if (AppConstants.TOR_BROWSER_UPDATE) {
+    // To avoid potential security holes associated with running the updater
+    // process with elevated privileges, Tor Browser does not support elevation.
+    return false;
+  }
   if (AppConstants.platform != "macosx") {
     return false;
   }
@@ -741,20 +760,22 @@ function getCanApplyUpdates() {
     return false;
   }
 
-  if (AppConstants.platform == "macosx") {
-    LOG(
-      "getCanApplyUpdates - bypass the write since elevation can be used " +
-        "on Mac OS X"
-    );
-    return true;
-  }
+  if (!AppConstants.TOR_BROWSER_UPDATE) {
+    if (AppConstants.platform == "macosx") {
+      LOG(
+        "getCanApplyUpdates - bypass the write since elevation can be used " +
+          "on Mac OS X"
+      );
+      return true;
+    }
 
-  if (shouldUseService()) {
-    LOG(
-      "getCanApplyUpdates - bypass the write checks because the Windows " +
-        "Maintenance Service can be used"
-    );
-    return true;
+    if (shouldUseService()) {
+      LOG(
+        "getCanApplyUpdates - bypass the write checks because the Windows " +
+          "Maintenance Service can be used"
+      );
+      return true;
+    }
   }
 
   try {
@@ -1567,28 +1588,32 @@ function handleUpdateFailure(update, errorCode) {
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
     if (AppConstants.platform == "macosx") {
-      let osxCancelations = Services.prefs.getIntPref(
-        PREF_APP_UPDATE_CANCELATIONS_OSX,
-        0
-      );
-      osxCancelations++;
-      Services.prefs.setIntPref(
-        PREF_APP_UPDATE_CANCELATIONS_OSX,
-        osxCancelations
-      );
-      let maxCancels = Services.prefs.getIntPref(
-        PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
-        DEFAULT_CANCELATIONS_OSX_MAX
-      );
-      // Prevent the preference from setting a value greater than 5.
-      maxCancels = Math.min(maxCancels, 5);
-      if (osxCancelations >= maxCancels) {
-        cleanupReadyUpdate();
+      if (AppConstants.TOR_BROWSER_UPDATE) {
+        cleanupActiveUpdates();
       } else {
-        writeStatusFile(
-          getReadyUpdateDir(),
-          (update.state = STATE_PENDING_ELEVATE)
+        let osxCancelations = Services.prefs.getIntPref(
+          PREF_APP_UPDATE_CANCELATIONS_OSX,
+          0
         );
+        osxCancelations++;
+        Services.prefs.setIntPref(
+          PREF_APP_UPDATE_CANCELATIONS_OSX,
+          osxCancelations
+        );
+        let maxCancels = Services.prefs.getIntPref(
+          PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
+          DEFAULT_CANCELATIONS_OSX_MAX
+        );
+        // Prevent the preference from setting a value greater than 5.
+        maxCancels = Math.min(maxCancels, 5);
+        if (osxCancelations >= maxCancels) {
+          cleanupReadyUpdate();
+        } else {
+          writeStatusFile(
+            getReadyUpdateDir(),
+            (update.state = STATE_PENDING_ELEVATE)
+          );
+        }
       }
       update.statusText = gUpdateBundle.GetStringFromName("elevationFailure");
     } else {
@@ -1810,13 +1835,22 @@ function updateIsAtLeastAsOldAs(update, version, buildID) {
 }
 
 /**
+ * This returns the current version of the browser to use to check updates.
+ */
+function getCompatVersion() {
+  return AppConstants.TOR_BROWSER_VERSION
+    ? AppConstants.TOR_BROWSER_VERSION
+    : Services.appinfo.version;
+}
+
+/**
  * This returns true if the passed update is the same version or older than
  * currently installed Firefox version.
  */
 function updateIsAtLeastAsOldAsCurrentVersion(update) {
   return updateIsAtLeastAsOldAs(
     update,
-    Services.appinfo.version,
+    getCompatVersion(),
     Services.appinfo.appBuildID
   );
 }
@@ -2121,7 +2155,31 @@ function Update(update) {
     this._patches.push(patch);
   }
 
-  if (!this._patches.length && !update.hasAttribute("unsupported")) {
+  if (update.hasAttribute("unsupported")) {
+    this.unsupported = "true" == update.getAttribute("unsupported");
+  } else if (update.hasAttribute("minSupportedOSVersion")) {
+    let minOSVersion = update.getAttribute("minSupportedOSVersion");
+    try {
+      let osVersion = Services.sysinfo.getProperty("version");
+      this.unsupported = Services.vc.compare(osVersion, minOSVersion) < 0;
+    } catch (e) {}
+  }
+  if (!this.unsupported && update.hasAttribute("minSupportedInstructionSet")) {
+    let minInstructionSet = update.getAttribute("minSupportedInstructionSet");
+    if (
+      ["MMX", "SSE", "SSE2", "SSE3", "SSE4A", "SSE4_1", "SSE4_2"].includes(
+        minInstructionSet
+      )
+    ) {
+      try {
+        this.unsupported = !Services.sysinfo.getProperty(
+          "has" + minInstructionSet
+        );
+      } catch (e) {}
+    }
+  }
+
+  if (!this._patches.length && !this.unsupported) {
     throw Components.Exception("", Cr.NS_ERROR_ILLEGAL_VALUE);
   }
 
@@ -2159,9 +2217,7 @@ function Update(update) {
       if (!isNaN(attr.value)) {
         this.promptWaitTime = parseInt(attr.value);
       }
-    } else if (attr.name == "unsupported") {
-      this.unsupported = attr.value == "true";
-    } else {
+    } else if (attr.name != "unsupported") {
       switch (attr.name) {
         case "appVersion":
         case "buildID":
@@ -2186,7 +2242,7 @@ function Update(update) {
   }
 
   if (!this.previousAppVersion) {
-    this.previousAppVersion = Services.appinfo.version;
+    this.previousAppVersion = getCompatVersion();
   }
 
   if (!this.elevationFailure) {
@@ -2544,6 +2600,9 @@ UpdateService.prototype = {
         break;
       case "network:offline-status-changed":
         this._offlineStatusChanged(data);
+        break;
+      case "torconnect:bootstrap-complete":
+        this._bootstrapComplete();
         break;
       case "nsPref:changed":
         if (data == PREF_APP_UPDATE_LOG || data == PREF_APP_UPDATE_LOG_FILE) {
@@ -3001,6 +3060,35 @@ UpdateService.prototype = {
     this._attemptResume();
   },
 
+  _registerBootstrapObserver: function AUS__registerBootstrapObserver() {
+    if (this._registeredBootstrapObserver) {
+      LOG(
+        "UpdateService:_registerBootstrapObserver - observer already registered"
+      );
+      return;
+    }
+
+    LOG(
+      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap to " +
+        "be complete, then forcing another check"
+    );
+
+    Services.obs.addObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = true;
+  },
+
+  _bootstrapComplete: function AUS__bootstrapComplete() {
+    Services.obs.removeObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = false;
+
+    LOG(
+      "UpdateService:_bootstrapComplete - bootstrapping complete, forcing " +
+        "another background check"
+    );
+
+    this._attemptResume();
+  },
+
   onCheckComplete: async function AUS_onCheckComplete(request, updates) {
     await this._selectAndInstallUpdate(updates);
   },
@@ -3019,6 +3107,11 @@ UpdateService.prototype = {
       if (this._pingSuffix) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
+      return;
+    } else if (_shouldRegisterBootstrapObserver(update.errorCode)) {
+      // Register boostrap observer to try again, but only when we own the
+      // tor process.
+      this._registerBootstrapObserver();
       return;
     }
 
@@ -3849,7 +3942,7 @@ UpdateService.prototype = {
         "UpdateService:downloadUpdate - canceling download of update since " +
           "it is for an earlier or same application version and build ID.\n" +
           "current application version: " +
-          Services.appinfo.version +
+          getCompatVersion() +
           "\n" +
           "update application version : " +
           update.appVersion +
@@ -4537,7 +4630,7 @@ Checker.prototype = {
   _callback: null,
 
   _getCanMigrate: function UC__getCanMigrate() {
-    if (AppConstants.platform != "win") {
+    if (AppConstants.platform != "win" || AppConstants.TOR_BROWSER_VERSION) {
       return false;
     }
 
@@ -5799,6 +5892,7 @@ Downloader.prototype = {
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
+    var shouldRegisterBootstrapObserver = false;
     var shouldRetrySoon = false;
     var deleteActiveUpdate = false;
     let migratedToReadyUpdate = false;
@@ -5910,7 +6004,20 @@ Downloader.prototype = {
       );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
-
+    } else if (_shouldRegisterBootstrapObserver(status)) {
+      // Register a bootstrap observer to try again.
+      // The bootstrap observer will continue the incremental download by
+      // calling downloadUpdate on the active update which continues
+      // downloading the file from where it was.
+      LOG(
+        "Downloader:onStopRequest - not bootstrapped, register bootstrap observer: true"
+      );
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_RETRY_OFFLINE
+      );
+      shouldRegisterBootstrapObserver = true;
+      deleteActiveUpdate = false;
       // Each of NS_ERROR_NET_TIMEOUT, ERROR_CONNECTION_REFUSED,
       // NS_ERROR_NET_RESET and NS_ERROR_DOCUMENT_NOT_CACHED can be returned
       // when disconnecting the internet while a download of a MAR is in
@@ -6024,7 +6131,11 @@ Downloader.prototype = {
 
     // Only notify listeners about the stopped state if we
     // aren't handling an internal retry.
-    if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
+    if (
+      !shouldRetrySoon &&
+      !shouldRegisterOnlineObserver &&
+      !shouldRegisterBootstrapObserver
+    ) {
       this.updateService.forEachDownloadListener(listener => {
         listener.onStopRequest(request, status);
       });
@@ -6209,6 +6320,9 @@ Downloader.prototype = {
     if (shouldRegisterOnlineObserver) {
       LOG("Downloader:onStopRequest - Registering online observer");
       this.updateService._registerOnlineObserver();
+    } else if (shouldRegisterBootstrapObserver) {
+      LOG("Downloader:onStopRequest - Registering bootstrap observer");
+      this.updateService._registerBootstrapObserver();
     } else if (shouldRetrySoon) {
       LOG("Downloader:onStopRequest - Retrying soon");
       this.updateService._consecutiveSocketErrors++;
