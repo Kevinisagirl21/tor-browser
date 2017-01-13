@@ -17,6 +17,21 @@ MOZ_BRANDING_DIRECTORY=browser/branding/unofficial
 MOZ_OFFICIAL_BRANDING_DIRECTORY=browser/branding/official
 MOZ_APP_ID={ec8030f7-c20a-464f-9b0e-13a3a9e97384}
 
+# ACCEPTED_MAR_CHANNEL_IDS should usually be the same as the value MAR_CHANNEL_ID.
+# If more than one ID is needed, then you should use a comma separated list
+# of values.
+# The MAR_CHANNEL_ID must not contain the following 3 characters: ",\t "
+if test "$MOZ_UPDATE_CHANNEL" = "alpha"; then
+  ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-alpha
+  MAR_CHANNEL_ID=torbrowser-torproject-alpha
+elif test "$MOZ_UPDATE_CHANNEL" = "nightly"; then
+  ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-nightly
+  MAR_CHANNEL_ID=torbrowser-torproject-nightly
+else
+  ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-release
+  MAR_CHANNEL_ID=torbrowser-torproject-release
+fi
+
 MOZ_PROFILE_MIGRATOR=1
 
 # Include the DevTools client, not just the server (which is the default)
