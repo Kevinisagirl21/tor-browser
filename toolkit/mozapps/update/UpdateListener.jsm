@@ -205,6 +205,15 @@ var UpdateListener = {
     }
   },
 
+  showUpdateDownloadingNotification() {
+    this.showUpdateNotification("downloading", true, true, () => {
+      // The user clicked on the "Downloading update" app menu item.
+      // Code in browser/components/customizableui/content/panelUI.js
+      // receives the following notification and opens the about dialog.
+      Services.obs.notifyObservers(null, "show-update-progress", null);
+    });
+  },
+
   handleUpdateError(update, status) {
     switch (status) {
       case "download-attempt-failed":
@@ -287,6 +296,17 @@ var UpdateListener = {
     }
   },
 
+  handleUpdateDownloading(status) {
+    switch (status) {
+      case "downloading":
+        this.showUpdateDownloadingNotification();
+        break;
+      case "idle":
+        this.reset();
+        break;
+    }
+  },
+
   observe(subject, topic, status) {
     let update = subject && subject.QueryInterface(Ci.nsIUpdate);
 
@@ -298,6 +318,9 @@ var UpdateListener = {
           Services.prefs.clearUserPref(PREF_APP_UPDATE_UNSUPPORTED_URL);
         }
         this.handleUpdateAvailable(update, status);
+        break;
+      case "update-downloading":
+        this.handleUpdateDownloading(status);
         break;
       case "update-staged":
       case "update-downloaded":
