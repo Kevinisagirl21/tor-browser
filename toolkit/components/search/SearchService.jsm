@@ -1166,26 +1166,16 @@ SearchService.prototype = {
   },
 
   async _fetchEngineSelectorEngines() {
-    let searchEngineSelectorProperties = {
-      locale: Services.locale.appLocaleAsBCP47,
-      region: Region.home || "default",
-      channel: AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")
-        ? "esr"
-        : AppConstants.MOZ_UPDATE_CHANNEL,
-      experiment: NimbusFeatures.search.getVariable("experiment") ?? "",
-      distroID: SearchUtils.distroID ?? "",
-    };
-
-    for (let [key, value] of Object.entries(searchEngineSelectorProperties)) {
-      this._settings.setAttribute(key, value);
-    }
-
-    let {
-      engines,
-      privateDefault,
-    } = await this._engineSelector.fetchEngineConfiguration(
-      searchEngineSelectorProperties
-    );
+    const engines = [
+      { webExtension: { id: "ddg@search.mozilla.org" }, orderHint: 100 },
+      { webExtension: { id: "youtube@search.mozilla.org" }, orderHint: 90 },
+      { webExtension: { id: "google@search.mozilla.org" }, orderHint: 80 },
+      { webExtension: { id: "ddg-onion@search.mozilla.org" }, orderHint: 70 },
+      { webExtension: { id: "startpage@search.mozilla.org" }, orderHint: 60 },
+      { webExtension: { id: "twitter@search.mozilla.org" }, orderHint: 50 },
+      { webExtension: { id: "wikipedia@search.mozilla.org" }, orderHint: 40 },
+      { webExtension: { id: "yahoo@search.mozilla.org" }, orderHint: 30 },
+    ];
 
     for (let e of engines) {
       if (!e.webExtension) {
@@ -1194,7 +1184,7 @@ SearchService.prototype = {
       e.webExtension.locale = e.webExtension?.locale ?? SearchUtils.DEFAULT_TAG;
     }
 
-    return { engines, privateDefault };
+    return { engines, privateDefault: undefined };
   },
 
   _setDefaultAndOrdersFromSelector(engines, privateDefault) {
