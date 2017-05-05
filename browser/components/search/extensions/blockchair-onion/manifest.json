@@ -1,0 +1,26 @@
+{
+  "name": "BlockchairOnion",
+  "description": "Blockchair Onion",
+  "manifest_version": 2,
+  "version": "1.0",
+  "applications": {
+    "gecko": {
+      "id": "blockchair-onion@search.mozilla.org"
+    }
+  },
+  "hidden": true,
+  "icons": {
+    "16": "favicon.png"
+  },
+  "web_accessible_resources": [
+    "favicon.png"
+  ],
+  "chrome_settings_overrides": {
+    "search_provider": {
+      "name": "BlockchairOnion",
+      "search_url": "http://blkchairbknpn73cfjhevhla7rkp4ed5gg2knctvv7it4lioy22defid.onion/search",
+      "search_form": "http://blkchairbknpn73cfjhevhla7rkp4ed5gg2knctvv7it4lioy22defid.onion/search/?q={searchTerms}",
+      "search_url_get_params": "q={searchTerms}"
+    }
+  }
+}
