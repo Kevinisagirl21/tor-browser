@@ -1,0 +1,26 @@
+{
+  "name": "Blockchair",
+  "description": "Blockchair",
+  "manifest_version": 2,
+  "version": "1.0",
+  "applications": {
+    "gecko": {
+      "id": "blockchair@search.mozilla.org"
+    }
+  },
+  "hidden": true,
+  "icons": {
+    "16": "favicon.png"
+  },
+  "web_accessible_resources": [
+    "favicon.png"
+  ],
+  "chrome_settings_overrides": {
+    "search_provider": {
+      "name": "Blockchair",
+      "search_url": "https://blockchair.com/search",
+      "search_form": "https://blockchair.com/search/?q={searchTerms}",
+      "search_url_get_params": "q={searchTerms}"
+    }
+  }
+}
