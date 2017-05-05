@@ -19,7 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Region: "resource://gre/modules/Region.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
-  SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
   SearchSettings: "resource://gre/modules/SearchSettings.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
@@ -248,11 +247,6 @@ SearchService.prototype = {
     Services.obs.addObserver(this, Region.REGION_TOPIC);
 
     try {
-      // Create the search engine selector.
-      this._engineSelector = new SearchEngineSelector(
-        this._handleConfigurationUpdated.bind(this)
-      );
-
       // See if we have a settings file so we don't have to parse a bunch of XML.
       let settings = await this._settings.get();
 
@@ -1055,16 +1049,18 @@ SearchService.prototype = {
       ? "esr"
       : AppConstants.MOZ_UPDATE_CHANNEL;
 
-    let {
-      engines,
-      privateDefault,
-    } = await this._engineSelector.fetchEngineConfiguration({
-      locale,
-      region,
-      channel,
-      experiment: gExperiment,
-      distroID: SearchUtils.distroID,
-    });
+    const engines = [
+      { webExtension: { id: "ddg@search.mozilla.org" }, orderHint: 100 },
+      { webExtension: { id: "youtube@search.mozilla.org" }, orderHint: 90 },
+      { webExtension: { id: "google@search.mozilla.org" }, orderHint: 80 },
+      { webExtension: { id: "blockchair@search.mozilla.org" }, orderHint: 70 },
+      { webExtension: { id: "ddg-onion@search.mozilla.org" }, orderHint: 60 },
+      { webExtension: { id: "blockchair-onion@search.mozilla.org" }, orderHint: 50 },
+      { webExtension: { id: "startpage@search.mozilla.org" }, orderHint: 40 },
+      { webExtension: { id: "twitter@search.mozilla.org" }, orderHint: 30 },
+      { webExtension: { id: "wikipedia@search.mozilla.org" }, orderHint: 20 },
+      { webExtension: { id: "yahoo@search.mozilla.org" }, orderHint: 10 },
+    ];
 
     for (let e of engines) {
       if (!e.webExtension) {
@@ -1073,7 +1069,7 @@ SearchService.prototype = {
       e.webExtension.locale = e.webExtension?.locale ?? SearchUtils.DEFAULT_TAG;
     }
 
-    return { engines, privateDefault };
+    return { engines, privateDefault: undefined };
   },
 
   _setDefaultAndOrdersFromSelector(engines, privateDefault) {
