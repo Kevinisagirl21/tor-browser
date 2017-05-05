@@ -1,0 +1,26 @@
+{
+  "name": "StartpageOnion",
+  "description": "Startpage Onion",
+  "manifest_version": 2,
+  "version": "1.0",
+  "applications": {
+    "gecko": {
+      "id": "startpage-onion@search.mozilla.org"
+    }
+  },
+  "hidden": true,
+  "icons": {
+    "16": "favicon.png"
+  },
+  "web_accessible_resources": [
+    "favicon.png"
+  ],
+  "chrome_settings_overrides": {
+    "search_provider": {
+      "name": "StartpageOnion",
+      "search_url": "http://startpagel6srwcjlue4zgq3zevrujfaow726kjytqbbjyrswwmjzcqd.onion/sp/search",
+      "search_form": "http://startpagel6srwcjlue4zgq3zevrujfaow726kjytqbbjyrswwmjzcqd.onion/sp/search/",
+      "search_url_post_params": "q={searchTerms}"
+    }
+  }
+}
