@@ -60,10 +60,3 @@
     locale/browser/newInstall.dtd                  (%chrome/browser/newInstall.dtd)
     locale/browser/brandings.dtd                   (%chrome/browser/brandings.dtd)
     locale/browser/fxmonitor.properties            (%chrome/browser/fxmonitor.properties)
-
-#ifdef XPI_NAME
-# Bug 1240628, restructure how l10n repacks work with feature addons
-# This is hacky, but ensures the chrome.manifest chain is complete
-[.] chrome.jar:
-% manifest features/chrome.manifest
-#endif
