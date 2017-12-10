@@ -31,6 +31,7 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsGridContainerFrame.h"
+#include "nsContentUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -2642,7 +2643,8 @@ void ReflowInput::CalculateBlockSideMargins() {
 
 // For risk management, we use preference to control the behavior, and
 // eNoExternalLeading is the old behavior.
-static nscoord GetNormalLineHeight(nsFontMetrics* aFontMetrics) {
+static nscoord GetNormalLineHeight(nsIContent* aContent,
+                                   nsFontMetrics* aFontMetrics) {
   MOZ_ASSERT(nullptr != aFontMetrics, "no font metrics");
 
   nscoord normalLineHeight;
@@ -2650,6 +2652,12 @@ static nscoord GetNormalLineHeight(nsFontMetrics* aFontMetrics) {
   nscoord externalLeading = aFontMetrics->ExternalLeading();
   nscoord internalLeading = aFontMetrics->InternalLeading();
   nscoord emHeight = aFontMetrics->EmHeight();
+
+  if (nsContentUtils::ShouldResistFingerprinting() &&
+      !aContent->IsInChromeDocument()) {
+    return NSToCoordRound(emHeight * NORMAL_LINE_HEIGHT_FACTOR);
+  }
+
   switch (GetNormalLineHeightCalcControl()) {
     case eIncludeExternalLeading:
       normalLineHeight = emHeight + internalLeading + externalLeading;
@@ -2667,7 +2675,8 @@ static nscoord GetNormalLineHeight(nsFontMetrics* aFontMetrics) {
   return normalLineHeight;
 }
 
-static inline nscoord ComputeLineHeight(ComputedStyle* aComputedStyle,
+static inline nscoord ComputeLineHeight(nsIContent* aContent,
+                                        ComputedStyle* aComputedStyle,
                                         nsPresContext* aPresContext,
                                         nscoord aBlockBSize,
                                         float aFontSizeInflation) {
@@ -2696,7 +2705,7 @@ static inline nscoord ComputeLineHeight(ComputedStyle* aComputedStyle,
 
   RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetFontMetricsForComputedStyle(
       aComputedStyle, aPresContext, aFontSizeInflation);
-  return GetNormalLineHeight(fm);
+  return GetNormalLineHeight(aContent, fm);
 }
 
 nscoord ReflowInput::CalcLineHeight() const {
@@ -2718,7 +2727,7 @@ nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
                                     float aFontSizeInflation) {
   MOZ_ASSERT(aComputedStyle, "Must have a ComputedStyle");
 
-  nscoord lineHeight = ComputeLineHeight(aComputedStyle, aPresContext,
+  nscoord lineHeight = ComputeLineHeight(aContent, aComputedStyle, aPresContext,
                                          aBlockBSize, aFontSizeInflation);
 
   NS_ASSERTION(lineHeight >= 0, "ComputeLineHeight screwed up");
@@ -2731,7 +2740,7 @@ nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
     if (!lh.IsNormal()) {
       RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetFontMetricsForComputedStyle(
           aComputedStyle, aPresContext, aFontSizeInflation);
-      nscoord normal = GetNormalLineHeight(fm);
+      nscoord normal = GetNormalLineHeight(aContent, fm);
       if (lineHeight < normal) {
         lineHeight = normal;
       }
