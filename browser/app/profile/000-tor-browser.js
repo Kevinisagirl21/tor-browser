@@ -114,6 +114,8 @@ pref("webgl.enable-webgl2", false);
 pref("gfx.downloadable_fonts.fallback_delay", -1);
 pref("browser.startup.homepage_override.buildID", "20100101");
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
+// Set video VP9 to 0 for everyone (bug 22548)
+pref("media.benchmark.vp9.threshold", 0);
 pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
 pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
