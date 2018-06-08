@@ -22,6 +22,13 @@ ChromeUtils.defineModuleGetter(
   "PluralForm",
   "resource://gre/modules/PluralForm.jsm"
 );
+XPCOMUtils.defineLazyGetter(
+  this,
+  "gTorButtonBundle",
+  function() {
+    return Services.strings.createBundle("chrome://torbutton/locale/torbutton.properties");
+  }
+);
 
 var security = {
   async init(uri, windowInfo) {
@@ -70,6 +77,11 @@ var security = {
       (Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT |
         Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT);
     var isEV = ui.state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
+    var isOnion = false;
+    const hostName = this.windowInfo.hostName;
+    if (hostName && hostName.endsWith(".onion")) {
+      isOnion = true;
+    }
 
     let secInfo = await window.opener.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getSecurityInfo();
     if (secInfo) {
@@ -95,6 +107,7 @@ var security = {
         isBroken,
         isMixed,
         isEV,
+        isOnion,
         cert,
         certChain: certChainArray,
         certificateTransparency: undefined,
@@ -154,6 +167,7 @@ var security = {
       isBroken,
       isMixed,
       isEV,
+      isOnion,
       cert: null,
       certificateTransparency: null,
     };
@@ -350,22 +364,50 @@ async function securityOnLoad(uri, windowInfo) {
     }
     msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
   } else if (info.encryptionStrength > 0) {
-    hdr = pkiBundle.getFormattedString(
-      "pageInfo_EncryptionWithBitsAndProtocol",
-      [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
-    );
+    if (!info.isOnion) {
+      hdr = pkiBundle.getFormattedString(
+        "pageInfo_EncryptionWithBitsAndProtocol",
+        [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
+      );
+    } else {
+      try {
+        hdr = gTorButtonBundle.formatStringFromName(
+          "pageInfo_OnionEncryptionWithBitsAndProtocol",
+          [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
+        );
+      } catch(err) {
+        hdr = "Connection Encrypted (Onion Service, "
+               + info.encryptionAlgorithm
+               + ", "
+               + info.encryptionStrength
+               + " bit keys, "
+               + info.version
+               + ")";
+      }
+    }
     msg1 = pkiBundle.getString("pageInfo_Privacy_Encrypted1");
     msg2 = pkiBundle.getString("pageInfo_Privacy_Encrypted2");
   } else {
-    hdr = pkiBundle.getString("pageInfo_NoEncryption");
-    if (windowInfo.hostName != null) {
-      msg1 = pkiBundle.getFormattedString("pageInfo_Privacy_None1", [
-        windowInfo.hostName,
-      ]);
+    if (!info.isOnion) {
+      hdr = pkiBundle.getString("pageInfo_NoEncryption");
+      if (windowInfo.hostName != null) {
+        msg1 = pkiBundle.getFormattedString("pageInfo_Privacy_None1", [
+          windowInfo.hostName,
+        ]);
+      } else {
+        msg1 = pkiBundle.getString("pageInfo_Privacy_None4");
+      }
+      msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
     } else {
-      msg1 = pkiBundle.getString("pageInfo_Privacy_None4");
+      try {
+        hdr = gTorButtonBundle.GetStringFromName("pageInfo_OnionEncryption");
+      } catch (err) {
+        hdr = "Connection Encrypted (Onion Service)";
+      }
+
+      msg1 = pkiBundle.getString("pageInfo_Privacy_Encrypted1");
+      msg2 = pkiBundle.getString("pageInfo_Privacy_Encrypted2");
     }
-    msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
   }
   setText("security-technical-shortform", hdr);
   setText("security-technical-longform1", msg1);
