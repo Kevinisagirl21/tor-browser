@@ -45,6 +45,8 @@
 #  include "GeckoProfiler.h"
 #endif
 
+#include "mozilla/dom/nsMixedContentBlocker.h"
+
 using namespace mozilla::ipc;
 using namespace mozilla::dom::ipc;
 
@@ -230,7 +232,9 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   nsCOMPtr<nsIURI> innerDocURI =
       NS_GetInnermostURI(aDocument->GetDocumentURI());
   if (innerDocURI) {
-    txn.SetIsSecure(innerDocURI->SchemeIs("https"));
+    txn.SetIsSecure(
+        innerDocURI->SchemeIs("https") ||
+        nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(innerDocURI));
   }
   nsCOMPtr<nsIChannel> mixedChannel;
   mWindowGlobal->GetDocShell()->GetMixedContentChannel(
