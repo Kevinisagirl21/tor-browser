@@ -145,6 +145,10 @@ var IdentityHandler = {
       result.host = uri.host;
     }
 
+    if (!aBrowser.securityUI.secInfo) {
+      return result;
+    }
+
     const cert = aBrowser.securityUI.secInfo.serverCert;
 
     result.certificate = aBrowser.securityUI.secInfo.serverCert.getBase64DERString();
