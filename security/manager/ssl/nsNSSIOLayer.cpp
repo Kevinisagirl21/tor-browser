@@ -420,7 +420,11 @@ void nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode) {
              "Invalid state transition to cert_verification_finished");
 
   if (mFd) {
-    SECStatus rv = SSL_AuthCertificateComplete(mFd, errorCode);
+    PRErrorCode passCode = errorCode;
+    if (errorCode == MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT) {
+      passCode = 0;
+    }
+    SECStatus rv = SSL_AuthCertificateComplete(mFd, passCode);
     // Only replace errorCode if there was originally no error
     if (rv != SECSuccess && errorCode == 0) {
       errorCode = PR_GetError();
@@ -431,12 +435,15 @@ void nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode) {
     }
   }
 
-  if (errorCode) {
+  if (errorCode &&
+      errorCode != MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT) {
     mFailedVerification = true;
     SetCanceled(errorCode);
   }
 
-  if (mPlaintextBytesRead && !errorCode) {
+  if (mPlaintextBytesRead &&
+      (!errorCode ||
+       errorCode == MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT)) {
     Telemetry::Accumulate(Telemetry::SSL_BYTES_BEFORE_CERT_CALLBACK,
                           AssertedCast<uint32_t>(mPlaintextBytesRead));
   }
