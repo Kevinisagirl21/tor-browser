@@ -131,6 +131,10 @@ var gIdentityHandler = {
     );
   },
 
+  get _uriIsOnionHost() {
+    return this._uriHasHost ? this._uri.host.toLowerCase().endsWith(".onion") : false;
+  },
+
   get _isAboutNetErrorPage() {
     return (
       gBrowser.selectedBrowser.documentURI &&
@@ -683,9 +687,9 @@ var gIdentityHandler = {
   get pointerlockFsWarningClassName() {
     // Note that the fullscreen warning does not handle _isSecureInternalUI.
     if (this._uriHasHost && this._isSecureConnection) {
-      return "verifiedDomain";
+      return this._uriIsOnionHost ? "onionVerifiedDomain" : "verifiedDomain";
     }
-    return "unknownIdentity";
+    return this._uriIsOnionHost ? "onionUnknownIdentity" : "unknownIdentity";
   },
 
   /**
@@ -693,6 +697,10 @@ var gIdentityHandler = {
    * built-in (returns false) or imported (returns true).
    */
   _hasCustomRoot() {
+    if (!this._secInfo) {
+      return false;
+    }
+
     let issuerCert = null;
     issuerCert = this._secInfo.succeededCertChain[
       this._secInfo.succeededCertChain.length - 1
@@ -735,11 +743,13 @@ var gIdentityHandler = {
         "identity.extension.label",
         [extensionName]
       );
-    } else if (this._uriHasHost && this._isSecureConnection) {
+    } else if (this._uriHasHost && this._isSecureConnection && this._secInfo) {
       // This is a secure connection.
-      this._identityBox.className = "verifiedDomain";
+      // _isSecureConnection implicitly includes onion services, which may not have an SSL certificate
+      const uriIsOnionHost = this._uriIsOnionHost;
+      this._identityBox.className = uriIsOnionHost ? "onionVerifiedDomain" : "verifiedDomain";
       if (this._isMixedActiveContentBlocked) {
-        this._identityBox.classList.add("mixedActiveBlocked");
+        this._identityBox.classList.add(uriIsOnionHost ? "onionMixedActiveBlocked" : "mixedActiveBlocked");
       }
       if (!this._isCertUserOverridden) {
         // It's a normal cert, verifier is the CA Org.
@@ -750,17 +760,17 @@ var gIdentityHandler = {
       }
     } else if (this._isBrokenConnection) {
       // This is a secure connection, but something is wrong.
-      this._identityBox.className = "unknownIdentity";
+      const uriIsOnionHost = this._uriIsOnionHost;
+      this._identityBox.className = uriIsOnionHost ? "onionUnknownIdentity" : "unknownIdentity";
 
       if (this._isMixedActiveContentLoaded) {
-        this._identityBox.classList.add("mixedActiveContent");
+        this._identityBox.classList.add(uriIsOnionHost ? "onionMixedActiveContent" : "mixedActiveContent");
       } else if (this._isMixedActiveContentBlocked) {
-        this._identityBox.classList.add(
-          "mixedDisplayContentLoadedActiveBlocked"
-        );
+        this._identityBox.classList.add(uriIsOnionHost ? "onionMixedDisplayContentLoadedActiveBlocked" : "mixedDisplayContentLoadedActiveBlocked");
       } else if (this._isMixedPassiveContentLoaded) {
-        this._identityBox.classList.add("mixedDisplayContent");
+        this._identityBox.classList.add(uriIsOnionHost ? "onionMixedDisplayContent" : "mixedDisplayContent");
       } else {
+        // TODO: ignore weak https cipher for onionsites?
         this._identityBox.classList.add("weakCipher");
       }
     } else if (this._isAboutCertErrorPage) {
@@ -773,8 +783,8 @@ var gIdentityHandler = {
       // Network errors and blocked pages get a more neutral icon
       this._identityBox.className = "unknownIdentity";
     } else if (this._isPotentiallyTrustworthy) {
-      // This is a local resource (and shouldn't be marked insecure).
-      this._identityBox.className = "localResource";
+      // This is a local resource or an onion site (and shouldn't be marked insecure).
+      this._identityBox.className = this._uriIsOnionHost ? "onionUnknownIdentity" : "localResource";
     } else {
       // This is an insecure connection.
       let warnOnInsecure =
@@ -798,7 +808,8 @@ var gIdentityHandler = {
     }
 
     if (this._isCertUserOverridden) {
-      this._identityBox.classList.add("certUserOverridden");
+      const uriIsOnionHost = this._uriIsOnionHost;
+      this._identityBox.classList.add(uriIsOnionHost ? "onionCertUserOverridden" : "certUserOverridden");
       // Cert is trusted because of a security exception, verifier is a special string.
       tooltip = gNavigatorBundle.getString(
         "identity.identified.verified_by_you"
