@@ -192,6 +192,25 @@
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
 }
 
+#identity-box[pageproxystate="valid"].onionUnknownIdentity #identity-icon,
+#identity-box[pageproxystate="valid"].onionVerifiedDomain #identity-icon,
+#identity-box[pageproxystate="valid"].onionMixedActiveBlocked #identity-icon {
+  list-style-image: url(chrome://browser/skin/onion-site.svg);
+  visibility: visible;
+}
+
+#identity-box[pageproxystate="valid"].onionMixedDisplayContent #identity-icon,
+#identity-box[pageproxystate="valid"].onionMixedDisplayContentLoadedActiveBlocked #identity-icon,
+#identity-box[pageproxystate="valid"].onionCertUserOverridden #identity-icon {
+  list-style-image: url(chrome://browser/skin/onion-warning.svg);
+  visibility: visible;
+}
+
+#identity-box[pageproxystate="valid"].onionMixedActiveContent #identity-icon {
+  list-style-image: url(chrome://browser/skin/onion-slash.svg);
+  visibility: visible;
+}
+
 #permissions-granted-icon {
   list-style-image: url(chrome://browser/skin/permissions.svg);
 }
