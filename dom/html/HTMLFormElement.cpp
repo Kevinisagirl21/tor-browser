@@ -887,7 +887,10 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
     formIsHTTPS = OwnerDoc()->GetDocumentURI()->SchemeIs("https");
   }
   if (!formIsHTTPS) {
-    return NS_OK;
+    bool formIsOnion = nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(OwnerDoc()->GetDocumentURI());
+    if (!formIsOnion) {
+      return NS_OK;
+    }
   }
 
   if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aActionURL)) {
