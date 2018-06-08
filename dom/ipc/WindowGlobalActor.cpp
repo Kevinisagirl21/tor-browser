@@ -15,6 +15,7 @@
 #include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/dom/JSWindowActorProtocol.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
 
 namespace mozilla {
 namespace dom {
@@ -102,7 +103,9 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   // Init Mixed Content Fields
   nsCOMPtr<nsIURI> innerDocURI = NS_GetInnermostURI(doc->GetDocumentURI());
   if (innerDocURI) {
-    fields.mIsSecure = innerDocURI->SchemeIs("https");
+    fields.mIsSecure =
+        innerDocURI->SchemeIs("https") ||
+        nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(innerDocURI);
   }
   nsCOMPtr<nsIChannel> mixedChannel;
   aWindow->GetDocShell()->GetMixedContentChannel(getter_AddRefs(mixedChannel));
