@@ -1881,7 +1881,8 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
     return false;
   }
 
-  if (nsContentUtils::HttpsStateIsModern(aDocument)) {
+  if (nsContentUtils::HttpsStateIsModern(aDocument) ||
+      nsContentUtils::DocumentHasOnionURI(aDocument)) {
     return true;
   }
 
