@@ -280,6 +280,7 @@ CategorizeCertificateError(PRErrorCode certificateError) {
     case mozilla::pkix::MOZILLA_PKIX_ERROR_MITM_DETECTED:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT:
+    case mozilla::pkix::MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA:
       return Some(
           nsITransportSecurityInfo::OverridableErrorCategory::ERROR_TRUST);
