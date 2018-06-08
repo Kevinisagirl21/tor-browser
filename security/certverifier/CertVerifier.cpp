@@ -839,6 +839,9 @@ Result CertVerifier::VerifySSLServerCert(
   if (rv != Success) {
     return rv;
   }
+
+  bool errOnionWithSelfSignedCert = false;
+
   bool isBuiltChainRootBuiltInRootLocal;
   rv = VerifyCert(peerCertBytes, certificateUsageSSLServer, time, pinarg,
                   PromiseFlatCString(hostname).get(), builtChain, flags,
@@ -861,9 +864,21 @@ Result CertVerifier::VerifySSLServerCert(
       // In this case we didn't find any issuer for the certificate, or we did
       // find other certificates with the same subject but different keys, and
       // the certificate is self-signed.
-      return Result::ERROR_SELF_SIGNED_CERT;
+      if (StringEndsWith(hostname, ".onion"_ns)) {
+        // Self signed cert over onion is deemed secure in some cases, as the
+        // onion service provides encryption.
+        // Firefox treats some errors as self-signed certificates and it allows
+        // to override them. For Onion services, we prefer being stricter, and
+        // we return the original errors.
+        // Moreover, we need also to determine if there are other legitimate
+        // certificate errors (such as expired, wrong domain) that we would like
+        // to surface to the user.
+        errOnionWithSelfSignedCert = rv == Result::ERROR_UNKNOWN_ISSUER;
+      } else {
+        return Result::ERROR_SELF_SIGNED_CERT;
+      }
     }
-    if (rv == Result::ERROR_UNKNOWN_ISSUER) {
+    if (rv == Result::ERROR_UNKNOWN_ISSUER && !errOnionWithSelfSignedCert) {
       // In this case we didn't get any valid path for the cert. Let's see if
       // the issuer is the same as the issuer for our canary probe. If yes, this
       // connection is connecting via a misconfigured proxy.
@@ -898,7 +913,9 @@ Result CertVerifier::VerifySSLServerCert(
         return hostnameResult;
       }
     }
-    return rv;
+    if (!errOnionWithSelfSignedCert) {
+      return rv;
+    }
   }
 
   if (dcInfo) {
@@ -935,7 +952,9 @@ Result CertVerifier::VerifySSLServerCert(
   if (isBuiltChainRootBuiltInRoot) {
     *isBuiltChainRootBuiltInRoot = isBuiltChainRootBuiltInRootLocal;
   }
-
+  if (errOnionWithSelfSignedCert) {
+    return Result::ERROR_ONION_WITH_SELF_SIGNED_CERT;
+  }
   return Success;
 }
 

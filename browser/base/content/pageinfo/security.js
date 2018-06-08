@@ -16,6 +16,11 @@ ChromeUtils.defineESModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   PluralForm: "resource://gre/modules/PluralForm.sys.mjs",
 });
+XPCOMUtils.defineLazyGetter(this, "gTorButtonBundle", function () {
+  return Services.strings.createBundle(
+    "chrome://torbutton/locale/torbutton.properties"
+  );
+});
 
 var security = {
   async init(uri, windowInfo) {
@@ -54,6 +59,16 @@ var security = {
       (Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT |
         Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT);
     var isEV = ui.state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
+    var isOnion = false;
+    let hostName;
+    try {
+      hostName = Services.eTLD.getBaseDomain(this.uri);
+    } catch (e) {
+      hostName = this.windowInfo.hostName;
+    }
+    if (hostName && hostName.endsWith(".onion")) {
+      isOnion = true;
+    }
 
     let retval = {
       cAName: "",
@@ -63,6 +78,7 @@ var security = {
       isBroken,
       isMixed,
       isEV,
+      isOnion,
       cert: null,
       certificateTransparency: null,
     };
@@ -100,6 +116,7 @@ var security = {
       isBroken,
       isMixed,
       isEV,
+      isOnion,
       cert,
       certChain: certChainArray,
       certificateTransparency: undefined,
@@ -341,13 +358,31 @@ async function securityOnLoad(uri, windowInfo) {
     }
     msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
   } else if (info.encryptionStrength > 0) {
-    hdr = pkiBundle.getFormattedString(
-      "pageInfo_EncryptionWithBitsAndProtocol",
-      [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
-    );
+    if (!info.isOnion) {
+      hdr = pkiBundle.getFormattedString(
+        "pageInfo_EncryptionWithBitsAndProtocol",
+        [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
+      );
+    } else {
+      try {
+        hdr = gTorButtonBundle.formatStringFromName(
+          "pageInfo_OnionEncryptionWithBitsAndProtocol",
+          [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
+        );
+      } catch (err) {
+        hdr =
+          "Connection Encrypted (Onion Service, " +
+          info.encryptionAlgorithm +
+          ", " +
+          info.encryptionStrength +
+          " bit keys, " +
+          info.version +
+          ")";
+      }
+    }
     msg1 = pkiBundle.getString("pageInfo_Privacy_Encrypted1");
     msg2 = pkiBundle.getString("pageInfo_Privacy_Encrypted2");
-  } else {
+  } else if (!info.isOnion) {
     hdr = pkiBundle.getString("pageInfo_NoEncryption");
     if (windowInfo.hostName != null) {
       msg1 = pkiBundle.getFormattedString("pageInfo_Privacy_None1", [
@@ -357,6 +392,15 @@ async function securityOnLoad(uri, windowInfo) {
       msg1 = pkiBundle.getString("pageInfo_Privacy_None4");
     }
     msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
+  } else {
+    try {
+      hdr = gTorButtonBundle.GetStringFromName("pageInfo_OnionEncryption");
+    } catch (err) {
+      hdr = "Connection Encrypted (Onion Service)";
+    }
+
+    msg1 = pkiBundle.getString("pageInfo_Privacy_Encrypted1");
+    msg2 = pkiBundle.getString("pageInfo_Privacy_Encrypted2");
   }
   setText("security-technical-shortform", hdr);
   setText("security-technical-longform1", msg1);
