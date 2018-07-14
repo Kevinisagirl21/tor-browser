@@ -74,6 +74,9 @@ class RemoteWebNavigation {
         fixupFlags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
       uri = Services.uriFixup.createFixupURI(aURI, fixupFlags);
+/*******************************************************************************
+   TOR BROWSER: Disable the following speculative connect until
+   we can make it properly obey first-party isolation.
 
       // We know the url is going to be loaded, let's start requesting network
       // connection before the content process asks.
@@ -97,6 +100,7 @@ class RemoteWebNavigation {
         }
         Services.io.speculativeConnect(uri, principal, null);
       }
+*******************************************************************************/
     } catch (ex) {
       // Can't setup speculative connection for this uri string for some
       // reason (such as failing to parse the URI), just ignore it.
