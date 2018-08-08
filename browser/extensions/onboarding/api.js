@@ -8,7 +8,6 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   OnboardingTourType: "resource://onboarding/modules/OnboardingTourType.jsm",
-  OnboardingTelemetry: "resource://onboarding/modules/OnboardingTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UIState: "resource://services-sync/UIState.jsm",
 });
@@ -21,7 +20,11 @@ const RESOURCE_HOST = "onboarding";
 
 const {PREF_STRING, PREF_BOOL, PREF_INT} = Ci.nsIPrefBranch;
 
-const BROWSER_READY_NOTIFICATION = "browser-delayed-startup-finished";
+// In Tor Browser we initialize onboarding upon "final-ui-startup" instead
+// of waiting for "browser-delayed-startup-finished"; otherwise, on first
+// run the onboarding frame script's "onload" listener is installed too
+// late to detect that about:tor is loaded.
+const BROWSER_READY_NOTIFICATION = "final-ui-startup";
 const BROWSER_SESSION_STORE_NOTIFICATION = "sessionstore-windows-restored";
 const PREF_WHITELIST = [
   ["browser.onboarding.enabled", PREF_BOOL],
@@ -33,6 +36,19 @@ const PREF_WHITELIST = [
 ];
 
 [
+  // Tor Browser tours:
+  "onboarding-tour-tor-welcome",
+  "onboarding-tour-tor-privacy",
+  "onboarding-tour-tor-network-9-0",
+  "onboarding-tour-tor-circuit-display",
+  "onboarding-tour-tor-security",
+  "onboarding-tour-tor-expect-differences",
+  "onboarding-tour-tor-onion-services",
+  "onboarding-tour-tor-toolbar-update-9-0",
+  "onboarding-tour-tor-learn-more",
+#if 0
+// Firefox tours. To reduce conflicts when rebasing against newer Firefox
+// code, we use the preprocessor to omit this code block.
   "onboarding-tour-addons",
   "onboarding-tour-customize",
   "onboarding-tour-default-browser",
@@ -42,6 +58,7 @@ const PREF_WHITELIST = [
   "onboarding-tour-screenshots",
   "onboarding-tour-singlesearch",
   "onboarding-tour-sync",
+#endif
 ].forEach(tourId => PREF_WHITELIST.push([`browser.onboarding.tour.${tourId}.completed`, PREF_BOOL]));
 
 let waitingForBrowserReady = true;
@@ -80,6 +97,21 @@ function setPrefs(prefs) {
         throw new TypeError(`Unexpected type (${type}) for preference ${name}.`);
     }
   });
+}
+
+function openTorTab(aURL, aFrameScript) {
+  let win = Services.wm.getMostRecentWindow('navigator:browser');
+  if (win) {
+    let tabBrowser = win.gBrowser;
+    let triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({});
+    let tab = tabBrowser.addTab(aURL, { triggeringPrincipal });
+    tabBrowser.selectedTab = tab;
+
+    if (aFrameScript) {
+      let b = tabBrowser.getBrowserForTab(tab);
+      b.messageManager.loadFrameScript(aFrameScript, true);
+    }
+  }
 }
 
 /**
@@ -155,6 +187,11 @@ function initContentMessageListener() {
           isLoggedIn: syncTourChecker.isLoggedIn(),
         });
         break;
+      case "tor-open-tab":
+        openTorTab(msg.data.params.url, msg.data.params.frameScriptURL);
+        break;
+#if 0
+// No telemetry in Tor Browser.
       case "ping-centre":
         try {
           OnboardingTelemetry.process(msg.data.params.data);
@@ -162,6 +199,7 @@ function initContentMessageListener() {
           Cu.reportError(e);
         }
         break;
+#endif
     }
   });
 }
@@ -173,7 +211,6 @@ function onBrowserReady() {
   waitingForBrowserReady = false;
 
   OnboardingTourType.check();
-  OnboardingTelemetry.init(startupData);
   Services.mm.loadFrameScript("resource://onboarding/onboarding.js", true, true);
   initContentMessageListener();
 }
