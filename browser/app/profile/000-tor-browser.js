@@ -340,6 +340,12 @@ pref("browser.download.panel.shown", true);
 // Treat .onions as secure
 pref("dom.securecontext.whitelist_onions", true);
 
+// Onboarding.
+pref("browser.onboarding.tourset-version", 5);
+pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
+pref("browser.onboarding.updatetour", "learn-more");
+pref("browser.onboarding.skip-tour-button.hide", true);
+
 // Disable special URL bar behaviors
 pref("browser.urlbar.suggest.topsites", false);
 pref("browser.urlbar.update1.interventions", false);
