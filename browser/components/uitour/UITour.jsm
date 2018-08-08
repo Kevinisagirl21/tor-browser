@@ -31,6 +31,26 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 // See LOG_LEVELS in Console.jsm. Common examples: "All", "Info", "Warn", & "Error".
 const PREF_LOG_LEVEL = "browser.uitour.loglevel";
 
+const TOR_BROWSER_PAGE_ACTIONS_ALLOWED = new Set([
+  "showInfo", // restricted to TOR_BROWSER_TARGETS_ALLOWED
+  "showMenu", // restricted to TOR_BROWSER_MENUS_ALLOWED
+  "hideMenu", // restricted to TOR_BROWSER_MENUS_ALLOWED
+  "showHighlight", // restricted to TOR_BROWSER_TARGETS_ALLOWED
+  "hideHighlight", // restricted to TOR_BROWSER_TARGETS_ALLOWED
+  "openPreferences",
+  "closeTab",
+  "torBrowserOpenSecurityLevelPanel",
+]);
+
+const TOR_BROWSER_TARGETS_ALLOWED = new Set([
+  "torBrowser-newIdentityButton",
+  "torBrowser-circuitDisplay",
+  "torBrowser-circuitDisplay-diagram",
+  "torBrowser-circuitDisplay-newCircuitButton",
+]);
+
+const TOR_BROWSER_MENUS_ALLOWED = new Set(["torCircuitPanel"]);
+
 const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
   "forceShowReaderIcon",
   "getConfiguration",
@@ -81,6 +101,28 @@ var UITour = {
 
   highlightEffects: ["random", "wobble", "zoom", "color", "focus-outline"],
   targets: new Map([
+    [
+      "torBrowser-circuitDisplay",
+      {
+        query: aDocument =>
+          aDocument.defaultView.gTorCircuitPanel.toolbarButton,
+      },
+    ],
+    [
+      "torBrowser-circuitDisplay-diagram",
+      torBrowserCircuitDisplayTarget("tor-circuit-panel-body"),
+    ],
+    [
+      "torBrowser-circuitDisplay-newCircuitButton",
+      torBrowserCircuitDisplayTarget("tor-circuit-new-circuit"),
+    ],
+    [
+      "torBrowser-newIdentityButton",
+      {
+        query: "#new-identity-button",
+      },
+    ],
+
     [
       "accountStatus",
       {
@@ -274,6 +316,11 @@ var UITour = {
         action,
         aEvent.pageVisibilityState
       );
+      return false;
+    }
+
+    if (!TOR_BROWSER_PAGE_ACTIONS_ALLOWED.has(action)) {
+      log.warn("Ignoring disallowed action:", action);
       return false;
     }
 
@@ -615,6 +662,16 @@ var UITour = {
         this.showProtectionReport(window, browser);
         break;
       }
+
+      case "torBrowserOpenSecurityLevelPanel": {
+        let securityLevelButton = window.document.getElementById(
+          "security-level-button"
+        );
+        if (securityLevelButton) {
+          securityLevelButton.click();
+        }
+        break;
+      }
     }
 
     // For performance reasons, only call initForBrowser if we did something
@@ -821,6 +878,14 @@ var UITour = {
           ["ViewShowing", this.onAppMenuSubviewShowing],
         ],
       },
+      {
+        name: "torCircuitPanel",
+        node: aWindow.gTorCircuitPanel.panel,
+        events: [
+          ["popuphidden", this.onPanelHidden],
+          ["popuphiding", this.onTorCircuitPanelHiding],
+        ],
+      },
     ];
     for (let panel of panels) {
       // Ensure the menu panel is hidden and clean up panel listeners after calling hideMenu.
@@ -849,10 +914,7 @@ var UITour = {
 
   // This function is copied to UITourListener.
   isSafeScheme(aURI) {
-    let allowedSchemes = new Set(["https", "about"]);
-    if (!Services.prefs.getBoolPref("browser.uitour.requireSecure")) {
-      allowedSchemes.add("http");
-    }
+    let allowedSchemes = new Set(["about", "https"]);
 
     if (!allowedSchemes.has(aURI.scheme)) {
       log.error("Unsafe scheme:", aURI.scheme);
@@ -901,7 +963,10 @@ var UITour = {
       return Promise.reject("Invalid target name specified");
     }
 
-    let targetObject = this.targets.get(aTargetName);
+    let targetObject;
+    if (TOR_BROWSER_TARGETS_ALLOWED.has(aTargetName)) {
+      targetObject = this.targets.get(aTargetName);
+    }
     if (!targetObject) {
       log.warn(
         "getTarget: The specified target name is not in the allowed set"
@@ -1368,6 +1433,10 @@ var UITour = {
   },
 
   showMenu(aWindow, aMenuName, aOpenCallback = null, aOptions = {}) {
+    if (!TOR_BROWSER_MENUS_ALLOWED.has(aMenuName)) {
+      return;
+    }
+
     log.debug("showMenu:", aMenuName);
     function openMenuButton(aMenuBtn) {
       if (!aMenuBtn || !aMenuBtn.hasMenu() || aMenuBtn.open) {
@@ -1438,10 +1507,35 @@ var UITour = {
         searchString: SEARCH_STRING,
         allowAutofill: false,
       });
+    } else if (aMenuName == "torCircuitPanel") {
+      const panel = aWindow.gTorCircuitPanel.panel;
+
+      // Add the listener even if the panel is already open since it will still
+      // only get registered once even if it was UITour that opened it.
+      panel.addEventListener("popuphiding", this.onTorCircuitPanelHiding);
+      panel.addEventListener("popuphidden", this.onPanelHidden);
+
+      panel.setAttribute("noautohide", "true");
+
+      if (panel.state == "open") {
+        aOpenCallback?.();
+        return;
+      }
+
+      this.recreatePopup(panel);
+
+      if (aOpenCallback) {
+        panel.addEventListener("popupshown", aOpenCallback, { once: true });
+      }
+      aWindow.gTorCircuitPanel.toolbarButton.click();
     }
   },
 
   hideMenu(aWindow, aMenuName) {
+    if (!TOR_BROWSER_MENUS_ALLOWED.has(aMenuName)) {
+      return;
+    }
+
     log.debug("hideMenu:", aMenuName);
     function closeMenuButton(aMenuBtn) {
       if (aMenuBtn && aMenuBtn.hasMenu()) {
@@ -1456,6 +1550,8 @@ var UITour = {
       closeMenuButton(menuBtn);
     } else if (aMenuName == "urlbar") {
       aWindow.gURLBar.view.close();
+    } else if (aMenuName == "torCircuitPanel") {
+      aWindow.gTorCircuitPanel.hide();
     }
   },
 
@@ -1530,6 +1626,12 @@ var UITour = {
 
   onAppMenuSubviewShowing(aEvent) {
     UITour._hideAnnotationsForPanel(aEvent, false, UITour.targetIsInAppMenu);
+  },
+
+  onTorCircuitPanelHiding(aEvent) {
+    UITour._hideAnnotationsForPanel(aEvent, true, aTarget => {
+      return aTarget.targetName.startsWith("torCircuitPanel-");
+    });
   },
 
   onPanelHidden(aEvent) {
@@ -1976,6 +2078,20 @@ var UITour = {
     }
   },
 };
+
+function torBrowserCircuitDisplayTarget(aElemID) {
+  return {
+    infoPanelPosition: "rightcenter topleft",
+    query(aDocument) {
+      let popup = aDocument.defaultView.gTorCircuitPanel.panel;
+      if (popup.state != "open") {
+        return null;
+      }
+      let element = aDocument.getElementById(aElemID);
+      return UITour.isElementVisible(element) ? element : null;
+    },
+  };
+}
 
 UITour.init();
 
