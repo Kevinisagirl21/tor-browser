@@ -355,15 +355,6 @@ menuitem.bookmark-item {
   margin-inline-end: -4px;
 }
 
-/**
- * Override the --arrowpanel-padding so the background extends
- * to the sides and bottom of the panel.
- */
-#UITourTooltipButtons {
-  margin-inline-start: -10px;
-  margin-bottom: -10px;
-}
-
 %include ../shared/contextmenu.inc.css
 
 #context-navigation > .menuitem-iconic > .menu-iconic-left {
