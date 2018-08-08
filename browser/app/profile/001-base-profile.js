@@ -507,6 +507,12 @@ pref("intl.multilingual.liveReload", false);
 // readers, at least on Windows.
 pref("accessibility.cache.enabled", true);
 
+// Onboarding.
+pref("browser.onboarding.tourset-version", 5);
+pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
+pref("browser.onboarding.updatetour", "learn-more");
+pref("browser.onboarding.skip-tour-button.hide", true);
+
 #ifdef XP_WIN
 // prefs to disable jump-list entries in the taskbar on Windows (see bug #12885)
 // this pref changes the app's set AUMID to be dependent on the profile path, rather than
