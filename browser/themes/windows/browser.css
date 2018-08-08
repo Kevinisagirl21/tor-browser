@@ -465,15 +465,6 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
 
 /* End private browsing and accessibility indicators */
 
-#UITourTooltipButtons {
-  /**
-   * Override the --arrowpanel-padding so the background extends
-   * to the sides and bottom of the panel.
-   */
-  margin-inline: -10px;
-  margin-bottom: -10px;
-}
-
 /* Make menu items larger when opened through touch. */
 #widget-overflow[touchmode] .toolbarbutton-1,
 panel[touchmode] .PanelUI-subView .subviewbutton,
