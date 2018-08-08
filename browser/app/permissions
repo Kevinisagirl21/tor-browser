@@ -6,3 +6,8 @@
 # * permission is an integer between 1 and 15
 # Permissions defined here will also be set for private browsing.
 # See PermissionManager.cpp for more...
+
+# UITour
+# DuckDuckGo .onion (used for circuit display onboarding).
+origin	uitour	1	https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/
+origin	uitour	1	about:tor
