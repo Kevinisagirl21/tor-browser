@@ -14,8 +14,8 @@
   /* Ensuring we can put the overlay over elements using
      z-index on original page */
   z-index: 20999;
-  color: #4d4d4d;
-  background: var(--newtab-overlay-color, rgb(245, 245, 247, 0.9)); /* #f7f7f5, 0.9 opacity */
+  color: #4a4a4a;
+  background: rgba(0,0,0,0);
   display: none;
 }
 
@@ -23,12 +23,45 @@
   display: block;
 }
 
-#onboarding-overlay-button {
-  padding: 10px 0 0 0;
+#onboarding-overlay-button-container {
+  padding: 16px 0 0 0;
   position: fixed;
-  cursor: pointer;
   top: 4px;
   inset-inline-start: 12px;
+}
+
+/*
+ * Define an animated attention-grabbing dot which is shown on the
+ * speech bubble when we are displaying the "updated" tour.
+*/
+#onboarding-overlay-button-container.onboarding-overlay-attention-dot::after {
+  display: inline-block;
+  position: relative;
+  content: " ";
+  width: 20px;
+  height: 20px;
+  top: -8px;
+  inset-inline-start: -16px;
+  background-color: #00E2B1;
+  border-radius: 50%;
+  animation: pulsate 2.0s ease-out;
+  animation-iteration-count: 7;
+}
+
+@keyframes pulsate {
+  0% {
+    opacity: 1.0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1.0;
+  }
+}
+
+#onboarding-overlay-button {
+  cursor: pointer;
   border: none;
   /* Set to none so no grey contrast background in the high-contrast mode */
   background: none;
@@ -56,7 +89,7 @@
   margin-top: -1px;
   margin-inline-start: -13px;
   border: 2px solid #f2f2f2;
-  background: #0A84FF;
+  background: #420c5d;
   padding: 0;
   width: 10px;
   height: 10px;
@@ -70,7 +103,7 @@
 
 #onboarding-overlay-button:hover::after,
 #onboarding-overlay-button.onboarding-speech-bubble::after {
-  background: #0060df;
+  background: rgba(255,255,255,0.2);
   font-size: 13px;
   text-align: center;
   color: #fff;
@@ -78,7 +111,7 @@
   font-weight: 400;
   content: attr(aria-label);
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: 12px;
   padding: 10px 16px;
   width: auto;
   height: auto;
@@ -124,24 +157,17 @@
   width: 16px;
   height: 16px;
   border: none;
-  background: none;
+  background: url("img/close.png") center no-repeat;
   padding: 0;
  }
 
-.onboarding-close-btn::before {
-  content: url("chrome://global/skin/icons/close.svg");
-  -moz-context-properties: fill, fill-opacity;
-  fill-opacity: 0;
-  fill: var(--newtab-icon-primary-color, currentColor);
-}
-
-.onboarding-close-btn:-moz-any(:hover, :active, :focus, :-moz-focusring)::before {
-  fill-opacity: 0.1;
+.onboarding-close-btn:-moz-any(:hover, :active, :focus, :-moz-focusring) {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 #onboarding-overlay.onboarding-opened > #onboarding-overlay-dialog {
   width: 960px;
-  height: 510px;
+  height: 540px;
   background: #fff;
   border: 1px solid rgba(9, 6, 13, 0.2); /* #09060D, 0.2 opacity */
   border-radius: 3px;
@@ -218,7 +244,7 @@
   font-size: 16px;
   cursor: pointer;
   max-height: 54px;
-  --onboarding-tour-item-active-color: #0A84FF;
+  --onboarding-tour-item-active-color: #420c5d;
 }
 
 #onboarding-tour-list .onboarding-tour-item:dir(rtl) {
@@ -226,7 +252,7 @@
 }
 
 #onboarding-tour-list .onboarding-tour-item.onboarding-complete::before {
-  content: url("img/icons_tour-complete.svg");
+  content: url("img/icons_tour-complete.png");
   position: relative;
   inset-inline-start: 3px;
   top: -10px;
@@ -262,6 +288,7 @@
 
 #onboarding-tour-list .onboarding-tour-item.onboarding-active,
 #onboarding-tour-list .onboarding-tour-item-container:hover .onboarding-tour-item {
+  font-weight: bold;
   color: var(--onboarding-tour-item-active-color);
   /* With 1px transparent outline, could see a border in the high-constrast mode */
   outline: 1px solid transparent;
@@ -319,6 +346,18 @@
   grid-template-columns: [tour-page-start] 368px [tour-content-start] 1fr [tour-page-end];
 }
 
+.onboarding-tour-description-highlight {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 6px 8px;
+  vertical-align: middle;
+  background-color: #F1F1F3;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .onboarding-tour-description {
   grid-row: tour-page-start / tour-page-end;
   grid-column: tour-page-start / tour-content-start;
@@ -326,15 +365,26 @@
   line-height: 22px;
   padding-inline-start: 40px;
   padding-inline-end: 28px;
-  max-height: 360px;
+  max-height: 370px;
   overflow: auto;
 }
 
 .onboarding-tour-description > h1 {
-  font-size: 36px;
-  margin-top: 16px;
+  font-size: 30px;
+  margin: 16px 0px 10px 0px;
   font-weight: 300;
-  line-height: 44px;
+  line-height: 36px;
+  color: #420c5d;
+}
+
+.onboarding-tour-description-para2 {
+  margin-top: 16px;
+}
+
+.onboarding-tour-description-suffix {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 16px;
 }
 
 .onboarding-tour-content {
@@ -345,8 +395,8 @@
 }
 
 .onboarding-tour-content > img {
-  width: 352px;
-  margin: 0;
+  width: 300px;
+  margin: 20px;
 }
 
 /* These illustrations need to be stuck on the right side to the border. Thus we
@@ -369,7 +419,7 @@
 }
 
 .onboarding-tour-action-button {
-  background: #0060df;
+  background: #4d0c5d;
   /* With 1px transparent border, could see a border in the high-constrast mode */
   border: 1px solid transparent;
   border-radius: 2px;
@@ -399,17 +449,42 @@
 }
 
 .onboarding-tour-action-button:hover:not([disabled])  {
-  background: #003eaa;
+  background: #410a4e;
   cursor: pointer;
 }
 
 .onboarding-tour-action-button:active:not([disabled]) {
-  background: #002275;
+  background: #34083f;
 }
 
 .onboarding-tour-action-button:disabled {
   opacity: 0.5;
 }
+
+/* Tor action buttons appear in the description column rather than the content one. */
+.onboarding-tour-tor-action-button-container {
+  /* Get higher z-index in order to ensure buttons within container are selectable */
+  z-index: 2;
+  grid-row: tour-button-start / tour-page-end;
+  grid-column: tour-page-start / tour-content-start;
+}
+
+.onboarding-tour-tor-action-button-container > .onboarding-tour-action-button {
+  margin-inline-start: 40px;	/* match .onboarding-tour-description */
+  float: inline-start;
+  background: #e6e6e6;
+  color: #303030;
+}
+
+.onboarding-tour-tor-action-button-container > .onboarding-tour-action-button:hover:not([disabled])  {
+  background: #d6d6d6;
+  cursor: pointer;
+}
+
+.onboarding-tour-tor-action-button-container > .onboarding-tour-action-button:active:not([disabled]) {
+  background: #c6c6c6;
+}
+
 
 /* Tour Icons */
 #onboarding-tour-singlesearch.onboarding-tour-item::after,
@@ -457,11 +532,26 @@
   mask-image: url("img/icons_screenshots.svg");
 }
 
+a#onboarding-tour-tor-expect-differences-button,
+a#onboarding-tour-tor-expect-differences-button:hover,
+a#onboarding-tour-tor-expect-differences-button:visited,
+a#onboarding-tour-tor-onion-services-button,
+a#onboarding-tour-tor-onion-services-button:hover,
+a#onboarding-tour-tor-onion-services-button:visited,
+a#onboarding-tour-tor-learn-more-button,
+a#onboarding-tour-tor-learn-more-button:hover,
+a#onboarding-tour-tor-learn-more-button:visited,
 a#onboarding-tour-screenshots-button,
 a#onboarding-tour-screenshots-button:hover,
 a#onboarding-tour-screenshots-button:visited {
   color: #fff;
   text-decoration: none;
+}
+
+/* The Tor Browswer tour items do not have icons, so we use a transparent PNG. */
+.onboarding-tour-item::after,
+#onboarding-notification-bar[data-target-tour-id] #onboarding-notification-tour-title::before {
+  mask-image: url("img/icons_no-icon.png");
 }
 
 /* Tour Notifications */
