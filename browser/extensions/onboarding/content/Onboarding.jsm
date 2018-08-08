@@ -11,20 +11,22 @@ var EXPORTED_SYMBOLS = ["Onboarding"];
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const ONBOARDING_CSS_URL = "resource://onboarding/onboarding.css";
-const BUNDLE_URI = "chrome://onboarding/locale/onboarding.properties";
+const TORBUTTON_BUNDLE_URI = "chrome://torbutton/locale/browserOnboarding.properties";
+const TORBROWSER_WELCOME_TOUR_NAME_KEY = "onboarding.tour-tor-welcome";
+const BUNDLE_URI = "chrome://torbutton/locale/onboarding.properties";
+const BROWSER_BUNDLE_URI = "chrome://browser/locale/browser.properties";
 const UITOUR_JS_URI = "resource://onboarding/lib/UITour-lib.js";
 const TOUR_AGENT_JS_URI = "resource://onboarding/onboarding-tour-agent.js";
 const BRAND_SHORT_NAME = Services.strings
-  .createBundle("chrome://branding/locale/brand.properties")
-  .GetStringFromName("brandShortName");
+                     .createBundle("chrome://branding/locale/brand.properties")
+                     .GetStringFromName("brandShortName");
 const PROMPT_COUNT_PREF = "browser.onboarding.notification.prompt-count";
 const NOTIFICATION_FINISHED_PREF = "browser.onboarding.notification.finished";
 const ONBOARDING_DIALOG_ID = "onboarding-overlay-dialog";
-const ONBOARDING_MIN_WIDTH_PX = 960;
-const SPEECH_BUBBLE_MIN_WIDTH_PX = 1365;
+const ONBOARDING_MIN_WIDTH_PX = 200;
+const SPEECH_BUBBLE_MIN_WIDTH_PX = 200;
 const SPEECH_BUBBLE_NEWTOUR_STRING_ID = "onboarding.overlay-icon-tooltip2";
-const SPEECH_BUBBLE_UPDATETOUR_STRING_ID =
-  "onboarding.overlay-icon-tooltip-updated2";
+const SPEECH_BUBBLE_UPDATETOUR_STRING_ID = "onboarding.overlay-icon-tooltip-updated2";
 const ICON_STATE_WATERMARK = "watermark";
 const ICON_STATE_DEFAULT = "default";
 
@@ -68,12 +70,7 @@ function createOnboardingTourContent(div, imageSrc) {
 /**
  * Helper function to create the tour button UI element.
  */
-function createOnboardingTourButton(
-  div,
-  buttonId,
-  l10nId,
-  buttonElementTagName = "button"
-) {
+function createOnboardingTourButton(div, buttonId, l10nId, buttonElementTagName = "button") {
   let doc = div.ownerDocument;
   let aside = doc.createElement("aside");
   aside.className = "onboarding-tour-button-container";
@@ -88,6 +85,194 @@ function createOnboardingTourButton(
   return aside;
 }
 
+// Tor Browser tours:
+var onboardingTourset = {
+  // Tour items for new users:
+  "welcome": {
+    id: "onboarding-tour-tor-welcome",
+    tourNameId: TORBROWSER_WELCOME_TOUR_NAME_KEY,
+    instantComplete: true,
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      createOnboardingTourDescription(div,
+        "onboarding.tour-tor-welcome.title", "onboarding.tour-tor-welcome.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-welcome.png");
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-welcome-button", "onboarding.tour-tor-welcome.next-button");
+
+      return div;
+    },
+  },
+  "privacy": {
+    id: "onboarding-tour-tor-privacy",
+    tourNameId: "onboarding.tour-tor-privacy",
+    instantComplete: true,
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      createOnboardingTourDescription(div,
+        "onboarding.tour-tor-privacy.title", "onboarding.tour-tor-privacy.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-privacy.png");
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-privacy-button", "onboarding.tour-tor-privacy.button");
+
+      return div;
+    },
+  },
+  // In Tor Browser 9.0, we replaced the Tor Network panel with an updated one.
+  "tor-network-9.0": {
+    id: "onboarding-tour-tor-network-9-0",
+    tourNameId: "onboarding.tour-tor-network",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      let desc = createOnboardingTourDescription(div,
+        "onboarding.tour-tor-network.title", "onboarding.tour-tor-network.description");
+      let additionalDesc = win.document.createElement("p");
+      additionalDesc.className = "onboarding-tour-description-para2";
+      additionalDesc.setAttribute("data-l10n-id",
+        "onboarding.tour-tor-network.description-para2");
+      desc.appendChild(additionalDesc);
+
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-network.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-network-action-button", "onboarding.tour-tor-network.action-button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+
+      // The next button (right side) is a "Done" button if we are displaying
+      // the tour to users who updated their browser; otherwise, it is a
+      // button that takes the user to the next onboarding page.
+      let nextBtnID, nextBtnL10nID;
+      if (this._tourType === "update") {
+        // Using the onion services IDs here seems like a mistake, but it
+        // provides the functionality and translated string ("Done") we need.
+        nextBtnID = "onboarding-tour-tor-onion-services-next-button";
+        nextBtnL10nID = "onboarding.tour-tor-onion-services.next-button";
+      } else {
+        nextBtnID = "onboarding-tour-tor-network-button";
+        nextBtnL10nID = "onboarding.tour-tor-network.button";
+      }
+      createOnboardingTourButton(div, nextBtnID, nextBtnL10nID);
+      return div;
+    },
+  },
+  "circuit-display": {
+    id: "onboarding-tour-tor-circuit-display",
+    tourNameId: "onboarding.tour-tor-circuit-display",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      createOnboardingTourDescription(div,
+        "onboarding.tour-tor-circuit-display.title", "onboarding.tour-tor-circuit-display.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-circuit-display.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-circuit-display-button", "onboarding.tour-tor-circuit-display.button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-circuit-display-next-button", "onboarding.tour-tor-circuit-display.next-button");
+
+      return div;
+    },
+  },
+  "security": {
+    id: "onboarding-tour-tor-security",
+    tourNameId: "onboarding.tour-tor-security",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      let desc = createOnboardingTourDescription(div,
+        "onboarding.tour-tor-security.title", "onboarding.tour-tor-security.description");
+      let additionalDesc = win.document.createElement("p");
+      additionalDesc.className = "onboarding-tour-description-suffix";
+      additionalDesc.setAttribute("data-l10n-id",
+        "onboarding.tour-tor-security.description-suffix");
+      desc.appendChild(additionalDesc);
+
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-security.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-security-button", "onboarding.tour-tor-security-level.button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-security-next-button", "onboarding.tour-tor-security-level.next-button");
+
+      return div;
+    },
+  },
+  "expect-differences": {
+    id: "onboarding-tour-tor-expect-differences",
+    tourNameId: "onboarding.tour-tor-expect-differences",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      createOnboardingTourDescription(div,
+        "onboarding.tour-tor-expect-differences.title", "onboarding.tour-tor-expect-differences.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-expect-differences.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-expect-differences-button", "onboarding.tour-tor-expect-differences.button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-expect-differences-next-button", "onboarding.tour-tor-expect-differences.next-button");
+
+      return div;
+    },
+  },
+  "onion-services": {
+    id: "onboarding-tour-tor-onion-services",
+    tourNameId: "onboarding.tour-tor-onion-services",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      createOnboardingTourDescription(div,
+        "onboarding.tour-tor-onion-services.title", "onboarding.tour-tor-onion-services.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-onion-services.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-onion-services-button", "onboarding.tour-tor-onion-services.button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-onion-services-next-button", "onboarding.tour-tor-onion-services.next-button");
+
+      return div;
+    },
+  },
+  "learn-more": {
+    id: "onboarding-tour-tor-learn-more",
+    // Re-use "Learn More" string from Firefox langpacks
+    tourNameId: "getUserMedia.shareScreen.learnMoreLabel",
+    highlightId: "onboarding.tour-tor-update.prefix-new",
+    getPage(win) {
+      return win.document.createElement("div");
+    },
+  },
+  // Tour items for users who have updated their Tor Browser:
+  "toolbar-update-9.0": {
+    id: "onboarding-tour-tor-toolbar-update-9-0",
+    tourNameId: "onboarding.tour-tor-toolbar",
+    getPage(win) {
+      let div = win.document.createElement("div");
+
+      let desc = createOnboardingTourDescription(div,
+        "onboarding.tour-tor-toolbar-update-9.0.title", "onboarding.tour-tor-toolbar-update-9.0.description");
+      let additionalDesc = win.document.createElement("p");
+      additionalDesc.className = "onboarding-tour-description-para2";
+      additionalDesc.setAttribute("data-l10n-id",
+        "onboarding.tour-tor-toolbar-update-9.0.description-para2");
+      desc.appendChild(additionalDesc);
+
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-toolbar-layout.png");
+      let btnContainer = createOnboardingTourButton(div,
+        "onboarding-tour-tor-toolbar-update-9-0-button", "onboarding.tour-tor-toolbar-update-9.0.button");
+      btnContainer.className = "onboarding-tour-tor-action-button-container";
+      createOnboardingTourButton(div,
+        "onboarding-tour-tor-toolbar-next-button", "onboarding.tour-tor-toolbar-update-9.0.next-button");
+
+      return div;
+    },
+  },
+};
+#if 0
+// Firefox tours. To reduce conflicts when rebasing against newer Firefox
+// code, we use the preprocessor to omit this code block.
 /**
  * Add any number of tours, key is the tourId, value should follow the format below
  * "tourId": { // The short tour id which could be saved in pref
@@ -110,162 +295,93 @@ function createOnboardingTourButton(
  * },
  **/
 var onboardingTourset = {
-  private: {
+  "private": {
     id: "onboarding-tour-private-browsing",
     tourNameId: "onboarding.tour-private-browsing",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-private-browsing.title"
-        ),
-        message: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-private-browsing.message2"
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-private-browsing.title"),
+        message: bundle.GetStringFromName("onboarding.notification.onboarding-tour-private-browsing.message2"),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-private-browsing.title2",
-        "onboarding.tour-private-browsing.description3"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_private.svg"
-      );
-      createOnboardingTourButton(
-        div,
-        "onboarding-tour-private-browsing-button",
-        "onboarding.tour-private-browsing.button"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-private-browsing.title2", "onboarding.tour-private-browsing.description3");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_private.svg");
+      createOnboardingTourButton(div,
+        "onboarding-tour-private-browsing-button", "onboarding.tour-private-browsing.button");
 
       return div;
     },
   },
-  addons: {
+  "addons": {
     id: "onboarding-tour-addons",
     tourNameId: "onboarding.tour-addons",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-addons.title"
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-addons.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-addons.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-addons.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-addons.title2",
-        "onboarding.tour-addons.description2"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_addons.svg"
-      );
-      createOnboardingTourButton(
-        div,
-        "onboarding-tour-addons-button",
-        "onboarding.tour-addons.button"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-addons.title2", "onboarding.tour-addons.description2");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_addons.svg");
+      createOnboardingTourButton(div,
+        "onboarding-tour-addons-button", "onboarding.tour-addons.button");
 
       return div;
     },
   },
-  customize: {
+  "customize": {
     id: "onboarding-tour-customize",
     tourNameId: "onboarding.tour-customize",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-customize.title"
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-customize.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-customize.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-customize.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-customize.title2",
-        "onboarding.tour-customize.description2"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_customize.svg"
-      );
-      createOnboardingTourButton(
-        div,
-        "onboarding-tour-customize-button",
-        "onboarding.tour-customize.button"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-customize.title2", "onboarding.tour-customize.description2");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_customize.svg");
+      createOnboardingTourButton(div,
+        "onboarding-tour-customize-button", "onboarding.tour-customize.button");
 
       return div;
     },
   },
-  default: {
+  "default": {
     id: "onboarding-tour-default-browser",
     instantComplete: true,
     tourNameId: "onboarding.tour-default-browser",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-default-browser.title",
-          [BRAND_SHORT_NAME],
-          1
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-default-browser.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.formatStringFromName("onboarding.notification.onboarding-tour-default-browser.title", [BRAND_SHORT_NAME], 1),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-default-browser.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win, bundle) {
       let div = win.document.createElement("div");
-      let setFromBackGround = bundle.formatStringFromName(
-        "onboarding.tour-default-browser.win7.button",
-        [BRAND_SHORT_NAME],
-        1
-      );
-      let setFromPanel = bundle.GetStringFromName(
-        "onboarding.tour-default-browser.button"
-      );
-      let isDefaultMessage = bundle.GetStringFromName(
-        "onboarding.tour-default-browser.is-default.message"
-      );
-      let isDefault2ndMessage = bundle.formatStringFromName(
-        "onboarding.tour-default-browser.is-default.2nd-message",
-        [BRAND_SHORT_NAME],
-        1
-      );
+      let setFromBackGround = bundle.formatStringFromName("onboarding.tour-default-browser.win7.button", [BRAND_SHORT_NAME], 1);
+      let setFromPanel = bundle.GetStringFromName("onboarding.tour-default-browser.button");
+      let isDefaultMessage = bundle.GetStringFromName("onboarding.tour-default-browser.is-default.message");
+      let isDefault2ndMessage = bundle.formatStringFromName("onboarding.tour-default-browser.is-default.2nd-message", [BRAND_SHORT_NAME], 1);
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-default-browser.title2",
-        "onboarding.tour-default-browser.description2"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_default.svg"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-default-browser.title2", "onboarding.tour-default-browser.description2");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_default.svg");
 
       let aside = win.document.createElement("aside");
       aside.className = "onboarding-tour-button-container";
@@ -289,25 +405,19 @@ var onboardingTourset = {
       isDefaultBrowserMsg.append(isDefault2ndMessage);
 
       div.addEventListener("beforeshow", () => {
-        win.document.dispatchEvent(
-          new Event("Agent:CanSetDefaultBrowserInBackground")
-        );
+        win.document.dispatchEvent(new Event("Agent:CanSetDefaultBrowserInBackground"));
       });
       return div;
     },
   },
-  sync: {
+  "sync": {
     id: "onboarding-tour-sync",
     instantComplete: true,
     tourNameId: "onboarding.tour-sync2",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-sync.title"
-        ),
-        message: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-sync.message"
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-sync.title"),
+        message: bundle.GetStringFromName("onboarding.notification.onboarding-tour-sync.message"),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
@@ -320,31 +430,21 @@ var onboardingTourset = {
       // which is identical to server-side checker of Firefox Account. See
       // discussion in https://bugzilla.mozilla.org/show_bug.cgi?id=1378770#c6
       // for detail.
-      let emailRegex =
-        "^[\\w.!#$%&’*+\\/=?^`{|}~-]{1,64}@[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?(?:\\.[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?)+$";
+      let emailRegex = "^[\\w.!#$%&’*+\\/=?^`{|}~-]{1,64}@[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?(?:\\.[a-z\\d](?:[a-z\\d-]{0,253}[a-z\\d])?)+$";
 
-      let description = createOnboardingTourDescription(
-        div,
-        "onboarding.tour-sync.title2",
-        "onboarding.tour-sync.description2"
-      );
+      let description = createOnboardingTourDescription(div,
+        "onboarding.tour-sync.title2", "onboarding.tour-sync.description2");
 
       description.querySelector("h1").className = "show-on-logged-out";
       description.querySelector("p").className = "show-on-logged-out";
 
       let h1LoggedIn = win.document.createElement("h1");
-      h1LoggedIn.setAttribute(
-        "data-l10n-id",
-        "onboarding.tour-sync.logged-in.title"
-      );
+      h1LoggedIn.setAttribute("data-l10n-id", "onboarding.tour-sync.logged-in.title");
       h1LoggedIn.className = "show-on-logged-in";
       description.appendChild(h1LoggedIn);
 
       let pLoggedIn = win.document.createElement("p");
-      pLoggedIn.setAttribute(
-        "data-l10n-id",
-        "onboarding.tour-sync.logged-in.description"
-      );
+      pLoggedIn.setAttribute("data-l10n-id", "onboarding.tour-sync.logged-in.description");
       pLoggedIn.className = "show-on-logged-in";
       description.appendChild(pLoggedIn);
 
@@ -368,9 +468,8 @@ var onboardingTourset = {
       input.id = "onboarding-tour-sync-email-input";
       input.setAttribute("required", "true");
       input.setAttribute("type", "email");
-      input.placeholder = bundle.GetStringFromName(
-        "onboarding.tour-sync.email-input.placeholder"
-      );
+      input.placeholder =
+        bundle.GetStringFromName("onboarding.tour-sync.email-input.placeholder");
       input.pattern = emailRegex;
       form.appendChild(input);
 
@@ -395,150 +494,93 @@ var onboardingTourset = {
       let connectDeviceButton = win.document.createElement("button");
       connectDeviceButton.id = "onboarding-tour-sync-connect-device-button";
       connectDeviceButton.className = "onboarding-tour-action-button";
-      connectDeviceButton.setAttribute(
-        "data-l10n-id",
-        "onboarding.tour-sync.connect-device.button"
-      );
+      connectDeviceButton.setAttribute("data-l10n-id", "onboarding.tour-sync.connect-device.button");
       aside.appendChild(connectDeviceButton);
 
       div.addEventListener("beforeshow", () => {
         function loginStatusListener(msg) {
-          removeMessageListener(
-            "Onboarding:ResponseLoginStatus",
-            loginStatusListener
-          );
-          div.dataset.loginState = msg.data.isLoggedIn
-            ? STATE_LOGIN
-            : STATE_LOGOUT;
+          removeMessageListener("Onboarding:ResponseLoginStatus", loginStatusListener);
+          div.dataset.loginState = msg.data.isLoggedIn ? STATE_LOGIN : STATE_LOGOUT;
         }
         this.sendMessageToChrome("get-login-status");
-        this.mm.addMessageListener(
-          "Onboarding:ResponseLoginStatus",
-          loginStatusListener
-        );
+        this.mm.addMessageListener("Onboarding:ResponseLoginStatus", loginStatusListener);
       });
 
       return div;
     },
   },
-  library: {
+  "library": {
     id: "onboarding-tour-library",
     tourNameId: "onboarding.tour-library",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-library.title"
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-library.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-library.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-library.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-library.title",
-        "onboarding.tour-library.description2"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_library.svg"
-      );
-      createOnboardingTourButton(
-        div,
-        "onboarding-tour-library-button",
-        "onboarding.tour-library.button2"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-library.title", "onboarding.tour-library.description2");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_library.svg");
+      createOnboardingTourButton(div,
+        "onboarding-tour-library-button", "onboarding.tour-library.button2");
 
       return div;
     },
   },
-  singlesearch: {
+  "singlesearch": {
     id: "onboarding-tour-singlesearch",
     tourNameId: "onboarding.tour-singlesearch",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-singlesearch.title"
-        ),
-        message: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-singlesearch.message"
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-singlesearch.title"),
+        message: bundle.GetStringFromName("onboarding.notification.onboarding-tour-singlesearch.message"),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win, bundle) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-singlesearch.title",
-        "onboarding.tour-singlesearch.description"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_singlesearch.svg"
-      );
-      createOnboardingTourButton(
-        div,
-        "onboarding-tour-singlesearch-button",
-        "onboarding.tour-singlesearch.button"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-singlesearch.title", "onboarding.tour-singlesearch.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_singlesearch.svg");
+      createOnboardingTourButton(div,
+        "onboarding-tour-singlesearch-button", "onboarding.tour-singlesearch.button");
 
       return div;
     },
   },
-  performance: {
+  "performance": {
     id: "onboarding-tour-performance",
     instantComplete: true,
     tourNameId: "onboarding.tour-performance",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-performance.title"
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-performance.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-performance.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-performance.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
     getPage(win, bundle) {
       let div = win.document.createElement("div");
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-performance.title",
-        "onboarding.tour-performance.description"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_performance.svg"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-performance.title", "onboarding.tour-performance.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_performance.svg");
 
       return div;
     },
   },
-  screenshots: {
+  "screenshots": {
     id: "onboarding-tour-screenshots",
     tourNameId: "onboarding.tour-screenshots",
     getNotificationStrings(bundle) {
       return {
-        title: bundle.GetStringFromName(
-          "onboarding.notification.onboarding-tour-screenshots.title"
-        ),
-        message: bundle.formatStringFromName(
-          "onboarding.notification.onboarding-tour-screenshots.message",
-          [BRAND_SHORT_NAME],
-          1
-        ),
+        title: bundle.GetStringFromName("onboarding.notification.onboarding-tour-screenshots.title"),
+        message: bundle.formatStringFromName("onboarding.notification.onboarding-tour-screenshots.message", [BRAND_SHORT_NAME], 1),
         button: bundle.GetStringFromName("onboarding.button.learnMore"),
       };
     },
@@ -547,22 +589,14 @@ var onboardingTourset = {
       // Screenshot tour opens the screenshot page directly, see below a#onboarding-tour-screenshots-button.
       // The screenshots page should be responsible for highlighting the Screenshots button
 
-      createOnboardingTourDescription(
-        div,
-        "onboarding.tour-screenshots.title",
-        "onboarding.tour-screenshots.description"
-      );
-      createOnboardingTourContent(
-        div,
-        "resource://onboarding/img/figure_screenshots.svg"
-      );
+      createOnboardingTourDescription(div,
+        "onboarding.tour-screenshots.title", "onboarding.tour-screenshots.description");
+      createOnboardingTourContent(div, "resource://onboarding/img/figure_screenshots.svg");
 
-      let aside = createOnboardingTourButton(
-        div,
-        "onboarding-tour-screenshots-button",
-        "onboarding.tour-screenshots.button",
-        "a"
-      );
+      let aside = createOnboardingTourButton(div,
+                                             "onboarding-tour-screenshots-button",
+                                             "onboarding.tour-screenshots.button",
+                                             "a");
 
       let button = aside.querySelector("a");
       button.setAttribute("href", "https://screenshots.firefox.com/#tour");
@@ -572,6 +606,7 @@ var onboardingTourset = {
     },
   },
 };
+#endif
 
 /**
  * The script won't be initialized if we turned off onboarding by
@@ -583,14 +618,14 @@ class Onboarding {
     this.init(contentWindow);
   }
 
+
   /**
    * @param {String} action the action to ask the chrome to do
    * @param {Array | Object} params the parameters for the action
    */
   sendMessageToChrome(action, params) {
     this.mm.sendAsyncMessage("Onboarding:OnContentMessage", {
-      action,
-      params,
+      action, params,
     });
   }
 
@@ -599,15 +634,13 @@ class Onboarding {
    * @param {Object} data the payload for the telemetry
    */
   telemetry(data) {
-    this.sendMessageToChrome("ping-centre", { data });
+     this.sendMessageToChrome("ping-centre", {data});
   }
 
   registerNewTelemetrySession(data) {
-    this.telemetry(
-      Object.assign(data, {
-        type: "onboarding-register-session",
-      })
-    );
+    this.telemetry(Object.assign(data, {
+      type: "onboarding-register-session",
+    }));
   }
 
   async init(contentWindow) {
@@ -616,10 +649,7 @@ class Onboarding {
     // The number will renew after reloading the page.
     this._session_key = Date.now();
     this._tours = [];
-    this._tourType = Services.prefs.getStringPref(
-      "browser.onboarding.tour-type",
-      "update"
-    );
+    this._tourType = Services.prefs.getStringPref("browser.onboarding.tour-type", "update");
 
     let tourIds = this._getTourIDList();
     tourIds.forEach(tourId => {
@@ -635,7 +665,10 @@ class Onboarding {
     // We want to create and append elements after CSS is loaded so
     // no flash of style changes and no additional reflow.
     await this._loadCSS();
-    this._bundle = Services.strings.createBundle(BUNDLE_URI);
+    this._bundle = new _TorOnboardingStringBundle();
+    if (!this._bundle.inited) {
+      return;
+    }
 
     this._loadJS(UITOUR_JS_URI);
 
@@ -667,9 +700,8 @@ class Onboarding {
     this._window.addEventListener("beforeunload", this);
     this._window.addEventListener("unload", this);
     this._window.addEventListener("resize", this);
-    this._resizeTimerId = this._window.requestIdleCallback(() =>
-      this._resizeUI()
-    );
+    this._resizeTimerId =
+      this._window.requestIdleCallback(() => this._resizeUI());
     // start log the onboarding-session when the tab is visible
     this.telemetry({
       type: "onboarding-session-begin",
@@ -678,7 +710,11 @@ class Onboarding {
   }
 
   _resizeUI() {
-    this._windowWidth = this._window.document.body.getBoundingClientRect().width;
+    // In Tor Browser we check against innerWidth instead of against the
+    // body's bounding rect because about:tor keeps its body hidden until
+    // the Tor status is known, and the bounding rect is zero while the
+    // body is hidden.
+    this._windowWidth = this._window.innerWidth;
     if (this._windowWidth < ONBOARDING_MIN_WIDTH_PX) {
       // Don't show the overlay UI before we get to a better, responsive design.
       this.destroy();
@@ -686,14 +722,18 @@ class Onboarding {
     }
 
     this._initUI();
-    if (
-      this._isFirstSession &&
-      this._windowWidth >= SPEECH_BUBBLE_MIN_WIDTH_PX
-    ) {
+    // For Tor Browser, show the "Let's get started" speech bubble until each
+    // tour item has been completed.
+    let isTourComplete = (ICON_STATE_WATERMARK ==
+      Services.prefs.getStringPref("browser.onboarding.state",
+      ICON_STATE_DEFAULT));
+    if ((!isTourComplete || this._isFirstSession) &&
+      this._windowWidth >= SPEECH_BUBBLE_MIN_WIDTH_PX) {
       this._overlayIcon.classList.add("onboarding-speech-bubble");
     } else {
       this._overlayIcon.classList.remove("onboarding-speech-bubble");
     }
+    this.updateAttentionDot();
   }
 
   _initUI() {
@@ -708,7 +748,10 @@ class Onboarding {
     this._overlayIcon = this._renderOverlayButton();
     this._overlayIcon.addEventListener("click", this);
     this._overlayIcon.addEventListener("keypress", this);
-    body.insertBefore(this._overlayIcon, body.firstChild);
+    let buttonContainer = this._window.document.createElement("div");
+    buttonContainer.id = "onboarding-overlay-button-container";
+    buttonContainer.appendChild(this._overlayIcon);
+    body.insertBefore(buttonContainer, body.firstChild);
 
     this._overlay = this._renderOverlay();
     this._overlay.addEventListener("click", this);
@@ -719,34 +762,21 @@ class Onboarding {
     this._loadJS(TOUR_AGENT_JS_URI);
 
     this._initPrefObserver();
-    this._onIconStateChange(
-      Services.prefs.getStringPref(
-        "browser.onboarding.state",
-        ICON_STATE_DEFAULT
-      )
-    );
+    this._onIconStateChange(Services.prefs.getStringPref("browser.onboarding.state", ICON_STATE_DEFAULT));
 
     // Doing tour notification takes some effort. Let's do it on idle.
-    this._window.requestIdleCallback(() => this.showNotification());
+// For now, onboarding notifications are disabled in Tor Browser.
+//    this._window.requestIdleCallback(() => this.showNotification());
   }
 
   _getTourIDList() {
-    let tours = Services.prefs.getStringPref(
-      `browser.onboarding.${this._tourType}tour`,
-      ""
-    );
-    return tours
-      .split(",")
-      .filter(tourId => {
-        if (
-          tourId === "sync" &&
-          !Services.prefs.getBoolPref("identity.fxaccounts.enabled")
-        ) {
-          return false;
-        }
-        return tourId !== "";
-      })
-      .map(tourId => tourId.trim());
+    let tours = Services.prefs.getStringPref(`browser.onboarding.${this._tourType}tour`, "");
+    return tours.split(",").filter(tourId => {
+      if (tourId === "sync" && !Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
+        return false;
+      }
+      return tourId !== "";
+    }).map(tourId => tourId.trim());
   }
 
   _initPrefObserver() {
@@ -756,22 +786,14 @@ class Onboarding {
 
     this._prefsObserved = new Map();
     this._prefsObserved.set("browser.onboarding.state", () => {
-      this._onIconStateChange(
-        Services.prefs.getStringPref(
-          "browser.onboarding.state",
-          ICON_STATE_DEFAULT
-        )
-      );
+      this._onIconStateChange(Services.prefs.getStringPref("browser.onboarding.state", ICON_STATE_DEFAULT));
     });
     this._tours.forEach(tour => {
       let tourId = tour.id;
-      this._prefsObserved.set(
-        `browser.onboarding.tour.${tourId}.completed`,
-        () => {
-          this.markTourCompletionState(tourId);
-          this._checkWatermarkByTours();
-        }
-      );
+      this._prefsObserved.set(`browser.onboarding.tour.${tourId}.completed`, () => {
+        this.markTourCompletionState(tourId);
+        this._checkWatermarkByTours();
+      });
     });
     for (let [name, callback] of this._prefsObserved) {
       Services.prefs.addObserver(name, callback);
@@ -781,12 +803,10 @@ class Onboarding {
   _checkWatermarkByTours() {
     let tourDone = this._tours.every(tour => this.isTourCompleted(tour.id));
     if (tourDone) {
-      this.sendMessageToChrome("set-prefs", [
-        {
-          name: "browser.onboarding.state",
-          value: ICON_STATE_WATERMARK,
-        },
-      ]);
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.state",
+        value: ICON_STATE_WATERMARK,
+      }]);
     }
   }
 
@@ -804,9 +824,8 @@ class Onboarding {
    * yet complete or the first one in the tab list.
    */
   get _firstUncompleteTour() {
-    return (
-      this._tours.find(tour => !this.isTourCompleted(tour.id)) || this._tours[0]
-    );
+    return this._tours.find(tour => !this.isTourCompleted(tour.id)) ||
+           this._tours[0];
   }
 
   /*
@@ -818,9 +837,7 @@ class Onboarding {
       return "";
     }
 
-    let tourItem = this._tourItems.find(item =>
-      item.classList.contains("onboarding-active")
-    );
+    let tourItem = this._tourItems.find(item => item.classList.contains("onboarding-active"));
     return tourItem ? tourItem.id : "";
   }
 
@@ -828,9 +845,8 @@ class Onboarding {
    * Return current logo state as "logo" or "watermark".
    */
   get _logoState() {
-    return this._overlayIcon.classList.contains("onboarding-watermark")
-      ? "watermark"
-      : "logo";
+    return this._overlayIcon.classList.contains("onboarding-watermark") ?
+      "watermark" : "logo";
   }
 
   /**
@@ -840,9 +856,7 @@ class Onboarding {
     let state;
     if (this._overlayIcon.classList.contains("onboarding-watermark")) {
       state = "hide";
-    } else if (
-      this._overlayIcon.classList.contains("onboarding-speech-bubble")
-    ) {
+    } else if (this._overlayIcon.classList.contains("onboarding-speech-bubble")) {
       state = "bubble";
     } else {
       state = "dot";
@@ -894,19 +908,30 @@ class Onboarding {
       ({ id, classList } = target.firstChild);
     }
 
+    const kOnionURL = "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/";  // DuckDuckGo
+    const kLearnMore = "https://www.torproject.org/releases/tor-browser-11-5/";
+    let handledTourActionClick = false;
     switch (id) {
       case "onboarding-overlay-button-icon":
       case "onboarding-overlay-button":
-        this.telemetry({
-          type: "onboarding-logo-click",
-          bubble_state: this._bubbleState,
-          logo_state: this._logoState,
-          notification_state: this._notificationState,
-          session_key: this._session_key,
-          width: this._windowWidthRounded,
-        });
-        this.showOverlay();
-        this.gotoPage(this._firstUncompleteTour.id);
+        // If this instance upgraded, then directly open the release notes
+        // when the bubble is clicked.
+        if (this._tourType === "update") {
+          this.sendMessageToChrome("tor-open-tab", {url: kLearnMore});
+          // Mark item as complete
+          this.setToursCompleted(["onboarding-tour-tor-learn-more"]);
+        } else {
+          this.telemetry({
+            type: "onboarding-logo-click",
+            bubble_state: this._bubbleState,
+            logo_state: this._logoState,
+            notification_state: this._notificationState,
+            session_key: this._session_key,
+            width: this._windowWidthRounded,
+          });
+          this.showOverlay();
+          this.gotoPage(this._firstUncompleteTour.id);
+        }
         break;
       case "onboarding-skip-tour-button":
         this.hideNotification();
@@ -918,10 +943,8 @@ class Onboarding {
       // that means clicking outside the tour content area.
       // Let's toggle the overlay.
       case "onboarding-overlay":
-        let eventName =
-          id === "onboarding-overlay-close-btn"
-            ? "overlay-close-button-click"
-            : "overlay-close-outside-click";
+        let eventName = id === "onboarding-overlay-close-btn" ?
+          "overlay-close-button-click" : "overlay-close-outside-click";
         this.telemetry({
           type: eventName,
           current_tour_id: this._activeTourId,
@@ -965,6 +988,36 @@ class Onboarding {
         this.gotoPage(tourId);
         this._removeTourFromNotificationQueue(tourId);
         break;
+      case "onboarding-tour-tor-welcome-button":
+      case "onboarding-tour-tor-privacy-button":
+      case "onboarding-tour-tor-network-button":
+      case "onboarding-tour-tor-circuit-display-next-button":
+      case "onboarding-tour-tor-security-next-button":
+      case "onboarding-tour-tor-expect-differences-next-button":
+      case "onboarding-tour-tor-toolbar-next-button":
+        this.gotoNextTourItem();
+        handledTourActionClick = true;
+        break;
+      case "onboarding-tour-tor-circuit-display-button":
+        let kFrameScript = "resource://onboarding/onboarding-tor-circuit-display.js";
+        this.sendMessageToChrome("tor-open-tab",
+                            {url: kOnionURL, frameScriptURL: kFrameScript});
+        break;
+      case "onboarding-tour-tor-expect-differences-button":
+        const kFAQURL = "https://support.torproject.org/#faq";
+        this.sendMessageToChrome("tor-open-tab", {url: kFAQURL});
+        break;
+      case "onboarding-tour-tor-onion-services-button":
+        this.sendMessageToChrome("tor-open-tab", {url: kOnionURL});
+        break;
+      // Open the Release Notes webpage and hide the overlay.
+      case "onboarding-tour-tor-onion-services-next-button":
+      case "onboarding-tour-tor-learn-more":
+        this.sendMessageToChrome("tor-open-tab", {url: kLearnMore});
+        this.hideOverlay();
+        // Mark item as complete
+        this.setToursCompleted(["onboarding-tour-tor-learn-more"]);
+        break;
     }
     if (classList.contains("onboarding-tour-item")) {
       this.telemetry({
@@ -978,9 +1031,10 @@ class Onboarding {
       // Keep focus (not visible) on current item for potential keyboard
       // navigation.
       target.focus();
-    } else if (classList.contains("onboarding-tour-action-button")) {
+    } else if (!handledTourActionClick &&
+      classList.contains("onboarding-tour-action-button")) {
       let activeTourId = this._activeTourId;
-      this.setToursCompleted([activeTourId]);
+      this.setToursCompleted([ activeTourId ]);
       this.telemetry({
         type: "overlay-cta-click",
         current_tour_id: activeTourId,
@@ -988,6 +1042,21 @@ class Onboarding {
         target_tour_id: activeTourId,
         width: this._windowWidthRounded,
       });
+    }
+  }
+
+  gotoNextTourItem() {
+    let activeTourID = this._activeTourId;
+    if (activeTourID) {
+      let idx = this._tourItems.findIndex(item => (item.id === activeTourID));
+      if (idx >= 0) {
+        // If at the end of the list, close onboarding; otherwise, go to next.
+        if (++idx >= this._tourItems.length) {
+          this.hideOverlay();
+        } else {
+          this.gotoPage(this._tourItems[idx].id);
+        }
+      }
     }
   }
 
@@ -1005,11 +1074,8 @@ class Onboarding {
    * @return {DOMNode}          newly focused element if any
    */
   wrapMoveFocus(current, back) {
-    let elms = [
-      ...this._dialog.querySelectorAll(
-        `button, input[type="checkbox"], input[type="email"], [tabindex="0"]`
-      ),
-    ];
+    let elms = [...this._dialog.querySelectorAll(
+      `button, input[type="checkbox"], input[type="email"], [tabindex="0"]`)];
     let next;
     if (back) {
       if (elms.indexOf(current) === 0) {
@@ -1125,9 +1191,8 @@ class Onboarding {
         break;
       case "resize":
         this._window.cancelIdleCallback(this._resizeTimerId);
-        this._resizeTimerId = this._window.requestIdleCallback(() =>
-          this._resizeUI()
-        );
+        this._resizeTimerId =
+          this._window.requestIdleCallback(() => this._resizeUI());
         break;
       case "keydown":
         this.handleKeydown(evt);
@@ -1149,12 +1214,12 @@ class Onboarding {
     }
     this.uiInitialized = false;
 
-    this._overlayIcon.dispatchEvent(
-      new this._window.CustomEvent("Agent:Destroy")
-    );
+    this._overlayIcon.dispatchEvent(new this._window.CustomEvent("Agent:Destroy"));
 
     this._clearPrefObserver();
+    let buttonContainer = this._overlayIcon.parentElement;
     this._overlayIcon.remove();
+    buttonContainer.remove();
     if (this._overlay) {
       // send overlay-session telemetry
       this.hideOverlay();
@@ -1165,7 +1230,8 @@ class Onboarding {
       this.hideNotification();
       this._notificationBar.remove();
     }
-    this._tourItems = this._tourPages = this._overlayIcon = this._overlay = this._notificationBar = null;
+    this._tourItems = this._tourPages =
+    this._overlayIcon = this._overlay = this._notificationBar = null;
   }
 
   _onIconStateChange(state) {
@@ -1177,19 +1243,28 @@ class Onboarding {
         this._overlayIcon.classList.add("onboarding-watermark");
         break;
     }
+    this.updateAttentionDot();
     return true;
   }
 
+  // Display an attention-grabbing dot on the speech bubble if the
+  // bubble is visible and we are showing the "update" tour.
+  updateAttentionDot() {
+    let buttonContainer = this._overlayIcon.parentElement;
+    if ((this._bubbleState === "bubble") && (this._tourType === "update")) {
+      buttonContainer.classList.add("onboarding-overlay-attention-dot");
+    } else {
+      buttonContainer.classList.remove("onboarding-overlay-attention-dot");
+    }
+  }
+
   showOverlay() {
-    if (!this._tourItems.length) {
+    if (this._tourItems.length == 0) {
       // Lazy loading until first toggle.
       this._loadTours(this._tours);
     }
 
-    if (
-      this._overlay &&
-      !this._overlay.classList.contains("onboarding-opened")
-    ) {
+    if (this._overlay && !this._overlay.classList.contains("onboarding-opened")) {
       this.hideNotification();
       this._overlay.classList.add("onboarding-opened");
       this.toggleModal(true);
@@ -1201,10 +1276,7 @@ class Onboarding {
   }
 
   hideOverlay() {
-    if (
-      this._overlay &&
-      this._overlay.classList.contains("onboarding-opened")
-    ) {
+    if (this._overlay && this._overlay.classList.contains("onboarding-opened")) {
       this._overlay.classList.remove("onboarding-opened");
       this.toggleModal(false);
       this.telemetry({
@@ -1223,10 +1295,8 @@ class Onboarding {
     if (opened) {
       // Set aria-hidden to true for the rest of the document.
       [...doc.body.children].forEach(
-        child =>
-          child.id !== "onboarding-overlay" &&
-          child.setAttribute("aria-hidden", true)
-      );
+        child => child.id !== "onboarding-overlay" &&
+                 child.setAttribute("aria-hidden", true));
       // When dialog is opened with the keyboard, focus on the first
       // uncomplete tour because it will be the selected tour.
       if (this._overlayIcon.dataset.keyboardFocus) {
@@ -1238,9 +1308,8 @@ class Onboarding {
       }
     } else {
       // Remove all set aria-hidden attributes.
-      [...doc.body.children].forEach(child =>
-        child.removeAttribute("aria-hidden")
-      );
+      [...doc.body.children].forEach(
+        child => child.removeAttribute("aria-hidden"));
       // If dialog was opened with a keyboard, set the focus back to the overlay
       // button.
       if (this._overlayIcon.dataset.keyboardFocus) {
@@ -1289,10 +1358,7 @@ class Onboarding {
   }
 
   isTourCompleted(tourId) {
-    return Services.prefs.getBoolPref(
-      `browser.onboarding.tour.${tourId}.completed`,
-      false
-    );
+    return Services.prefs.getBoolPref(`browser.onboarding.tour.${tourId}.completed`, false);
   }
 
   setToursCompleted(tourIds) {
@@ -1305,7 +1371,7 @@ class Onboarding {
         });
       }
     });
-    if (params.length) {
+    if (params.length > 0) {
       this.sendMessageToChrome("set-prefs", params);
     }
   }
@@ -1328,10 +1394,8 @@ class Onboarding {
       if (!completedText) {
         completedText = this._window.document.createElement("span");
         completedText.id = completedTextId;
-        completedText.setAttribute(
-          "aria-label",
-          this._bundle.GetStringFromName("onboarding.complete")
-        );
+        completedText.setAttribute("aria-label",
+          this._bundle.GetStringFromName("onboarding.complete"));
         targetItem.appendChild(completedText);
         targetItem.setAttribute("aria-describedby", completedTextId);
       }
@@ -1355,20 +1419,12 @@ class Onboarding {
     this._firstSession = true;
 
     // There is a queue, which means we had prompted tour notifications before. Therefore this is not the 1st session.
-    if (
-      Services.prefs.prefHasUserValue(
-        "browser.onboarding.notification.tour-ids-queue"
-      )
-    ) {
+    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
       this._firstSession = false;
     }
 
     // When this is set to 0 on purpose, always judge as not the 1st session
-    if (
-      Services.prefs.getIntPref(
-        "browser.onboarding.notification.mute-duration-on-first-session-ms"
-      ) === 0
-    ) {
+    if (Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms") === 0) {
       this._firstSession = false;
     }
 
@@ -1376,13 +1432,7 @@ class Onboarding {
   }
 
   _getLastTourChangeTime() {
-    return (
-      1000 *
-      Services.prefs.getIntPref(
-        "browser.onboarding.notification.last-time-of-changing-tour-sec",
-        0
-      )
-    );
+    return 1000 * Services.prefs.getIntPref("browser.onboarding.notification.last-time-of-changing-tour-sec", 0);
   }
 
   _muteNotificationOnFirstSession(lastTourChangeTime) {
@@ -1391,32 +1441,23 @@ class Onboarding {
     }
 
     if (lastTourChangeTime <= 0) {
-      this.sendMessageToChrome("set-prefs", [
-        {
-          name:
-            "browser.onboarding.notification.last-time-of-changing-tour-sec",
-          value: Math.floor(Date.now() / 1000),
-        },
-      ]);
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.notification.last-time-of-changing-tour-sec",
+        value: Math.floor(Date.now() / 1000),
+      }]);
       return true;
     }
-    let muteDuration = Services.prefs.getIntPref(
-      "browser.onboarding.notification.mute-duration-on-first-session-ms"
-    );
+    let muteDuration = Services.prefs.getIntPref("browser.onboarding.notification.mute-duration-on-first-session-ms");
     return Date.now() - lastTourChangeTime <= muteDuration;
   }
 
   _isTimeForNextTourNotification(lastTourChangeTime) {
-    let maxCount = Services.prefs.getIntPref(
-      "browser.onboarding.notification.max-prompt-count-per-tour"
-    );
+    let maxCount = Services.prefs.getIntPref("browser.onboarding.notification.max-prompt-count-per-tour");
     if (this._notificationPromptCount >= maxCount) {
       return true;
     }
 
-    let maxTime = Services.prefs.getIntPref(
-      "browser.onboarding.notification.max-life-time-per-tour-ms"
-    );
+    let maxTime = Services.prefs.getIntPref("browser.onboarding.notification.max-life-time-per-tour-ms");
     if (lastTourChangeTime && Date.now() - lastTourChangeTime >= maxTime) {
       return true;
     }
@@ -1444,14 +1485,8 @@ class Onboarding {
 
   _getNotificationQueue() {
     let queue = "";
-    if (
-      Services.prefs.prefHasUserValue(
-        "browser.onboarding.notification.tour-ids-queue"
-      )
-    ) {
-      queue = Services.prefs.getStringPref(
-        "browser.onboarding.notification.tour-ids-queue"
-      );
+    if (Services.prefs.prefHasUserValue("browser.onboarding.notification.tour-ids-queue")) {
+      queue = Services.prefs.getStringPref("browser.onboarding.notification.tour-ids-queue");
     } else {
       // For each tour, it only gets 2 chances to prompt with notification
       // (each chance includes 8 impressions or 5-days max life time)
@@ -1462,12 +1497,10 @@ class Onboarding {
       // until the queue is empty.
       let ids = this._tours.map(tour => tour.id).join(",");
       queue = `${ids},${ids}`;
-      this.sendMessageToChrome("set-prefs", [
-        {
-          name: "browser.onboarding.notification.tour-ids-queue",
-          value: queue,
-        },
-      ]);
+      this.sendMessageToChrome("set-prefs", [{
+        name: "browser.onboarding.notification.tour-ids-queue",
+        value: queue,
+      }]);
     }
     return queue ? queue.split(",") : [];
   }
@@ -1485,11 +1518,10 @@ class Onboarding {
     // After the notification mute on the 1st session,
     // we don't want to show the speech bubble by default
     this._overlayIcon.classList.remove("onboarding-speech-bubble");
+    this.updateAttentionDot();
 
     let queue = this._getNotificationQueue();
-    let totalMaxTime = Services.prefs.getIntPref(
-      "browser.onboarding.notification.max-life-time-all-tours-ms"
-    );
+    let totalMaxTime = Services.prefs.getIntPref("browser.onboarding.notification.max-life-time-all-tours-ms");
     if (lastTime && Date.now() - lastTime >= totalMaxTime) {
       // Reach total max life time for all tour notifications.
       // Clear the queue so that we would finish tour notifications below
@@ -1498,15 +1530,15 @@ class Onboarding {
 
     let startQueueLength = queue.length;
     // See if need to move on to the next tour
-    if (queue.length && this._isTimeForNextTourNotification(lastTime)) {
+    if (queue.length > 0 && this._isTimeForNextTourNotification(lastTime)) {
       queue.shift();
     }
     // We don't want to prompt the completed tour.
-    while (queue.length && this.isTourCompleted(queue[0])) {
+    while (queue.length > 0 && this.isTourCompleted(queue[0])) {
       queue.shift();
     }
 
-    if (!queue.length) {
+    if (queue.length == 0) {
       this.sendMessageToChrome("set-prefs", [
         {
           name: NOTIFICATION_FINISHED_PREF,
@@ -1531,17 +1563,11 @@ class Onboarding {
     this._notificationBar.addEventListener("click", this);
     this._notificationBar.dataset.targetTourId = targetTour.id;
     let notificationStrings = targetTour.getNotificationStrings(this._bundle);
-    let actionBtn = this._notificationBar.querySelector(
-      "#onboarding-notification-action-btn"
-    );
+    let actionBtn = this._notificationBar.querySelector("#onboarding-notification-action-btn");
     actionBtn.textContent = notificationStrings.button;
-    let tourTitle = this._notificationBar.querySelector(
-      "#onboarding-notification-tour-title"
-    );
+    let tourTitle = this._notificationBar.querySelector("#onboarding-notification-tour-title");
     tourTitle.textContent = notificationStrings.title;
-    let tourMessage = this._notificationBar.querySelector(
-      "#onboarding-notification-tour-message"
-    );
+    let tourMessage = this._notificationBar.querySelector("#onboarding-notification-tour-message");
     tourMessage.textContent = notificationStrings.message;
     this._notificationBar.classList.add("onboarding-opened");
     this._window.document.body.appendChild(this._notificationBar);
@@ -1604,10 +1630,7 @@ class Onboarding {
     let footer = this._window.document.createElement("footer");
     footer.id = "onboarding-notification-bar";
     footer.setAttribute("aria-live", "polite");
-    footer.setAttribute(
-      "aria-labelledby",
-      "onboarding-notification-tour-title"
-    );
+    footer.setAttribute("aria-labelledby", "onboarding-notification-tour-title");
 
     let section = this._window.document.createElement("section");
     section.id = "onboarding-notification-message-section";
@@ -1642,12 +1665,8 @@ class Onboarding {
     closeButton.className = "onboarding-close-btn";
     footer.appendChild(closeButton);
 
-    closeButton.setAttribute(
-      "title",
-      this._bundle.GetStringFromName(
-        "onboarding.notification-close-button-tooltip"
-      )
-    );
+    closeButton.setAttribute("title",
+      this._bundle.GetStringFromName("onboarding.notification-close-button-tooltip"));
 
     return footer;
   }
@@ -1685,9 +1704,8 @@ class Onboarding {
 
     let header = this._window.document.createElement("header");
     header.id = "onboarding-header";
-    header.textContent = this._bundle.GetStringFromName(
-      "onboarding.overlay-title2"
-    );
+// In Tor Browser, we do not want header text.
+//    header.textContent = this._bundle.GetStringFromName("onboarding.overlay-title2");
     this._dialog.appendChild(header);
 
     let nav = this._window.document.createElement("nav");
@@ -1705,25 +1723,16 @@ class Onboarding {
     let button = this._window.document.createElement("button");
     button.id = "onboarding-overlay-close-btn";
     button.className = "onboarding-close-btn";
-    button.setAttribute(
-      "title",
-      this._bundle.GetStringFromName("onboarding.overlay-close-button-tooltip")
-    );
+    button.setAttribute("title",
+      this._bundle.GetStringFromName("onboarding.overlay-close-button-tooltip"));
     this._dialog.appendChild(button);
 
     // support show/hide skip tour button via pref
-    if (
-      !Services.prefs.getBoolPref(
-        "browser.onboarding.skip-tour-button.hide",
-        false
-      )
-    ) {
+    if (!Services.prefs.getBoolPref("browser.onboarding.skip-tour-button.hide", false)) {
       let skipButton = this._window.document.createElement("button");
       skipButton.id = "onboarding-skip-tour-button";
       skipButton.classList.add("onboarding-action-button");
-      skipButton.textContent = this._bundle.GetStringFromName(
-        "onboarding.skip-tour-button-label"
-      );
+      skipButton.textContent = this._bundle.GetStringFromName("onboarding.skip-tour-button-label");
       footer.appendChild(skipButton);
     }
 
@@ -1744,23 +1753,12 @@ class Onboarding {
     }
     let tooltip = "";
     try {
-      let tooltipStringId = Services.prefs.getStringPref(
-        tooltipStringPrefId,
-        defaultTourStringId
-      );
-      tooltip = this._bundle.formatStringFromName(
-        tooltipStringId,
-        [BRAND_SHORT_NAME],
-        1
-      );
+      let tooltipStringId = Services.prefs.getStringPref(tooltipStringPrefId, defaultTourStringId);
+      tooltip = this._bundle.formatStringFromName(tooltipStringId, [BRAND_SHORT_NAME], 1);
     } catch (e) {
       Cu.reportError(e);
       // fallback to defaultTourStringId to proceed
-      tooltip = this._bundle.formatStringFromName(
-        defaultTourStringId,
-        [BRAND_SHORT_NAME],
-        1
-      );
+      tooltip = this._bundle.formatStringFromName(defaultTourStringId, [BRAND_SHORT_NAME], 1);
     }
     button.setAttribute("aria-label", tooltip);
     button.id = "onboarding-overlay-button";
@@ -1769,19 +1767,9 @@ class Onboarding {
     let defaultImg = this._window.document.createElement("img");
     defaultImg.id = "onboarding-overlay-button-icon";
     defaultImg.setAttribute("role", "presentation");
-    defaultImg.src = Services.prefs.getStringPref(
-      "browser.onboarding.default-icon-src",
-      "chrome://branding/content/icon64.png"
-    );
+    defaultImg.src = Services.prefs.getStringPref("browser.onboarding.default-icon-src",
+      "chrome://branding/content/icon64.png");
     button.appendChild(defaultImg);
-    let watermarkImg = this._window.document.createElement("img");
-    watermarkImg.id = "onboarding-overlay-button-watermark-icon";
-    watermarkImg.setAttribute("role", "presentation");
-    watermarkImg.src = Services.prefs.getStringPref(
-      "browser.onboarding.watermark-icon-src",
-      "resource://onboarding/img/watermark.svg"
-    );
-    button.appendChild(watermarkImg);
     return button;
   }
 
@@ -1811,7 +1799,17 @@ class Onboarding {
       let tourPanelId = `${tour.id}-page`;
       tab.setAttribute("aria-controls", tourPanelId);
 
+      if (tour.highlightId) {
+        // Add [New] or [Updated] text after this navigation item to draw
+        // attention to it.
+        let highlight = this._window.document.createElement("span");
+        highlight.className = "onboarding-tour-description-highlight";
+        highlight.textContent = this._bundle.GetStringFromName(tour.highlightId);
+        tab.appendChild(highlight);
+      }
+
       li.appendChild(tab);
+
       itemsFrag.appendChild(li);
       // Dynamically create tour pages
       let div = tour.getPage.call(this, this._window, this._bundle);
@@ -1824,10 +1822,7 @@ class Onboarding {
         // only and frequently used arguments in our l10n case. Rewrite it if
         // other arguments appear.
         element.textContent = this._bundle.formatStringFromName(
-          element.dataset.l10nId,
-          [BRAND_SHORT_NAME],
-          1
-        );
+                                element.dataset.l10nId, [BRAND_SHORT_NAME], 1);
       }
 
       div.id = tourPanelId;
@@ -1869,5 +1864,57 @@ class Onboarding {
     script.type = "text/javascript";
     script.src = uri;
     doc.head.appendChild(script);
+  }
+}
+
+// _TorOnboardingStringBundle implements the subset of the nsIStringBundle
+// that is used by the code in this file. It checks first for strings inside
+// Torbutton's browserOnboarding.properties file and secondarily in Firefox's
+// onboarding.properties file. Finally, it looks for the string within
+// browser.properties.
+class _TorOnboardingStringBundle {
+  constructor() {
+    this._mBrowserBundle = Services.strings.createBundle(BROWSER_BUNDLE_URI);
+    this._mFirefoxBundle = Services.strings.createBundle(BUNDLE_URI);
+    this._mTorButtonBundle = Services.strings.createBundle(TORBUTTON_BUNDLE_URI);
+
+    // If the Tor Browser onboarding strings which ship inside Torbutton are
+    // not available, fail initialization so that no tours are shown.
+    try {
+      let result = this._mTorButtonBundle.GetStringFromName(
+                                            TORBROWSER_WELCOME_TOUR_NAME_KEY);
+      this.inited = true;
+    } catch (e) {}
+  }
+
+  GetStringFromName(aName) {
+    let result;
+    try {
+      result = this._mTorButtonBundle.GetStringFromName(aName);
+    } catch (e) {
+      try {
+        result = this._mFirefoxBundle.GetStringFromName(aName);
+      } catch (e) {
+        result = this._mBrowserBundle.GetStringFromName(aName);
+      }
+    }
+    return result;
+  }
+
+  formatStringFromName(aName, aParams, aLength) {
+    let result;
+    try {
+      result = this._mTorButtonBundle.formatStringFromName(aName, aParams,
+                                                             aLength);
+    } catch (e) {
+      try {
+        result = this._mFirefoxBundle.formatStringFromName(aName, aParams,
+                                                           aLength);
+      } catch (e) {
+        result = this._mBrowserBundle.formatStringFromName(aName, aParams,
+                                                           aLength);
+      }
+    }
+    return result;
   }
 }
