@@ -49,14 +49,16 @@
 }
 
 #UITourTooltipTitle {
-  font-size: 1.45rem;
+  color: #420C5D;
+  font-size: 16px;
   font-weight: bold;
   margin: 0;
 }
 
 #UITourTooltipDescription {
   margin-inline: 0;
-  font-size: 1.15rem;
+  color: #4A4A4A;
+  font-size: 13px;
   line-height: 1.8rem;
   margin-bottom: 0; /* Override global.css */
 }
@@ -78,7 +80,6 @@
 #UITourTooltipButtons {
   -moz-box-pack: end;
   background-color: var(--arrowpanel-dimmed);
-  border-top: 1px solid var(--panel-separator-color);
   margin: 10px -16px -16px;
   padding: 16px;
 }
@@ -112,19 +113,11 @@
 #UITourTooltipButtons > button:not(.button-link) {
   appearance: none;
   background-color: rgb(251,251,251);
-  border-radius: 3px;
-  border: 1px solid;
-  border-color: rgb(192,192,192);
+  border-radius: 2px;
   color: rgb(71,71,71);
-  padding: 4px 30px;
+  padding: 6px 30px;
   transition-property: background-color, border-color;
   transition-duration: 150ms;
-}
-
-#UITourTooltipButtons > button:not(.button-link):not(:active):hover {
-  background-color: hsla(210,4%,10%,.15);
-  border-color: hsla(210,4%,10%,.15);
-  box-shadow: 0 1px 0 0 hsla(210,4%,10%,.05) inset;
 }
 
 #UITourTooltipButtons > label,
@@ -133,17 +126,16 @@
   background: transparent;
   border: none;
   box-shadow: none;
-  color: var(--panel-disabled-color);
+  color: #4A4A4A;
   padding-inline: 10px;
 }
 
-/* The primary button gets the same color as the customize button. */
 #UITourTooltipButtons > button.button-primary {
-  background-color: rgb(116,191,67);
+  background-color: #420C5D;
   color: white;
-  padding-inline: 30px;
+  padding-inline: 28px;
 }
 
 #UITourTooltipButtons > button.button-primary:not(:active):hover {
-  background-color: rgb(105,173,61);
+  background-color: #410A4E;
 }
