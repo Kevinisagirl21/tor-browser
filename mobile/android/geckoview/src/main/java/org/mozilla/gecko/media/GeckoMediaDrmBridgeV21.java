@@ -31,6 +31,7 @@ import android.util.Log;
 
 import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.util.ProxySelector;
+import org.mozilla.geckoview.BuildConfig;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
@@ -488,6 +489,11 @@ public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
 
         @Override
         protected Void doInBackground(final Void... params) {
+            if (BuildConfig.TOR_BROWSER_VERSION != "") {
+                Log.i(LOGTAG, "This is Tor Browser. Skipping.");
+                return null;
+            }
+
             HttpURLConnection urlConnection = null;
             BufferedReader in = null;
             try {
