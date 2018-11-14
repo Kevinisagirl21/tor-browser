@@ -54,7 +54,5 @@ pref("media.realtime_decoder.enabled", false);
 pref("general.useragent.updates.enabled", false);
 pref("general.useragent.updates.url", "");
 
-// Override this because Orbot uses 9050 as the default
-pref("network.proxy.socks_port", 9050);
 // Enable touch events on Android (highlighting text, etc)
 pref("dom.w3c_touch_events.enabled", 2);
