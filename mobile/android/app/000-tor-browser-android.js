@@ -54,9 +54,6 @@ pref("media.realtime_decoder.enabled", false);
 pref("general.useragent.updates.enabled", false);
 pref("general.useragent.updates.url", "");
 
-// Override this because Orbot uses 9050 as the default
-pref("network.proxy.socks_port", 9050);
-
 // Do not allow the user to install extensions from web
 pref("xpinstall.enabled", false);
 pref("extensions.enabledScopes", 1);
