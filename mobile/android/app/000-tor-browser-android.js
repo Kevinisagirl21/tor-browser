@@ -61,3 +61,6 @@ pref("network.proxy.socks_port", 9050);
 pref("xpinstall.enabled", false);
 pref("extensions.enabledScopes", 1);
 pref("extensions.autoDisableScopes", 1);
+
+// Enable touch events on Android (highlighting text, etc)
+pref("dom.w3c_touch_events.enabled", 2);
