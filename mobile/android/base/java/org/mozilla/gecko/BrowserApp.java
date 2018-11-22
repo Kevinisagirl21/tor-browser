@@ -181,8 +181,7 @@ import org.mozilla.gecko.widget.GeckoActionProvider;
 import org.mozilla.gecko.widget.SplashScreen;
 import org.mozilla.geckoview.GeckoSession;
 
-import org.torproject.android.OrbotMainActivity;
-import org.torproject.android.service.TorServiceConstants;
+import info.guardianproject.netcipher.proxy.OrbotHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -240,9 +239,6 @@ public class BrowserApp extends GeckoApp
     public static final int ACTIVITY_REQUEST_TRIPLE_READERVIEW = 4001;
     public static final int ACTIVITY_RESULT_TRIPLE_READERVIEW_ADD_BOOKMARK = 4002;
     public static final int ACTIVITY_RESULT_TRIPLE_READERVIEW_IGNORE = 4003;
-    public static final int ACTIVITY_RESULT_ORBOT_LAUNCH = 5001;
-
-    private static boolean mOrbotRun = false;
 
     public static final String ACTION_VIEW_MULTIPLE = AppConstants.ANDROID_PACKAGE_NAME + ".action.VIEW_MULTIPLE";
 
@@ -1286,26 +1282,41 @@ public class BrowserApp extends GeckoApp
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (TextUtils.equals(intent.getAction(), TorServiceConstants.ACTION_STATUS)) {
+            if (TextUtils.equals(intent.getAction(), OrbotHelper.ACTION_STATUS)) {
                 GeckoAppShell.setTorStatus(intent);
             }
         }
     };
 
     public void checkStartOrbot() {
-        /* run in thread so Tor status updates will be received while the
-        * Gecko event sync is blocking the main thread */
-        HandlerThread handlerThread = new HandlerThread("torStatusReceiver");
-        handlerThread.start();
-        Looper looper = handlerThread.getLooper();
-        Handler handler = new Handler(looper);
-        registerReceiver(torStatusReceiver, new IntentFilter(TorServiceConstants.ACTION_STATUS),
-            null, handler);
+        if (!OrbotHelper.isOrbotInstalled(this)) {
+            final Intent installOrbotIntent = OrbotHelper.getOrbotInstallIntent(this);
 
-        if (!mOrbotRun) {
-          final String orbotStartAction = "android.intent.action.MAIN";
-          final Intent launchOrbot = new Intent(orbotStartAction, null, this, OrbotMainActivity.class);
-          startActivityForResult(launchOrbot, ACTIVITY_RESULT_ORBOT_LAUNCH, null);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.install_orbot);
+            builder.setMessage(R.string.you_must_have_orbot);
+            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    startActivity(installOrbotIntent);
+                }
+            });
+            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            });
+            builder.show();
+        } else {
+            /* run in thread so Tor status updates will be received while the
+            * Gecko event sync is blocking the main thread */
+            HandlerThread handlerThread = new HandlerThread("torStatusReceiver");
+            handlerThread.start();
+            Looper looper = handlerThread.getLooper();
+            Handler handler = new Handler(looper);
+            registerReceiver(torStatusReceiver, new IntentFilter(OrbotHelper.ACTION_STATUS),
+                null, handler);
+            OrbotHelper.requestStartTor(this);
         }
     }
 
@@ -3005,12 +3016,6 @@ public class BrowserApp extends GeckoApp
 
             case ACTIVITY_REQUEST_TAB_QUEUE:
                 TabQueueHelper.processTabQueuePromptResponse(resultCode, this);
-                break;
-
-            case ACTIVITY_RESULT_ORBOT_LAUNCH:
-                final SafeIntent intent = new SafeIntent(getIntent());
-                Log.d(LOGTAG, "onActivityResult: ACTIVITY_RESULT_ORBOT_LAUNCH");
-                mOrbotRun = true;
                 break;
 
             default:

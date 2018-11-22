@@ -28,8 +28,6 @@ import org.mozilla.gecko.NotificationListener;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.util.BitmapUtils;
 
-import org.torproject.android.service.util.NotificationBuilderCompat;
-
 /**
  * Client for posting notifications.
  */
@@ -144,7 +142,7 @@ public final class NotificationClient implements NotificationListener {
     private void add(final String name, final String imageUrl, final String host,
                      final String alertTitle, final String alertText,
                      final PendingIntent contentIntent, final PendingIntent deleteIntent) {
-        final NotificationBuilderCompat builder = new NotificationBuilderCompat(mContext)
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext)
                 .setContentTitle(alertTitle)
                 .setContentText(alertText)
                 .setSmallIcon(R.drawable.ic_status_logo)
@@ -152,7 +150,7 @@ public final class NotificationClient implements NotificationListener {
                 .setDeleteIntent(deleteIntent)
                 .setAutoCancel(true)
                 .setDefaults(Notification.DEFAULT_SOUND)
-                .setStyle(new Notification.BigTextStyle()
+                .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(alertText)
                         .setSummaryText(host));
 

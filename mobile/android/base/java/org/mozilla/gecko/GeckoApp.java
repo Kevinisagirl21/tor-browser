@@ -91,8 +91,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import org.torproject.android.service.TorService;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -597,9 +595,6 @@ public abstract class GeckoApp extends GeckoActivity
         }
 
         EventDispatcher.getInstance().dispatch("Browser:Quit", res);
-
-        Intent torService = new Intent(this, TorService.class);
-        stopService(torService);
 
         // We don't call shutdown here because this creates a race condition which
         // can cause the clearing of private data to fail. Instead, we shut down the
@@ -1216,30 +1211,6 @@ public abstract class GeckoApp extends GeckoActivity
                                 }
                             }
                         }
-                    }
-                } else if (mIsRestoringActivity) {
-                    /* Synchronize Tabs state with Gecko. We're restoring the Activity, this
-                     * mean all of the Chrome state was lost, but the previously created
-                     * Tabs still exist within the Android application, because those are
-                     * static and the application keeps track of those (and only the Activity
-                     * is starting, the application was never destroyed). */
-                    Iterable<Tab> tabs = Tabs.getInstance().getTabsInOrder();
-                    Tab selectedTab = Tabs.getInstance().getSelectedTab();
-                    for (Tab tab : tabs) {
-                        GeckoBundle reloadMessage = new GeckoBundle();
-                        reloadMessage.putString("url", tab.getURL());
-                        reloadMessage.putString("engine", null);
-                        reloadMessage.putInt("parentId", tab.getParentId());
-                        reloadMessage.putBoolean("userEntered", true);
-                        reloadMessage.putBoolean("isPrivate", tab.isPrivate());
-                        reloadMessage.putBoolean("pinned", false);
-                        reloadMessage.putBoolean("desktopMode", tab.getDesktopMode());
-                        reloadMessage.putString("referrerURI", null);
-                        reloadMessage.putInt("tabID", tab.getId());
-                        reloadMessage.putBoolean("newTab", true);
-                        reloadMessage.putBoolean("delayLoad", selectedTab != tab);
-                        reloadMessage.putBoolean("selected", selectedTab == tab);
-                        getAppEventDispatcher().dispatch("Tab:Load", reloadMessage);
                     }
                 }
 

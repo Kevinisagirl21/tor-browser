@@ -32,10 +32,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.util.SimpleArrayMap;
 import android.util.Log;
-
-import org.torproject.android.service.util.NotificationBuilderCompat;
 
 public final class NotificationHelper implements BundleEventListener {
     public static final String HELPER_BROADCAST_ACTION = AppConstants.ANDROID_PACKAGE_NAME + ".helperBroadcastAction";
@@ -234,7 +233,7 @@ public final class NotificationHelper implements BundleEventListener {
     private void showNotification(final GeckoBundle message) {
         ThreadUtils.assertOnUiThread();
 
-        final NotificationBuilderCompat builder = new NotificationBuilderCompat(mContext);
+        final NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext);
 
         // These attributes are required
         final String id = message.getString(ID_ATTR);

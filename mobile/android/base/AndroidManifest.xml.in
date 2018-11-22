@@ -24,7 +24,6 @@
 #include FennecManifest_permissions.xml.in
 
     <application android:label="@string/moz_app_displayname"
-                 tools:replace="android:label"
                  android:icon="@drawable/icon"
                  android:logo="@drawable/logo"
                  android:name="@MOZ_ANDROID_APPLICATION_CLASS@"
