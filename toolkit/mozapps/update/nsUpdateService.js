@@ -4011,7 +4011,15 @@ UpdatePrompt.prototype = {
         "an update was downloaded. topic: update-downloaded, status: " + update.state);
     Services.obs.notifyObservers(update, "update-downloaded", update.state);
 
-    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_DOORHANGER, false)) {
+    if (background && Services.prefs.getBoolPref(PREF_APP_UPDATE_DOORHANGER, false)) {
+      // To fix https://trac.torproject.org/projects/tor/ticket/27828
+      // ("Check for Tor Browser update" doesn't seem to do anything), in
+      // Tor Browser we only return here when the background parameter is
+      // true. This causes the update wizard XUL window to (correctly) be
+      // opened in response to "Check for Tor Browser Update."
+      // This change does not alter the behavior of any existing
+      // update-related UI because all callers of showUpdateDownloaded()
+      // other than Torbutton pass true for the background parameter.
       return;
     }
 
