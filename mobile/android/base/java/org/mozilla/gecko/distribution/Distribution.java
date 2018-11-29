@@ -43,7 +43,9 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.GeckoSharedPrefs;
+import org.mozilla.gecko.preferences.DistroSharedPrefsImport;
 import org.mozilla.gecko.Telemetry;
+import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.HardwareUtils;
@@ -246,6 +248,7 @@ public class Distribution {
                         final String preferencesJSON = FileUtils.readStringFromFile(descFile);
                         data = new GeckoBundle(1);
                         data.putString("preferences", preferencesJSON);
+                        DistroSharedPrefsImport.importPreferences(distribution.context, distribution);
 
                     } catch (IOException e) {
                         Log.e(LOGTAG, "Error getting distribution descriptor file.", e);
@@ -498,6 +501,13 @@ public class Distribution {
 
         // We've done the work once; don't do it again.
         if (this.state == STATE_SET) {
+            // If this is a new version of the app, then copy the
+            // distribution files from the APK
+            if (!AppConstants.MOZ_APP_BUILDID.equals(settings.getString(GeckoPreferences.PREFS_APP_UPDATE_LAST_BUILD_ID, null))) {
+                Log.i(LOGTAG, "Copying APK distribution file because the build ID changed.");
+                copyAndCheckAPKDistribution();
+            }
+
             // Note that we don't compute the distribution directory.
             // Call `ensureDistributionDir` if you need it.
             runReadyQueue();
