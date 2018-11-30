@@ -124,18 +124,23 @@ Sanitizer.prototype = {
         sss.clearAll();
 
         // Clear push subscriptions
+        // Avoid throwing an error because nsIPushService isn't implemented
         yield new Promise((resolve, reject) => {
-          let push = Cc["@mozilla.org/push/Service;1"]
-                       .getService(Ci.nsIPushService);
-          push.clearForDomain("*", status => {
-            if (Components.isSuccessCode(status)) {
-              resolve();
-            } else {
-              reject(new Error("Error clearing push subscriptions: " +
-                               status));
-            }
-          });
+            reject(new Error("Error clearing push subscriptions"));
         });
+
+        //yield new Promise((resolve, reject) => {
+        //  let push = Cc["@mozilla.org/push/Service;1"]
+        //               .getService(Ci.nsIPushService);
+        //  push.clearForDomain("*", status => {
+        //    if (Components.isSuccessCode(status)) {
+        //      resolve();
+        //    } else {
+        //      reject(new Error("Error clearing push subscriptions: " +
+        //                       status));
+        //    }
+        //  });
+        //});
         TelemetryStopwatch.finish("FX_SANITIZE_SITESETTINGS", refObj);
       }),
 
