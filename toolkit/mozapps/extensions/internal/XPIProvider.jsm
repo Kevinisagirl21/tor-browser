@@ -1601,6 +1601,17 @@ var XPIStates = {
       for (let [id, file] of location.getAddonLocations(true)) {
         knownIds.delete(id);
 
+#if defined(TOR_BROWSER_VERSION) && defined(ANDROID)
+        // Remove Torbutton if it is installed in the user profile
+        if (id === "torbutton@torproject.org" &&
+            location.name === KEY_APP_PROFILE) {
+          logger.debug("Uninstalling Torbutton from user profile.");
+          location.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
+#endif
+
         let xpiState = loc.get(id);
         if (!xpiState) {
           logger.debug("New add-on ${id} in ${location}", {id, location: location.name});
