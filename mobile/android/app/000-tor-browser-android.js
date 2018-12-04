@@ -54,10 +54,5 @@ pref("media.realtime_decoder.enabled", false);
 pref("general.useragent.updates.enabled", false);
 pref("general.useragent.updates.url", "");
 
-// Do not allow the user to install extensions from web
-pref("xpinstall.enabled", false);
-pref("extensions.enabledScopes", 1);
-pref("extensions.autoDisableScopes", 1);
-
 // Enable touch events on Android (highlighting text, etc)
 pref("dom.w3c_touch_events.enabled", 2);
