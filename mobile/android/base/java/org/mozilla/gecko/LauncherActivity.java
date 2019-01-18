@@ -45,9 +45,6 @@ import static org.mozilla.gecko.deeplink.DeepLinkContract.LINK_FXA_SIGNIN;
 
 import org.mozilla.gecko.deeplink.DeepLinkContract;
 
-import org.torproject.android.OrbotMainActivity;
-import org.torproject.android.service.TorServiceConstants;
-
 /**
  * Activity that receives incoming Intents and dispatches them to the appropriate activities (e.g. browser, custom tabs, web app).
  */
@@ -69,9 +66,6 @@ public class LauncherActivity extends Activity {
         // Is this web app?
         } else if (isWebAppIntent(safeIntent)) {
             dispatchWebAppIntent();
-
-        } else if (TorServiceConstants.TOR_APP_USERNAME.equals(getIntent().getAction())) {
-            dispatchOrbotIntent();
 
         // If it's not a view intent, it won't be a custom tabs intent either. Just launch!
         } else if (!isViewIntentWithURL(safeIntent)) {
@@ -118,18 +112,6 @@ public class LauncherActivity extends Activity {
         intent.setClassName(getApplicationContext(), AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
 
         filterFlags(intent);
-
-        startActivity(intent);
-    }
-
-    private void dispatchOrbotIntent() {
-        final String orbotStartAction = "android.intent.action.MAIN";
-        final Intent intent = new Intent(orbotStartAction, null, this, OrbotMainActivity.class);
-
-        //When we launch Orbot, we want a new task.
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
         startActivity(intent);
     }
