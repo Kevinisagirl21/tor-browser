@@ -886,10 +886,10 @@ var BrowserApp = {
             if (!permissionGranted) {
                 return;
             }
-            let doc = aTarget.ownerDocument;
+
             ContentAreaUtils.saveImageURL(aTarget.currentRequestFinalURI.spec, null, "SaveImageTitle",
-                                          false, true, doc.documentURIObject,
-                                          null, null, null, doc.isPrivate, doc.nodePrincipal);
+                                          false, true, aTarget.ownerDocument.documentURIObject,
+                                          aTarget.ownerDocument);
         });
       });
 
