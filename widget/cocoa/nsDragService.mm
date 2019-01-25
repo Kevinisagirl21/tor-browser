@@ -327,7 +327,8 @@ nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
       }
 
       // Assign a principal:
-      currentTransferable->SetRequestingPrincipal(mSourceNode->NodePrincipal());
+      nsCOMPtr<nsINode> node = do_QueryInterface(mSourceNode);
+      currentTransferable->SetRequestingPrincipal(node->NodePrincipal());
 
       // Transform the transferable to an NSDictionary
       NSDictionary* pasteboardOutputDict =
