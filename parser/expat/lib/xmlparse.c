@@ -839,7 +839,7 @@ generate_hash_secret_salt(XML_Parser parser)
 {
   unsigned long entropy;
   (void)parser;
-#if defined(HAVE_ARC4RANDOM_BUF) || defined(__CloudABI__)
+#if !defined(__ANDROID__) && (defined(HAVE_ARC4RANDOM_BUF) || defined(__CloudABI__))
   (void)gather_time_entropy;
   arc4random_buf(&entropy, sizeof(entropy));
   return ENTROPY_DEBUG("arc4random_buf", entropy);
