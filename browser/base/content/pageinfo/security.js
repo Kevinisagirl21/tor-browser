@@ -52,7 +52,10 @@ var security = {
       (ui.state & Ci.nsIWebProgressListener.STATE_IS_INSECURE);
     var isEV =
       (ui.state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL);
-    var isOnion = hostName.endsWith(".onion");
+    var isOnion = false;
+    if (hostName && hostName.endsWith(".onion")) {
+      isOnion = true;
+    }
 
     ui.QueryInterface(nsISSLStatusProvider);
     var status = ui.SSLStatus;
