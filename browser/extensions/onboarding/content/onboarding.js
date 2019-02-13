@@ -195,12 +195,9 @@ var onboardingTourset = {
       createOnboardingTourDescription(div,
         "onboarding.tour-tor-expect-differences.title", "onboarding.tour-tor-expect-differences.description");
       createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-expect-differences.png");
-      let button = createOnboardingTourButton(div,
+      createOnboardingTourButton(div,
                         "onboarding-tour-tor-expect-differences-button",
-                        "onboarding.tour-tor-expect-differences.button", "a");
-      let anchor = button.querySelector("a");
-      anchor.setAttribute("href", "https://support.torproject.org/#faq");
-      anchor.setAttribute("target", "_blank");
+                        "onboarding.tour-tor-expect-differences.button");
 
       return div;
     },
@@ -214,12 +211,9 @@ var onboardingTourset = {
       createOnboardingTourDescription(div,
         "onboarding.tour-tor-onion-services.title", "onboarding.tour-tor-onion-services.description");
       createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-onion-services.png");
-      let button = createOnboardingTourButton(div,
+      createOnboardingTourButton(div,
                         "onboarding-tour-tor-onion-services-button",
-                        "onboarding.tour-tor-onion-services.button", "a");
-      let anchor = button.querySelector("a");
-      anchor.setAttribute("href", "https://3g2upl4pq6kufc4m.onion/");
-      anchor.setAttribute("target", "_blank");
+                        "onboarding.tour-tor-onion-services.button");
 
       return div;
     },
@@ -836,6 +830,7 @@ class Onboarding {
       ({ id, classList } = target.firstChild);
     }
 
+    const kOnionURL = "https://3g2upl4pq6kufc4m.onion/";  // DuckDuckGo
     let handledTourActionClick = false;
     switch (id) {
       case "onboarding-overlay-button":
@@ -918,7 +913,16 @@ class Onboarding {
         handledTourActionClick = true;
         break;
       case "onboarding-tour-tor-circuit-display-button":
-        sendMessageToChrome("tor-open-circuit-display-page");
+        let kFrameScript = "resource://onboarding/onboarding-tor-circuit-display.js";
+        sendMessageToChrome("tor-open-tab",
+                            {url: kOnionURL, frameScriptURL: kFrameScript});
+        break;
+      case "onboarding-tour-tor-expect-differences-button":
+        const kFAQURL = "https://support.torproject.org/#faq";
+        sendMessageToChrome("tor-open-tab", {url: kFAQURL});
+        break;
+      case "onboarding-tour-tor-onion-services-button":
+        sendMessageToChrome("tor-open-tab", {url: kOnionURL});
         break;
     }
     if (classList.contains("onboarding-tour-item")) {
