@@ -223,6 +223,11 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
+  ["SecurityLevelButton"],
+  "chrome://browser/content/securitylevel/securityLevel.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
   "gEditItemOverlay",
   "chrome://browser/content/places/editBookmark.js"
 );
@@ -1857,6 +1862,9 @@ var gBrowserInit = {
     // doesn't flicker as the window is being shown.
     DownloadsButton.init();
 
+    // Init the SecuritySettingsButton
+    SecurityLevelButton.init();
+
     // Certain kinds of automigration rely on this notification to complete
     // their tasks BEFORE the browser window is shown. SessionStore uses it to
     // restore tabs into windows AFTER important parts like gMultiProcessBrowser
@@ -2459,6 +2467,8 @@ var gBrowserInit = {
     SidebarUI.uninit();
 
     DownloadsButton.uninit();
+
+    SecurityLevelButton.uninit();
 
     gAccessibilityServiceIndicator.uninit();
 
