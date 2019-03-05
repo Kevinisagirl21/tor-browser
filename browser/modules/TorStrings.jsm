@@ -182,6 +182,10 @@ var TorStrings = {
         "advanced_security_settings",
         "Advanced Security Settings\u2026"
       ),
+      change: getString(
+        "change",
+        "Change\u2026"
+      ),
     };
     return retval;
   })() /* Security Level Strings */,
