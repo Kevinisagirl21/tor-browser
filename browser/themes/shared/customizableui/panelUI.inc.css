@@ -1430,7 +1430,8 @@ menuitem.panel-subview-footer@menuStateActive@,
 #editBookmarkPanel toolbarseparator,
 #downloadsPanel-mainView toolbarseparator,
 .cui-widget-panelview menuseparator,
-.cui-widget-panel toolbarseparator {
+.cui-widget-panel toolbarseparator,
+#securityLevel-panel toolbarseparator {
   appearance: none;
   min-height: 0;
   border-top: 1px solid var(--panel-separator-color);
