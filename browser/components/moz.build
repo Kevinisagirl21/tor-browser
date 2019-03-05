@@ -49,6 +49,7 @@ DIRS += [
     "protocolhandler",
     "resistfingerprinting",
     "search",
+    "securitylevel",
     "sessionstore",
     "shell",
     "syncedtabs",
