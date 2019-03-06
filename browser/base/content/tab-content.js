@@ -359,8 +359,6 @@ AboutReaderListener.init();
 let AboutTBUpdateListener = {
   init: function(chromeGlobal) {
     chromeGlobal.addEventListener('AboutTBUpdateLoad', this, false, true);
-    chromeGlobal.addEventListener("AboutTBUpdateNewFeaturesOnboarding",
-                                  this, false, true);
   },
 
   get isAboutTBUpdate() {
@@ -374,9 +372,6 @@ let AboutTBUpdateListener = {
     switch (aEvent.type) {
       case "AboutTBUpdateLoad":
         this.onPageLoad();
-        break;
-      case "AboutTBUpdateNewFeaturesOnboarding":
-        this.onNewFeaturesOnboarding();
         break;
       case "pagehide":
         this.onPageHide(aEvent);
@@ -411,11 +406,6 @@ let AboutTBUpdateListener = {
     removeEventListener("pagehide", this, true);
   },
 
-  onNewFeaturesOnboarding: function() {
-    // Tell the onboarding extension to open the circuit display onboarding.
-    sendAsyncMessage("Onboarding:OnContentMessage",
-                     {action: "tor-open-circuit-display-page"});
-  },
 };
 AboutTBUpdateListener.init(this);
 #endif
