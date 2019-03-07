@@ -40,10 +40,8 @@ var AboutTBUpdate = {
   },
 
   sendAboutTBUpdateData: function(aTarget) {
-    let data = { productInfo: this.productInfo,
-                 moreInfoURL: this.moreInfoURL,
-                 changeLog: this.changeLog };
-
+    let data = this.releaseNoteInfo;
+    data.moreInfoURL = this.moreInfoURL;
     if (aTarget && aTarget.messageManager) {
       aTarget.messageManager.sendAsyncMessage(kSendUpdateMessageName, data);
     } else {
@@ -51,15 +49,6 @@ var AboutTBUpdate = {
                  .getService(Ci.nsIMessageListenerManager);
       mm.broadcastAsyncMessage(kSendUpdateMessageName, data);
     }
-  },
-
-  get productInfo() {
-    const kBrandBundle = "chrome://branding/locale/brand.properties";
-    let brandBundle = Cc["@mozilla.org/intl/stringbundle;1"]
-                        .getService(Ci.nsIStringBundleService)
-                        .createBundle(kBrandBundle);
-    return brandBundle.GetStringFromName("brandFullName")
-           + "\n" + TOR_BROWSER_VERSION;
   },
 
   get moreInfoURL() {
@@ -71,12 +60,22 @@ var AboutTBUpdate = {
     return Services.urlFormatter.formatURLPref("startup.homepage_override_url");
   },
 
-  // Read and return the text from the beginning of the changelog file that is
-  // located at TorBrowser/Docs/ChangeLog.txt.
+  // Read the text from the beginning of the changelog file that is located
+  // at TorBrowser/Docs/ChangeLog.txt and return an object that contains
+  // the following properties:
+  //   version        e.g., Tor Browser 8.5
+  //   releaseDate    e.g., March 31 2019
+  //   releaseNotes   details of changes (lines 2 - end of ChangeLog.txt)
+  // We attempt to parse the first line of ChangeLog.txt to extract the
+  // version and releaseDate. If parsing fails, we return the entire first
+  // line in version and omit releaseDate.
+  //
   // On Mac OS, when building with --enable-tor-browser-data-outside-app-dir
-  // to support Gatekeeper signing, the file is located in
+  // to support Gatekeeper signing, the ChangeLog.txt file is located in
   // TorBrowser.app/Contents/Resources/TorBrowser/Docs/.
-  get changeLog() {
+  get releaseNoteInfo() {
+    let info = {};
+
     try {
 #ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
       // "XREExeF".parent is the directory that contains firefox, i.e.,
@@ -103,9 +102,39 @@ var AboutTBUpdate = {
       fs.close();
 
       // Truncate at the first empty line.
-      return s.replace(/[\r\n][\r\n][\s\S]*$/m, "");
+      s = s.replace(/[\r\n][\r\n][\s\S]*$/m, "");
+
+      // Split into first line (version plus releaseDate) and
+      // remainder (releaseNotes).
+      // This first match() uses multiline mode with two capture groups:
+      //   first line: (.*$)
+      //   remaining lines: ([\s\S]+)
+      //     [\s\S] matches all characters including end of line. This trick
+      //     is needed because when using JavaScript regex in multiline mode,
+      //     . does not match an end of line character.
+      let matchArray = s.match(/(.*$)\s*([\s\S]+)/m);
+      if (matchArray && (matchArray.length == 3)) {
+        info.releaseNotes = matchArray[2];
+        let line1 = matchArray[1];
+        // Extract the version and releaseDate. The first line looks like:
+        //   Tor Browser 8.5 -- May 1 2019
+        // The regex uses two capture groups:
+        //   text that does not include a hyphen: (^[^-]*)
+        //   remaining text: (.*$)
+        // In between we match optional whitespace, one or more hyphens, and
+        // optional whitespace by using: \s*-+\s*
+        matchArray = line1.match(/(^[^-]*)\s*-+\s*(.*$)/);
+        if (matchArray && (matchArray.length == 3)) {
+          info.version = matchArray[1];
+          info.releaseDate = matchArray[2];
+        } else {
+          info.version = line1; // Match failed: return entire line in version.
+        }
+      } else {
+        info.releaseNotes = s; // Only one line: use as releaseNotes.
+      }
     } catch (e) {}
 
-    return "";
+    return info;
   },
 };

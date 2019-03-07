@@ -13,24 +13,26 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>&aboutTBUpdate.title;</title>
+  <title>&aboutTBUpdate.changelogTitle;</title>
   <link rel="stylesheet" type="text/css"
         href="chrome://browser/content/abouttbupdate/aboutTBUpdate.css"/>
   <script src="chrome://browser/content/abouttbupdate/aboutTBUpdate.js"
           type="text/javascript"/>
 </head>
 <body dir="&locale.dir;" onload="init()">
-<div id="torbrowser-version"/>
-<div id="logo"/>
-<div id="msg">
-<div id="msg-updated">&aboutTBUpdate.updated;</div>
-<div>&aboutTBUpdate.linkPrefix;<a id="infolink">&aboutTBUpdate.linkLabel;</a>&aboutTBUpdate.linkSuffix;
-</div>
-</div>
-<br clear="all"/>
-<div id="changelog-container">
-<div id="changelog-heading">&aboutTBUpdate.changeLogHeading;</div>
-<div id="changelog"></div>
+<div class="two-column-grid">
+  <div class="label-column">&aboutTBUpdate.version;</div>
+  <div id="version-content"/>
+
+  <div class="label-column release-date-cell">&aboutTBUpdate.releaseDate;</div>
+  <div id="releasedate-content" class="release-date-cell"/>
+
+  <div class="more-info-row"/>
+  <div class="more-info-row">&aboutTBUpdate.linkPrefix;<a id="infolink">&aboutTBUpdate.linkLabel;</a>&aboutTBUpdate.linkSuffix;</div>
+
+  <div id="releasenotes-label"
+       class="label-column">&aboutTBUpdate.releaseNotes;</div>
+  <div id="releasenotes-content"></div>
 </div>
 </body>
 </html>

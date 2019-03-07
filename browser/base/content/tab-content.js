@@ -384,12 +384,21 @@ let AboutTBUpdateListener = {
       this.onUpdate(aMessage.data);
   },
 
+  // aData may contain the following string properties:
+  //   version
+  //   releaseDate
+  //   moreInfoURL
+  //   releaseNotes
   onUpdate: function(aData) {
     let doc = content.document;
-    doc.getElementById("torbrowser-version").textContent = aData.productInfo;
+    doc.getElementById("version-content").textContent = aData.version;
+    if (aData.releaseDate) {
+      doc.body.setAttribute("havereleasedate", "true");
+      doc.getElementById("releasedate-content").textContent = aData.releaseDate;
+    }
     if (aData.moreInfoURL)
       doc.getElementById("infolink").setAttribute("href", aData.moreInfoURL);
-    doc.getElementById("changelog").textContent = aData.changeLog;
+    doc.getElementById("releasenotes-content").textContent = aData.releaseNotes;
   },
 
   onPageLoad: function() {

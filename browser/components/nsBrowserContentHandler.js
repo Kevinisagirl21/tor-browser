@@ -541,6 +541,21 @@ nsBrowserContentHandler.prototype = {
       }
     }
 
+    // Retrieve the home page early so we can compare it against about:tor
+    // to decide whether or not we need an override page (second tab) after
+    // an update was applied.
+    var startPage = "";
+    try {
+      var choice = prefb.getIntPref("browser.startup.page");
+      if (choice == 1 || choice == 3)
+        startPage = this.startPage;
+    } catch (e) {
+      Cu.reportError(e);
+    }
+
+    if (startPage == "about:blank")
+      startPage = "";
+
     var override;
     var overridePage = "";
     var additionalPage = "";
@@ -580,11 +595,14 @@ nsBrowserContentHandler.prototype = {
             // we may open the startPage in addition to restoring the session.
             //
             // Tor Browser: Instead of opening the post-update "override page"
-            // directly, an about:tbupdate page is opened that includes a link
-            // to the override page as well as text from the first part of the
-            // local ChangeLog.txt file. The override page URL comes from the
-            // openURL attribute within the updates.xml file or, if no showURL
-            // action is present, from the startup.homepage_override_url pref.
+            // directly, we ensure that about:tor will be opened in a special
+            // mode that notifies the user that their browser was updated.
+            // The about:tor page will provide a link to the override page
+            // where the user can learn more about the update, as well as a
+            // link to the Tor Browser changelog page (about:tbupdate). The
+            // override page URL comes from the openURL attribute within the
+            // updates.xml file or, if no showURL action is present, from the
+            // startup.homepage_override_url pref.
             var ss = Cc["@mozilla.org/browser/sessionstartup;1"]
                        .getService(Ci.nsISessionStartup);
             willRestoreSession = ss.isAutomaticRestoreEnabled();
@@ -606,7 +624,14 @@ nsBrowserContentHandler.prototype = {
             if (overridePage)
             {
               prefb.setCharPref("torbrowser.post_update.url", overridePage);
-              overridePage = "about:tbupdate"
+              prefb.setBoolPref("torbrowser.post_update.shouldNotify", true);
+              // If the user's homepage is about:tor, we will inform them
+              // about the update on that page; otherwise, we arrange to
+              // open about:tor in a secondary tab.
+              if (startPage === "about:tor")
+                overridePage = "";
+              else
+                overridePage = "about:tor";
             }
 #endif
             break;
@@ -635,18 +660,6 @@ nsBrowserContentHandler.prototype = {
         overridePage = additionalPage;
       }
     }
-
-    var startPage = "";
-    try {
-      var choice = prefb.getIntPref("browser.startup.page");
-      if (choice == 1 || choice == 3)
-        startPage = this.startPage;
-    } catch (e) {
-      Cu.reportError(e);
-    }
-
-    if (startPage == "about:blank")
-      startPage = "";
 
     let skipStartPage = override == OVERRIDE_NEW_PROFILE &&
       prefb.getBoolPref("browser.startup.firstrunSkipsHomepage");
