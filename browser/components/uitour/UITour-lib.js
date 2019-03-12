@@ -791,10 +791,10 @@ if (typeof Mozilla == "undefined") {
   };
 
   /**
-  * @summary Opens Torbutton's Security Settings (aka the Security Slider).
+  * @summary Opens the Security Level Panel.
   */
-  Mozilla.UITour.torBrowserOpenSecuritySettings = function() {
-    _sendEvent("torBrowserOpenSecuritySettings");
+  Mozilla.UITour.torBrowserOpenSecurityLevelPanel = function() {
+    _sendEvent("torBrowserOpenSecurityLevelPanel");
   };
 })();
 

@@ -46,7 +46,7 @@ const TOR_BROWSER_PAGE_ACTIONS_ALLOWED = new Set([
   "showMenu",  // restricted to TOR_BROWSER_MENUS_ALLOWED
   "hideMenu",  // restricted to TOR_BROWSER_MENUS_ALLOWED
   "closeTab",
-  "torBrowserOpenSecuritySettings",
+  "torBrowserOpenSecurityLevelPanel",
 ]);
 
 const TOR_BROWSER_TARGETS_ALLOWED = new Set([
@@ -717,10 +717,11 @@ var UITour = {
         break;
       }
 
-      case "torBrowserOpenSecuritySettings":
-        // Ask Torbutton to open the Tor Browser Security Settings.
-        Services.obs.notifyObservers(undefined, "TorOpenSecuritySettings",
-                                     undefined);
+      case "torBrowserOpenSecurityLevelPanel":
+        let securityLevelButton =
+                      window.document.getElementById("security-level-button");
+        if (securityLevelButton)
+	  securityLevelButton.doCommand();
         break;
     }
 

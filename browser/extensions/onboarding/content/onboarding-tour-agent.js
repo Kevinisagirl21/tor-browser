@@ -19,7 +19,7 @@ let onCanSetDefaultBrowserInBackground = () => {
 let onClick = evt => {
   switch (evt.target.id) {
     case "onboarding-tour-tor-security-button":
-      Mozilla.UITour.torBrowserOpenSecuritySettings();
+      Mozilla.UITour.torBrowserOpenSecurityLevelPanel();
       break;
 #if 0
 // Firefox onboarding actions. To reduce conflicts when rebasing against

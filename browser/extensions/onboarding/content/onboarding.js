@@ -181,7 +181,7 @@ var onboardingTourset = {
         "onboarding.tour-tor-security.title", "onboarding.tour-tor-security.description");
       createOnboardingTourContent(div, "resource://onboarding/img/figure_tor-security.png");
       createOnboardingTourButton(div,
-        "onboarding-tour-tor-security-button", "onboarding.tour-tor-security.button");
+        "onboarding-tour-tor-security-button", "onboarding.tour-tor-security-level.button");
 
       return div;
     },
