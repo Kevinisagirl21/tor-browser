@@ -4410,9 +4410,9 @@ Tab.prototype = {
     // Must be called after appendChild so the docShell has been created.
     this.setActive(false);
 
-    let isPrivate = "isPrivate" in aParams && aParams.isPrivate;
+    let isPrivate = (("isPrivate" in aParams) && aParams.isPrivate) || Services.prefs.getBoolPref("browser.privatebrowsing.autostart");
     if (isPrivate) {
-      attrs.privateBrowsingId = 1;
+      attrs['privateBrowsingId'] = 1;
     }
 
     this.browser.docShell.setOriginAttributes(attrs);
