@@ -1104,7 +1104,7 @@ public class BrowserApp extends GeckoApp
      *
      * mTorStatus provides synchronization across threads.
      */
-    private boolean checkTorIsStarted() {
+    public boolean checkTorIsStarted() {
         // When tor is started, true. Otherwise, false
         mTorStatus = false;
         BroadcastReceiver br = setupReceiveTorIsStartedAsync();
@@ -2096,6 +2096,7 @@ public class BrowserApp extends GeckoApp
                         finishAndShutdown(/* restart */ false);
                     }
                 }
+                super.handleMessage(event, message, callback);
                 break;
 
             case "Sanitize:OpenTabs":
@@ -2969,6 +2970,7 @@ public class BrowserApp extends GeckoApp
 
                     // If we finished, then Tor bootstrapped 100%
                     mTorNeedsStart = false;
+                    EventDispatcher.getInstance().dispatch("Tor:Ready", null);
 
                     // When bootstrapping completes, check if the Firstrun (onboarding) screens
                     // should be shown.
