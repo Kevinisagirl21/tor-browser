@@ -123,7 +123,11 @@ static const nsLiteralCString kPreloadPermissions[] = {
     // interception when a user has disabled storage for a specific site.  Once
     // service worker interception moves to the parent process this should be
     // removed.  See bug 1428130.
-    "cookie"_ns};
+    "cookie"_ns,
+
+    // Bug 28822: Make sure uitour permissions are preloaded in content
+    // processes.
+    "uitour"_ns};
 
 // Certain permissions should never be persisted to disk under GeckoView; it's
 // the responsibility of the app to manage storing these beyond the scope of
