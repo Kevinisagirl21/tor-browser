@@ -243,6 +243,8 @@ var lazilyLoadedBrowserScripts = [
   ["CastingApps", "chrome://browser/content/CastingApps.js"],
   ["RemoteDebugger", "chrome://browser/content/RemoteDebugger.js"],
   ["gViewSourceUtils", "chrome://global/content/viewSourceUtils.js"],
+  ["torbuttonUtils", "chrome://torbutton/content/torbutton_utils.js"],
+  ["torbutton", "chrome://torbutton/content/torbutton.js"],
 ];
 
 lazilyLoadedBrowserScripts.forEach(function(aScript) {
@@ -762,6 +764,8 @@ var BrowserApp = {
       true,
       true
     );
+
+    torbutton_init();
 
     // We can't delay registering WebChannel listeners: if the first page is
     // about:accounts, which can happen when starting the Firefox Account flow
