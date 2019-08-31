@@ -1007,7 +1007,9 @@ SearchService.prototype = {
       !cache.engines ||
       cache.version != SearchUtils.CACHE_VERSION ||
       cache.locale != Services.locale.requestedLocale ||
-      cache.buildID != buildID;
+      cache.buildID != buildID ||
+      cache.enabledScopes !=
+        Services.prefs.getIntPref("extensions.enabledScopes", -1);
 
     let enginesCorrupted = false;
     if (!rebuildCache) {
