@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const kPrefName = "browser.startup.homepage";
-const kDefaultHomePage = "about:home";
+const kDefaultHomePage = "about:tor";
 const kExtensionControllerPref =
   "browser.startup.homepage_override.extensionControlled";
 const kHomePageIgnoreListId = "homepage-urls";
