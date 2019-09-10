@@ -774,7 +774,7 @@
                         oncommand="gSync.toggleAccountPanel('PanelUI-fxa', this, event)"/>
         </toolbaritem>
         <toolbarseparator class="sync-ui-item"/>
-        <toolbaritem>
+        <toolbaritem hidden="true">
           <toolbarbutton id="appMenu-protection-report-button"
                class="subviewbutton subviewbutton-iconic"
                oncommand="gProtectionsHandler.openProtections(); gProtectionsHandler.recordClick('open_full_report', null, 'app_menu');">
@@ -785,7 +785,7 @@
             </label>
           </toolbarbutton>
         </toolbaritem>
-        <toolbarseparator id="appMenu-tp-separator"/>
+        <toolbarseparator hidden="true" id="appMenu-tp-separator"/>
         <toolbarbutton id="appMenu-new-window-button"
                        class="subviewbutton subviewbutton-iconic"
                        label="&newNavigatorCmd.label;"
