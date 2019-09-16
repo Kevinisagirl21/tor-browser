@@ -306,8 +306,6 @@ var gMainPane = {
     });
     this.updatePerformanceSettingsBox({ duringChangeEvent: false });
     this.displayUseSystemLocale();
-    this.updateProxySettingsUI();
-    initializeProxyUI(gMainPane);
 
     if (Services.prefs.getBoolPref("intl.multilingual.enabled")) {
       gMainPane.initPrimaryBrowserLanguageUI();
@@ -465,11 +463,6 @@ var gMainPane = {
     Preferences.get("layers.acceleration.disabled").on(
       "change",
       gMainPane.updateHardwareAcceleration.bind(gMainPane)
-    );
-    setEventListener(
-      "connectionSettings",
-      "command",
-      gMainPane.showConnections
     );
     setEventListener(
       "browserContainersCheckbox",
