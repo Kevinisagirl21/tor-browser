@@ -1,0 +1,194 @@
+<!-- Tor panel -->
+
+<script type="application/javascript"
+        src="chrome://browser/content/torpreferences/connectionPane.js"/>
+<html:template id="template-paneConnection">
+
+<!-- Tor Connect Message Box -->
+<groupbox data-category="paneConnection" hidden="true">
+  <html:div id="torPreferences-connectMessageBox"
+            class="subcategory"
+            data-category="paneConnection"
+            hidden="true">
+    <html:table>
+      <html:tr>
+        <html:td>
+          <html:div id="torPreferences-connectMessageBox-icon"/>
+        </html:td>
+        <html:td id="torPreferences-connectMessageBox-message">
+        </html:td>
+        <html:td>
+          <html:button id="torPreferences-connectMessageBox-button">
+          </html:button>
+        </html:td>
+      </html:tr>
+    </html:table>
+  </html:div>
+</groupbox>
+
+<hbox id="torPreferencesCategory"
+      class="subcategory"
+      data-category="paneConnection"
+      hidden="true">
+  <html:h1 id="torPreferences-header"/>
+</hbox>
+
+<groupbox data-category="paneConnection"
+          hidden="true">
+  <description flex="1">
+    <html:span id="torPreferences-description" class="tail-with-learn-more"/>
+    <label id="torPreferences-learnMore" class="learnMore text-link" is="text-link"/>
+  </description>
+</groupbox>
+
+<groupbox id="torPreferences-status-group"
+          data-category="paneConnection"
+          hidden="true">
+  <hbox id="torPreferences-status-box">
+    <image id="torPreferences-status-internet-icon"/>
+    <html:span id="torPreferences-status-internet-label"/>
+    <button id="torPreferences-status-internet-test"/>
+    <image id="torPreferences-status-internet-statusIcon"/>
+    <html:span id="torPreferences-status-internet-status"/>
+    <image id="torPreferences-status-tor-icon"/>
+    <html:span id="torPreferences-status-tor-label"/>
+    <image id="torPreferences-status-tor-statusIcon"/>
+    <html:span id="torPreferences-status-tor-status"/>
+  </hbox>
+</groupbox>
+
+<!-- Quickstart -->
+<groupbox id="torPreferences-quickstart-group"
+          data-category="paneConnection"
+          hidden="true">
+  <html:h2 id="torPreferences-quickstart-header"/>
+  <description flex="1">
+    <html:span id="torPreferences-quickstart-description"/>
+  </description>
+  <checkbox id="torPreferences-quickstart-toggle"/>
+</groupbox>
+
+<!-- Bridges -->
+<hbox class="subcategory"
+      data-category="paneConnection"
+      hidden="true">
+    <html:h1 id="torPreferences-bridges-header"/>
+</hbox>
+<groupbox id="torPreferences-bridges-group"
+          data-category="paneConnection"
+          hidden="true">
+  <description flex="1">
+    <html:span id="torPreferences-bridges-description" class="tail-with-learn-more"/>
+    <label id="torPreferences-bridges-learnMore" class="learnMore text-link" is="text-link"/>
+  </description>
+  <hbox align="center" id="torPreferences-bridges-locationGroup" hidden="true">
+    <label id="torPreferences-bridges-locationLabel"
+           control="torPreferences-bridges-location"/>
+    <spacer flex="1"/>
+    <menulist id="torPreferences-bridges-location">
+      <menupopup id="torPreferences-bridges-locationEntries"/>
+    </menulist>
+    <button id="torPreferences-bridges-buttonChooseBridgeForMe" class="torMarginFix primary"/>
+  </hbox>
+  <html:h2 id="torPreferences-currentBridges-header">
+    <html:span id="torPreferences-currentBridges-headerText"/>
+    <html:input type="checkbox" id="torPreferences-currentBridges-switch" class="toggle-button"/>
+  </html:h2>
+  <description flex="1" id="torPreferences-currentBridges-description">
+    <html:span id="torPreferences-currentBridges-descriptionText"/>
+  </description>
+  <menupopup id="torPreferences-bridgeCard-menu"/>
+  <vbox id="torPreferences-bridgeCard-template" class="torPreferences-bridgeCard">
+    <hbox class="torPreferences-bridgeCard-heading">
+      <html:div class="torPreferences-bridgeCard-id"/>
+      <html:div class="torPreferences-bridgeCard-headingAddr"/>
+      <html:div class="torPreferences-bridgeCard-buttons">
+        <html:span class="torPreferences-bridgeCard-connectedBadge">
+          <image class="torPreferences-bridgeCard-connectedIcon"/>
+          <html:span class="torPreferences-bridgeCard-connectedLabel"/>
+        </html:span>
+        <html:button class="torPreferences-bridgeCard-options stop-click"/>
+      </html:div>
+    </hbox>
+    <box class="torPreferences-bridgeCard-grid">
+      <box class="torPreferences-bridgeCard-qrWrapper">
+        <html:div class="torPreferences-bridgeCard-qr stop-click">
+          <html:div class="torPreferences-bridgeCard-qrCode"/>
+          <html:div class="torPreferences-bridgeCard-qrOnionBox"/>
+          <html:div class="torPreferences-bridgeCard-qrOnion"/>
+        </html:div>
+      </box>
+      <description class="torPreferences-bridgeCard-share"></description>
+      <hbox class="torPreferences-bridgeCard-addrBox">
+        <html:input class="torPreferences-bridgeCard-addr torMarginFix stop-click" type="text" readonly="readonly"/>
+      </hbox>
+      <hbox class="torPreferences-bridgeCard-learnMoreBox" align="center">
+        <label class="torPreferences-bridgeCard-learnMore learnMore text-link stop-click" is="text-link"/>
+      </hbox>
+      <hbox class="torPreferences-bridgeCard-copy" align="center">
+        <button class="torPreferences-bridgeCard-copyButton stop-click"/>
+      </hbox>
+    </box>
+  </vbox>
+  <vbox id="torPreferences-currentBridges-cards"></vbox>
+  <vbox align="center">
+    <button id="torPreferences-currentBridges-showAll"/>
+    <button id="torPreferences-currentBridges-removeAll" class="primary danger-button"/>
+  </vbox>
+  <html:h2 id="torPreferences-addBridge-header"></html:h2>
+  <hbox align="center">
+    <label id="torPreferences-addBridge-labelBuiltinBridge"/>
+    <space flex="1"/>
+    <button id="torPreferences-addBridge-buttonBuiltinBridge" class="torMarginFix"/>
+  </hbox>
+  <hbox align="center">
+    <label id="torPreferences-addBridge-labelRequestBridge"/>
+    <space flex="1"/>
+    <button id="torPreferences-addBridge-buttonRequestBridge" class="torMarginFix"/>
+  </hbox>
+  <hbox align="center">
+    <label id="torPreferences-addBridge-labelEnterBridge"/>
+    <space flex="1"/>
+    <button id="torPreferences-addBridge-buttonEnterBridge" class="torMarginFix"/>
+  </hbox>
+</groupbox>
+
+<!-- Advanced -->
+<hbox class="subcategory"
+      data-category="paneConnection"
+      hidden="true">
+    <html:h1 id="torPreferences-advanced-header"/>
+</hbox>
+<groupbox id="torPreferences-advanced-group"
+          data-category="paneConnection"
+          hidden="true">
+  <box id="torPreferences-advanced-grid">
+    <hbox id="torPreferences-advanced-hbox" align="center">
+      <label id="torPreferences-advanced-label"/>
+    </hbox>
+    <hbox align="center">
+      <button id="torPreferences-advanced-button"/>
+    </hbox>
+    <hbox id="torPreferences-torDaemon-hbox" align="center">
+      <label id="torPreferences-torLogs"/>
+    </hbox>
+    <hbox align="center" data-subcategory="viewlogs">
+      <button id="torPreferences-buttonTorLogs"/>
+    </hbox>
+  </box>
+</groupbox>
+
+<html:div id="bridge-remove-overlay" class="hidden">
+  <html:div id="bridge-remove-modal">
+    <html:img id="bridge-remove-dismiss" src="chrome://global/skin/icons/close.svg"/>
+    <html:div id="bridge-remove-icon"/>
+    <html:p id="bridge-remove-question"/>
+    <html:p id="bridge-remove-warning"/>
+    <html:div id="bridge-remove-buttonbar">
+    <button id="bridge-remove-cancel"/>
+    <button id="bridge-remove-confirm"/>
+    </html:div>
+  </html:div>
+</html:div>
+
+</html:template>
