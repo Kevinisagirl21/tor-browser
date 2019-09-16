@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
+<?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
+
+<window type="child"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml">
+<dialog id="torPreferences-builtinBridge-dialog"
+        buttons="help,accept,cancel">
+  <html:h3 id="torPreferences-builtinBridge-header">&#8203;</html:h3>
+  <description>
+    <html:div id="torPreferences-builtinBridge-description">&#8203;<br/>&#8203;</html:div>
+  </description>
+  <radiogroup id="torPreferences-builtinBridge-typeSelection">
+    <radio id="torPreferences-builtinBridges-radioObfs" value="obfs4" hidden="true"/>
+    <html:div id="torPreferences-builtinBridges-descrObfs" class="indent" hidden="true">&#8203;</html:div>
+    <radio id="torPreferences-builtinBridges-radioSnowflake" value="snowflake" hidden="true"/>
+    <html:div id="torPreferences-builtinBridges-descrSnowflake" class="indent" hidden="true">&#8203;</html:div>
+    <radio id="torPreferences-builtinBridges-radioMeekAzure" value="meek-azure" hidden="true"/>
+    <html:div id="torPreferences-builtinBridges-descrMeekAzure" class="indent" hidden="true">&#8203;</html:div>
+  </radiogroup>
+  <script type="application/javascript"><![CDATA[
+    "use strict";
+
+    let builtinBridgeDialog = window.arguments[0];
+    let dialog = document.getElementById("torPreferences-builtinBridge-dialog");
+    builtinBridgeDialog.init(window, dialog);
+  ]]></script>
+</dialog>
+</window>
