@@ -13,6 +13,7 @@
 <?xml-stylesheet href="chrome://browser/skin/preferences/containers.css"?>
 <?xml-stylesheet href="chrome://browser/skin/preferences/privacy.css"?>
 <?xml-stylesheet href="chrome://browser/content/securitylevel/securityLevelPreferences.css"?>
+<?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
 
 <!DOCTYPE html>
 
@@ -168,6 +169,9 @@
           <image class="category-icon"/>
           <label class="category-name" flex="1" data-l10n-id="more-from-moz-title"></label>
         </richlistitem>
+
+#include ../torpreferences/content/connectionCategory.inc.xhtml
+
       </richlistbox>
 
       <spacer flex="1"/>
@@ -218,6 +222,7 @@
 #include sync.inc.xhtml
 #include experimental.inc.xhtml
 #include moreFromMozilla.inc.xhtml
+#include ../torpreferences/content/connectionPane.xhtml
         </vbox>
       </vbox>
     </vbox>
