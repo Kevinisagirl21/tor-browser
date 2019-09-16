@@ -1,0 +1,123 @@
+<!-- Tor panel -->
+
+<script type="application/javascript"
+        src="chrome://browser/content/torpreferences/torPane.js"/>
+<html:template id="template-paneTor">
+<hbox id="torPreferencesCategory"
+      class="subcategory"
+      data-category="paneTor"
+      hidden="true">
+  <html:h1 id="torPreferences-header"/>
+</hbox>
+
+<groupbox data-category="paneTor"
+          hidden="true">
+  <description flex="1">
+    <html:span id="torPreferences-description" class="tail-with-learn-more"/>
+    <label id="torPreferences-learnMore" class="learnMore text-link" is="text-link"/>
+  </description>
+</groupbox>
+
+<!-- Bridges -->
+<groupbox id="torPreferences-bridges-group"
+          data-category="paneTor"
+          hidden="true">
+  <html:h2 id="torPreferences-bridges-header"/>
+  <description flex="1">
+    <html:span id="torPreferences-bridges-description" class="tail-with-learn-more"/>
+    <label id="torPreferences-bridges-learnMore" class="learnMore text-link" is="text-link"/>
+  </description>
+  <checkbox id="torPreferences-bridges-toggle"/>
+  <radiogroup id="torPreferences-bridges-bridgeSelection">
+    <hbox class="indent">
+      <radio id="torPreferences-bridges-radioBuiltin"/>
+      <spacer flex="1"/>
+      <menulist id="torPreferences-bridges-builtinList" class="torMarginFix">
+        <menupopup/>
+      </menulist>
+    </hbox>
+    <vbox class="indent">
+      <hbox>
+        <radio id="torPreferences-bridges-radioRequestBridge"/>
+        <space flex="1"/>
+        <button id="torPreferences-bridges-buttonRequestBridge" class="torMarginFix"/>
+      </hbox>
+      <html:textarea
+        id="torPreferences-bridges-textareaRequestBridge"
+        class="indent torMarginFix"
+        multiline="true"
+        rows="3"
+        readonly="true"/>
+    </vbox>
+    <hbox class="indent" flex="1">
+      <vbox flex="1">
+        <radio id="torPreferences-bridges-radioProvideBridge"/>
+        <description id="torPreferences-bridges-descriptionProvideBridge" class="indent"/>
+        <html:textarea
+          id="torPreferences-bridges-textareaProvideBridge"
+          class="indent torMarginFix"
+          multiline="true"
+          rows="3"/>
+      </vbox>
+    </hbox>
+  </radiogroup>
+</groupbox>
+
+<!-- Advanced -->
+<groupbox id="torPreferences-advanced-group"
+          data-category="paneTor"
+          hidden="true">
+  <html:h2 id="torPreferences-advanced-header"/>
+  <description flex="1">
+    <html:span id="torPreferences-advanced-description" class="tail-with-learn-more"/>
+    <label id="torPreferences-advanced-learnMore" class="learnMore text-link" is="text-link" style="display:none"/>
+  </description>
+  <box id="torPreferences-advanced-grid">
+    <!-- Local Proxy -->
+    <hbox class="torPreferences-advanced-checkbox-container">
+      <checkbox id="torPreferences-advanced-toggleProxy"/>
+    </hbox>
+    <hbox class="indent" align="center">
+      <label id="torPreferences-localProxy-type"/>
+    </hbox>
+    <hbox align="center">
+      <spacer flex="1"/>
+      <menulist id="torPreferences-localProxy-builtinList" class="torMarginFix">
+        <menupopup/>
+      </menulist>
+    </hbox>
+    <hbox class="indent" align="center">
+      <label id="torPreferences-localProxy-address"/>
+    </hbox>
+    <hbox align="center">
+      <html:input id="torPreferences-localProxy-textboxAddress" type="text" class="torMarginFix"/>
+      <label id="torPreferences-localProxy-port"/>
+      <!-- proxy-port-input class style pulled from preferences.css and used in the vanilla proxy setup menu -->
+      <html:input id="torPreferences-localProxy-textboxPort" class="proxy-port-input torMarginFix" hidespinbuttons="true" type="number" min="0" max="65535" maxlength="5"/>
+    </hbox>
+    <hbox class="indent" align="center">
+      <label id="torPreferences-localProxy-username"/>
+    </hbox>
+    <hbox align="center">
+      <html:input id="torPreferences-localProxy-textboxUsername" type="text" class="torMarginFix"/>
+      <label id="torPreferences-localProxy-password"/>
+      <html:input id="torPreferences-localProxy-textboxPassword" class="torMarginFix" type="password"/>
+    </hbox>
+    <!-- Firewall -->
+    <hbox class="torPreferences-advanced-checkbox-container">
+      <checkbox id="torPreferences-advanced-toggleFirewall"/>
+    </hbox>
+    <hbox class="indent" align="center">
+      <label id="torPreferences-advanced-allowedPorts"/>
+    </hbox>
+    <hbox align="center">
+      <html:input id="torPreferences-advanced-textboxAllowedPorts" type="text" class="torMarginFix" value="80,443"/>
+    </hbox>
+  </box>
+  <hbox id="torPreferences-torDaemon-hbox" align="center">
+    <label id="torPreferences-torLogs"/>
+    <spacer flex="1"/>
+    <button id="torPreferences-buttonTorLogs" class="torMarginFix"/>
+  </hbox>
+</groupbox>
+</html:template>
