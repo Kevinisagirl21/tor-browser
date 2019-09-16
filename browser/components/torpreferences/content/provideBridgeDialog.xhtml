@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
+<?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
+
+<window
+  type="child"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+>
+  <dialog id="torPreferences-provideBridge-dialog" buttons="help,accept,cancel">
+    <description>
+      <html:div id="torPreferences-provideBridge-description"
+        >&#8203;<br />&#8203;</html:div
+      >
+    </description>
+    <html:textarea
+      id="torPreferences-provideBridge-textarea"
+      multiline="true"
+      rows="3"
+    />
+    <script type="application/javascript">
+      <![CDATA[
+          "use strict";
+
+          let provideBridgeDialog = window.arguments[0];
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialog = document.getElementById("torPreferences-provideBridge-dialog");
+            provideBridgeDialog.init(window, dialog);
+          });
+        ]]>
+    </script>
+  </dialog>
+</window>
