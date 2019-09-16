@@ -322,15 +322,6 @@ var gMainPane = {
     });
     this.updatePerformanceSettingsBox({ duringChangeEvent: false });
     this.displayUseSystemLocale();
-    let connectionSettingsLink = document.getElementById(
-      "connectionSettingsLearnMore"
-    );
-    let connectionSettingsUrl =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "prefs-connection-settings";
-    connectionSettingsLink.setAttribute("href", connectionSettingsUrl);
-    this.updateProxySettingsUI();
-    initializeProxyUI(gMainPane);
 
     if (Services.prefs.getBoolPref("intl.multilingual.enabled")) {
       gMainPane.initPrimaryBrowserLanguageUI();
@@ -482,11 +473,6 @@ var gMainPane = {
     Preferences.get("layers.acceleration.disabled").on(
       "change",
       gMainPane.updateHardwareAcceleration.bind(gMainPane)
-    );
-    setEventListener(
-      "connectionSettings",
-      "command",
-      gMainPane.showConnections
     );
     setEventListener(
       "browserContainersCheckbox",
