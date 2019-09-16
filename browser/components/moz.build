@@ -54,6 +54,7 @@ DIRS += [
     "syncedtabs",
     "uitour",
     "urlbar",
+    "torpreferences",
     "translation",
 ]
 
