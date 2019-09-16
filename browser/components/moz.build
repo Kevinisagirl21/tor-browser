@@ -58,6 +58,7 @@ DIRS += [
     "translation",
     "uitour",
     "urlbar",
+    "torpreferences",
 ]
 
 DIRS += ["build"]
