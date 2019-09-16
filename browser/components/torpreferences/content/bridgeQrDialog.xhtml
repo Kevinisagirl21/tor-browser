@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
+<?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
+
+<window
+  type="child"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+>
+  <dialog id="bridgeQr-dialog" buttons="accept">
+    <html:div>
+      <html:div id="bridgeQr">
+        <html:div id="bridgeQr-target" />
+        <html:div id="bridgeQr-onionBox" />
+        <html:div id="bridgeQr-onion" />
+      </html:div>
+    </html:div>
+    <script type="application/javascript">
+      <![CDATA[
+          "use strict";
+
+          let dialogObject = window.arguments[0];
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialogElement = document.getElementById("bridgeQr-dialog");
+            dialogObject.init(window, dialogElement);
+          });
+        ]]>
+    </script>
+  </dialog>
+</window>
