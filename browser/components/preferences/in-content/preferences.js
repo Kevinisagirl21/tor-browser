@@ -13,6 +13,7 @@
 /* import-globals-from findInPage.js */
 /* import-globals-from ../../../base/content/utilityOverlay.js */
 /* import-globals-from ../../../../toolkit/content/preferencesBindings.js */
+/* import-globals-from ../../torpreferences/content/torPane.js */
 /* global MozXULElement */
 
 "use strict";
@@ -92,6 +93,7 @@ function init_all() {
     document.getElementById("template-paneSync").remove();
   }
   register_module("paneSearchResults", gSearchResultsPane);
+  register_module("paneTor", gTorPane);
   gSearchResultsPane.init();
   gMainPane.preInit();
 
