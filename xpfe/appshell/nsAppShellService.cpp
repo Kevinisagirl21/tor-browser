@@ -93,6 +93,10 @@ void nsAppShellService::EnsureHiddenWindow() {
 
 NS_IMETHODIMP
 nsAppShellService::CreateHiddenWindow() {
+  if (mHiddenWindow) {
+    return NS_OK;
+  }
+
   if (!XRE_IsParentProcess()) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
