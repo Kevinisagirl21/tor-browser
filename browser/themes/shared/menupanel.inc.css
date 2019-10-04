@@ -183,3 +183,11 @@ toolbarpaletteitem[place="palette"] > #bookmarks-menu-button,
   -moz-context-properties: fill, fill-opacity;
   fill-opacity: 0;
 }
+
+#appMenuNewIdentity {
+  list-style-image: url("chrome://browser/skin/new_identity.svg");
+}
+
+#appMenuNewCircuit {
+  list-style-image: url("chrome://browser/skin/new_circuit.svg");
+}
