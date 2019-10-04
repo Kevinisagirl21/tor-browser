@@ -195,3 +195,11 @@ toolbarpaletteitem[place="palette"] > #bookmarks-menu-button,
   list-style-image: url(chrome://browser/skin/fullscreen-exit.svg);
 }
 } /** END Proton **/
+
+#appMenuNewIdentity {
+  list-style-image: url("chrome://browser/skin/new_identity.svg");
+}
+
+#appMenuNewCircuit {
+  list-style-image: url("chrome://browser/skin/new_circuit.svg");
+}
