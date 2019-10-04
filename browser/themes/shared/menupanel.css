@@ -25,3 +25,11 @@
 #appMenu-fullscreen-button2[checked] {
   list-style-image: url(chrome://browser/skin/fullscreen-exit.svg);
 }
+
+#appMenuNewIdentity {
+  list-style-image: url("chrome://browser/skin/new_identity.svg");
+}
+
+#appMenuNewCircuit {
+  list-style-image: url("chrome://browser/skin/new_circuit.svg");
+}
