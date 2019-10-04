@@ -67,6 +67,8 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
  */
 var kVersion = 17;
 
+var kTorVersion = 1;
+
 /**
  * Buttons removed from built-ins by version they were removed. kVersion must be
  * bumped any time a new id is added to this. Use the button id as key, and
@@ -605,6 +607,20 @@ var CustomizableUIInternal = {
           navbarPlacements.length;
 
         navbarPlacements.splice(newPosition, 0, "save-to-pocket-button");
+      }
+    }
+
+    let currentTorVersion = gSavedState.currentTorVersion;
+    if (currentTorVersion < 1 && gSavedState.placements) {
+      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+      if (navbarPlacements) {
+        let secLevelIndex = navbarPlacements.indexOf("security-level-button");
+        if (secLevelIndex === -1) {
+          let urlbarIndex = navbarPlacements.indexOf("urlbar-container");
+          secLevelIndex = urlbarIndex + 1;
+          navbarPlacements.splice(secLevelIndex, 0, "security-level-button");
+        }
+        navbarPlacements.splice(secLevelIndex + 1, 0, "new-identity-button");
       }
     }
   },
@@ -2496,6 +2512,10 @@ var CustomizableUIInternal = {
       gSavedState.currentVersion = 0;
     }
 
+    if (!("currentTorVersion" in gSavedState)) {
+      gSavedState.currentTorVersion = 0;
+    }
+
     gSeenWidgets = new Set(gSavedState.seen || []);
     gDirtyAreaCache = new Set(gSavedState.dirtyAreaCache || []);
     gNewElementCount = gSavedState.newElementCount || 0;
@@ -2574,6 +2594,7 @@ var CustomizableUIInternal = {
       seen: gSeenWidgets,
       dirtyAreaCache: gDirtyAreaCache,
       currentVersion: kVersion,
+      currentTorVersion: kTorVersion,
       newElementCount: gNewElementCount,
     };
 
