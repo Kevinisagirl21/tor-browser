@@ -302,3 +302,6 @@
   skin/classic/browser/install-ssb.svg                         (../shared/install-ssb.svg)
   skin/classic/browser/critical.svg                            (../shared/icons/critical.svg)
   skin/classic/browser/webRTC-indicator.css                    (../shared/webRTC-indicator.css)
+
+  skin/classic/browser/new_circuit.svg                         (../shared/icons/new_circuit.svg)
+  skin/classic/browser/new_identity.svg                        (../shared/icons/new_identity.svg)
