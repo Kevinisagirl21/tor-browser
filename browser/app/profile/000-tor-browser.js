@@ -21,7 +21,6 @@ pref("startup.homepage_override_url", "https://blog.torproject.org/category/tags
 pref("app.update.promptWaitTime", 3600);
 pref("app.update.badge", true);
 pref("app.update.notifyDuringDownload", true);
-pref("extensions.hotfix.id", ""); // Bug 16837: Disable hotfix updates as they may cause compat issues
 
 #ifndef XP_MACOSX
 // Disable staged updates on platforms other than macOS.
@@ -50,7 +49,6 @@ pref("browser.cache.disk.enable", false);
 pref("browser.cache.offline.enable", false);
 pref("permissions.memory_only", true);
 pref("network.cookie.lifetimePolicy", 2);
-pref("browser.download.manager.retention", 1);
 pref("security.nocertdb", true);
 
 // Disk activity: TBB Directory Isolation
@@ -71,7 +69,6 @@ pref("browser.send_pings", false);
 pref("geo.enabled", false);
 pref("geo.wifi.uri", "");
 pref("browser.search.suggest.enabled", false);
-pref("browser.safebrowsing.enabled", false);
 pref("browser.safebrowsing.malware.enabled", false);
 pref("browser.safebrowsing.phishing.enabled", false);
 pref("browser.safebrowsing.downloads.enabled", false);
@@ -84,15 +81,9 @@ pref("browser.safebrowsing.provider.google4.updateURL", "");
 pref("browser.safebrowsing.provider.google4.gethashURL", "");
 pref("browser.safebrowsing.provider.mozilla.updateURL", "");
 pref("browser.safebrowsing.provider.mozilla.gethashURL", "");
-pref("browser.download.manager.scanWhenDone", false); // prevents AV remote reporting of downloads
 pref("extensions.ui.lastCategory", "addons://list/extension");
-pref("datareporting.healthreport.service.enabled", false); // Yes, all three of these must be set
 pref("datareporting.healthreport.uploadEnabled", false);
 pref("datareporting.policy.dataSubmissionEnabled", false);
-// Don't fetch a localized remote page that Tor Browser interacts with, see
-// #16727. And, yes, it is "reportUrl" and not "reportURL".
-pref("datareporting.healthreport.about.reportUrl", "data:text/plain,");
-pref("datareporting.healthreport.about.reportUrlUnified", "data:text/plain,");
 // Make sure Unified Telemetry is really disabled, see: #18738.
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
@@ -105,19 +96,14 @@ pref("services.sync.engine.prefs", false); // Never sync prefs, addons, or tabs 
 pref("services.sync.engine.addons", false);
 pref("services.sync.engine.tabs", false);
 pref("extensions.getAddons.cache.enabled", false); // https://blog.mozilla.org/addons/how-to-opt-out-of-add-on-metadata-updates/
-pref("browser.newtabpage.preload", false); // Bug 16316 - Avoid potential confusion over tiles for now.
 pref("browser.newtabpage.enabled", false);
-pref("browser.search.countryCode", "US"); // The next three prefs disable GeoIP search lookups (#16254)
-pref("browser.search.region", "US");
+pref("browser.search.region", "US"); // The next two prefs disable GeoIP search lookups (#16254)
 pref("browser.search.geoip.url", "");
 pref("browser.fixup.alternate.enabled", false); // Bug #16783: Prevent .onion fixups
 // Make sure there is no Tracking Protection active in Tor Browser, see: #17898.
 pref("privacy.trackingprotection.pbmode.enabled", false);
 // Disable the Pocket extension (Bug #18886 and #31602)
-pref("browser.pocket.enabled", false);
 pref("extensions.pocket.enabled", false);
-pref("browser.pocket.api", "");
-pref("browser.pocket.site", "");
 pref("network.http.referer.hideOnionSource", true);
 
 // Disable ServiceWorkers by default
@@ -139,7 +125,6 @@ pref("general.useragent.vendor", "");
 pref("general.useragent.vendorSub", "");
 pref("dom.enable_performance", false);
 pref("browser.zoom.siteSpecific", false);
-pref("intl.charset.default", "windows-1252");
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
 pref("dom.gamepad.enabled", false); // bugs.torproject.org/13023
 // Disable video statistics fingerprinting vector (bug 15757)
@@ -149,10 +134,8 @@ pref("media.benchmark.vp9.threshold", 0);
 // Disable device sensors as possible fingerprinting vector (bug 15758)
 pref("device.sensors.enabled", false);
 pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
-pref("dom.enable_user_timing", false); // Bug 16336: To hell with this API
 pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
-pref("dom.event.highrestimestamp.enabled", true); // Bug #17046: "Highres" (but truncated) timestamps prevent uptime leaks
 pref("privacy.suppressModifierKeyEvents", true); // Bug #17009: Suppress ALT and SHIFT events"
 pref("ui.use_standins_for_native_colors", true); // https://bugzilla.mozilla.org/232227
 pref("privacy.use_utc_timezone", true);
@@ -221,14 +204,12 @@ pref("browser.eme.ui.enabled", false);
 pref("media.gmp-widevinecdm.visible", false);
 pref("media.gmp-widevinecdm.enabled", false);
 pref("media.eme.enabled", false);
-pref("media.eme.apiVisible", false);
 pref("media.mediadrm-widevinecdm.visible", false);
 // WebIDE can bypass proxy settings for remote debugging. It also downloads
 // some additional addons that we have not reviewed. Turn all that off.
 pref("devtools.webide.autoinstallADBHelper", false);
 pref("devtools.webide.autoinstallFxdtAdapters", false);
 pref("devtools.webide.enabled", false);
-pref("devtools.appmanager.enabled", false);
 // The in-browser debugger for debugging chrome code is not coping with our
 // restrictive DNS look-up policy. We use "127.0.0.1" instead of "localhost" as
 // a workaround. See bug 16523 for more details.
@@ -304,18 +285,6 @@ pref("browser.search.geoSpecificDefaults", false);
 pref("browser.search.order.extra.1", "DuckDuckGo");
 pref("browser.search.order.extra.2", "YouTube");
 
-// Audio_data is deprecated in future releases, but still present
-// in FF24. This is a dangerous combination (spotted by iSec)
-pref("media.audio_data.enabled", false);
-
-// If true, remote JAR files will not be opened, regardless of content type
-// Patch written by Jeff Gibat (iSEC).
-pref("network.jar.block-remote-files", true);
-
-// Disable RC4 fallback. This will go live in Firefox 44, Chrome and IE/Edge:
-// https://blog.mozilla.org/security/2015/09/11/deprecating-the-rc4-cipher/
-pref("security.tls.unrestricted_rc4_fallback", false);
-
 // Enforce certificate pinning, see: https://bugs.torproject.org/16206
 pref("security.cert_pinning.enforcement_level", 2);
 
@@ -327,9 +296,6 @@ pref("security.enterprise_roots.enabled", false);
 
 // Don't ping Mozilla for MitM detection, see bug 32321
 pref("security.certerrors.mitm.priming.enabled", false);
-
-// Enforce SHA1 deprecation, see: bug 18042.
-pref("security.pki.sha1_enforcement_level", 2);
 
 // Disable the language pack signing check for now on macOS, see #31942
 #ifdef XP_MACOSX
