@@ -5,18 +5,6 @@
 
 #include ../../../browser/app/profile/000-tor-browser.js
 
-
-// Disable Presentation API
-pref("dom.presentation.controller.enabled", false);
-pref("dom.presentation.enabled", false);
-pref("dom.presentation.discoverable", false);
-pref("dom.presentation.discoverable.encrypted", false);
-pref("dom.presentation.discovery.enabled", false);
-pref("dom.presentation.receiver.enabled", false);
-
-pref("dom.audiochannel.audioCompeting", false);
-pref("dom.audiochannel.mediaControl", false);
-
 // Space separated list of URLs that are allowed to send objects (instead of
 // only strings) through webchannels. This list is duplicated in browser/app/profile/firefox.js
 pref("webchannel.allowObject.urlWhitelist", "");
