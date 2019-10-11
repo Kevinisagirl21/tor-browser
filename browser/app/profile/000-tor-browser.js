@@ -364,6 +364,17 @@ pref("browser.taskbar.lists.tasks.enabled", false);
 pref("browser.taskbar.lists.recent.enabled", false);
 #endif
 
+// Disable Presentation API
+pref("dom.presentation.controller.enabled", false);
+pref("dom.presentation.enabled", false);
+pref("dom.presentation.discoverable", false);
+pref("dom.presentation.discoverable.encrypted", false);
+pref("dom.presentation.discovery.enabled", false);
+pref("dom.presentation.receiver.enabled", false);
+
+pref("dom.audiochannel.audioCompeting", false);
+pref("dom.audiochannel.mediaControl", false);
+
 #expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
 
 // If we are bundling fonts, whitelist those bundled fonts, and restrict system fonts to a selection.
