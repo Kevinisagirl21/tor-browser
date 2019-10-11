@@ -27,7 +27,6 @@ let expectedPrefs = [
    ["dom.indexedDB.enabled", false],
    ["permissions.memory_only", true],
    ["network.cookie.lifetimePolicy", 2],
-   ["browser.download.manager.retention", 1],
    ["security.nocertdb", true],
 
    // Disk activity: TBB Directory Isolation
@@ -47,11 +46,8 @@ let expectedPrefs = [
    ["geo.enabled", false],
    ["geo.wifi.uri", ""],
    ["browser.search.suggest.enabled", false],
-   ["browser.safebrowsing.enabled", false],
    ["browser.safebrowsing.malware.enabled", false],
-   ["browser.download.manager.scanWhenDone", false], // prevents AV remote reporting of downloads
    ["extensions.ui.lastCategory", "addons://list/extension"],
-   ["datareporting.healthreport.service.enabled", false], // Yes, all three of these must be set
    ["datareporting.healthreport.uploadEnabled", false],
    ["datareporting.policy.dataSubmissionEnabled", false],
    ["security.mixed_content.block_active_content", false], // Disable until https://bugzilla.mozilla.org/show_bug.cgi?id=878890 is patched
@@ -65,7 +61,6 @@ let expectedPrefs = [
    ["webgl.min_capability_mode", true],
    ["webgl.disable-extensions", true],
    ["dom.battery.enabled", false], // fingerprinting due to differing OS implementations
-   ["dom.network.enabled",false], // fingerprinting due to differing OS implementations
    ["browser.display.max_font_attempts",10],
    ["browser.display.max_font_count",10],
    ["gfx.downloadable_fonts.fallback_delay", -1],
@@ -81,10 +76,6 @@ let expectedPrefs = [
    ["general.useragent.vendorSub", ""],
    ["dom.enable_performance", false],
    ["browser.zoom.siteSpecific", false],
-   ["intl.charset.default", "windows-1252"],
-   //["intl.accept_languages", "en-us, en"], // Set by Torbutton
-   //["intl.accept_charsets", "iso-8859-1,*,utf-8"], // Set by Torbutton
-   //["intl.charsetmenu.browser.cache", "UTF-8"], // Set by Torbutton
 
    // Third party stuff
    ["network.cookie.cookieBehavior", 1],
@@ -155,10 +146,6 @@ let expectedPrefs = [
    ["javascript.options.asmjs", false],
    ["javascript.options.typeinference", false],
 
-   // Audio_data is deprecated in future releases, but still present
-   // in FF24. This is a dangerous combination (spotted by iSec)
-   ["media.audio_data.enabled", false],
-
    // Enable TLS 1.1 and 1.2:
    // https://trac.torproject.org/projects/tor/ticket/11253
    ["security.tls.version.max", 3],
@@ -167,9 +154,6 @@ let expectedPrefs = [
    ["torbrowser.version", "UNKNOWN"],
 
   ];
-
-
-
 
 let getPref = function (prefName) {
   let type = gPrefService.getPrefType(prefName);
