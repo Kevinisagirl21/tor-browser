@@ -1,4 +1,4 @@
-"use strict;";
+"use strict";
 
 var EXPORTED_SYMBOLS = ["BridgeDB"];
 
