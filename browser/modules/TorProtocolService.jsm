@@ -109,7 +109,6 @@ var TorProtocolService = {
       // convert settingsObject map to js object for torlauncher-protocol-service
       let settingsObject = {};
       for (const [setting, value] of newSettings) {
-        // console.log(`${setting} : ${value}`);
         settingsObject[setting] = value;
       }
 

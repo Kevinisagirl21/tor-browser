@@ -67,7 +67,7 @@
   <html:h2 id="torPreferences-advanced-header"/>
   <description flex="1">
     <html:span id="torPreferences-advanced-description" class="tail-with-learn-more"/>
-    <label id="torPreferences-advanced-learnMore" class="learnMore text-link" is="text-link"/>
+    <label id="torPreferences-advanced-learnMore" class="learnMore text-link" is="text-link" style="display:none"/>
   </description>
   <grid flex="1">
     <columns>
