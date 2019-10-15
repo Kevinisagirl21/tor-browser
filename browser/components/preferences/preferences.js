@@ -121,10 +121,7 @@ function init_all() {
 
   gotoPref().then(() => {
     let helpButton = document.getElementById("helpButton");
-    let helpUrl =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "preferences";
-    helpButton.setAttribute("href", helpUrl);
+    helpButton.setAttribute("href", "https://support.torproject.org/tbb");
 
     document.getElementById("addonsButton").addEventListener("click", e => {
       if (e.button >= 2) {
