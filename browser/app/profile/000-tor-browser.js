@@ -149,6 +149,9 @@ pref("extensions.fxmonitor.enabled", false);
 pref("signon.management.page.mobileAndroidURL", "");
 pref("signon.management.page.mobileAppleURL", "");
 
+// Disable remote "password recipes"
+pref("signon.recipes.remoteRecipesEnabled", false);
+
 // Disable ServiceWorkers and push notifications by default
 pref("dom.serviceWorkers.enabled", false);
 pref("dom.push.enabled", false);
