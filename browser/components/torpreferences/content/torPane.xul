@@ -2,7 +2,7 @@
 
 <script type="application/javascript"
         src="chrome://browser/content/torpreferences/torPane.js"/>
-
+<html:template id="template-paneTor">
 <hbox id="torPreferencesCategory"
       class="subcategory"
       hidden="true"
@@ -117,3 +117,4 @@
     <button id="torPreferences-buttonTorLogs" class="torMarginFix" oncommand="gTorPane.onViewTorLogs();"/>
   </hbox>
 </groupbox>
+</html:template>

@@ -478,6 +478,11 @@ const gTorPane = (function() {
       this._populateXUL();
     },
 
+    // whether the page should be present in about:preferences
+    get enabled() {
+      return TorProtocolService.ownsTorDaemon;
+    },
+
     //
     // Callbacks
     //

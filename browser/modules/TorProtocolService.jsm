@@ -2,10 +2,15 @@
 
 var EXPORTED_SYMBOLS = ["TorProtocolService"];
 
+const { TorLauncherUtil } = ChromeUtils.import(
+  "resource://torlauncher/modules/tl-util.jsm"
+);
+
 var TorProtocolService = {
   _tlps: Cc["@torproject.org/torlauncher-protocol-service;1"].getService(
     Ci.nsISupports
   ).wrappedJSObject,
+
   // maintain a map of tor settings set by Tor Browser so that we don't
   // repeatedly set the same key/values over and over
   // this map contains string keys to primitive or array values
@@ -198,5 +203,10 @@ var TorProtocolService = {
     let countObj = { value: 0 };
     let torLog = this._tlps.TorGetLog(countObj);
     return torLog;
+  },
+
+  // true if we launched and control tor, false if using system tor
+  get ownsTorDaemon() {
+    return TorLauncherUtil.shouldStartAndOwnTor;
   },
 };

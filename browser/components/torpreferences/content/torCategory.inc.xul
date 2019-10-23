@@ -2,7 +2,8 @@
               class="category"
               value="paneTor"
               helpTopic="prefs-tor"
-              align="center">
+              align="center"
+              hidden="true">
   <image class="category-icon"/>
   <label id="torPreferences-labelCategory" class="category-name" flex="1" value="Tor"/>
 </richlistitem>
