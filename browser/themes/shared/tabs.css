@@ -56,6 +56,12 @@
   background-color: var(--tabpanel-background-color);
 }
 
+/* extend down the toolbar's colors when letterboxing is enabled*/
+#tabbrowser-tabpanels.letterboxing {
+  background-color: var(--toolbar-bgcolor);
+  background-image: var(--toolbar-bgimage);
+}
+
 #tabbrowser-tabs,
 #tabbrowser-arrowscrollbox,
 #tabbrowser-tabs[positionpinnedtabs] > #tabbrowser-arrowscrollbox > .tabbrowser-tab[pinned] {
