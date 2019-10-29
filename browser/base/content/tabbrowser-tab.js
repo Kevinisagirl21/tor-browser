@@ -225,6 +225,15 @@
       return true;
     }
 
+    get needsLetterbox() {
+      let browser = this.linkedBrowser;
+      if (isBlankPageURL(browser.currentURI.spec)) {
+        return false;
+      }
+
+      return true;
+    }
+
     get lastAccessed() {
       return this._lastAccessed == Infinity ? Date.now() : this._lastAccessed;
     }
