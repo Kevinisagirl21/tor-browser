@@ -94,6 +94,13 @@ body {
   }
 }
 
+.browserStack > browser.letterboxing {
+  border-color: var(--chrome-content-separator-color);
+  border-style: solid;
+  border-width : 1px;
+  border-top: none;
+}
+
 %ifdef MENUBAR_CAN_AUTOHIDE
 #toolbar-menubar[autohide="true"] {
   overflow: hidden;
