@@ -98,6 +98,13 @@ body {
   -moz-window-dragging: drag;
 }
 
+.browserStack > browser.letterboxing {
+  border-color: var(--chrome-content-separator-color);
+  border-style: solid;
+  border-width : 1px;
+  border-top: none;
+}
+
 #toolbar-menubar[autohide="true"] {
   overflow: hidden;
 }
