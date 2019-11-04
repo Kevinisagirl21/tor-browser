@@ -3232,7 +3232,7 @@ bool Document::DocumentSupportsL10n(JSContext* aCx, JSObject* aObject) {
 }
 
 void Document::LocalizationLinkAdded(Element* aLinkElement) {
-  if (!nsContentUtils::PrincipalAllowsL10n(NodePrincipal(), GetDocumentURI())) {
+  if (!AllowsL10n()) {
     return;
   }
 
@@ -3263,7 +3263,7 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
 }
 
 void Document::LocalizationLinkRemoved(Element* aLinkElement) {
-  if (!nsContentUtils::PrincipalAllowsL10n(NodePrincipal(), GetDocumentURI())) {
+  if (!AllowsL10n()) {
     return;
   }
 
@@ -3313,6 +3313,10 @@ void Document::TriggerInitialDocumentTranslation() {
 
 void Document::InitialDocumentTranslationCompleted() {
   mPendingInitialTranslation = false;
+}
+
+bool Document::AllowsL10n() const {
+  return nsContentUtils::PrincipalAllowsL10n(NodePrincipal(), GetDocumentURI());
 }
 
 bool Document::IsWebAnimationsEnabled(JSContext* aCx, JSObject* /*unused*/) {
