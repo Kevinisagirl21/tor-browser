@@ -3654,6 +3654,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     }
   } else {
     // Errors requiring simple formatting
+    bool isOnionAuthError = false;
     switch (aError) {
       case NS_ERROR_MALFORMED_URI:
         // URI is malformed
@@ -3736,9 +3737,43 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         // HTTP/2 or HTTP/3 stack detected a protocol error
         error = "networkProtocolError";
         break;
-
+      case NS_ERROR_TOR_ONION_SVC_NOT_FOUND:
+        error = "onionServices.descNotFound";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_IS_INVALID:
+        error = "onionServices.descInvalid";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_INTRO_FAILED:
+        error = "onionServices.introFailed";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_REND_FAILED:
+        error = "onionServices.rendezvousFailed";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH:
+        error = "onionServices.clientAuthMissing";
+        isOnionAuthError = true;
+        break;
+      case NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH:
+        error = "onionServices.clientAuthIncorrect";
+        isOnionAuthError = true;
+        break;
+      case NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS:
+        error = "onionServices.badAddress";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_INTRO_TIMEDOUT:
+        error = "onionServices.introTimedOut";
+        break;
       default:
         break;
+    }
+
+    // The presence of aFailedChannel indicates that we arrived here due to a
+    // failed connection attempt. Note that we will arrive here a second time
+    // if the user cancels the Tor client auth prompt, but in that case we
+    // will not have a failed channel and therefore we will not prompt again.
+    if (isOnionAuthError && aFailedChannel) {
+      // Display about:blank while the Tor client auth prompt is open.
+      errorPage.AssignLiteral("blank");
     }
   }
 
@@ -3822,6 +3857,20 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     nsAutoString str;
     rv =
         stringBundle->FormatStringFromName(errorDescriptionID, formatStrs, str);
+    if (NS_FAILED(rv)) {
+      // As a fallback, check torbutton.properties for the error string.
+      const char bundleURL[] = "chrome://torbutton/locale/torbutton.properties";
+      nsCOMPtr<nsIStringBundleService> stringBundleService =
+          mozilla::services::GetStringBundleService();
+      if (stringBundleService) {
+        nsCOMPtr<nsIStringBundle> tbStringBundle;
+        if (NS_SUCCEEDED(stringBundleService->CreateBundle(
+                bundleURL, getter_AddRefs(tbStringBundle)))) {
+          rv = tbStringBundle->FormatStringFromName(errorDescriptionID,
+                                                    formatStrs, str);
+        }
+      }
+    }
     NS_ENSURE_SUCCESS(rv, rv);
     messageStr.Assign(str);
   }
@@ -6296,6 +6345,7 @@ nsresult nsDocShell::FilterStatusForErrorPage(
       aStatus == NS_ERROR_FILE_ACCESS_DENIED ||
       aStatus == NS_ERROR_CORRUPTED_CONTENT ||
       aStatus == NS_ERROR_INVALID_CONTENT_ENCODING ||
+      NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_TOR ||
       NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
     // Errors to be shown for any frame
     return aStatus;
@@ -8022,6 +8072,35 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     uint32_t locationFlags =
         (mLoadType & LOAD_CMD_RELOAD) ? uint32_t(LOCATION_CHANGE_RELOAD) : 0;
     FireOnLocationChange(this, aRequest, mCurrentURI, locationFlags);
+  }
+
+  // Arrange to show a Tor onion service client authentication prompt if
+  // appropriate.
+  if ((mLoadType == LOAD_ERROR_PAGE) && failedChannel) {
+    nsresult status = NS_OK;
+    if (NS_SUCCEEDED(failedChannel->GetStatus(&status)) &&
+        ((status == NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH) ||
+         (status == NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH))) {
+      nsAutoCString onionHost;
+      failedURI->GetHost(onionHost);
+      const char* topic = (status == NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH)
+                              ? "tor-onion-services-clientauth-missing"
+                              : "tor-onion-services-clientauth-incorrect";
+      if (XRE_IsContentProcess()) {
+        nsCOMPtr<nsIBrowserChild> browserChild = GetBrowserChild();
+        if (browserChild) {
+          static_cast<BrowserChild*>(browserChild.get())
+              ->SendShowOnionServicesAuthPrompt(onionHost, nsCString(topic));
+        }
+      } else {
+        nsCOMPtr<nsPIDOMWindowOuter> browserWin = GetWindow();
+        nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
+        if (browserWin && obsSvc) {
+          obsSvc->NotifyObservers(browserWin, topic,
+                                  NS_ConvertUTF8toUTF16(onionHost).get());
+        }
+      }
+    }
   }
 
   return NS_OK;
