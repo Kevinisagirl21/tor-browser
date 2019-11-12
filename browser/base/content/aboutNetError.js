@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* eslint-env mozilla/frame-script */
+/* import-globals-from ../../components/onionservices/content/netError/onionNetError.js */
 
 const formatter = new Intl.DateTimeFormat("default");
 
@@ -280,7 +281,10 @@ function initPage() {
     errDesc = document.getElementById("ed_generic");
   }
 
-  setErrorPageStrings(err);
+  const isOnionError = err.startsWith("onionServices.");
+  if (!isOnionError) {
+    setErrorPageStrings(err);
+  }
 
   var sd = document.getElementById("errorShortDescText");
   if (sd) {
@@ -432,6 +436,10 @@ function initPage() {
     for (var span of container.querySelectorAll("span.hostname")) {
       span.textContent = document.location.hostname;
     }
+  }
+
+  if (isOnionError) {
+    OnionServicesAboutNetError.initPage(document);
   }
 }
 

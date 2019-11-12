@@ -120,6 +120,9 @@
   list-style-image: url(chrome://browser/skin/notification-icons/indexedDB.svg);
 }
 
+/* Reuse Firefox's login (key) icon for the Tor onion services auth. prompt */
+.popup-notification-icon[popupid="tor-clientauth"],
+.tor-clientauth-icon,
 .popup-notification-icon[popupid="password"],
 .login-icon {
   list-style-image: url(chrome://browser/skin/login.svg);
