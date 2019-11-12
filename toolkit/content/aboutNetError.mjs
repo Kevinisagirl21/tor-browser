@@ -4,6 +4,7 @@
 
 /* eslint-env mozilla/remote-page */
 /* eslint-disable import/no-unassigned-import */
+/* import-globals-from ../../browser/components/onionservices/content/netError/onionNetError.js */
 
 import {
   parse,
@@ -313,6 +314,7 @@ async function initPage() {
   }
 
   const isTRROnlyFailure = gErrorCode == "dnsNotFound" && RPMIsTRROnlyFailure();
+  const isOnionError = gErrorCode.startsWith("onionServices.");
 
   let isNativeFallbackWarning = false;
   if (RPMGetBoolPref("network.trr.display_fallback_warning")) {
@@ -358,6 +360,11 @@ async function initPage() {
   }
 
   document.body.classList.add("neterror");
+
+  if (isOnionError) {
+    OnionServicesAboutNetError.initPage(document);
+    return;
+  }
 
   let longDesc = document.getElementById("errorLongDesc");
   const tryAgain = document.getElementById("netErrorButtonContainer");
