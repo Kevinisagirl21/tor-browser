@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* eslint-env mozilla/frame-script */
+/* import-globals-from ../../components/onionservices/content/netError/onionNetError.js */
 
 import "chrome://global/content/certviewer/pvutils_bundle.js";
 import "chrome://global/content/certviewer/asn1js_bundle.js";
@@ -325,7 +326,10 @@ function initPage() {
     errDesc = document.getElementById("ed_generic");
   }
 
-  setErrorPageStrings(err);
+  const isOnionError = err.startsWith("onionServices.");
+  if (!isOnionError) {
+    setErrorPageStrings(err);
+  }
 
   var sd = document.getElementById("errorShortDescText");
   if (sd) {
@@ -475,6 +479,10 @@ function initPage() {
     for (var span of container.querySelectorAll("span.hostname")) {
       span.textContent = HOST_NAME;
     }
+  }
+
+  if (isOnionError) {
+    OnionServicesAboutNetError.initPage(document);
   }
 }
 
