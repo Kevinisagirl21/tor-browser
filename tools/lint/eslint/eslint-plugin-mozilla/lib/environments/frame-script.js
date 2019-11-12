@@ -38,5 +38,6 @@ module.exports = {
     RPMAddToHistogram: false,
     RPMRemoveMessageListener: false,
     RPMGetHttpResponseHeader: false,
+    RPMGetTorStrings: false,
   },
 };
