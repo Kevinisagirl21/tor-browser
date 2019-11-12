@@ -1,0 +1,24 @@
+/* Copyright (c) 2020, The Tor Project, Inc. */
+
+@import url("chrome://browser/skin/browser-colors.css");
+
+#torOnionServiceKeys-overview-container {
+  margin-right: 30px;
+}
+
+#onionservices-savedkeys-tree treechildren::-moz-tree-cell-text {
+  font-size: 80%;
+}
+
+#onionservices-savedkeys-errorContainer {
+  margin-top: 4px;
+  min-height: 3em;
+}
+
+#onionservices-savedkeys-errorIcon {
+  margin-right: 4px;
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+  -moz-context-properties: fill;
+  fill: var(--warning-color);
+  visibility: hidden;
+}
