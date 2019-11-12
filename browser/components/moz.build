@@ -39,6 +39,7 @@ DIRS += [
     "pagedata",
     "migration",
     "newtab",
+    "onionservices",
     "originattributes",
     "ion",
     "places",
