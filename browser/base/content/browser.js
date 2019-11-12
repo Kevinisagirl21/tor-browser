@@ -236,6 +236,11 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
+  ["OnionAuthPrompt"],
+  "chrome://browser/content/onionservices/authPrompt.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
   "gEditItemOverlay",
   "chrome://browser/content/places/editBookmark.js"
 );
@@ -1780,6 +1785,9 @@ var gBrowserInit = {
     // Init the NewIdentityButton
     NewIdentityButton.init();
 
+    // Init the OnionAuthPrompt
+    OnionAuthPrompt.init();
+
     // Certain kinds of automigration rely on this notification to complete
     // their tasks BEFORE the browser window is shown. SessionStore uses it to
     // restore tabs into windows AFTER important parts like gMultiProcessBrowser
@@ -2516,6 +2524,8 @@ var gBrowserInit = {
     SecurityLevelButton.uninit();
 
     NewIdentityButton.uninit();
+
+    OnionAuthPrompt.uninit();
 
     TorBootstrapUrlbar.uninit();
 

@@ -39,6 +39,7 @@ DIRS += [
     "migration",
     "newidentity",
     "newtab",
+    "onionservices",
     "originattributes",
     "ion",
     "places",
