@@ -7,4 +7,10 @@
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+var { OnionAuthUtil } = ChromeUtils.import(
+  "chrome://browser/content/onionservices/authUtil.jsm"
+);
+
 Services.obs.notifyObservers(this, "tab-content-frameloader-created");
+
+OnionAuthUtil.addCancelMessageListener(this, docShell);
