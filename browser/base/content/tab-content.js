@@ -19,6 +19,9 @@ ChromeUtils.defineModuleGetter(
   "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm"
 );
+var { OnionAuthUtil } = ChromeUtils.import(
+  "chrome://browser/content/onionservices/authUtil.jsm"
+);
 
 var { ActorManagerChild } = ChromeUtils.import(
   "resource://gre/modules/ActorManagerChild.jsm"
@@ -118,3 +121,5 @@ addEventListener("MozAfterPaint", function onFirstNonBlankPaint() {
   removeEventListener("MozAfterPaint", onFirstNonBlankPaint);
   sendAsyncMessage("Browser:FirstNonBlankPaint");
 });
+
+OnionAuthUtil.addCancelMessageListener(this, docShell);
