@@ -99,6 +99,7 @@ let RemotePageAccessManager = {
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
+      RPMGetTorStrings: ["*"],
     },
     "about:newinstall": {
       RPMGetUpdateChannel: ["*"],

@@ -39,6 +39,7 @@ DIRS += [
     "fxmonitor",
     "migration",
     "newtab",
+    "onionservices",
     "originattributes",
     "ion",
     "places",
