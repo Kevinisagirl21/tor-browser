@@ -119,6 +119,7 @@ export let RemotePageAccessManager = {
       RPMSetTRRDisabledLoadFlags: ["*"],
       RPMSendQuery: ["Browser:AddTRRExcludedDomain", "ShouldShowTorConnect"],
       RPMGetIntPref: ["network.trr.mode"],
+      RPMGetTorStrings: ["*"],
     },
     "about:newtab": {
       RPMSendAsyncMessage: ["ActivityStream:ContentToMain"],
