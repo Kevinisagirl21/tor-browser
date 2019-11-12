@@ -235,6 +235,11 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
+  ["OnionAuthPrompt"],
+  "chrome://browser/content/onionservices/authPrompt.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
   "gEditItemOverlay",
   "chrome://browser/content/places/instantEditBookmark.js"
 );
@@ -1799,6 +1804,9 @@ var gBrowserInit = {
     // Init the NewIdentityButton
     NewIdentityButton.init();
 
+    // Init the OnionAuthPrompt
+    OnionAuthPrompt.init();
+
     gTorCircuitPanel.init();
 
     // Certain kinds of automigration rely on this notification to complete
@@ -2542,6 +2550,8 @@ var gBrowserInit = {
     SecurityLevelButton.uninit();
 
     NewIdentityButton.uninit();
+
+    OnionAuthPrompt.uninit();
 
     gTorCircuitPanel.uninit();
 
