@@ -280,5 +280,6 @@
   "TorConnectStage",
   "TorConnectTopics",
   "gTorConnectUrlbarButton",
-  "gTorConnectTitlebarStatus"
+  "gTorConnectTitlebarStatus",
+  "OnionAuthPrompt"
 ]
