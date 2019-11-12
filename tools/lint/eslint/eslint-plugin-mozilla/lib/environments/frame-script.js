@@ -41,5 +41,6 @@ module.exports = {
     RPMGetHttpResponseHeader: false,
     RPMTryPingSecureWWWLink: false,
     RPMOpenSecureWWWLink: false,
+    RPMGetTorStrings: false,
   },
 };
