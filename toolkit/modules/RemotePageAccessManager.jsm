@@ -95,6 +95,7 @@ let RemotePageAccessManager = {
       ],
       RPMPrefIsLocked: ["security.tls.version.min"],
       RPMAddToHistogram: ["*"],
+      RPMGetTorStrings: ["*"],
     },
     "about:newinstall": {
       RPMGetUpdateChannel: ["*"],
