@@ -400,6 +400,8 @@ PopupNotifications.prototype = {
    *                - "menucommand" if a menu was activated.
    *          - [optional] dismiss (boolean): If this is true, the notification
    *            will be dismissed instead of removed after running the callback.
+   *          - [optional] leaveOpen (boolean): If this is true, the notification
+   *            will not be removed after running the callback.
    *          - [optional] disableHighlight (boolean): If this is true, the button
    *            will not apply the default highlight style.
    *        If null, the notification will have a default "OK" action button
@@ -1861,6 +1863,10 @@ PopupNotifications.prototype = {
 
       if (action.dismiss) {
         this._dismiss();
+        return;
+      }
+
+      if (action.leaveOpen) {
         return;
       }
     }
