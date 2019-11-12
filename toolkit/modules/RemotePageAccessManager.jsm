@@ -102,6 +102,7 @@ let RemotePageAccessManager = {
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
+      RPMGetTorStrings: ["*"],
     },
     "about:plugins": {
       RPMSendQuery: ["RequestPlugins"],
