@@ -23,6 +23,11 @@ ChromeUtils.defineModuleGetter(
   "WebNavigationFrames",
   "resource://gre/modules/WebNavigationFrames.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "OnionServicesAboutNetError",
+  "chrome://browser/content/onionservices/netError/onionNetError.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
@@ -849,7 +854,7 @@ class NetErrorChild extends ActorChild {
     }
     if (this.isAboutNetError(win.document)) {
       let docShell = win.docShell;
-      if (docShell) {
+      if (docShell && docShell.failedChannel) {
         let { securityInfo } = docShell.failedChannel;
         // We don't have a securityInfo when this is for example a DNS error.
         if (securityInfo) {
@@ -863,6 +868,11 @@ class NetErrorChild extends ActorChild {
       let learnMoreLink = win.document.getElementById("learnMoreLink");
       let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
       learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
+
+      // Initialize the onion services error module, which customizes the
+      // content on the error page when an onion service error is being
+      // displayed.
+      OnionServicesAboutNetError.initPage(win.document);
     }
 
     let automatic = Services.prefs.getBoolPref(
