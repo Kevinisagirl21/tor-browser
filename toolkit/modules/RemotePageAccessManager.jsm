@@ -103,6 +103,7 @@ let RemotePageAccessManager = {
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
+      RPMGetTorStrings: ["*"],
       RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:plugins": {
