@@ -1,0 +1,70 @@
+/* Copyright (c) 2020, The Tor Project, Inc. */
+
+#onionErrorDiagramContainer {
+  margin: 0px auto 40px 0px;
+  /* 3 icons 64px wide each seperated by a 64px gap */
+  width: 384px;
+  display: grid;
+  grid-row-gap: 15px;
+  grid-column-gap: 64px;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+#onionErrorDiagramContainer > div {
+  margin: auto;
+  position: relative; /* needed to allow overlay of the ok or error icon */
+}
+
+.onionErrorImage {
+  width: 64px;
+  height: 64px;
+  background-size: 64px 64px;
+  background-position: center;
+  background-repeat: no-repeat;
+  -moz-context-properties: fill;
+  fill: var(--in-content-icon-color);
+  opacity: 50%;
+}
+
+.onionErrorImage[status] {
+  opacity: 100%;
+}
+
+#onionErrorBrowserImage {
+  background-image: url("browser.svg");
+}
+
+#onionErrorNetworkImage {
+  background-image: url("network.svg");
+}
+
+#onionErrorOnionSiteImage {
+  background-image: url("onionsite.svg");
+}
+
+/* rules to support overlay of the ok or error icon */
+.onionErrorImage[status]::after {
+  content: " ";
+  position: absolute;
+  left: -8px;
+  top: calc((64px - 24px) / 2);
+  width: 24px;
+  height: 24px;
+  -moz-context-properties: fill;
+  fill: var(--in-content-page-background);
+
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 3px solid var(--in-content-page-background);
+  border-radius: 50%;
+}
+
+.onionErrorImage[status="ok"]::after {
+  background-color: var(--in-content-icon-color);
+  background-image: url("chrome://global/skin/icons/check.svg");
+}
+
+.onionErrorImage[status="error"]::after {
+  background-color: var(--warning-color);
+  background-image: url("chrome://global/skin/icons/close.svg");
+}
