@@ -19,6 +19,9 @@ ChromeUtils.defineModuleGetter(
   "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm"
 );
+var { OnionAuthUtil } = ChromeUtils.import(
+  "chrome://browser/content/onionservices/authUtil.jsm"
+);
 
 // BrowserChildGlobal
 var global = this;
@@ -72,6 +75,8 @@ if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
 }
 
 Services.obs.notifyObservers(this, "tab-content-frameloader-created");
+
+OnionAuthUtil.addCancelMessageListener(this, docShell);
 
 // This is a temporary hack to prevent regressions (bug 1471327).
 void content;

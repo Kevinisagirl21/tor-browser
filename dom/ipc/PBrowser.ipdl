@@ -616,6 +616,15 @@ parent:
     async RequestPointerCapture(uint32_t aPointerId) returns (bool aSuccess);
     async ReleasePointerCapture(uint32_t aPointerId);
 
+    /**
+     * This function is used to notify the parent that it should display a
+     * onion services client authentication prompt.
+     *
+     * @param aOnionHost The hostname of the .onion that needs authentication.
+     * @param aTopic The reason for the prompt.
+     */
+    async ShowOnionServicesAuthPrompt(nsCString aOnionHost, nsCString aTopic);
+
 child:
     async NativeSynthesisResponse(uint64_t aObserverId, nsCString aResponse);
     async FlushTabState(uint32_t aFlushId, bool aIsFinal);
