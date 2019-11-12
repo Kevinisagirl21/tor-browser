@@ -13,6 +13,8 @@ const { RemotePageChild } = ChromeUtils.import(
   "resource://gre/actors/RemotePageChild.jsm"
 );
 
+const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "gSerializationHelper",
@@ -29,6 +31,7 @@ class NetErrorChild extends RemotePageChild {
       "RPMPrefIsLocked",
       "RPMAddToHistogram",
       "RPMRecordTelemetryEvent",
+      "RPMGetTorStrings",
     ];
     this.exportFunctions(exportableFunctions);
   }
@@ -81,5 +84,9 @@ class NetErrorChild extends RemotePageChild {
 
   RPMRecordTelemetryEvent(category, event, object, value, extra) {
     Services.telemetry.recordEvent(category, event, object, value, extra);
+  }
+
+  RPMGetTorStrings() {
+    return Cu.cloneInto(TorStrings.onionServices, this.contentWindow);
   }
 }
