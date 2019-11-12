@@ -468,6 +468,8 @@
   </hbox>
 </groupbox>
 
+#include ../../onionservices/content/authPreferences.inc.xul
+
 <!-- The form autofill section is inserted in to this box
      after the form autofill extension has initialized. -->
 <groupbox id="formAutofillGroupBox"

@@ -33,6 +33,7 @@
 <?xml-stylesheet href="chrome://browser/skin/places/editBookmark.css" type="text/css"?>
 <?xml-stylesheet href="chrome://torbutton/skin/tor-circuit-display.css" type="text/css"?>
 <?xml-stylesheet href="chrome://torbutton/skin/torbutton.css" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/content/onionservices/onionservices.css" type="text/css"?>
 
 # All DTD information is stored in a separate file so that it can be shared by
 # hiddenWindow.xul.
@@ -623,6 +624,7 @@
 #include ../../components/controlcenter/content/protectionsPanel.inc.xul
 #include ../../components/downloads/content/downloadsPanel.inc.xul
 #include ../../components/securitylevel/content/securityLevelPanel.inc.xul
+#include ../../components/onionservices/content/authPopup.inc.xul
 #include browser-allTabsMenu.inc.xul
 
     <hbox id="downloads-animation-container" mousethrough="always">
@@ -922,6 +924,7 @@
                          tooltiptext="&urlbar.indexedDBNotificationAnchor.tooltip;"/>
                   <image id="password-notification-icon" class="notification-anchor-icon login-icon" role="button"
                          tooltiptext="&urlbar.passwordNotificationAnchor.tooltip;"/>
+#include ../../components/onionservices/content/authNotificationIcon.inc.xul
                   <stack id="plugins-notification-icon" class="notification-anchor-icon" role="button" align="center"
                          tooltiptext="&urlbar.pluginsNotificationAnchor.tooltip;">
                     <image class="plugin-icon" />

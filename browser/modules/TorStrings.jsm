@@ -5,6 +5,9 @@ var EXPORTED_SYMBOLS = ["TorStrings"];
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { Services } = ChromeUtils.import(
+  "resource://gre/modules/Services.jsm"
+);
 const { getLocale } = ChromeUtils.import(
   "resource://torbutton/modules/utils.js"
 );
@@ -17,11 +20,11 @@ XPCOMUtils.defineLazyGetter(this, "domParser", () => {
 });
 
 /*
-  Tor String Bundle
+  Tor DTD String Bundle
 
-  Strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
+  DTD strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
 */
-class TorStringBundle {
+class TorDTDStringBundle {
   constructor(aBundleURLs, aPrefix) {
     let locations = [];
     for (const [index, url] of aBundleURLs.entries()) {
@@ -65,6 +68,36 @@ class TorStringBundle {
 }
 
 /*
+  Tor Property String Bundle
+
+  Property strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
+*/
+class TorPropertyStringBundle {
+  constructor(aBundleURL, aPrefix) {
+    try {
+      this._bundle = Services.strings.createBundle(aBundleURL);
+    } catch (e) {}
+
+    this._prefix = aPrefix;
+  }
+
+  getString(key, fallback) {
+    if (key) {
+      try {
+        return this._bundle.GetStringFromName(`${this._prefix}${key}`);
+      } catch (e) {}
+    }
+
+    // on failure, assign the fallback if it exists
+    if (fallback) {
+      return fallback;
+    }
+    // otherwise return string key
+    return `$(${key})`;
+  }
+}
+
+/*
   Security Level Strings
 */
 var TorStrings = {
@@ -72,7 +105,7 @@ var TorStrings = {
     Tor Browser Security Level Strings
   */
   securityLevel: (function() {
-    let tsb = new TorStringBundle(
+    let tsb = new TorDTDStringBundle(
       ["chrome://torbutton/locale/torbutton.dtd"],
       "torbutton.prefs.sec_"
     );
@@ -157,7 +190,7 @@ var TorStrings = {
     Tor about:preferences#tor Strings
   */
   settings: (function() {
-    let tsb = new TorStringBundle(
+    let tsb = new TorDTDStringBundle(
       ["chrome://torlauncher/locale/network-settings.dtd"],
       ""
     );
@@ -282,6 +315,98 @@ var TorStrings = {
 
     return retval;
   })() /* Tor Network Settings Strings */,
+
+  /*
+    Tor Onion Services Strings, e.g., for the authentication prompt.
+  */
+  onionServices: (function() {
+    let tsb = new TorPropertyStringBundle(
+      "chrome://torbutton/locale/torbutton.properties",
+      "onionServices."
+    );
+    let getString = function(key, fallback) {
+      return tsb.getString(key, fallback);
+    };
+
+    const kProblemLoadingSiteFallback = "Problem Loading Onionsite";
+    const kLongDescFallback = "Details: %S";
+
+    let retval = {
+      learnMore: getString("learnMore", "Learn more"),
+      learnMoreURL: `https://support.torproject.org/${getLocale()}/onionservices/client-auth/`,
+      errorPage: {
+        browser: getString("errorPage.browser", "Browser"),
+        network: getString("errorPage.network", "Network"),
+        onionSite: getString("errorPage.onionSite", "Onionsite"),
+      },
+      descNotFound: { // Tor SOCKS error 0xF0
+        pageTitle: getString("descNotFound.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("descNotFound.header", "Onionsite Not Found"),
+        longDescription: getString("descNotFound.longDescription", kLongDescFallback),
+      },
+      descInvalid: { // Tor SOCKS error 0xF1
+        pageTitle: getString("descInvalid.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("descInvalid.header", "Onionsite Cannot Be Reached"),
+        longDescription: getString("descInvalid.longDescription", kLongDescFallback),
+      },
+      introFailed: { // Tor SOCKS error 0xF2
+        pageTitle: getString("introFailed.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("introFailed.header", "Onionsite Has Disconnected"),
+        longDescription: getString("introFailed.longDescription", kLongDescFallback),
+      },
+      rendezvousFailed: { // Tor SOCKS error 0xF3
+        pageTitle: getString("rendezvousFailed.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("rendezvousFailed.header", "Unable to Connect to Onionsite"),
+        longDescription: getString("rendezvousFailed.longDescription", kLongDescFallback),
+      },
+      clientAuthMissing: { // Tor SOCKS error 0xF4
+        pageTitle: getString("clientAuthMissing.pageTitle", "Authorization Required"),
+        header: getString("clientAuthMissing.header", "Onionsite Requires Authentication"),
+        longDescription: getString("clientAuthMissing.longDescription", kLongDescFallback),
+      },
+      clientAuthIncorrect: { // Tor SOCKS error 0xF5
+        pageTitle: getString("clientAuthIncorrect.pageTitle", "Authorization Failed"),
+        header: getString("clientAuthIncorrect.header", "Onionsite Authentication Failed"),
+        longDescription: getString("clientAuthIncorrect.longDescription", kLongDescFallback),
+      },
+      badAddress: { // Tor SOCKS error 0xF6
+        pageTitle: getString("badAddress.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("badAddress.header", "Invalid Onionsite Address"),
+        longDescription: getString("badAddress.longDescription", kLongDescFallback),
+      },
+      introTimedOut: { // Tor SOCKS error 0xF7
+        pageTitle: getString("introTimedOut.pageTitle", kProblemLoadingSiteFallback),
+        header: getString("introTimedOut.header", "Onionsite Circuit Creation Timed Out"),
+        longDescription: getString("introTimedOut.longDescription", kLongDescFallback),
+      },
+      authPrompt: {
+        description:
+          getString("authPrompt.description2", "%S is requesting that you authenticate."),
+        keyPlaceholder: getString("authPrompt.keyPlaceholder", "Enter your key"),
+        done: getString("authPrompt.done", "Done"),
+        doneAccessKey: getString("authPrompt.doneAccessKey", "d"),
+        invalidKey: getString("authPrompt.invalidKey", "Invalid key"),
+        failedToSetKey:
+          getString("authPrompt.failedToSetKey", "Failed to set key"),
+      },
+      authPreferences: {
+        header: getString("authPreferences.header", "Onion Services Authentication"),
+        overview: getString("authPreferences.overview", "Some onion services require that you identify yourself with a key"),
+        savedKeys: getString("authPreferences.savedKeys", "Saved Keys"),
+        dialogTitle: getString("authPreferences.dialogTitle", "Onion Services Keys"),
+        dialogIntro: getString("authPreferences.dialogIntro", "Keys for the following onionsites are stored on your computer"),
+        onionSite: getString("authPreferences.onionSite", "Onionsite"),
+        onionKey: getString("authPreferences.onionKey", "Key"),
+        remove: getString("authPreferences.remove", "Remove"),
+        removeAll: getString("authPreferences.removeAll", "Remove All"),
+        failedToGetKeys: getString("authPreferences.failedToGetKeys", "Failed to get keys"),
+        failedToRemoveKey: getString("authPreferences.failedToRemoveKey", "Failed to remove key"),
+      },
+    };
+
+    return retval;
+  })() /* Tor Onion Services Strings */,
+
 
   /*
     Tor Deamon Configuration Key Strings
