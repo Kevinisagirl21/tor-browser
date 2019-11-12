@@ -8,6 +8,13 @@ body {
   --warning-color: #ffa436;
 }
 
+body.onionAuthPrompt {
+  background: white;
+}
+.onionAuthPrompt > * {
+  display: none;
+}
+
 @media (prefers-color-scheme: dark)  {
   body {
     --warning-color: #ffbd4f;
