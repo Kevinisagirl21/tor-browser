@@ -48,6 +48,12 @@ XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
   }
 });
 
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["OnionServicesAuthPreferences"],
+  "chrome://browser/content/onionservices/authPreferences.js"
+);
+
 // TODO: module import via ChromeUtils.defineModuleGetter
 XPCOMUtils.defineLazyScriptGetter(
   this,
@@ -542,6 +548,7 @@ var gPrivacyPane = {
     this.trackingProtectionReadPrefs();
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
+    OnionServicesAuthPreferences.init();
     this._initSecurityLevel();
 
     Services.telemetry.setEventRecordingEnabled("pwmgr", true);
