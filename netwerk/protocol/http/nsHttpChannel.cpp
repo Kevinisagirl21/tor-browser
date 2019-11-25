@@ -9631,8 +9631,7 @@ void nsHttpChannel::SetOriginHeader() {
     nsContentUtils::GetASCIIOrigin(referrer, origin);
   }
 
-  // Restrict Origin to same-origin loads if requested by user or leaving from
-  // .onion
+  // Restrict Origin to same-origin loads if requested by user
   if (sSendOriginHeader == 1) {
     nsAutoCString currentOrigin;
     nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
@@ -9640,16 +9639,14 @@ void nsHttpChannel::SetOriginHeader() {
       // Origin header suppressed by user setting
       return;
     }
-  } else if (dom::ReferrerInfo::HideOnionReferrerSource()) {
+  }
+
+  if (dom::ReferrerInfo::HideOnionReferrerSource()) {
     nsAutoCString host;
     if (referrer && NS_SUCCEEDED(referrer->GetAsciiHost(host)) &&
-        StringEndsWith(host, NS_LITERAL_CSTRING(".onion"))) {
-      nsAutoCString currentOrigin;
-      nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
-      if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
-        // Origin header is suppressed by .onion
-        return;
-      }
+        StringEndsWith(host, NS_LITERAL_CSTRING(".onion")) &&
+        dom::ReferrerInfo::IsCrossOriginRequest(this)) {
+      origin.AssignLiteral("null");
     }
   }
 
