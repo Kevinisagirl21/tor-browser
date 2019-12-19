@@ -226,9 +226,6 @@ pref("browser.policies.testing.disallowEnterprise", true);
 // Security slider
 pref("svg.in-content.enabled", true);
 pref("mathml.disabled", false);
-// Mozilla keeps still finding critical bugs in Graphite code. Disable it for
-// now, see bug 21726.
-pref("gfx.font_rendering.graphite.enabled", false);
 
 // Network and performance
 pref("security.ssl.enable_false_start", true);
