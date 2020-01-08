@@ -64,18 +64,7 @@ let expectedPrefs = [
    ["browser.display.max_font_attempts",10],
    ["browser.display.max_font_count",10],
    ["gfx.downloadable_fonts.fallback_delay", -1],
-   ["general.appname.override", "Netscape"],
-   ["general.appversion.override", "5.0 (Windows)"],
-   ["general.oscpu.override", "Windows NT 6.1"],
-   ["general.platform.override", "Win32"],
-   ["general.useragent.override", "Mozilla/5.0 (Windows NT 6.1; rv:24.0) Gecko/20100101 Firefox/24.0"],
-   ["general.productSub.override", "20100101"],
-   ["general.buildID.override", "20100101"],
    ["browser.startup.homepage_override.buildID", "20100101"],
-   ["general.useragent.vendor", ""],
-   ["general.useragent.vendorSub", ""],
-   ["dom.enable_performance", false],
-   ["browser.zoom.siteSpecific", false],
 
    // Third party stuff
    ["network.cookie.cookieBehavior", 1],
