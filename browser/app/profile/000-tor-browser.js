@@ -114,34 +114,14 @@ pref("webgl.disable-extensions", true);
 pref("webgl.disable-fail-if-major-performance-caveat", true);
 pref("webgl.enable-webgl2", false);
 pref("gfx.downloadable_fonts.fallback_delay", -1);
-pref("general.appname.override", "Netscape");
-pref("general.appversion.override", "5.0 (Windows)");
-pref("general.oscpu.override", "Windows NT 6.1");
-pref("general.platform.override", "Win32");
-pref("general.productSub.override", "20100101");
-pref("general.buildID.override", "20100101");
 pref("browser.startup.homepage_override.buildID", "20100101");
-pref("general.useragent.vendor", "");
-pref("general.useragent.vendorSub", "");
-pref("dom.enable_performance", false);
-pref("browser.zoom.siteSpecific", false);
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
-pref("dom.gamepad.enabled", false); // bugs.torproject.org/13023
-// Disable video statistics fingerprinting vector (bug 15757)
-pref("media.video_stats.enabled", false);
 // Set video VP9 to 0 for everyone (bug 22548)
 pref("media.benchmark.vp9.threshold", 0);
-// Disable device sensors as possible fingerprinting vector (bug 15758)
-pref("device.sensors.enabled", false);
 pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
 pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
-pref("privacy.suppressModifierKeyEvents", true); // Bug #17009: Suppress ALT and SHIFT events"
-pref("ui.use_standins_for_native_colors", true); // https://bugzilla.mozilla.org/232227
-pref("privacy.use_utc_timezone", true);
-pref("media.webspeech.synth.enabled", false); // Bug 10283: Disable SpeechSynthesis API
 pref("dom.webaudio.enabled", false); // Bug 13017: Disable Web Audio API
-pref("dom.maxHardwareConcurrency", 1); // Bug 21675: Spoof single-core cpu
 pref("dom.w3c_touch_events.enabled", 0); // Bug 10286: Always disable Touch API
 pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
@@ -152,6 +132,11 @@ pref("browser.cache.frecency_experiment", -1);
 pref("dom.use_components_shim", false);
 // Enable letterboxing
 pref("privacy.resistFingerprinting.letterboxing", true);
+// Disable network information API everywhere. It gets spoofed in bug 1372072
+// but, alas, the behavior is inconsistent across platforms, see:
+// https://trac.torproject.org/projects/tor/ticket/27268#comment:19. We should
+// not leak that difference if possible.
+pref("dom.netinfo.enabled", false);
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
@@ -207,8 +192,7 @@ pref("media.eme.enabled", false);
 pref("media.mediadrm-widevinecdm.visible", false);
 // WebIDE can bypass proxy settings for remote debugging. It also downloads
 // some additional addons that we have not reviewed. Turn all that off.
-pref("devtools.webide.autoinstallADBHelper", false);
-pref("devtools.webide.autoinstallFxdtAdapters", false);
+pref("devtools.webide.autoinstallADBExtension", false);
 pref("devtools.webide.enabled", false);
 // The in-browser debugger for debugging chrome code is not coping with our
 // restrictive DNS look-up policy. We use "127.0.0.1" instead of "localhost" as
