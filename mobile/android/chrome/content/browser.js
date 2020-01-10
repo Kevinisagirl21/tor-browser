@@ -7253,7 +7253,10 @@ var SearchEngines = {
           return;
         }
 
-        this.addOpenSearchEngine(engines[data.button]);
+        this.addOpenSearchEngine(
+          engines[data.button],
+          browser.contentPrincipal
+        );
         engines.splice(data.button, 1);
 
         if (engines.length < 1) {
@@ -7269,9 +7272,15 @@ var SearchEngines = {
       });
   },
 
-  addOpenSearchEngine: async function addOpenSearchEngine(engine) {
+  addOpenSearchEngine: async function addOpenSearchEngine(engine, principal) {
     try {
-      await Services.search.addEngine(engine.url, engine.iconURL, false);
+      await Services.search.addEngine(
+        engine.url,
+        engine.iconURL,
+        false,
+        null,
+        principal
+      );
       // Display a toast confirming addition of new search engine.
       Snackbars.show(
         Strings.browser.formatStringFromName(
