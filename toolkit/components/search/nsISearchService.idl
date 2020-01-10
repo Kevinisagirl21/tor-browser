@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsISupports.idl"
+#include "nsIPrincipal.idl"
 
 interface nsIURI;
 interface nsIInputStream;
@@ -288,11 +289,15 @@ interface nsISearchService : nsISupports
    * @param extensionID [optional]
    *        Optional: The correct extensionID if called by an add-on.
    *
+   * @param principal [optional]
+   *        Optional: The principal from which the search engine was added.
+   *
    * @throws NS_ERROR_FAILURE if the description file cannot be successfully
    *         loaded.
    */
   Promise addEngine(in AString engineURL, in AString iconURL, in boolean confirm,
-                    [optional] in AString extensionID);
+                    [optional] in AString extensionID,
+                    [optional] in nsIPrincipal principal);
 
   /**
    * Adds a new search engine, without asking the user for confirmation and
