@@ -1248,38 +1248,46 @@ BrowserPageActions.addSearchEngine = {
   },
 
   _installEngine(uri, image) {
-    Services.search.addEngine(uri, image, false).then(
-      engine => {
-        showBrowserPageActionFeedback(this.action);
-      },
-      errorCode => {
-        if (errorCode != Ci.nsISearchService.ERROR_DUPLICATE_ENGINE) {
-          // Download error is shown by the search service
-          return;
+    Services.search
+      .addEngine(
+        uri,
+        image,
+        false,
+        null,
+        gBrowser.selectedBrowser.contentPrincipal
+      )
+      .then(
+        engine => {
+          showBrowserPageActionFeedback(this.action);
+        },
+        errorCode => {
+          if (errorCode != Ci.nsISearchService.ERROR_DUPLICATE_ENGINE) {
+            // Download error is shown by the search service
+            return;
+          }
+          const kSearchBundleURI =
+            "chrome://global/locale/search/search.properties";
+          let searchBundle = Services.strings.createBundle(kSearchBundleURI);
+          let brandBundle = document.getElementById("bundle_brand");
+          let brandName = brandBundle.getString("brandShortName");
+          let title = searchBundle.GetStringFromName(
+            "error_invalid_engine_title"
+          );
+          let text = searchBundle.formatStringFromName(
+            "error_duplicate_engine_msg",
+            [brandName, uri],
+            2
+          );
+          Services.prompt.QueryInterface(Ci.nsIPromptFactory);
+          let prompt = Services.prompt.getPrompt(
+            gBrowser.contentWindow,
+            Ci.nsIPrompt
+          );
+          prompt.QueryInterface(Ci.nsIWritablePropertyBag2);
+          prompt.setPropertyAsBool("allowTabModal", true);
+          prompt.alert(title, text);
         }
-        const kSearchBundleURI =
-          "chrome://global/locale/search/search.properties";
-        let searchBundle = Services.strings.createBundle(kSearchBundleURI);
-        let brandBundle = document.getElementById("bundle_brand");
-        let brandName = brandBundle.getString("brandShortName");
-        let title = searchBundle.GetStringFromName(
-          "error_invalid_engine_title"
-        );
-        let text = searchBundle.formatStringFromName(
-          "error_duplicate_engine_msg",
-          [brandName, uri],
-          2
-        );
-        Services.prompt.QueryInterface(Ci.nsIPromptFactory);
-        let prompt = Services.prompt.getPrompt(
-          gBrowser.contentWindow,
-          Ci.nsIPrompt
-        );
-        prompt.QueryInterface(Ci.nsIWritablePropertyBag2);
-        prompt.setPropertyAsBool("allowTabModal", true);
-        prompt.alert(title, text);
-      }
-    );
+      );
   },
 };
 
