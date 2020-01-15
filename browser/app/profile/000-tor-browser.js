@@ -137,6 +137,7 @@ pref("privacy.resistFingerprinting.letterboxing", true);
 // https://trac.torproject.org/projects/tor/ticket/27268#comment:19. We should
 // not leak that difference if possible.
 pref("dom.netinfo.enabled", false);
+pref("network.http.referer.defaultPolicy", 2); // Bug 32948: Make referer behavior consistent regardless of private browing mode status
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
