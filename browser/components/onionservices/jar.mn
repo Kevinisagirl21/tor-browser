@@ -1,0 +1,4 @@
+browser.jar:
+    content/browser/onionservices/authPrompt.js                    (content/authPrompt.js)
+    content/browser/onionservices/authUtil.jsm                     (content/authUtil.jsm)
+    content/browser/onionservices/onionservices.css                (content/onionservices.css)

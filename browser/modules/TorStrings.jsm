@@ -5,6 +5,9 @@ var EXPORTED_SYMBOLS = ["TorStrings"];
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { Services } = ChromeUtils.import(
+  "resource://gre/modules/Services.jsm"
+);
 const { getLocale } = ChromeUtils.import(
   "resource://torbutton/modules/utils.js"
 );
@@ -17,11 +20,11 @@ XPCOMUtils.defineLazyGetter(this, "domParser", () => {
 });
 
 /*
-  Tor String Bundle
+  Tor DTD String Bundle
 
-  Strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
+  DTD strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
 */
-class TorStringBundle {
+class TorDTDStringBundle {
   constructor(aBundleURLs, aPrefix) {
     let locations = [];
     for (const [index, url] of aBundleURLs.entries()) {
@@ -65,6 +68,36 @@ class TorStringBundle {
 }
 
 /*
+  Tor Property String Bundle
+
+  Property strings loaded from torbutton/tor-launcher, but provide a fallback in case they aren't available
+*/
+class TorPropertyStringBundle {
+  constructor(aBundleURL, aPrefix) {
+    try {
+      this._bundle = Services.strings.createBundle(aBundleURL);
+    } catch (e) {}
+
+    this._prefix = aPrefix;
+  }
+
+  getString(key, fallback) {
+    if (key) {
+      try {
+        return this._bundle.GetStringFromName(`${this._prefix}${key}`);
+      } catch (e) {}
+    }
+
+    // on failure, assign the fallback if it exists
+    if (fallback) {
+      return fallback;
+    }
+    // otherwise return string key
+    return `$(${key})`;
+  }
+}
+
+/*
   Security Level Strings
 */
 var TorStrings = {
@@ -72,7 +105,7 @@ var TorStrings = {
     Tor Browser Security Level Strings
   */
   securityLevel: (function() {
-    let tsb = new TorStringBundle(
+    let tsb = new TorDTDStringBundle(
       ["chrome://torbutton/locale/torbutton.dtd"],
       "torbutton.prefs.sec_"
     );
@@ -157,7 +190,7 @@ var TorStrings = {
     Tor about:preferences#tor Strings
   */
   settings: (function() {
-    let tsb = new TorStringBundle(
+    let tsb = new TorDTDStringBundle(
       ["chrome://torlauncher/locale/network-settings.dtd"],
       ""
     );
@@ -282,6 +315,37 @@ var TorStrings = {
 
     return retval;
   })() /* Tor Network Settings Strings */,
+
+  /*
+    Tor Onion Services Strings, e.g., for the authentication prompt.
+  */
+  onionServices: (function() {
+    let tsb = new TorPropertyStringBundle(
+      "chrome://torbutton/locale/torbutton.properties",
+      "onionServices."
+    );
+    let getString = function(key, fallback) {
+      return tsb.getString(key, fallback);
+    };
+
+    let retval = {
+      learnMore: getString("torPreferences.learnMore", "Learn More"),
+      learnMoreURL: `https://2019.www.torproject.org/docs/tor-manual-dev.html.${getLocale()}#_client_authorization`,
+      authPrompt: {
+        description:
+          getString("authPrompt.description", "%S is requesting your private key."),
+        keyPlaceholder: getString("authPrompt.keyPlaceholder", "Enter your key"),
+        done: getString("authPrompt.done", "Done"),
+        doneAccessKey: getString("authPrompt.doneAccessKey", "d"),
+        invalidKey: getString("authPrompt.invalidKey", "Invalid key"),
+        failedToSetKey:
+          getString("authPrompt.failedToSetKey", "Failed to set key"),
+      },
+    };
+
+    return retval;
+  })() /* Tor Onion Services Strings */,
+
 
   /*
     Tor Deamon Configuration Key Strings

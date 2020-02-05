@@ -562,6 +562,14 @@ parent:
                              int32_t[] aPositionDescendants,
                              uint32_t aFlushId);
 
+    /**
+     * This function is used to notify the parent that it should display a
+     * onion services client authentication prompt.
+     *
+     * @param aOnionHost The hostname of the .onion that needs authentication.
+     */
+    async ShowOnionServicesAuthPrompt(nsCString aOnionHost);
+
 child:
     async NativeSynthesisResponse(uint64_t aObserverId, nsCString aResponse);
     async FlushTabState(uint32_t aFlushId);

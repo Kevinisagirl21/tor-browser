@@ -840,7 +840,7 @@ class NetErrorChild extends ActorChild {
     }
     if (this.isAboutNetError(win.document)) {
       let docShell = win.docShell;
-      if (docShell) {
+      if (docShell && docShell.failedChannel) {
         let { securityInfo } = docShell.failedChannel;
         // We don't have a securityInfo when this is for example a DNS error.
         if (securityInfo) {
