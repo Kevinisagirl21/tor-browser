@@ -27,15 +27,15 @@ import org.mozilla.gecko.fxa.FxAccountConstants;
 import org.mozilla.gecko.fxa.activities.FxAccountWebFlowActivity;
 
 
-public class FxaBannerRow extends StreamViewHolder {
+public class SignInRow extends StreamViewHolder {
 
-    public static final @LayoutRes int LAYOUT_ID = R.layout.activity_stream_fxa_banner;
+    public static final @LayoutRes int LAYOUT_ID = R.layout.activity_stream_signin;
 
     @SuppressLint("ApplySharedPref")
-    public FxaBannerRow(View itemView) {
+    public SignInRow(View itemView) {
         super(itemView);
 
-        final View signUpButton = itemView.findViewById(R.id.banner_sign_up);
+        final View signUpButton = itemView.findViewById(R.id.as_signup);
         signUpButton.setOnClickListener(v -> {
             Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.BUTTON, "awesomescreen-signup");
 
@@ -45,7 +45,7 @@ public class FxaBannerRow extends StreamViewHolder {
             itemView.getContext().startActivity(intent);
         });
 
-        final TextView signInButton = itemView.findViewById(R.id.banner_sign_in);
+        final TextView signInButton = itemView.findViewById(R.id.as_signin);
         final String signInPrompt = itemView.getContext().getString(R.string.activity_stream_signin_prompt);
         final String signInPromptButton = itemView.getContext().getString(R.string.activity_stream_signin_prompt_button);
         final String signInText = signInPrompt + " " + signInPromptButton;
@@ -67,13 +67,13 @@ public class FxaBannerRow extends StreamViewHolder {
         signInButton.setHighlightColor(Color.BLUE);
 
 
-        final View dismissButton = itemView.findViewById(R.id.banner_dismiss);
+        final View dismissButton = itemView.findViewById(R.id.as_dismiss);
         dismissButton.setOnClickListener(v -> {
             Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.BUTTON, "awesomescreen-signup-dismiss");
             final SharedPreferences sharedPreferences = GeckoSharedPrefs.forProfile(itemView.getContext());
             //Note: In ActivityStreamHomeFragment we have a prefs listener for this value.
             //We commit asap in order to reload our recyclerview as soon as the user dismissed the row.
-            sharedPreferences.edit().putBoolean(ActivityStreamPanel.PREF_USER_DISMISSED_FXA_BANNER, true).commit();
+            sharedPreferences.edit().putBoolean(ActivityStreamPanel.PREF_USER_DISMISSED_SIGNIN, true).commit();
 
         });
     }
