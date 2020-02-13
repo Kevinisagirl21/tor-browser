@@ -73,6 +73,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   Translation: "resource:///modules/translation/Translation.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   UrlbarInput: "resource:///modules/UrlbarInput.jsm",
@@ -3336,7 +3337,10 @@ function URLBarSetURI(aURI, updatePopupNotifications) {
   // bar if the user has deleted the URL and we'd just put the same URL
   // back. See bug 304198.
   if (value === null) {
-    let uri = aURI || gBrowser.currentURI;
+    let uri =
+      aURI ||
+      gBrowser.selectedBrowser.currentOnionAliasURI ||
+      gBrowser.currentURI;
     // Strip off usernames and passwords for the location bar
     try {
       uri = Services.uriFixup.createExposableURI(uri);
@@ -5898,11 +5902,24 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
+      // The onion memorable alias needs to be used in URLBarSetURI, but also in
+      // other parts of the code (like the bookmarks UI), so we save it.
+      if (gBrowser.selectedBrowser.allowOnionUrlbarRewrites) {
+        gBrowser.selectedBrowser.currentOnionAliasURI = OnionAliasStore.getShortURI(
+          aLocationURI
+        );
+      } else {
+        gBrowser.selectedBrowser.currentOnionAliasURI = null;
+      }
+
       // We want to update the popup visibility if we received this notification
       // via simulated locationchange events such as switching between tabs, however
       // if this is a document navigation then PopupNotifications will be updated
       // via TabsProgressListener.onLocationChange and we do not want it called twice
-      URLBarSetURI(aLocationURI, aIsSimulated);
+      URLBarSetURI(
+        gBrowser.selectedBrowser.currentOnionAliasURI || aLocationURI,
+        aIsSimulated
+      );
 
       BookmarkingUI.onLocationChange();
 
@@ -7639,6 +7656,21 @@ function handleLinkClick(event, href, linkNode) {
     } catch (e) {}
   }
 
+  // Check if the link needs to be opened with .tor.onion urlbar rewrites
+  // allowed. Only when the owner doc has allowOnionUrlbarRewrites = true
+  // and the same origin we should allow this.
+  let persistAllowOnionUrlbarRewritesInChildTab = false;
+  if (where == "tab" && gBrowser.docShell.allowOnionUrlbarRewrites) {
+    const sm = Services.scriptSecurityManager;
+    try {
+      let tURI = makeURI(href);
+      let isPrivateWin =
+        doc.nodePrincipal.originAttributes.privateBrowsingId > 0;
+      sm.checkSameOriginURI(referrerURI, tURI, false, isPrivateWin);
+      persistAllowOnionUrlbarRewritesInChildTab = true;
+    } catch (e) {}
+  }
+
   // first get document wide referrer policy, then
   // get referrer attribute from clicked link and parse it and
   // allow per element referrer to overrule the document wide referrer if enabled
@@ -7671,6 +7703,7 @@ function handleLinkClick(event, href, linkNode) {
     triggeringPrincipal: doc.nodePrincipal,
     csp,
     frameOuterWindowID,
+    allowOnionUrlbarRewrites: persistAllowOnionUrlbarRewritesInChildTab,
   };
 
   // The new tab/window must use the same userContextId

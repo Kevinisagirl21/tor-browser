@@ -153,6 +153,9 @@ class nsDocShell final : public nsDocLoader,
 
     // Whether the load was triggered by user interaction.
     INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED = 0x1000,
+
+    // Whether rewriting the urlbar to a short .onion alias is allowed.
+    INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES = 0x2000,
   };
 
   // Event type dispatched by RestorePresentation
@@ -1235,6 +1238,7 @@ class nsDocShell final : public nsDocLoader,
   bool mCSSErrorReportingEnabled : 1;
   bool mAllowAuth : 1;
   bool mAllowKeywordFixup : 1;
+  bool mAllowOnionUrlbarRewrites : 1;
   bool mIsOffScreenBrowser : 1;
   bool mIsActive : 1;
   bool mDisableMetaRefreshWhenInactive : 1;
