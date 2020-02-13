@@ -287,6 +287,7 @@ var SessionHistoryInternal = {
     }
 
     entry.persist = shEntry.persist;
+    entry.allowOnionUrlbarRewrites = shEntry.allowOnionUrlbarRewrites;
 
     return entry;
   },
@@ -557,6 +558,10 @@ var SessionHistoryInternal = {
           i
         );
       }
+    }
+
+    if (entry.allowOnionUrlbarRewrites) {
+      shEntry.allowOnionUrlbarRewrites = entry.allowOnionUrlbarRewrites;
     }
 
     return shEntry;
