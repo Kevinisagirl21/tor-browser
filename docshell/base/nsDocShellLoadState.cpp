@@ -874,6 +874,10 @@ void nsDocShellLoadState::CalculateLoadURIFlags() {
     mInternalLoadFlags |= nsDocShell::INTERNAL_LOAD_FLAGS_FIRST_LOAD;
   }
 
+  if (mLoadFlags & nsIWebNavigation::LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES) {
+    mInternalLoadFlags |= nsDocShell::INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
+  }
+
   if (mLoadFlags & nsIWebNavigation::LOAD_FLAGS_BYPASS_CLASSIFIER) {
     mInternalLoadFlags |= nsDocShell::INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER;
   }
