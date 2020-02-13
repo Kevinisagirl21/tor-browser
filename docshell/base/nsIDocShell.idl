@@ -1195,4 +1195,9 @@ interface nsIDocShell : nsIDocShellTreeItem
    * Whether developer tools are watching activity in this docshell.
    */
   [infallible] attribute boolean watchedByDevtools;
+
+  /**
+   * Whether rewriting the urlbar to a short .onion alias is allowed.
+   */
+  [infallible] readonly attribute boolean allowOnionUrlbarRewrites;
 };
