@@ -803,6 +803,20 @@ SessionHistoryEntry::SetPersist(bool aPersist) {
 }
 
 NS_IMETHODIMP
+SessionHistoryEntry::GetOnionUrlbarRewritesAllowed(
+    bool* aOnionUrlbarRewritesAllowed) {
+  *aOnionUrlbarRewritesAllowed = mInfo->mOnionUrlbarRewritesAllowed;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SessionHistoryEntry::SetOnionUrlbarRewritesAllowed(
+    bool aOnionUrlbarRewritesAllowed) {
+  mInfo->mOnionUrlbarRewritesAllowed = aOnionUrlbarRewritesAllowed;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 SessionHistoryEntry::GetScrollPosition(int32_t* aX, int32_t* aY) {
   *aX = mInfo->mScrollPositionX;
   *aY = mInfo->mScrollPositionY;

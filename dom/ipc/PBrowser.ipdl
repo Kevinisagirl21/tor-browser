@@ -136,6 +136,7 @@ struct WebProgressLocationChangeData
   bool isSyntheticDocument;
   bool mayEnableCharacterEncodingMenu;
   bool charsetAutodetected;
+  bool onionUrlbarRewritesAllowed;
   nsString contentType;
   nsString title;
   nsString charset;
