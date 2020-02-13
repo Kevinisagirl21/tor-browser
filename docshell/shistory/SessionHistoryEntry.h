@@ -84,6 +84,7 @@ class SessionHistoryInfo {
   bool mIsSrcdocEntry = false;
   bool mScrollRestorationIsManual = false;
   bool mPersist = false;
+  bool mOnionUrlbarRewritesAllowed = false;
 };
 
 // SessionHistoryEntry is used to store session history data in the parent
