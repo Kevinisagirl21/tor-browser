@@ -813,6 +813,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TabUnloader: "resource:///modules/TabUnloader.jsm",
   TRRRacer: "resource:///modules/TRRPerformance.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UIState: "resource://services-sync/UIState.jsm",
   WebChannel: "resource://gre/modules/WebChannel.jsm",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
@@ -2131,6 +2132,7 @@ BrowserGlue.prototype = {
 
     Normandy.uninit();
     RFPHelper.uninit();
+    OnionAliasStore.uninit();
   },
 
   // Set up a listener to enable/disable the screenshots extension
@@ -2557,6 +2559,12 @@ BrowserGlue.prototype = {
       {
         task: () => {
           RFPHelper.init();
+        },
+      },
+
+      {
+        task: () => {
+          OnionAliasStore.init();
         },
       },
 

@@ -3702,6 +3702,8 @@ NS_IMETHODIMP BrowserChild::OnLocationChange(nsIWebProgress* aWebProgress,
         docShell->GetMayEnableCharacterEncodingMenu();
     locationChangeData->charsetAutodetected() =
         docShell->GetCharsetAutodetected();
+    locationChangeData->onionUrlbarRewritesAllowed() =
+        docShell->GetOnionUrlbarRewritesAllowed();
 
     locationChangeData->contentPrincipal() = document->NodePrincipal();
     locationChangeData->contentPartitionedPrincipal() =
