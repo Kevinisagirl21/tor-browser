@@ -172,6 +172,7 @@ class SessionHistoryInfo {
   bool mPersist = true;
   bool mHasUserInteraction = false;
   bool mHasUserActivation = false;
+  bool mOnionUrlbarRewritesAllowed = false;
 
   union SharedState {
     SharedState();
