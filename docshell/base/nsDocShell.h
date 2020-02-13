@@ -153,6 +153,9 @@ class nsDocShell final : public nsDocLoader,
 
     // Whether the load should go through LoadURIDelegate.
     INTERNAL_LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE = 0x2000,
+
+    // Whether rewriting the urlbar to a short .onion alias is allowed.
+    INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES = 0x4000,
   };
 
   // Event type dispatched by RestorePresentation
@@ -575,6 +578,8 @@ class nsDocShell final : public nsDocLoader,
   //
 
   virtual void DestroyChildren() override;
+
+  static bool IsTorOnionRedirect(nsIURI* aOldURI, nsIURI* aNewURI);
 
   // Overridden from nsDocLoader, this provides more information than the
   // normal OnStateChange with flags STATE_REDIRECTING
@@ -1262,6 +1267,7 @@ class nsDocShell final : public nsDocLoader,
   bool mCSSErrorReportingEnabled : 1;
   bool mAllowAuth : 1;
   bool mAllowKeywordFixup : 1;
+  bool mOnionUrlbarRewritesAllowed : 1;
   bool mIsOffScreenBrowser : 1;
   bool mDisableMetaRefreshWhenInactive : 1;
   bool mIsAppTab : 1;
