@@ -92,6 +92,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabUnloader: "resource:///modules/TabUnloader.jsm",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
   TRRRacer: "resource:///modules/TRRPerformance.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UIState: "resource://services-sync/UIState.jsm",
   UpdateListener: "resource://gre/modules/UpdateListener.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
@@ -1969,6 +1970,7 @@ BrowserGlue.prototype = {
       () => RFPHelper.uninit(),
       () => ASRouterNewTabHook.destroy(),
       () => UpdateListener.reset(),
+      () => OnionAliasStore.uninit(),
     ];
 
     for (let task of tasks) {
@@ -2585,6 +2587,12 @@ BrowserGlue.prototype = {
       {
         task: () => {
           RFPHelper.init();
+        },
+      },
+
+      {
+        task: () => {
+          OnionAliasStore.init();
         },
       },
 
