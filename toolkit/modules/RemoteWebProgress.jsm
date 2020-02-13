@@ -281,6 +281,8 @@ class RemoteWebProgressManager {
           this._browser._isSyntheticDocument = json.synthetic;
           this._browser._innerWindowID = json.innerWindowID;
           this._browser._contentRequestContextID = json.requestContextID;
+          this._browser._allowOnionUrlbarRewrites =
+            json.allowOnionUrlbarRewrites;
         }
 
         this.onLocationChange(webProgress, request, location, flags);

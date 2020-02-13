@@ -93,6 +93,7 @@ function openContextMenu(aMessage) {
     disableSetDesktopBackground: data.disableSetDesktopBg,
     loginFillInfo: data.loginFillInfo,
     parentAllowsMixedContent: data.parentAllowsMixedContent,
+    parentAllowsOnionUrlbarRewrites: data.parentAllowsOnionUrlbarRewrites,
     userContextId: data.userContextId,
     webExtContextData: data.webExtContextData,
   };
@@ -1122,9 +1123,26 @@ nsContextMenu.prototype = {
       } catch (e) {}
     }
 
+    // Check if the link needs to be opened with .tor.onion urlbar rewrites
+    // allowed. Only when parent has allowOnionUrlbarRewrites = true
+    // and the same origin we should allow this.
+    let persistAllowOnionUrlbarRewrites = false;
+
+    if (gContextMenuContentData.parentAllowsOnionUrlbarRewrites) {
+      const sm = Services.scriptSecurityManager;
+      try {
+        let targetURI = this.linkURI;
+        let isPrivateWin =
+          this.browser.contentPrincipal.originAttributes.privateBrowsingId > 0;
+        sm.checkSameOriginURI(referrerURI, targetURI, false, isPrivateWin);
+        persistAllowOnionUrlbarRewrites = true;
+      } catch (e) {}
+    }
+
     let params = {
       allowMixedContent: persistAllowMixedContentInChildTab,
       userContextId: parseInt(event.target.getAttribute("data-usercontextid")),
+      allowOnionUrlbarRewrites: persistAllowOnionUrlbarRewrites,
     };
 
     openLinkIn(this.linkURL, "tab", this._openLinkInParameters(params));
