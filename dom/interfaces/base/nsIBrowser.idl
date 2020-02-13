@@ -127,7 +127,8 @@ interface nsIBrowser : nsISupports
                                in boolean aIsSynthetic,
                                in boolean aHasRequestContextID,
                                in uint64_t aRequestContextID,
-                               in AString aContentType);
+                               in AString aContentType,
+                               in boolean aOnionUrlbarRewritesAllowed);
 
   /**
    * Called to perform any async tasks which must be completed before changing
