@@ -227,6 +227,11 @@ interface nsIWebNavigation : nsISupports
   const unsigned long LOAD_FLAGS_IS_REDIRECT = 0x800000;
 
   /**
+   * Allow rewriting the urlbar to a short .onion alias.
+   */
+  const unsigned long LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES = 0x1000000;
+
+  /**
    * Loads a given URI.  This will give priority to loading the requested URI
    * in the object implementing this interface.  If it can't be loaded here
    * however, the URI dispatcher will go through its normal process of content

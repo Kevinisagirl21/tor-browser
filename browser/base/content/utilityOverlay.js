@@ -370,6 +370,7 @@ function openLinkIn(url, where, params) {
   var aRelatedToCurrent = params.relatedToCurrent;
   var aAllowInheritPrincipal = !!params.allowInheritPrincipal;
   var aAllowMixedContent = params.allowMixedContent;
+  var aAllowOnionUrlbarRewrites = params.allowOnionUrlbarRewrites;
   var aForceAllowDataURI = params.forceAllowDataURI;
   var aInBackground = params.inBackground;
   var aInitiatingDoc = params.initiatingDoc;
@@ -680,6 +681,7 @@ function openLinkIn(url, where, params) {
         relatedToCurrent: aRelatedToCurrent,
         skipAnimation: aSkipTabAnimation,
         allowMixedContent: aAllowMixedContent,
+        allowOnionUrlbarRewrites: aAllowOnionUrlbarRewrites,
         userContextId: aUserContextId,
         originPrincipal: aPrincipal,
         triggeringPrincipal: aTriggeringPrincipal,
