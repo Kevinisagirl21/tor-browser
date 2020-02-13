@@ -152,6 +152,7 @@ class SessionHistoryInfo {
   bool mIsSrcdocEntry = false;
   bool mScrollRestorationIsManual = false;
   bool mPersist = true;
+  bool mOnionUrlbarRewritesAllowed = false;
 
   union SharedState {
     SharedState();
