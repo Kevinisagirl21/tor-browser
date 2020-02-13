@@ -77,6 +77,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   UrlbarInput: "resource:///modules/UrlbarInput.jsm",
@@ -5280,11 +5281,26 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
+      // The onion memorable alias needs to be used in URLBarSetURI, but also in
+      // other parts of the code (like the bookmarks UI), so we save it.
+      const onionRewritesDisabled = Services.prefs.getBoolPref(
+        "browser.urlbar.onionRewrites.disabled",
+        false
+      );
+      if (!onionRewritesDisabled) {
+        gBrowser.selectedBrowser.currentOnionAliasURI = OnionAliasStore.getShortURI(
+          aLocationURI
+        );
+      }
+
       // We want to update the popup visibility if we received this notification
       // via simulated locationchange events such as switching between tabs, however
       // if this is a document navigation then PopupNotifications will be updated
       // via TabsProgressListener.onLocationChange and we do not want it called twice
-      gURLBar.setURI(aLocationURI, aIsSimulated);
+      gURLBar.setURI(
+        gBrowser.selectedBrowser.currentOnionAliasURI || aLocationURI,
+        aIsSimulated
+      );
 
       BookmarkingUI.onLocationChange();
 
