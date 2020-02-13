@@ -255,6 +255,8 @@
 
       this._mayEnableCharacterEncodingMenu = null;
 
+      this._onionUrlbarRewritesAllowed = false;
+
       this._contentPrincipal = null;
 
       this._contentPartitionedPrincipal = null;
@@ -581,6 +583,12 @@
       if (this.isRemoteBrowser) {
         this._mayEnableCharacterEncodingMenu = aMayEnable;
       }
+    }
+
+    get onionUrlbarRewritesAllowed() {
+      return this.isRemoteBrowser
+        ? this._onionUrlbarRewritesAllowed
+        : this.docShell.onionUrlbarRewritesAllowed;
     }
 
     get contentPrincipal() {
@@ -1112,7 +1120,8 @@
       aIsSynthetic,
       aHaveRequestContextID,
       aRequestContextID,
-      aContentType
+      aContentType,
+      aOnionUrlbarRewritesAllowed
     ) {
       if (this.isRemoteBrowser && this.messageManager) {
         if (aCharset != null) {
@@ -1134,6 +1143,7 @@
         this._contentRequestContextID = aHaveRequestContextID
           ? aRequestContextID
           : null;
+        this._onionUrlbarRewritesAllowed = aOnionUrlbarRewritesAllowed;
       }
     }
 
@@ -1535,6 +1545,7 @@
             "_contentPrincipal",
             "_contentPartitionedPrincipal",
             "_isSyntheticDocument",
+            "_onionUrlbarRewritesAllowed",
           ]
         );
       }
