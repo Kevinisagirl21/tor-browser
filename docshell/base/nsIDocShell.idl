@@ -904,4 +904,9 @@ interface nsIDocShell : nsIDocShellTreeItem
    * until session history state is moved into the parent process.
    */
   void persistLayoutHistoryState();
+
+  /**
+   * Whether rewriting the urlbar to a short .onion alias is allowed.
+   */
+  [infallible] readonly attribute boolean onionUrlbarRewritesAllowed;
 };
