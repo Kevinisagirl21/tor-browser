@@ -2539,6 +2539,16 @@ DocumentLoadListener::AsyncOnChannelRedirect(
        "mHaveVisibleRedirect=%c",
        this, mHaveVisibleRedirect ? 'T' : 'F'));
 
+  // Like the code above for allowing mixed content, we need to check this here
+  // in case the redirect is not handled in the docshell.
+  nsCOMPtr<nsIURI> oldURI, newURI;
+  aOldChannel->GetURI(getter_AddRefs(oldURI));
+  aNewChannel->GetURI(getter_AddRefs(newURI));
+  if (nsDocShell::IsTorOnionRedirect(oldURI, newURI)) {
+    mLoadStateInternalLoadFlags |=
+        nsDocShell::INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
+  }
+
   // We need the original URI of the current channel to use to open the real
   // channel in the content process. Unfortunately we overwrite the original
   // uri of the new channel with the original pre-redirect URI, so grab
