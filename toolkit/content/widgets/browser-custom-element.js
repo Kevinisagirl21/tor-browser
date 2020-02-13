@@ -261,6 +261,8 @@
 
       this._mayEnableCharacterEncodingMenu = null;
 
+      this._onionUrlbarRewritesAllowed = false;
+
       this._charsetAutodetected = false;
 
       this._contentPrincipal = null;
@@ -684,6 +686,12 @@
       if (this.isRemoteBrowser) {
         this._mayEnableCharacterEncodingMenu = aMayEnable;
       }
+    }
+
+    get onionUrlbarRewritesAllowed() {
+      return this.isRemoteBrowser
+        ? this._onionUrlbarRewritesAllowed
+        : this.docShell.onionUrlbarRewritesAllowed;
     }
 
     get charsetAutodetected() {
@@ -1292,7 +1300,8 @@
       aInnerWindowID,
       aHaveRequestContextID,
       aRequestContextID,
-      aContentType
+      aContentType,
+      aOnionUrlbarRewritesAllowed
     ) {
       if (this.isRemoteBrowser && this.messageManager) {
         if (aCharset != null) {
@@ -1316,6 +1325,7 @@
         this._contentRequestContextID = aHaveRequestContextID
           ? aRequestContextID
           : null;
+        this._onionUrlbarRewritesAllowed = aOnionUrlbarRewritesAllowed;
       }
     }
 
@@ -1708,6 +1718,7 @@
             "_contentStoragePrincipal",
             "_isSyntheticDocument",
             "_innerWindowID",
+            "_onionUrlbarRewritesAllowed",
           ]
         );
       }
