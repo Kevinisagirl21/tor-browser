@@ -318,6 +318,7 @@ var SessionHistoryInternal = {
     }
 
     entry.persist = shEntry.persist;
+    entry.onionUrlbarRewritesAllowed = shEntry.onionUrlbarRewritesAllowed;
 
     return entry;
   },
@@ -599,6 +600,10 @@ var SessionHistoryInternal = {
           i
         );
       }
+    }
+
+    if (entry.onionUrlbarRewritesAllowed) {
+      shEntry.onionUrlbarRewritesAllowed = entry.onionUrlbarRewritesAllowed;
     }
 
     return shEntry;

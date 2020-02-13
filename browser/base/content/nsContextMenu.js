@@ -57,6 +57,7 @@ function openContextMenu(aMessage, aBrowser, aActor) {
     disableSetDesktopBackground: data.disableSetDesktopBackground,
     loginFillInfo: data.loginFillInfo,
     parentAllowsMixedContent: data.parentAllowsMixedContent,
+    parentAllowsOnionUrlbarRewrites: data.parentAllowsOnionUrlbarRewrites,
     userContextId: data.userContextId,
     webExtContextData: data.webExtContextData,
   };
@@ -1059,6 +1060,7 @@ class nsContextMenu {
       triggeringPrincipal: this.principal,
       csp: this.csp,
       frameOuterWindowID: this.contentData.frameOuterWindowID,
+      onionUrlbarRewritesAllowed: false,
     };
     for (let p in extra) {
       params[p] = extra[p];
@@ -1082,6 +1084,22 @@ class nsContextMenu {
     }
 
     params.referrerInfo = referrerInfo;
+
+    // Check if the link needs to be opened with .tor.onion urlbar rewrites
+    // allowed. Only when parent has onionUrlbarRewritesAllowed = true
+    // and the same origin we should allow this.
+    if (this.contentData.parentAllowsOnionUrlbarRewrites) {
+      let referrerURI = this.contentData.documentURIObject;
+      const sm = Services.scriptSecurityManager;
+      try {
+        let targetURI = this.linkURI;
+        let isPrivateWin =
+          this.browser.contentPrincipal.originAttributes.privateBrowsingId > 0;
+        sm.checkSameOriginURI(referrerURI, targetURI, false, isPrivateWin);
+        params.onionUrlbarRewritesAllowed = true;
+      } catch (e) {}
+    }
+
     return params;
   }
 
