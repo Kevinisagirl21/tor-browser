@@ -131,7 +131,8 @@ interface nsIBrowser : nsISupports
                                in boolean aIsSynthetic,
                                in boolean aHasRequestContextID,
                                in uint64_t aRequestContextID,
-                               in AString aContentType);
+                               in AString aContentType,
+                               in boolean aOnionUrlbarRewritesAllowed);
 
   /**
    * Determine what process switching behavior this browser element should have.

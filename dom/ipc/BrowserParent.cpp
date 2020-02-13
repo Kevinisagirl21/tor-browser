@@ -2704,7 +2704,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
         aLocationChangeData->isSyntheticDocument(),
         aLocationChangeData->requestContextID().isSome(),
         aLocationChangeData->requestContextID().valueOr(0),
-        aLocationChangeData->contentType());
+        aLocationChangeData->contentType(),
+        aLocationChangeData->onionUrlbarRewritesAllowed());
   }
 
   GetBrowsingContext()->Top()->GetWebProgress()->OnLocationChange(

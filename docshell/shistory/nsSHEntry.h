@@ -64,6 +64,7 @@ class nsSHEntry : public nsISHEntry {
   bool mLoadedInThisProcess;
   bool mPersist;
   bool mHasUserInteraction;
+  bool mOnionUrlbarRewritesAllowed;
 };
 
 #endif /* nsSHEntry_h */

@@ -1563,6 +1563,7 @@
       var aRelatedToCurrent;
       var aAllowInheritPrincipal;
       var aAllowMixedContent;
+      var aOnionUrlbarRewritesAllowed;
       var aSkipAnimation;
       var aForceNotRemote;
       var aPreferredRemoteType;
@@ -1593,6 +1594,7 @@
         aRelatedToCurrent = params.relatedToCurrent;
         aAllowInheritPrincipal = !!params.allowInheritPrincipal;
         aAllowMixedContent = params.allowMixedContent;
+        aOnionUrlbarRewritesAllowed = params.onionUrlbarRewritesAllowed;
         aSkipAnimation = params.skipAnimation;
         aForceNotRemote = params.forceNotRemote;
         aPreferredRemoteType = params.preferredRemoteType;
@@ -1634,6 +1636,7 @@
         relatedToCurrent: aRelatedToCurrent,
         skipAnimation: aSkipAnimation,
         allowMixedContent: aAllowMixedContent,
+        onionUrlbarRewritesAllowed: aOnionUrlbarRewritesAllowed,
         forceNotRemote: aForceNotRemote,
         createLazyBrowser: aCreateLazyBrowser,
         preferredRemoteType: aPreferredRemoteType,
@@ -2435,6 +2438,7 @@
       {
         allowInheritPrincipal,
         allowMixedContent,
+        onionUrlbarRewritesAllowed,
         allowThirdPartyFixup,
         bulkOrderedOpen,
         charset,
@@ -2763,6 +2767,9 @@
           }
           if (allowMixedContent) {
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
+          }
+          if (onionUrlbarRewritesAllowed) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
           }
           if (!allowInheritPrincipal) {
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
