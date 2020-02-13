@@ -96,6 +96,7 @@ class SessionHistoryInfo {
   bool mIsSrcdocEntry = false;
   bool mScrollRestorationIsManual = false;
   bool mPersist = false;
+  bool mOnionUrlbarRewritesAllowed = false;
 };
 
 struct LoadingSessionHistoryInfo {

@@ -533,13 +533,13 @@ var gIdentityHandler = {
    *        nsIURI for which the identity UI should be displayed, already
    *        processed by createExposableURI.
    */
-  updateIdentity(state, uri) {
+  updateIdentity(state, uri, onionAliasURI) {
     let shouldHidePopup = this._uri && this._uri.spec != uri.spec;
     this._state = state;
 
     // Firstly, populate the state properties required to display the UI. See
     // the documentation of the individual properties for details.
-    this.setURI(uri);
+    this.setURI(uri, onionAliasURI);
     this._secInfo = gBrowser.securityUI.secInfo;
     this._isSecureContext = gBrowser.securityUI.isSecureContext;
 
@@ -625,17 +625,18 @@ var gIdentityHandler = {
    * Attempt to provide proper IDN treatment for host names
    */
   getEffectiveHost() {
+    let uri = this._onionAliasURI || this._uri;
     if (!this._IDNService) {
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(
         Ci.nsIIDNService
       );
     }
     try {
-      return this._IDNService.convertToDisplayIDN(this._uri.host, {});
+      return this._IDNService.convertToDisplayIDN(uri.host, {});
     } catch (e) {
       // If something goes wrong (e.g. host is an IP address) just fail back
       // to the full domain.
-      return this._uri.host;
+      return uri.host;
     }
   },
 
@@ -1076,11 +1077,12 @@ var gIdentityHandler = {
     this.updateSitePermissions();
   },
 
-  setURI(uri) {
+  setURI(uri, onionAliasURI) {
     if (uri.schemeIs("view-source")) {
       uri = Services.io.newURI(uri.spec.replace(/^view-source:/i, ""));
     }
     this._uri = uri;
+    this._onionAliasURI = onionAliasURI;
 
     try {
       // Account for file: urls and catch when "" is the value
