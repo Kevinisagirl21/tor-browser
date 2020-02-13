@@ -5651,6 +5651,10 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
     return;
   }
 
+  if (!mOnionUrlbarRewritesAllowed && IsTorOnionRedirect(oldURI, newURI)) {
+    mOnionUrlbarRewritesAllowed = true;
+  }
+
   // DocumentChannel adds redirect chain to global history in the parent
   // process. The redirect chain can't be queried from the content process, so
   // there's no need to update global history here.
@@ -8680,6 +8684,20 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   return NS_OK;
 }
 
+/* static */
+bool nsDocShell::IsTorOnionRedirect(nsIURI* aOldURI, nsIURI* aNewURI) {
+    nsAutoCString oldHost;
+    nsAutoCString newHost;
+    if (aOldURI && aNewURI && NS_SUCCEEDED(aOldURI->GetHost(oldHost)) &&
+        StringEndsWith(oldHost, NS_LITERAL_CSTRING(".tor.onion")) &&
+        NS_SUCCEEDED(aNewURI->GetHost(newHost)) &&
+        StringEndsWith(newHost, NS_LITERAL_CSTRING(".onion")) &&
+        !StringEndsWith(newHost, NS_LITERAL_CSTRING(".tor.onion"))) {
+      return true;
+    }
+    return false;
+  }
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   nsIDocShell** aDocShell,
                                   nsIRequest** aRequest) {
@@ -8831,6 +8849,30 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   mAllowKeywordFixup =
       aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP);
+
+  if (mOnionUrlbarRewritesAllowed) {
+    mOnionUrlbarRewritesAllowed = false;
+    nsCOMPtr<nsIURI> referrer;
+    nsIReferrerInfo* referrerInfo = aLoadState->GetReferrerInfo();
+    if (referrerInfo) {
+      referrerInfo->GetOriginalReferrer(getter_AddRefs(referrer));
+      bool isPrivateWin = false;
+      Document* doc = GetDocument();
+      if (doc) {
+        isPrivateWin =
+            doc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
+        nsCOMPtr<nsIScriptSecurityManager> secMan =
+            do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
+        mOnionUrlbarRewritesAllowed =
+            secMan && NS_SUCCEEDED(secMan->CheckSameOriginURI(
+                          aLoadState->URI(), referrer, false, isPrivateWin));
+      }
+    }
+  }
+  mOnionUrlbarRewritesAllowed =
+      mOnionUrlbarRewritesAllowed ||
+      aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES);
+
   mURIResultedInDocument = false;  // reset the clock...
 
   // See if this is actually a load between two history entries for the same
@@ -10976,6 +11018,7 @@ nsresult nsDocShell::AddToSessionHistory(
                 mDynamicallyCreated, originalURI, resultPrincipalURI,
                 loadReplace, referrerInfo, srcdoc, srcdocEntry, baseURI,
                 saveLayoutState, expired);
+  entry->SetOnionUrlbarRewritesAllowed(mOnionUrlbarRewritesAllowed);
 
   if (root == static_cast<nsIDocShellTreeItem*>(this) && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
@@ -12772,4 +12815,13 @@ bool nsDocShell::GetIsAttemptingToNavigate() {
   }
 
   return false;
+}
+
+NS_IMETHODIMP
+nsDocShell::GetOnionUrlbarRewritesAllowed(bool* aOnionUrlbarRewritesAllowed) {
+  NS_ENSURE_ARG(aOnionUrlbarRewritesAllowed);
+  *aOnionUrlbarRewritesAllowed =
+      StaticPrefs::browser_urlbar_onionRewrites_enabled() &&
+      mOnionUrlbarRewritesAllowed;
+  return NS_OK;
 }
