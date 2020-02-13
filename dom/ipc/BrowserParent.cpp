@@ -2698,7 +2698,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
         aWebProgressData->innerDOMWindowID(),
         aLocationChangeData->requestContextID().isSome(),
         aLocationChangeData->requestContextID().valueOr(0),
-        aLocationChangeData->contentType());
+        aLocationChangeData->contentType(),
+        aLocationChangeData->onionUrlbarRewritesAllowed());
   }
 
   Unused << managerAsListener->OnLocationChange(webProgress, request, aLocation,
