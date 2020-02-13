@@ -576,6 +576,9 @@ class ContextMenuChild extends JSWindowActorChild {
     // The same-origin check will be done in nsContextMenu.openLinkInTab.
     let parentAllowsMixedContent = !!this.docShell.mixedContentChannel;
 
+    let parentAllowsOnionUrlbarRewrites = this.docShell
+      .onionUrlbarRewritesAllowed;
+
     let disableSetDesktopBackground = null;
 
     // Media related cache info parent needs for saving
@@ -688,6 +691,7 @@ class ContextMenuChild extends JSWindowActorChild {
       frameBrowsingContextID,
       disableSetDesktopBackground,
       parentAllowsMixedContent,
+      parentAllowsOnionUrlbarRewrites,
     };
 
     if (context.inFrame && !context.inSrcdocFrame) {
