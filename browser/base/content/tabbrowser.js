@@ -1650,6 +1650,7 @@
       var aFromExternal;
       var aRelatedToCurrent;
       var aAllowInheritPrincipal;
+      var aOnionUrlbarRewritesAllowed;
       var aSkipAnimation;
       var aForceNotRemote;
       var aPreferredRemoteType;
@@ -1679,6 +1680,7 @@
         aFromExternal = params.fromExternal;
         aRelatedToCurrent = params.relatedToCurrent;
         aAllowInheritPrincipal = !!params.allowInheritPrincipal;
+        aOnionUrlbarRewritesAllowed = params.onionUrlbarRewritesAllowed;
         aSkipAnimation = params.skipAnimation;
         aForceNotRemote = params.forceNotRemote;
         aPreferredRemoteType = params.preferredRemoteType;
@@ -1719,6 +1721,7 @@
         fromExternal: aFromExternal,
         relatedToCurrent: aRelatedToCurrent,
         skipAnimation: aSkipAnimation,
+        onionUrlbarRewritesAllowed: aOnionUrlbarRewritesAllowed,
         forceNotRemote: aForceNotRemote,
         createLazyBrowser: aCreateLazyBrowser,
         preferredRemoteType: aPreferredRemoteType,
@@ -2558,6 +2561,7 @@
       aURI,
       {
         allowInheritPrincipal,
+        onionUrlbarRewritesAllowed,
         allowThirdPartyFixup,
         bulkOrderedOpen,
         charset,
@@ -2905,6 +2909,9 @@
             // XXX this code must be reviewed and changed when bug 1616353
             // lands.
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIRST_LOAD;
+          }
+          if (onionUrlbarRewritesAllowed) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
           }
           if (!allowInheritPrincipal) {
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
