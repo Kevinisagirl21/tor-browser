@@ -88,6 +88,7 @@ var ContentClick = {
       charset: browser.characterSet,
       referrerInfo: E10SUtils.deserializeReferrerInfo(json.referrerInfo),
       allowMixedContent: json.allowMixedContent,
+      allowOnionUrlbarRewrites: json.allowOnionUrlbarRewrites,
       isContentWindowPrivate: json.isContentWindowPrivate,
       originPrincipal: json.originPrincipal,
       triggeringPrincipal: json.triggeringPrincipal,
