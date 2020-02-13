@@ -474,7 +474,8 @@ var PlacesCommandHook = {
    */
   async bookmarkPage() {
     let browser = gBrowser.selectedBrowser;
-    let url = new URL(browser.currentURI.spec);
+    const uri = browser.currentOnionAliasURI || browser.currentURI;
+    let url = new URL(uri.spec);
     let info = await PlacesUtils.bookmarks.fetch({ url });
     let isNewBookmark = !info;
     let showEditUI = !isNewBookmark || StarUI.showForNewBookmarks;
@@ -582,7 +583,7 @@ var PlacesCommandHook = {
 
     tabs.forEach(tab => {
       let browser = tab.linkedBrowser;
-      let uri = browser.currentURI;
+      let uri = browser.currentOnionAliasURI || browser.currentURI;
       let title = browser.contentTitle || tab.label;
       let spec = uri.spec;
       if (!(spec in uniquePages)) {
@@ -1844,14 +1845,17 @@ var BookmarkingUI = {
   },
 
   onLocationChange: function BUI_onLocationChange() {
-    if (this._uri && gBrowser.currentURI.equals(this._uri)) {
+    const uri =
+      gBrowser.selectedBrowser.currentOnionAliasURI || gBrowser.currentURI;
+    if (this._uri && uri.equals(this._uri)) {
       return;
     }
     this.updateStarState();
   },
 
   updateStarState: function BUI_updateStarState() {
-    this._uri = gBrowser.currentURI;
+    this._uri =
+      gBrowser.selectedBrowser.currentOnionAliasURI || gBrowser.currentURI;
     this._itemGuids.clear();
     let guids = new Set();
 

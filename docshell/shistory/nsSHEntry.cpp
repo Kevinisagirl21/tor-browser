@@ -43,7 +43,8 @@ nsSHEntry::nsSHEntry()
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(false),
       mPersist(true),
-      mHasUserInteraction(false) {}
+      mHasUserInteraction(false),
+      mOnionUrlbarRewritesAllowed(false) {}
 
 nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
     : mShared(aOther.mShared),
@@ -70,7 +71,8 @@ nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(aOther.mLoadedInThisProcess),
       mPersist(aOther.mPersist),
-      mHasUserInteraction(false) {}
+      mHasUserInteraction(false),
+      mOnionUrlbarRewritesAllowed(aOther.mOnionUrlbarRewritesAllowed) {}
 
 nsSHEntry::~nsSHEntry() {
   // Null out the mParent pointers on all our kids.
@@ -864,6 +866,18 @@ nsSHEntry::SetPersist(bool aPersist) {
 }
 
 NS_IMETHODIMP
+nsSHEntry::GetOnionUrlbarRewritesAllowed(bool* aOnionUrlbarRewritesAllowed) {
+  *aOnionUrlbarRewritesAllowed = mOnionUrlbarRewritesAllowed;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHEntry::SetOnionUrlbarRewritesAllowed(bool aOnionUrlbarRewritesAllowed) {
+  mOnionUrlbarRewritesAllowed = aOnionUrlbarRewritesAllowed;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsSHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
   nsCOMPtr<nsIURI> uri = GetURI();
   RefPtr<nsDocShellLoadState> loadState(new nsDocShellLoadState(uri));
@@ -911,6 +925,10 @@ nsSHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
     flags |= nsDocShell::InternalLoad::INTERNAL_LOAD_FLAGS_IS_SRCDOC;
   } else {
     srcdoc = VoidString();
+  }
+  if (GetOnionUrlbarRewritesAllowed()) {
+    flags |= nsDocShell::InternalLoad::
+        INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
   }
   loadState->SetSrcdocData(srcdoc);
   loadState->SetBaseURI(baseURI);
