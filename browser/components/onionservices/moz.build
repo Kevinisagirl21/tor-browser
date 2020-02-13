@@ -1,0 +1,5 @@
+EXTRA_JS_MODULES += [
+    "ExtensionMessaging.jsm",
+    "HttpsEverywhereControl.jsm",
+    "OnionAliasStore.jsm",
+]

@@ -551,6 +551,9 @@ class ContextMenuChild extends JSWindowActorChild {
       doc.defaultView
     ).getFieldContext(aEvent.composedTarget);
 
+    let parentAllowsOnionUrlbarRewrites = this.docShell
+      .onionUrlbarRewritesAllowed;
+
     let disableSetDesktopBackground = null;
 
     // Media related cache info parent needs for saving
@@ -661,6 +664,7 @@ class ContextMenuChild extends JSWindowActorChild {
       frameID,
       frameBrowsingContextID,
       disableSetDesktopBackground,
+      parentAllowsOnionUrlbarRewrites,
     };
 
     if (context.inFrame && !context.inSrcdocFrame) {
