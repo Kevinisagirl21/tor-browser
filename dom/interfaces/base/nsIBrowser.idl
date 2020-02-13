@@ -158,7 +158,8 @@ interface nsIBrowser : nsISupports
                                in uint64_t aInnerWindowID,
                                in boolean aHasRequestContextID,
                                in uint64_t aRequestContextID,
-                               in AString aContentType);
+                               in AString aContentType,
+                               in boolean aOnionUrlbarRewritesAllowed);
 
   /**
    * Called by Gecko when it wants to change the process which is currently
