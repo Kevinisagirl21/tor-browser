@@ -42,7 +42,8 @@ nsSHEntry::nsSHEntry()
       mIsSrcdocEntry(false),
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(false),
-      mPersist(true) {}
+      mPersist(true),
+      mAllowOnionUrlbarRewrites(false) {}
 
 nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
     : mShared(aOther.mShared),
@@ -68,7 +69,8 @@ nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
       mIsSrcdocEntry(aOther.mIsSrcdocEntry),
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(aOther.mLoadedInThisProcess),
-      mPersist(aOther.mPersist) {}
+      mPersist(aOther.mPersist),
+      mAllowOnionUrlbarRewrites(aOther.mAllowOnionUrlbarRewrites) {}
 
 nsSHEntry::~nsSHEntry() {
   // Null out the mParent pointers on all our kids.
@@ -853,5 +855,17 @@ nsSHEntry::GetPersist(bool* aPersist) {
 NS_IMETHODIMP
 nsSHEntry::SetPersist(bool aPersist) {
   mPersist = aPersist;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHEntry::GetAllowOnionUrlbarRewrites(bool* aAllowOnionUrlbarRewrites) {
+  *aAllowOnionUrlbarRewrites = mAllowOnionUrlbarRewrites;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHEntry::SetAllowOnionUrlbarRewrites(bool aAllowOnionUrlbarRewrites) {
+  mAllowOnionUrlbarRewrites = aAllowOnionUrlbarRewrites;
   return NS_OK;
 }
