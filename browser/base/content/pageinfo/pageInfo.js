@@ -390,7 +390,7 @@ async function onNonMediaPageInfoLoad(browser, pageInfoData, imageInfo) {
     );
   }
   onLoadPermission(uri, principal);
-  securityOnLoad(uri, windowInfo);
+  securityOnLoad(uri, windowInfo, browser.currentOnionAliasURI);
 }
 
 function resetPageInfo(args) {
