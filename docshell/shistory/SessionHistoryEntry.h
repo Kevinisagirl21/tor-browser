@@ -58,6 +58,7 @@ class SessionHistoryInfo {
   bool mIsSrcdocEntry = false;
   bool mScrollRestorationIsManual = false;
   bool mPersist = false;
+  bool mOnionUrlbarRewritesAllowed = false;
 };
 
 // XXX Not sure that the id shouldn't just live in SessionHistoryInfo.
