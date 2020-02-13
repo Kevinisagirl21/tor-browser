@@ -138,6 +138,26 @@ class ClickHandlerChild extends JSWindowActorChild {
       json.originStoragePrincipal = ownerDoc.effectiveStoragePrincipal;
       json.triggeringPrincipal = ownerDoc.nodePrincipal;
 
+      // Check if the link needs to be opened with .tor.onion urlbar rewrites
+      // allowed. Only when the owner doc has onionUrlbarRewritesAllowed = true
+      // and the same origin we should allow this.
+      json.onionUrlbarRewritesAllowed = false;
+      if (this.docShell.onionUrlbarRewritesAllowed) {
+        const sm = Services.scriptSecurityManager;
+        try {
+          let targetURI = Services.io.newURI(href);
+          let isPrivateWin =
+            ownerDoc.nodePrincipal.originAttributes.privateBrowsingId > 0;
+          sm.checkSameOriginURI(
+            docshell.currentDocumentChannel.URI,
+            targetURI,
+            false,
+            isPrivateWin
+          );
+          json.onionUrlbarRewritesAllowed = true;
+        } catch (e) {}
+      }
+
       // If a link element is clicked with middle button, user wants to open
       // the link somewhere rather than pasting clipboard content.  Therefore,
       // when it's clicked with middle button, we should prevent multiple

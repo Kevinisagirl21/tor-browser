@@ -243,6 +243,11 @@ interface nsISHEntry : nsISupports
     [infallible] attribute boolean persist;
 
     /**
+     * Whether rewriting the urlbar to a short .onion alias is allowed.
+     */
+    [infallible] attribute boolean onionUrlbarRewritesAllowed;
+
+    /**
      * Set/Get the visual viewport scroll position if session history is
      * changed through anchor navigation or pushState.
      */

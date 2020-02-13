@@ -102,6 +102,7 @@ class ClickHandlerParent extends JSWindowActorParent {
       charset: browser.characterSet,
       referrerInfo: E10SUtils.deserializeReferrerInfo(data.referrerInfo),
       allowMixedContent: data.allowMixedContent,
+      onionUrlbarRewritesAllowed: data.onionUrlbarRewritesAllowed,
       isContentWindowPrivate: data.isContentWindowPrivate,
       originPrincipal: data.originPrincipal,
       originStoragePrincipal: data.originStoragePrincipal,
