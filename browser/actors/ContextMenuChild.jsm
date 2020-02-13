@@ -543,6 +543,9 @@ class ContextMenuChild extends ActorChild {
     // The same-origin check will be done in nsContextMenu.openLinkInTab.
     let parentAllowsMixedContent = !!this.docShell.mixedContentChannel;
 
+    let parentAllowsOnionUrlbarRewrites = this.docShell
+      .allowOnionUrlbarRewrites;
+
     // Get referrer attribute from clicked link and parse it
     let referrerAttrValue = Services.netUtils.parseAttributePolicyString(
       aEvent.composedTarget.getAttribute("referrerpolicy")
@@ -659,6 +662,7 @@ class ContextMenuChild extends ActorChild {
       popupNodeSelectors,
       disableSetDesktopBg,
       parentAllowsMixedContent,
+      parentAllowsOnionUrlbarRewrites,
     };
 
     Services.obs.notifyObservers(

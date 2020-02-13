@@ -167,6 +167,7 @@ class WebProgressChild {
       json.requestContextID = this.mm.content.document.documentLoadGroup
         ? this.mm.content.document.documentLoadGroup.requestContextID
         : null;
+      json.allowOnionUrlbarRewrites = this.mm.docShell.allowOnionUrlbarRewrites;
 
       if (AppConstants.MOZ_CRASHREPORTER && CrashReporter.enabled) {
         let uri = aLocationURI;
