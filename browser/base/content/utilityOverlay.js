@@ -381,6 +381,7 @@ function openLinkIn(url, where, params) {
     : new ReferrerInfo(Ci.nsIReferrerInfo.EMPTY, true, null);
   var aRelatedToCurrent = params.relatedToCurrent;
   var aAllowInheritPrincipal = !!params.allowInheritPrincipal;
+  var aOnionUrlbarRewritesAllowed = params.onionUrlbarRewritesAllowed;
   var aForceAllowDataURI = params.forceAllowDataURI;
   var aInBackground = params.inBackground;
   var aInitiatingDoc = params.initiatingDoc;
@@ -497,6 +498,11 @@ function openLinkIn(url, where, params) {
     ].createInstance(Ci.nsISupportsPRBool);
     allowThirdPartyFixupSupports.data = aAllowThirdPartyFixup;
 
+    var onionUrlbarRewritesAllowed = Cc[
+      "@mozilla.org/supports-PRBool;1"
+    ].createInstance(Ci.nsISupportsPRBool);
+    onionUrlbarRewritesAllowed.data = aOnionUrlbarRewritesAllowed;
+
     var userContextIdSupports = Cc[
       "@mozilla.org/supports-PRUint32;1"
     ].createInstance(Ci.nsISupportsPRUint32);
@@ -513,6 +519,8 @@ function openLinkIn(url, where, params) {
     sa.appendElement(aTriggeringPrincipal);
     sa.appendElement(null); // allowInheritPrincipal
     sa.appendElement(aCsp);
+    sa.appendElement(null); // nsOpenWindowInfo
+    sa.appendElement(onionUrlbarRewritesAllowed);
 
     const sourceWindow = w || window;
     let win;
@@ -630,6 +638,9 @@ function openLinkIn(url, where, params) {
       if (aForceAllowDataURI) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
       }
+      if (aOnionUrlbarRewritesAllowed) {
+        flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES;
+      }
 
       let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
       if (
@@ -676,6 +687,7 @@ function openLinkIn(url, where, params) {
         allowThirdPartyFixup: aAllowThirdPartyFixup,
         relatedToCurrent: aRelatedToCurrent,
         skipAnimation: aSkipTabAnimation,
+        onionUrlbarRewritesAllowed: aOnionUrlbarRewritesAllowed,
         userContextId: aUserContextId,
         originPrincipal: aPrincipal,
         originStoragePrincipal: aStoragePrincipal,
