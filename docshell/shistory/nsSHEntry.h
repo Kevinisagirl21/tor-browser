@@ -63,6 +63,7 @@ class nsSHEntry : public nsISHEntry {
   bool mScrollRestorationIsManual;
   bool mLoadedInThisProcess;
   bool mPersist;
+  bool mOnionUrlbarRewritesAllowed;
 };
 
 #endif /* nsSHEntry_h */
