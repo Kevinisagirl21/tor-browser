@@ -77,6 +77,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
   UrlbarInput: "resource:///modules/UrlbarInput.jsm",
@@ -2324,6 +2325,7 @@ var gBrowserInit = {
         //                 [9]: allowInheritPrincipal (bool)
         //                 [10]: csp (nsIContentSecurityPolicy)
         //                 [11]: nsOpenWindowInfo
+        //                 [12]: onionUrlbarRewritesAllowed (bool)
         let userContextId =
           window.arguments[5] != undefined
             ? window.arguments[5]
@@ -2343,7 +2345,8 @@ var gBrowserInit = {
           // TODO fix allowInheritPrincipal to default to false.
           // Default to true unless explicitly set to false because of bug 1475201.
           window.arguments[9] !== false,
-          window.arguments[10]
+          window.arguments[10],
+          window.arguments[12]
         );
         window.focus();
       } else {
@@ -3229,7 +3232,8 @@ function loadURI(
   forceAboutBlankViewerInCurrent,
   triggeringPrincipal,
   allowInheritPrincipal = false,
-  csp = null
+  csp = null,
+  onionUrlbarRewritesAllowed = false
 ) {
   if (!triggeringPrincipal) {
     throw new Error("Must load with a triggering Principal");
@@ -3247,6 +3251,7 @@ function loadURI(
       csp,
       forceAboutBlankViewerInCurrent,
       allowInheritPrincipal,
+      onionUrlbarRewritesAllowed,
     });
   } catch (e) {
     Cu.reportError(e);
@@ -5358,11 +5363,24 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
+      // The onion memorable alias needs to be used in gURLBar.setURI, but also in
+      // other parts of the code (like the bookmarks UI), so we save it.
+      if (gBrowser.selectedBrowser.onionUrlbarRewritesAllowed) {
+        gBrowser.selectedBrowser.currentOnionAliasURI = OnionAliasStore.getShortURI(
+          aLocationURI
+        );
+      } else {
+        gBrowser.selectedBrowser.currentOnionAliasURI = null;
+      }
+
       // We want to update the popup visibility if we received this notification
       // via simulated locationchange events such as switching between tabs, however
       // if this is a document navigation then PopupNotifications will be updated
       // via TabsProgressListener.onLocationChange and we do not want it called twice
-      gURLBar.setURI(aLocationURI, aIsSimulated);
+      gURLBar.setURI(
+        gBrowser.selectedBrowser.currentOnionAliasURI || aLocationURI,
+        aIsSimulated
+      );
 
       BookmarkingUI.onLocationChange();
 
@@ -5533,6 +5551,7 @@ var XULBrowserWindow = {
     // Don't need to do anything if the data we use to update the UI hasn't
     // changed
     let uri = gBrowser.currentURI;
+    let onionAliasURI = gBrowser.selectedBrowser.currentOnionAliasURI;
     let spec = uri.spec;
     if (this._state == aState && this._lastLocation == spec) {
       // Switching to a tab of the same URL doesn't change most security
@@ -5550,7 +5569,7 @@ var XULBrowserWindow = {
     try {
       uri = Services.io.createExposableURI(uri);
     } catch (e) {}
-    gIdentityHandler.updateIdentity(this._state, uri);
+    gIdentityHandler.updateIdentity(this._state, uri, onionAliasURI);
   },
 
   // simulate all change notifications after switching tabs
@@ -7010,6 +7029,21 @@ function handleLinkClick(event, href, linkNode) {
     } catch (e) {}
   }
 
+  // Check if the link needs to be opened with .tor.onion urlbar rewrites
+  // allowed. Only when the owner doc has onionUrlbarRewritesAllowed = true
+  // and the same origin we should allow this.
+  let persistOnionUrlbarRewritesAllowedInChildTab = false;
+  if (where == "tab" && gBrowser.docShell.onionUrlbarRewritesAllowed) {
+    const sm = Services.scriptSecurityManager;
+    try {
+      let tURI = makeURI(href);
+      let isPrivateWin =
+        doc.nodePrincipal.originAttributes.privateBrowsingId > 0;
+      sm.checkSameOriginURI(doc.documentURIObject, tURI, false, isPrivateWin);
+      persistOnionUrlbarRewritesAllowedInChildTab = true;
+    } catch (e) {}
+  }
+
   let frameOuterWindowID = WebNavigationFrames.getFrameId(doc.defaultView);
 
   urlSecurityCheck(href, doc.nodePrincipal);
@@ -7022,6 +7056,7 @@ function handleLinkClick(event, href, linkNode) {
     triggeringPrincipal: doc.nodePrincipal,
     csp: doc.csp,
     frameOuterWindowID,
+    onionUrlbarRewritesAllowed: persistOnionUrlbarRewritesAllowedInChildTab,
   };
 
   // The new tab/window must use the same userContextId

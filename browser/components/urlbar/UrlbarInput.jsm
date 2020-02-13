@@ -277,7 +277,10 @@ class UrlbarInput {
     // bar if the user has deleted the URL and we'd just put the same URL
     // back. See bug 304198.
     if (value === null) {
-      uri = uri || this.window.gBrowser.currentURI;
+      uri =
+        uri ||
+        this.window.gBrowser.selectedBrowser.currentOnionAliasURI ||
+        this.window.gBrowser.currentURI;
       // Strip off usernames and passwords for the location bar
       try {
         uri = Services.io.createExposableURI(uri);
@@ -1541,7 +1544,13 @@ class UrlbarInput {
     }
 
     let uri;
-    if (this.getAttribute("pageproxystate") == "valid") {
+    // When we rewrite .onion to an alias, gBrowser.currentURI will be different than
+    // the URI displayed in the urlbar. We need to use the urlbar value to copy the
+    // alias instead of the actual .onion URI that is loaded.
+    if (
+      this.getAttribute("pageproxystate") == "valid" &&
+      !this.window.gBrowser.selectedBrowser.currentOnionAliasURI
+    ) {
       uri = this.window.gBrowser.currentURI;
     } else {
       // The value could be:
