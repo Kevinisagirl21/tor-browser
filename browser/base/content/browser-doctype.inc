@@ -14,3 +14,9 @@
 %syncBrandDTD;
 <!ENTITY % brandingsDTD SYSTEM "chrome://browser/locale/brandings.dtd">
 %brandingsDTD;
+<!ENTITY % torbuttonDTD SYSTEM "chrome://torbutton/locale/torbutton.dtd">
+%torbuttonDTD;
+<!ENTITY % aboutTorDTD SYSTEM "chrome://torbutton/locale/aboutTor.dtd">
+%aboutTorDTD;
+<!ENTITY % aboutDialogDTD SYSTEM "chrome://torbutton/locale/aboutDialog.dtd">
+%aboutDialogDTD;
