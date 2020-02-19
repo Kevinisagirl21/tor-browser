@@ -92,6 +92,28 @@
         </vbox>
       </hbox>
 
+      <!-- Circuit display section -->
+
+      <vbox id="circuit-display-container" class="identity-popup-section">
+        <toolbarseparator/>
+        <vbox id="circuit-display-header" flex="1" role="group"
+              aria-labelledby="circuit-display-headline">
+          <hbox flex="1">
+            <label id="circuit-display-headline"
+                   role="heading" aria-level="2">&torbutton.circuit_display.title;</label>
+          </hbox>
+        </vbox>
+        <vbox id="circuit-display-content">
+          <html:ul id="circuit-display-nodes" dir="auto"/>
+          <hbox id="circuit-guard-note-container"/>
+          <hbox id="circuit-reload-button-container">
+            <html:button id="circuit-reload-button"
+                    onclick="torbutton_new_circuit()"
+                    default="true">&torbutton.circuit_display.new_circuit;</html:button>
+          </hbox>
+        </vbox>
+      </vbox>
+
       <!-- Clear Site Data Button -->
       <vbox hidden="true"
             id="identity-popup-clear-sitedata-footer">
