@@ -389,4 +389,5 @@
          internal="true"/>
 #endif
     <key id="new-identity-key" modifiers="accel shift" key="U" oncommand="NewIdentityButton.onCommand(event)"/>
+    <key id="torbutton-new-circuit-key" modifiers="accel shift" key="L" oncommand="torbutton_new_circuit()"/>
   </keyset>
