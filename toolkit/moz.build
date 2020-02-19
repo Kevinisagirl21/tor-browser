@@ -23,6 +23,7 @@ DIRS += [
     'pluginproblem',
     'profile',
     'themes',
+    'torproject/torbutton',
 ]
 
 if CONFIG['OS_ARCH'] == 'WINNT' and CONFIG['MOZ_DEFAULT_BROWSER_AGENT']:
@@ -35,9 +36,6 @@ if CONFIG['MOZ_MAINTENANCE_SERVICE'] or CONFIG['MOZ_UPDATER']:
     DIRS += [
         'mozapps/update/common',
     ]
-
-if CONFIG['MOZ_BUILD_APP'] == 'mobile/android':
-    DIRS += ['torproject/torbutton']
 
 if CONFIG['MOZ_MAINTENANCE_SERVICE']:
     DIRS += [
