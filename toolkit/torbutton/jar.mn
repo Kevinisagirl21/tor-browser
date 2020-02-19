@@ -1,0 +1,37 @@
+#filter substitution
+
+torbutton.jar:
+
+% content torbutton %content/
+
+  content/torbutton.js                   (chrome/content/torbutton.js)
+  content/aboutTor/aboutTor-content.js   (chrome/content/aboutTor/aboutTor-content.js)
+* content/aboutTor/aboutTor.xhtml        (chrome/content/aboutTor/aboutTor.xhtml)
+  content/aboutTor/resources/aboutTor.js (chrome/content/aboutTor/resources/aboutTor.js)
+
+  components/    (components/*)
+  modules/       (modules/*)
+  skin/          (chrome/skin/*)
+
+% resource torbutton %
+% resource torbutton-abouttor resource://torbutton/content/aboutTor/resources/ contentaccessible=yes
+% resource torbutton-assets resource://torbutton/skin/ contentaccessible=yes
+
+% skin torbutton classic/1.0 %skin/
+
+# Firefox 4-style component registration
+% component {06322def-6fde-4c06-aef6-47ae8e799629} %components/startup-observer.js
+% contract @torproject.org/startup-observer;1 {06322def-6fde-4c06-aef6-47ae8e799629}
+
+% component {5d57312b-5d8c-4169-b4af-e80d6a28a72e} %components/torCheckService.js
+% contract @torproject.org/torbutton-torCheckService;1 {5d57312b-5d8c-4169-b4af-e80d6a28a72e}
+
+% component {f36d72c9-9718-4134-b550-e109638331d7} %components/torbutton-logger.js
+% contract @torproject.org/torbutton-logger;1 {f36d72c9-9718-4134-b550-e109638331d7}
+
+% component {e33fd6d4-270f-475f-a96f-ff3140279f68} %components/domain-isolator.js
+% contract @torproject.org/domain-isolator;1 {e33fd6d4-270f-475f-a96f-ff3140279f68}
+
+% category profile-after-change StartupObserver @torproject.org/startup-observer;1
+% category profile-after-change DomainIsolator @torproject.org/domain-isolator;1
+% category profile-after-change DragDropFilter @torproject.org/torbutton-dragDropFilter;1
