@@ -266,3 +266,5 @@
   skin/classic/browser/syncedtabs/sidebar.css                  (../shared/syncedtabs/sidebar.css)
 
   skin/classic/browser/new_identity.svg                        (../shared/icons/new_identity.svg)
+
+  skin/classic/browser/new_circuit.svg                         (../shared/icons/new_circuit.svg)
