@@ -35,6 +35,7 @@ EXTRA_JS_MODULES += [
     "ExtensionWorkerChild.jsm",
     "FindContent.jsm",
     "MatchURLFilters.jsm",
+    "MessageChannel.jsm",
     "MessageManagerProxy.jsm",
     "NativeManifests.jsm",
     "NativeMessaging.jsm",
