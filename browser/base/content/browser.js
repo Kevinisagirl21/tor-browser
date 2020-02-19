@@ -627,6 +627,7 @@ var gPageIcons = {
 };
 
 var gInitialPages = [
+  "about:tor",
   "about:blank",
   "about:newtab",
   "about:home",
