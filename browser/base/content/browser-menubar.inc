@@ -31,6 +31,11 @@
                 <menuseparator/>
                 <menuitem id="menu_newIdentity"
                           key="new-identity-key"/>
+                <menuitem id="menu_newCircuit"
+                          accesskey="&torbutton.context_menu.new_circuit_key;"
+                          key="torbutton-new-circuit-key"
+                          label="&torbutton.context_menu.new_circuit;"
+                          oncommand="torbutton_new_circuit();"/>
                 <menuseparator/>
                 <menuitem id="menu_openLocation"
                           hidden="true"
@@ -455,44 +460,55 @@
               <menupopup id="menu_HelpPopup" onpopupshowing="buildHelpMenu();">
 <!-- Note: Items under here are cloned to the AppMenu Help submenu. The cloned items
      have their strings defined by appmenu-data-l10n-id. -->
-                <menuitem id="menu_openHelp"
+                <!-- dummy elements to avoid 'getElementById' errors -->
+                <box id="feedbackPage"/>
+                <box id="helpSafeMode"/>
+                <box id="menu_HelpPopup_reportPhishingtoolmenu"/>
+                <box id="menu_HelpPopup_reportPhishingErrortoolmenu"/>
+                <!-- Add Tor Browser manual link -->
+                <menuitem id="torBrowserUserManual"
+                          oncommand="gBrowser.selectedTab = gBrowser.addTab('about:manual', {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()});"
+                          label="&aboutTor.torbrowser_user_manual.label;"
+                          accesskey="&aboutTor.torbrowser_user_manual.accesskey;"/>
+                <!-- Bug 18905: Hide unused help menu items -->
+                <!-- <menuitem id="menu_openHelp"
                           oncommand="openHelpLink('firefox-help')"
                           data-l10n-id="menu-get-help"
                           appmenu-data-l10n-id="appmenu-get-help"
 #ifdef XP_MACOSX
-                          key="key_openHelpMac"/>
+                          key="key_openHelpMac"/> -->
 #else
-                          />
+                          /> -->
 #endif
-                <menuitem id="feedbackPage"
+                <!-- <menuitem id="feedbackPage"
                           oncommand="openFeedbackPage()"
-                          data-l10n-id="menu-help-share-ideas"
-                          appmenu-data-l10n-id="appmenu-help-share-ideas"/>
-                <menuitem id="helpSafeMode"
+                          data-l10n-id="menu-help-feedback-page"
+                          appmenu-data-l10n-id="appmenu-help-feedback-page"/> -->
+                <!-- <menuitem id="helpSafeMode"
                           oncommand="safeModeRestart();"
                           data-l10n-id="menu-help-enter-troubleshoot-mode2"
-                          appmenu-data-l10n-id="appmenu-help-enter-troubleshoot-mode2"/>
-                <menuitem id="troubleShooting"
+                          appmenu-data-l10n-id="appmenu-help-enter-troubleshoot-mode2"/> -->
+                <!-- <menuitem id="troubleShooting"
                           oncommand="openTroubleshootingPage()"
                           data-l10n-id="menu-help-more-troubleshooting-info"
-                          appmenu-data-l10n-id="appmenu-help-more-troubleshooting-info"/>
+                          appmenu-data-l10n-id="appmenu-help-more-troubleshooting-info"/> -->
                 <menuitem id="help_reportSiteIssue"
                           oncommand="ReportSiteIssue();"
                           data-l10n-id="menu-help-report-site-issue"
                           appmenu-data-l10n-id="appmenu-help-report-site-issue"
                           hidden="true"/>
-                <menuitem id="menu_HelpPopup_reportPhishingtoolmenu"
+                <!-- <menuitem id="menu_HelpPopup_reportPhishingtoolmenu"
                           disabled="true"
                           oncommand="openUILink(gSafeBrowsing.getReportURL('Phish'), event, {triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({})});"
                           hidden="true"
                           data-l10n-id="menu-help-report-deceptive-site"
-                          appmenu-data-l10n-id="appmenu-help-report-deceptive-site"/>
-                <menuitem id="menu_HelpPopup_reportPhishingErrortoolmenu"
+                          appmenu-data-l10n-id="appmenu-help-report-deceptive-site"/> -->
+                <!-- <menuitem id="menu_HelpPopup_reportPhishingErrortoolmenu"
                           disabled="true"
                           oncommand="ReportFalseDeceptiveSite();"
                           data-l10n-id="menu-help-not-deceptive"
                           appmenu-data-l10n-id="appmenu-help-not-deceptive"
-                          hidden="true"/>
+                          hidden="true"/> -->
                 <menuseparator id="aboutSeparator"/>
                 <menuitem id="aboutName"
                           oncommand="openAboutDialog();"
