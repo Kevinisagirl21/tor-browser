@@ -1,0 +1,193 @@
+/*
+This CSS file is for styling the tor circuit display, which consists of a title,
+a domain, and a bulleted list.
+
+Each bullet in the circuit node list is supposed to represent a Tor circuit node,
+and lines drawn between them to represent Tor network inter-relay connections.
+*/
+
+#circuit-display-container {
+  margin-inline: 8px;
+  margin-top: 0px;
+  margin-bottom: 4px;
+  padding: 0px 3px;
+}
+
+#circuit-display-container > toolbarseparator {
+  margin-block: 0px;
+  margin-inline: -3px;
+  width: calc(100% + 6px);
+}
+
+#circuit-display-headline {
+  margin-inline-start: 8px;
+}
+
+#circuit-display-header {
+  background-image: url(chrome://torbutton/skin/torbutton.svg);
+  background-repeat: no-repeat;
+  background-position: 4px 50%;
+  background-size: 16px auto;
+  min-height:  16px;
+  -moz-context-properties: fill, fill-opacity;
+  fill: currentColor;
+  margin-block: 8px;
+}
+
+#circuit-display-header:-moz-locale-dir(rtl) {
+  background-position-x: right;
+}
+
+#circuit-display-header > hbox {
+  margin-inline-start: 16px;
+}
+
+#circuit-display-content {
+  width: 100%;
+}
+
+#circuit-display-content > * {
+  margin-inline: 0px;
+  margin-inline-start: 16px;
+  margin-top: 0px;
+  margin-bottom: 8px;
+}
+
+#circuit-display-content > hbox:not([hidden]) {
+  display: flex;
+}
+
+#circuit-reload-button-container {
+  padding-top: 8px;
+  justify-content: flex-end;
+}
+
+#circuit-reload-content {
+  cursor: default;
+  width: 100%;
+}
+
+/* Format the domain text. */
+#circuit-display-domain {
+  opacity: 0.8;
+}
+
+#circuit-div {
+  position: relative;
+  margin-inline-start: 6px;
+}
+
+/* Format the circuit node list. */
+ul#circuit-display-nodes {
+  line-height:32px;
+  padding-inline-start: 8px;
+}
+
+/* Hide default bullets, and draw our own bullets */
+ul#circuit-display-nodes li {
+  background-image: url(chrome://torbutton/skin/tor-circuit-line.svg);
+  background-position: left center;
+  background-repeat: no-repeat;
+  list-style: none;
+  /* tor circuit svg are 16px wide */
+  padding-inline-start: calc(16px + 0.5em);
+  white-space: nowrap;
+  max-height: 32px;
+  -moz-context-properties: stroke, stroke-opacity;
+  stroke: currentColor;
+  stroke-opacity: 100%;
+}
+
+ul#circuit-display-nodes li:dir(rtl) {
+  background-position: right center;
+}
+
+ul#circuit-display-nodes li:first-child {
+  background-image: url(chrome://torbutton/skin/tor-circuit-line-first.svg);
+}
+
+ul#circuit-display-nodes li:last-child {
+  background-image: url(chrome://torbutton/skin/tor-circuit-line-last.svg);
+}
+
+.circuit-ip-address {
+  font-size: 80%;
+  opacity: 0.7;
+  padding-inline-start: 3px;
+}
+
+.circuit-guard-info {
+  font-size: 80%;
+  color: var(--button-primary-bgcolor);
+  font-weight: bold;
+  padding-inline-start: 3px;
+}
+
+#circuit-reload-button {
+  background-color: var(--button-primary-bgcolor);
+  border-radius: 4px;
+  border-width: 0px;
+  color: var(--button-primary-color);
+  font-weight: 600;
+  padding: 8px 16px;
+  margin: 0;
+}
+#circuit-reload-button:hover {
+  background-color: var(--button-primary-hover-bgcolor);
+}
+
+#circuit-reload-button:active {
+  background-color: var(--button-primary-active-bgcolor);
+}
+
+#circuit-guard-note-container div {
+  margin-inline-start: 8px;
+}
+
+.circuit-guard-name {
+  font-weight: bold;
+}
+
+.circuit-link {
+  cursor: pointer;
+  color: var(--urlbar-popup-url-color);
+}
+
+.circuit-link:hover {
+  text-decoration: underline;
+}
+
+.circuit-onion {
+  cursor: pointer;
+}
+
+.circuit-onion:hover::after {
+  opacity: 1;
+}
+
+.circuit-onion::after {
+  background-color: var(--button-bgcolor);;
+  border-radius: 4px;
+  color: var(--button-color);
+  content: attr(data-text-clicktocopy);
+  font-size: 80%;
+  opacity: 0;
+  padding: 5px 10px;
+  margin: 10px;
+  text-align: center;
+  transition: opacity 0.3s cubic-bezier(0.07, 0.95, 0, 1);
+}
+
+.circuit-onion:hover::after {
+  background-color: var(--button-hover-bgcolor);
+}
+
+.circuit-onion:active::after {
+  background-color: var(--button-active-bgcolor);
+}
+
+
+.circuit-onion-copied::after {
+  content: attr(data-text-copied);
+  opacity: 1;
+}
