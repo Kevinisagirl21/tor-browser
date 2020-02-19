@@ -83,7 +83,11 @@ function getGlobalScriptIncludes(scriptPath) {
           "browser/components/screenshots/content/"
         )
         .replace("chrome://browser/content/", "browser/base/content/")
-        .replace("chrome://global/content/", "toolkit/content/");
+        .replace("chrome://global/content/", "toolkit/content/")
+        .replace(
+          "chrome://torbutton/content/",
+          "toolkit/torproject/torbutton/chrome/content/"
+        );
 
       for (let mapping of Object.getOwnPropertyNames(MAPPINGS)) {
         if (sourceFile.includes(mapping)) {
