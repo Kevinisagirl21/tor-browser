@@ -635,6 +635,7 @@ var gPageIcons = {
 };
 
 var gInitialPages = [
+  "about:tor",
   "about:blank",
   "about:home",
   ...(AppConstants.NIGHTLY_BUILD ? ["about:firefoxview"] : []),
