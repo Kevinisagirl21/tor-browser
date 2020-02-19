@@ -55,7 +55,8 @@
                      class="subviewbutton"
                      data-l10n-id="appmenuitem-new-private-window"
                      key="key_privatebrowsing"
-                     command="Tools:PrivateBrowsing"/>
+                     command="Tools:PrivateBrowsing"
+                     hidden="true"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenu-bookmarks-button"
                      class="subviewbutton subviewbutton-nav"
@@ -175,11 +176,17 @@
       <toolbarbutton id="appMenu-restoreSession"
                      data-l10n-id="appmenu-restore-session"
                      class="subviewbutton"
-                     command="Browser:RestoreLastSession"/>
+                     command="Browser:RestoreLastSession"
+                     hidden="true"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenu-new-identity"
                      class="subviewbutton subviewbutton-iconic"
                      key="new-identity-key"/>
+      <toolbarbutton id="appMenuNewCircuit"
+                     class="subviewbutton subviewbutton-iconic"
+                     key="torbutton-new-circuit-key"
+                     label="&torbutton.context_menu.new_circuit;"
+                     oncommand="torbutton_new_circuit();"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenuClearRecentHistory"
                      data-l10n-id="appmenu-clear-history"
