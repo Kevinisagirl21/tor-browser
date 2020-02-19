@@ -1,0 +1,313 @@
+/*
+ * Copyright (c) 2019, The Tor Project, Inc.
+ * See LICENSE for licensing information.
+ *
+ * vim: set sw=2 sts=2 ts=8 et syntax=css:
+ */
+
+:root {
+  --abouttor-text-color: white;
+  --abouttor-bg-toron-color: #420C5D;
+  --abouttor-bg-toroff-color: #A4000F;
+  --onion-opacity: 0.2;
+  --onion-color: #fff;
+  --onion-radius: 75px;
+}
+
+* {
+  padding: 0px;
+  margin: 0px;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  margin: 0px auto;
+  padding: 0px 0px;
+  font-family: Helvetica, Arial, sans-serif;
+  color: var(--abouttor-text-color);
+  background-color: var(--abouttor-bg-toroff-color);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+}
+
+body[toron] {
+  background-color: var(--abouttor-bg-toron-color);
+}
+
+/* Hide the entire document by default to avoid showing the incorrect
+ * Tor on / off status (that info must be retrieved from the chrome
+ * process, which involves IPC when multiprocess mode is enabled). An
+ * initialized attribute will be added as soon as the status is known.
+ */
+body:not([initialized]) {
+  display: none;
+}
+
+.torcontent-container {
+  margin: 40px 20px 28px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media only screen and (min-width: 900px) {
+  .torcontent-container {
+    margin: 40px auto 28px auto;
+    max-width: 1000px;
+  }
+}
+
+#torbrowser-info {
+  position: absolute;
+  top: 16px;
+  offset-inline-end: 16px;
+  inset-inline-end: 16px;
+  height: 36px;
+  width: 200px;
+}
+
+#torbrowser-info div {
+  font-size: 14px;
+  white-space: pre-wrap;
+  text-align: end;
+  margin-bottom: 6px;
+}
+
+/* Hide "View Changelog" link if update channel is not release or alpha. */
+body:not([updatechannel="release"]):not([updatechannel="alpha"]) #torbrowser-changelog-link {
+  display: none;
+}
+
+a {
+  color: var(--abouttor-text-color);
+}
+
+#torstatus {
+  margin-top: 135px;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: flex-end;
+  min-height: 92px;
+}
+
+.top {
+  white-space: nowrap;
+}
+
+.torstatus-container {
+  text-align: center;
+}
+
+body[hasbeenupdated] .hideIfHasBeenUpdated,
+body[toron] .hideIfTorOn,
+body:not([toron]) .hideIfTorOff {
+  display: none;
+}
+
+body:not([hasbeenupdated]) .showIfHasBeenUpdated {
+  display: none;
+}
+
+.torstatus-container * {
+  text-align: center;
+}
+
+.top div.hideIfTorOff .heading1 {
+  margin-top: 20px;
+}
+
+.top .heading1 {
+  font-size: 50px;
+  font-weight: 300;
+  margin-bottom: 5px;
+}
+
+.top .heading2 {
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+#bottom {
+  margin-top: 10vh;
+  margin-inline: auto;
+  max-width: 730px;
+}
+
+#bottom p {
+  font-size: 10px;
+  text-align: start;
+  padding-bottom: 20px;
+}
+
+#bottom p:last-child {
+  padding-bottom: 0px;
+}
+
+#bottom p.moreInfoLink {
+  font-size: 15px;
+}
+
+#bottom img.imageStyle {
+  padding-inline-end: 0.5em;
+  height: 1.5em;
+  vertical-align: bottom;
+  -moz-context-properties: fill;
+  fill: white;
+}
+
+/* Hide the linebreaks on large enough screens (desktops, laptops, and
+ * tablets).
+ */
+@media only screen and (min-width: 768px) {
+  #bottom br {
+    display: none;
+  }
+}
+
+.searchbox form {
+  max-width: 575px;
+  width: auto;
+  margin-block: 0;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.searchwrapper {
+  display: flex;
+  height: 46px;
+  border: 1px solid black;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.searchlabel {
+  height: auto;
+  width: 50px;
+  display: inline-block;
+  background: url('dax-logo.svg') no-repeat center center;
+  background-size: 30px 30px;
+}
+
+#search-button {
+  height: auto;
+  width: 36px;
+  border: 0;
+  background: url('chrome://browser/skin/forward.svg') no-repeat center center;
+  background-size: 16px 16px;
+  cursor: pointer;
+}
+
+#search-button:dir(rtl) {
+  transform: scaleX(-1);
+}
+
+#search-button:hover {
+  background-color: rgba(12, 12, 13, 0.1);  /* same as Firefox's about:home */
+}
+
+#bannerRoot {
+  width: 690px;
+  padding: 20px 25px 25px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  margin: 35px auto 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  position: static;
+}
+
+#bannerTextCol {
+  padding-top: 8px;
+  padding-inline-start: 15px;
+  font-size: 15px;
+  line-height: normal;
+  color: #FFFFFF;
+  width: 633px;
+}
+
+#bannerHeader {
+  font-weight: bold;
+}
+
+#bannerImg {
+    width: 32px;
+    position: static;
+}
+
+a#bannerLink {
+  text-decoration: underline;
+}
+
+a#bannerLink:hover {
+  text-decoration: none;
+}
+
+/* #search-text is the search input field */
+#search-text {
+  flex: 1;
+  border: none;
+  padding: 4px 2px 5px 2px;
+  margin: 0;
+  font-size: 15px;
+}
+
+#search-text:focus-visible {
+  outline: none;
+}
+
+#search-button:focus-visible {
+  outline: 1px dotted black;
+  outline-offset: -6px;
+}
+
+
+/*
+ * Mobile specific css
+ */
+
+.torcontent-logo {
+  display: none;
+}
+
+body[mobile] #torbrowser-changelog-link,
+body[mobile] .searchbox,
+body[mobile] .top .heading2,
+body[mobile] #manual,
+body[mobile] #mission {
+  display: none;
+}
+
+body[mobile] .top {
+  white-space: normal;
+  margin-top: 0px !important;
+}
+
+body[mobile] .torcontent-logo {
+  display: block;
+  margin-top: 20px;
+  width: 50%;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body[mobile] .top .heading1 {
+  font-size: 62px;
+  line-height: 1.1
+}
+
+body[mobile] .onion-pattern-container {
+  flex: none;
+  z-index: -1; /* ensure that circles do not block access to clickable links */
+  position: absolute;
+  bottom: 0px;
+}
