@@ -1,0 +1,12 @@
+#filter substitution
+
+torbutton.jar:
+
+% content torbutton %content/
+
+  content/torbutton.js                   (chrome/content/torbutton.js)
+
+  components/    (components/*)
+  modules/       (modules/*)
+
+% resource torbutton %
