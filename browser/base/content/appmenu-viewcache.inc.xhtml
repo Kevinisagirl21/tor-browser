@@ -45,7 +45,8 @@
                      class="subviewbutton subviewbutton-iconic"
                      data-l10n-id="appmenuitem-new-private-window"
                      key="key_privatebrowsing"
-                     command="Tools:PrivateBrowsing"/>
+                     command="Tools:PrivateBrowsing"
+                     hidden="true"/>
 #ifdef NIGHTLY_BUILD
       <toolbarbutton id="appMenu-fission-window-button"
                      class="subviewbutton subviewbutton-iconic"
@@ -61,7 +62,19 @@
       <toolbarbutton id="appMenuRestoreLastSession"
                      data-l10n-id="appmenu-restore-session"
                      class="subviewbutton subviewbutton-iconic"
-                     command="Browser:RestoreLastSession"/>
+                     command="Browser:RestoreLastSession"
+                     hidden="true"/>
+      <toolbarseparator/>
+      <toolbarbutton id="appMenuNewIdentity"
+                     class="subviewbutton subviewbutton-iconic"
+                     key="torbutton-new-identity-key"
+                     label="&torbutton.context_menu.new_identity;"
+                     oncommand="torbutton_new_identity();"/>
+      <toolbarbutton id="appMenuNewCircuit"
+                     class="subviewbutton subviewbutton-iconic"
+                     key="torbutton-new-circuit-key"
+                     label="&torbutton.context_menu.new_circuit;"
+                     oncommand="torbutton_new_circuit();"/>
       <toolbarseparator/>
       <toolbaritem id="appMenu-zoom-controls" class="toolbaritem-combined-buttons" closemenu="none">
         <!-- Use a spacer, because panel sizing code gets confused when using CSS methods. -->
@@ -255,6 +268,17 @@
                      data-l10n-id="appmenuitem-new-private-window"
                      key="key_privatebrowsing"
                      command="Tools:PrivateBrowsing"/>
+      <toolbarseparator/>
+      <toolbarbutton id="appMenuNewIdentity"
+                     class="subviewbutton"
+                     key="torbutton-new-identity-key"
+                     label="&torbutton.context_menu.new_identity_sentence_case;"
+                     oncommand="torbutton_new_identity();"/>
+      <toolbarbutton id="appMenuNewCircuit"
+                     class="subviewbutton"
+                     key="torbutton-new-circuit-key"
+                     label="&torbutton.context_menu.new_circuit_sentence_case;"
+                     oncommand="torbutton_new_circuit();"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenu-bookmarks-button"
                      class="subviewbutton subviewbutton-nav"
