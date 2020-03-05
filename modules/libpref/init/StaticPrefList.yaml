@@ -10469,6 +10469,11 @@
   value: ""
   mirror: never
 
+- name: privacy.prioritizeonions.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "prompts."
 #---------------------------------------------------------------------------
