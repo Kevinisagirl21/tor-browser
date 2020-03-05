@@ -2078,6 +2078,7 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   // mDocumentURI.
   mDocumentBaseURI = nullptr;
   mChromeXHRDocBaseURI = nullptr;
+  mOnionLocationURI = nullptr;
 
   if (aLoadGroup) {
     mDocumentLoadGroup = do_GetWeakReference(aLoadGroup);
@@ -3731,6 +3732,21 @@ void Document::GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const {
   }
 }
 
+static bool IsValidOnionLocation(nsIURI* aDocumentURI,
+                                 nsIURI* aOnionLocationURI) {
+  bool isHttpish;
+  nsAutoCString onionHost;
+  return aDocumentURI && aOnionLocationURI &&
+         NS_SUCCEEDED(aDocumentURI->SchemeIs("https", &isHttpish)) &&
+         isHttpish &&
+         ((NS_SUCCEEDED(aOnionLocationURI->SchemeIs("http", &isHttpish)) &&
+           isHttpish) ||
+          (NS_SUCCEEDED(aOnionLocationURI->SchemeIs("https", &isHttpish)) &&
+           isHttpish)) &&
+         NS_SUCCEEDED(aOnionLocationURI->GetAsciiHost(onionHost)) &&
+         StringEndsWith(onionHost, NS_LITERAL_CSTRING(".onion"));
+}
+
 void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
   if (!aHeaderField) {
     NS_ERROR("null headerField");
@@ -3832,6 +3848,20 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     if (policy != mozilla::net::RP_Unset) {
       mReferrerPolicy = policy;
       mReferrerPolicySet = true;
+    }
+  }
+  if (aHeaderField == nsGkAtoms::headerOnionLocation && !aData.IsEmpty()) {
+    nsCOMPtr<nsIURI> onionURI;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(onionURI), aData)) &&
+        IsValidOnionLocation(Document::GetDocumentURI(), onionURI)) {
+      if (StaticPrefs::privacy_prioritizeOnions()) {
+        nsCOMPtr<nsIRefreshURI> refresher(mDocumentContainer);
+        if (refresher) {
+          refresher->RefreshURI(onionURI, NodePrincipal(), 0, false, true);
+        }
+      } else {
+        mOnionLocationURI = onionURI;
+      }
     }
   }
 }
@@ -7468,7 +7498,7 @@ void Document::RetrieveRelevantHeaders(nsIChannel* aChannel) {
     static const char* const headers[] = {
         "default-style", "content-style-type", "content-language",
         "content-disposition", "refresh", "x-dns-prefetch-control",
-        "x-frame-options", "referrer-policy",
+        "x-frame-options", "referrer-policy", "onion-location",
         // add more http headers if you need
         // XXXbz don't add content-location support without reading bug
         // 238654 and its dependencies/dups first.
