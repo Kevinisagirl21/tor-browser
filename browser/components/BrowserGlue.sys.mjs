@@ -760,6 +760,19 @@ let JSWINDOWACTORS = {
     ],
   },
 
+  OnionLocation: {
+    parent: {
+      moduleURI: "resource:///modules/OnionLocationParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/OnionLocationChild.jsm",
+      events: {
+        pageshow: { mozSystemGroup: true },
+      },
+    },
+    messageManagerGroups: ["browsers"],
+  },
+
   PageInfo: {
     child: {
       esModuleURI: "resource:///actors/PageInfoChild.sys.mjs",
