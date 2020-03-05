@@ -473,6 +473,19 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  OnionLocation: {
+    parent: {
+      moduleURI: "resource:///modules/OnionLocationParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/OnionLocationChild.jsm",
+      events: {
+        pageshow: { mozSystemGroup: true },
+      },
+    },
+    messageManagerGroups: ["browsers"],
+  },
+
   PageInfo: {
     child: {
       moduleURI: "resource:///actors/PageInfoChild.jsm",
