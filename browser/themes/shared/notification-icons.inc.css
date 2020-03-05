@@ -449,3 +449,5 @@
   -moz-context-properties: fill;
   fill: var(--panel-banner-item-warning-icon-bgcolor);
 }
+
+%include ../../components/onionservices/content/onionlocation-notification-icons.css
