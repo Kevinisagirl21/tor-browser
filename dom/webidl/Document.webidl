@@ -732,4 +732,7 @@ partial interface Document {
   // context which isn't in bfcache.
   [ChromeOnly]
   boolean isActive();
+  // Allow chrome JS to know whether a document has a valid Onion-Location
+  // that we could redirect to.
+  [ChromeOnly] readonly attribute URI? onionLocationURI;
 };
