@@ -55,6 +55,12 @@ XPCOMUtils.defineLazyScriptGetter(
   "chrome://browser/content/securitylevel/securityLevel.js"
 );
 
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["OnionLocationPreferences"],
+  "chrome://browser/content/onionservices/onionlocationPreferences.js"
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "OS_AUTH_ENABLED",
@@ -131,6 +137,9 @@ Preferences.addAll([
   { id: "privacy.sanitize.timeSpan", type: "int" },
   // Do not track
   { id: "privacy.donottrackheader.enabled", type: "bool" },
+
+  // Onion Location
+  { id: "privacy.prioritizeonions.enabled", type: "bool" },
 
   // Media
   { id: "media.autoplay.default", type: "int" },
@@ -334,6 +343,13 @@ var gPrivacyPane = {
   },
 
   /**
+   * Show the OnionLocation preferences UI
+   */
+  _initOnionLocation() {
+    OnionLocationPreferences.init();
+  },
+
+  /**
    * Whether the prompt to restart Firefox should appear when changing the autostart pref.
    */
   _shouldPromptForRestart: true,
@@ -529,6 +545,7 @@ var gPrivacyPane = {
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
     this._initSecurityLevel();
+    this._initOnionLocation();
 
     Services.telemetry.setEventRecordingEnabled("pwmgr", true);
 
