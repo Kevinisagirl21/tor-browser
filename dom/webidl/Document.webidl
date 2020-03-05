@@ -711,3 +711,11 @@ partial interface Document {
   [ChromeOnly]
   void setNotifyFormOrPasswordRemoved(boolean aShouldNotify);
 };
+
+/**
+ * Extension to allows chrome JS to know whether the document has a valid
+ * Onion-Location that we could redirect to.
+ */
+partial interface Document {
+  [ChromeOnly] readonly attribute URI? onionLocationURI;
+};
