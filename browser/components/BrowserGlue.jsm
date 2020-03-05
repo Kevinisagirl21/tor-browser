@@ -216,6 +216,14 @@ let LEGACY_ACTORS = {
     },
   },
 
+  OnionLocation: {
+    child: {
+      module: "resource:///modules/OnionLocationChild.jsm",
+      events: { pageshow: {} },
+      messages: ["OnionLocation:Refresh"],
+    },
+  },
+
   PageInfo: {
     child: {
       module: "resource:///actors/PageInfoChild.jsm",
@@ -507,6 +515,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ContentClick: "resource:///modules/ContentClick.jsm",
   FormValidationHandler: "resource:///modules/FormValidationHandler.jsm",
   LoginManagerParent: "resource://gre/modules/LoginManagerParent.jsm",
+  OnionLocationParent: "resource:///modules/OnionLocationParent.jsm",
   PictureInPicture: "resource://gre/modules/PictureInPicture.jsm",
   ReaderParent: "resource:///modules/ReaderParent.jsm",
   RemotePrompt: "resource:///modules/RemotePrompt.jsm",
@@ -605,6 +614,7 @@ const listeners = {
     ContentSearch: ["ContentSearch"],
     "FormValidation:ShowPopup": ["FormValidationHandler"],
     "FormValidation:HidePopup": ["FormValidationHandler"],
+    "OnionLocation:Set": ["OnionLocationParent"],
     "PictureInPicture:Request": ["PictureInPicture"],
     "PictureInPicture:Close": ["PictureInPicture"],
     "PictureInPicture:Playing": ["PictureInPicture"],
