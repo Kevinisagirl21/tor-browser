@@ -879,3 +879,5 @@
 .searchbar-search-button:hover:not([addengines=true]) > .searchbar-search-icon-overlay:-moz-locale-dir(rtl) {
   margin-inline: -26px 20px;
 }
+
+%include ../../components/onionservices/content/onionlocation-urlbar.css
