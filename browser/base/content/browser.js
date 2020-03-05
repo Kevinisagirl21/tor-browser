@@ -45,6 +45,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
   OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.jsm",
+  OnionLocationParent: "resource:///modules/OnionLocationParent.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
   PanelMultiView: "resource:///modules/PanelMultiView.jsm",
@@ -5455,6 +5456,7 @@ var XULBrowserWindow = {
     Services.obs.notifyObservers(null, "touchbar-location-change", location);
     UpdateBackForwardCommands(gBrowser.webNavigation);
     AboutReaderParent.updateReaderButton(gBrowser.selectedBrowser);
+    OnionLocationParent.updateOnionLocationBadge(gBrowser.selectedBrowser);
 
     if (!gMultiProcessBrowser) {
       // Bug 1108553 - Cannot rotate images with e10s
@@ -5947,6 +5949,16 @@ var CombinedStopReload = {
 
 var TabsProgressListener = {
   onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+    // Clear OnionLocation UI
+    if (
+      aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
+      aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
+      aRequest &&
+      aWebProgress.isTopLevel
+    ) {
+      OnionLocationParent.onStateChange(aBrowser);
+    }
+
     // Collect telemetry data about tab load times.
     if (
       aWebProgress.isTopLevel &&
