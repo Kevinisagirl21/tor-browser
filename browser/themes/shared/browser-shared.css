@@ -25,6 +25,7 @@
 @import url("chrome://global/skin/browser-colors.css");
 @import url("chrome://browser/skin/tor-branding.css");
 @import url("chrome://browser/skin/tor-urlbar-button.css");
+@import url("chrome://browser/skin/onionlocation.css");
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
