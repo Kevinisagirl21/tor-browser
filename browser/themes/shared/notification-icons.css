@@ -402,3 +402,5 @@
   -moz-context-properties: fill;
   fill: var(--warning-icon-bgcolor);
 }
+
+%include ../../components/onionservices/content/onionlocation-notification-icons.css
