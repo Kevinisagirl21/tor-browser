@@ -536,3 +536,5 @@
   border-radius: 50%;
 }
 } /** END not Proton **/
+
+%include ../../components/onionservices/content/onionlocation-notification-icons.css
