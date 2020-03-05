@@ -789,3 +789,5 @@
 #urlbar.hidden-focus[focused="true"] {
   caret-color: transparent;
 }
+
+%include ../../components/onionservices/content/onionlocation-urlbar.css
