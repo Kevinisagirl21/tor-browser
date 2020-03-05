@@ -1,0 +1,60 @@
+/* Copyright (c) 2020, The Tor Project, Inc. */
+
+#onion-location-box {
+  height: 28px;
+
+  background-color: var(--purple-60);
+  -moz-context-properties: fill;
+  fill: white;
+}
+
+#onion-location-box:hover {
+  background-color: var(--purple-70);
+}
+
+#onion-location-box:active {
+  background-color: var(--purple-80);
+}
+
+@media (prefers-color-scheme: dark) {
+  #onion-location-box {
+    background-color: var(--purple-50);
+  }
+
+  #onion-location-box:hover {
+    background-color: var(--purple-60);
+  }
+
+  #onion-location-box:active {
+    background-color: var(--purple-70);
+  }
+}
+
+#onion-location-button {
+  list-style-image: url(chrome://browser/content/onionservices/onionlocation.svg);
+  padding-inline-start: 0.5em;
+}
+
+label#onion-label {
+  line-height: 28px;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 0.5em;
+  color: white;
+  font-weight: bold;
+}
+
+/* set appropriate sizes for the non-standard ui densities */
+:root[uidensity=compact] hbox.urlbar-page-action#onion-location-box {
+  height: 24px;
+}
+:root[uidensity=compact] label#onion-label {
+  line-height: 24px;
+}
+
+:root[uidensity=touch] hbox.urlbar-page-action#onion-location-box {
+  height: 30px;
+}
+:root[uidensity=touch] label#onion-label {
+  line-height: 30px;
+}
