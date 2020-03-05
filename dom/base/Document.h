@@ -3322,6 +3322,7 @@ class Document : public nsINode,
   void ReleaseCapture() const;
   void MozSetImageElement(const nsAString& aImageElementId, Element* aElement);
   nsIURI* GetDocumentURIObject() const;
+  nsIURI* GetOnionLocationURI() const { return mOnionLocationURI; }
   // Not const because all the fullscreen goop is not const
   bool FullscreenEnabled(CallerType aCallerType);
   Element* GetTopLayerTop();
@@ -4190,6 +4191,7 @@ class Document : public nsINode,
   nsCOMPtr<nsIURI> mChromeXHRDocURI;
   nsCOMPtr<nsIURI> mDocumentBaseURI;
   nsCOMPtr<nsIURI> mChromeXHRDocBaseURI;
+  nsCOMPtr<nsIURI> mOnionLocationURI;
 
   // The base domain of the document for third-party checks.
   nsCString mBaseDomain;
