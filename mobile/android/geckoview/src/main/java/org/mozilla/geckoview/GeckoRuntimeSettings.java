@@ -475,6 +475,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mSecurityLevel.set(level);
       return this;
     }
+
+    /**
+     * Sets whether the browser should prioritize .onion sites when available.
+     *
+     * @param flag  True if we should prioritize .onion sites, false otherwise
+     * @return This Builder instance.
+     */
+    public @NonNull Builder prioritizeOnions(final boolean flag) {
+      getSettings().mPrioritizeOnions.set(flag);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -526,6 +537,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
   /* package */ final Pref<Integer> mSecurityLevel =
       new Pref<>("browser.security_level.security_slider", 4);
+  /* package */ final Pref<Boolean> mPrioritizeOnions =
+      new Pref<>("privacy.prioritizeonions.enabled", false);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1307,6 +1320,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    */
   public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
     mSecurityLevel.commit(level);
+    return this;
+  }
+
+  /**
+   * Gets whether we should prioritize .onion sites.
+   *
+   * @return Whether we should prioritize .onion sites.
+   */
+  public boolean getPrioritizeOnions() {
+    return mPrioritizeOnions.get();
+  }
+
+  /**
+   * Sets whether we should prioritize .onion sites.
+   *
+   * @param flag Whether we should prioritize .onion sites.
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setPrioritizeOnions(final boolean flag) {
+    mPrioritizeOnions.commit(flag);
     return this;
   }
 
