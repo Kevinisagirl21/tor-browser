@@ -1,0 +1,46 @@
+/* Copyright (c) 2020, The Tor Project, Inc. */
+
+#onion-location-box {
+  background-color: var(--purple-60);
+  -moz-context-properties: fill;
+  fill: white;
+}
+
+#onion-location-box:hover {
+  background-color: var(--purple-70);
+}
+
+#onion-location-box:active {
+  background-color: var(--purple-80);
+}
+
+@media (prefers-color-scheme: dark) {
+  #onion-location-box {
+    background-color: var(--purple-50);
+  }
+
+  #onion-location-box:hover {
+    background-color: var(--purple-60);
+  }
+
+  #onion-location-box:active {
+    background-color: var(--purple-70);
+  }
+}
+
+#onion-location-button {
+  list-style-image: url(chrome://browser/content/onionservices/onionlocation.svg);
+  padding-inline-start: 0.5em;
+}
+
+label#onion-label {
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 0.5em;
+  color: white;
+  font-weight: normal;
+}
+
+.onionlocation-notification-icon {
+  display: none;
+}
