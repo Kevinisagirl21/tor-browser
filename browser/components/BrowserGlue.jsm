@@ -539,6 +539,13 @@ let LEGACY_ACTORS = {
       observers: ["keyword-uri-fixup"],
     },
   },
+  OnionLocation: {
+    child: {
+      module: "resource:///modules/OnionLocationChild.jsm",
+      events: { pageshow: {} },
+      messages: ["OnionLocation:Refresh"],
+    },
+  },
 };
 
 if (AppConstants.TOR_BROWSER_UPDATE) {
@@ -713,6 +720,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyModuleGetters(this, {
   AboutLoginsParent: "resource:///modules/AboutLoginsParent.jsm",
   AsyncPrefs: "resource://gre/modules/AsyncPrefs.jsm",
+  OnionLocationParent: "resource:///modules/OnionLocationParent.jsm",
   PluginManager: "resource:///actors/PluginParent.jsm",
   ReaderParent: "resource:///modules/ReaderParent.jsm",
 });
@@ -816,6 +824,7 @@ const listeners = {
     "AboutLogins:VulnerableLogins": ["AboutLoginsParent"],
     "Reader:FaviconRequest": ["ReaderParent"],
     "Reader:UpdateReaderButton": ["ReaderParent"],
+    "OnionLocation:Set": ["OnionLocationParent"],
   },
 
   observe(subject, topic, data) {
