@@ -415,3 +415,5 @@ html|*#webRTC-previewVideo {
   background: #FFE900 url(chrome://browser/skin/notification-icons/update.svg) no-repeat center;
   border-radius: 50%;
 }
+
+%include ../../components/onionservices/content/onionlocation-notification-icons.css
