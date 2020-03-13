@@ -970,6 +970,12 @@ var BuiltInLocation = new (class _BuiltInLocation extends XPIStateLocation {
   get enumerable() {
     return false;
   }
+
+  restore(saved) {
+    super.restore(saved);
+    // Bug 33342: avoid restoring disconnect addon from addonStartup.json.lz4.
+    this.removeAddon("disconnect@search.mozilla.org");
+  }
 })();
 
 /**
