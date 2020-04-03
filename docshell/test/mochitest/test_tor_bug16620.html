@@ -13,8 +13,7 @@
 </head>
 <body>
 <a target="_blank" href="https://trac.torproject.org/projects/tor/ticket/16620">Tor Bug 16620</a>
-<script type="application/javascript;version=1.7">
-
+<script>
 // ## Test constants
 const kTestPath = "/tests/docshell/test/mochitest/";
 const kLinkFile = "tor_bug16620.html";
@@ -156,7 +155,7 @@ window.addEventListener("message", function(aEvent) {
                                   noReferrerOnLink: noReferrerOnLink,
                                   noReferrerInMetaTag: noReferrerInMetaTag,
                                   resetInUnload: resetInUnload },
-                                aEvent.origin);
+                                  "*");
     } else if ("secondDocLoaded" == state) {
       // Process response from step two of the link-based tests.
       if (curTest.expectIsolation) {
