@@ -88,9 +88,25 @@ EnterprisePoliciesManager.prototype = {
   ),
 
   _initialize() {
-    // We don't want to have any enterprise policies in Tor Browser enabled as
-    // those can affect proxy settings etc. See: e.g. #30575.
-    this.status = Ci.nsIEnterprisePolicies.INACTIVE;
+    let provider = this._chooseProvider();
+
+    if (!provider) {
+      this.status = Ci.nsIEnterprisePolicies.INACTIVE;
+      return;
+    }
+
+    if (provider.failed) {
+      this.status = Ci.nsIEnterprisePolicies.FAILED;
+      return;
+    }
+
+    this.status = Ci.nsIEnterprisePolicies.ACTIVE;
+    this._parsedPolicies = {};
+    Services.telemetry.scalarSet(
+      "policies.count",
+      Object.keys(provider.policies).length
+    );
+    this._activatePolicies(provider.policies);
   },
 
   _chooseProvider() {
