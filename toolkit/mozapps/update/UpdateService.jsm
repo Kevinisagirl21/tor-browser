@@ -3268,6 +3268,14 @@ UpdateService.prototype = {
    * See nsIUpdateService.idl
    */
   get canApplyUpdates() {
+    if (this.disabledByPolicy) {
+      LOG(
+        "UpdateService.canApplyUpdates - unable to apply updates, " +
+          "the option has been disabled by the administrator."
+      );
+      return false;
+    }
+
     return getCanApplyUpdates() && hasUpdateMutex();
   },
 
@@ -3275,6 +3283,14 @@ UpdateService.prototype = {
    * See nsIUpdateService.idl
    */
   get canStageUpdates() {
+    if (this.disabledByPolicy) {
+      LOG(
+        "UpdateService.canStageUpdates - unable to stage updates, " +
+          "the option has been disabled by the administrator."
+      );
+      return false;
+    }
+
     return getCanStageUpdates();
   },
 
