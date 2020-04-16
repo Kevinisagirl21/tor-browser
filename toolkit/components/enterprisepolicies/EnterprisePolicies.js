@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// To avoid accessing the Windows Registry or macOS' file system attributes,
+// Tor Browser only supports policies.json.
+#define JSON_POLICIES_ONLY MOZ_PROXY_BYPASS_PROTECTION
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -11,9 +15,11 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+#ifndef JSON_POLICIES_ONLY
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.jsm",
+#endif
   Policies: "resource:///modules/policies/Policies.jsm",
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
@@ -111,6 +117,7 @@ EnterprisePoliciesManager.prototype = {
 
   _chooseProvider() {
     let provider = null;
+#ifndef JSON_POLICIES_ONLY
     if (AppConstants.platform == "win") {
       provider = new WindowsGPOPoliciesProvider();
     } else if (AppConstants.platform == "macosx") {
@@ -119,6 +126,7 @@ EnterprisePoliciesManager.prototype = {
     if (provider && provider.hasPolicies) {
       return provider;
     }
+#endif
 
     provider = new JSONPoliciesProvider();
     if (provider.hasPolicies) {
@@ -561,6 +569,7 @@ class JSONPoliciesProvider {
   }
 }
 
+#ifndef JSON_POLICIES_ONLY
 class WindowsGPOPoliciesProvider {
   constructor() {
     this._policies = null;
@@ -622,6 +631,7 @@ class macOSPoliciesProvider {
     return this._failed;
   }
 }
+#endif
 
 var components = [EnterprisePoliciesManager];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
