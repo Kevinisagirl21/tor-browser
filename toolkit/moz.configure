@@ -2530,3 +2530,21 @@ def oxidized_breakpad(target):
 
 set_config("MOZ_OXIDIZED_BREAKPAD", True, when=oxidized_breakpad)
 set_define("MOZ_OXIDIZED_BREAKPAD", True, when=oxidized_breakpad)
+
+# Avoid system policies
+# ==============================================================
+
+option(
+    "--disable-system-policies",
+    help="Prevent reading policies from Windows registry, macOS's file system attributes, and /etc/firefox",
+)
+
+
+@depends("--disable-system-policies")
+def system_policies(value):
+    if not value:
+        return True
+
+
+set_config("MOZ_AVOID_SYSTEM_POLICIES", system_policies)
+set_define("MOZ_AVOID_SYSTEM_POLICIES", system_policies)
