@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// To ensure that policies intended for Firefox or another browser will not
+// be used, Tor Browser only looks for policies in ${InstallDir}/distribution
+#define AVOID_SYSTEM_POLICIES MOZ_PROXY_BYPASS_PROTECTION
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -11,9 +15,11 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+#ifndef AVOID_SYSTEM_POLICIES
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.jsm",
+#endif
   Policies: "resource:///modules/policies/Policies.jsm",
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
@@ -114,6 +120,7 @@ EnterprisePoliciesManager.prototype = {
 
   _chooseProvider() {
     let provider = null;
+#ifndef AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "win") {
       provider = new WindowsGPOPoliciesProvider();
     } else if (AppConstants.platform == "macosx") {
@@ -122,6 +129,7 @@ EnterprisePoliciesManager.prototype = {
     if (provider && provider.hasPolicies) {
       return provider;
     }
+#endif
 
     provider = new JSONPoliciesProvider();
     if (provider.hasPolicies) {
@@ -473,6 +481,7 @@ class JSONPoliciesProvider {
   _getConfigurationFile() {
     let configFile = null;
 
+#ifndef AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "linux") {
       let systemConfigFile = Cc["@mozilla.org/file/local;1"].createInstance(
         Ci.nsIFile
@@ -485,6 +494,7 @@ class JSONPoliciesProvider {
         return systemConfigFile;
       }
     }
+#endif
 
     try {
       let perUserPath = Services.prefs.getBoolPref(PREF_PER_USER_DIR, false);
@@ -566,6 +576,7 @@ class JSONPoliciesProvider {
   }
 }
 
+#ifndef AVOID_SYSTEM_POLICIES
 class WindowsGPOPoliciesProvider {
   constructor() {
     this._policies = null;
@@ -631,6 +642,7 @@ class macOSPoliciesProvider {
     return this._failed;
   }
 }
+#endif
 
 var components = [EnterprisePoliciesManager];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
