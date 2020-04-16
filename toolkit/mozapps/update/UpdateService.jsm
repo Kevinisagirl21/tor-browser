@@ -2843,6 +2843,10 @@ UpdateService.prototype = {
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
+    if (this.disabledByPolicy) {
+      return;
+    }
+
     this._isNotify = isNotify;
 
     // Histogram IDs:
@@ -3345,6 +3349,14 @@ UpdateService.prototype = {
    * See nsIUpdateService.idl
    */
   get canApplyUpdates() {
+    if (this.disabledByPolicy) {
+      LOG(
+        "UpdateService.canApplyUpdates - unable to apply updates, " +
+          "the option has been disabled by the administrator."
+      );
+      return false;
+    }
+
     return getCanApplyUpdates() && hasUpdateMutex();
   },
 
@@ -3352,6 +3364,14 @@ UpdateService.prototype = {
    * See nsIUpdateService.idl
    */
   get canStageUpdates() {
+    if (this.disabledByPolicy) {
+      LOG(
+        "UpdateService.canStageUpdates - unable to stage updates, " +
+          "the option has been disabled by the administrator."
+      );
+      return false;
+    }
+
     return getCanStageUpdates();
   },
 
