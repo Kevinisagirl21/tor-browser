@@ -4,6 +4,9 @@
 
 var EXPORTED_SYMBOLS = ["EnterprisePoliciesManager"];
 
+// If MOZ_AVOID_SYSTEM_POLICIES is defined, policies will be looked for only
+// in ${InstallDir}/distribution
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -13,9 +16,11 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+#ifndef MOZ_AVOID_SYSTEM_POLICIES
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.jsm",
+#endif
   Policies: "resource:///modules/policies/Policies.jsm",
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.jsm",
@@ -140,11 +145,13 @@ EnterprisePoliciesManager.prototype = {
 
   _chooseProvider() {
     let platformProvider = null;
+#ifndef MOZ_AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "win") {
       platformProvider = new WindowsGPOPoliciesProvider();
     } else if (AppConstants.platform == "macosx") {
       platformProvider = new macOSPoliciesProvider();
     }
+#endif
     let jsonProvider = new JSONPoliciesProvider();
     if (platformProvider && platformProvider.hasPolicies) {
       if (jsonProvider.hasPolicies) {
@@ -491,7 +498,7 @@ class JSONPoliciesProvider {
 
   _getConfigurationFile() {
     let configFile = null;
-
+#ifndef MOZ_AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "linux") {
       let systemConfigFile = Cc["@mozilla.org/file/local;1"].createInstance(
         Ci.nsIFile
@@ -504,7 +511,7 @@ class JSONPoliciesProvider {
         return systemConfigFile;
       }
     }
-
+#endif
     try {
       let perUserPath = Services.prefs.getBoolPref(PREF_PER_USER_DIR, false);
       if (perUserPath) {
@@ -585,6 +592,7 @@ class JSONPoliciesProvider {
   }
 }
 
+#ifndef MOZ_AVOID_SYSTEM_POLICIES
 class WindowsGPOPoliciesProvider {
   constructor() {
     this._policies = null;
@@ -686,3 +694,4 @@ class CombinedProvider {
     return false;
   }
 }
+#endif
