@@ -679,6 +679,9 @@ public class TorPreferences extends AppCompatPreferenceActivity {
                         case "meek":
                             buttonId = R.id.radio_pref_bridges_meek_azure;
                             break;
+                        case "snowflake":
+                            buttonId = R.id.radio_pref_bridges_snowflake;
+                            break;
                     }
 
                     if (buttonId != -1) {
@@ -730,11 +733,13 @@ public class TorPreferences extends AppCompatPreferenceActivity {
             //
             // Similarly, if meek-azure is chosen, substitute it with "meek"
             // (tor-android-service only handles these keywords specially if
-            // they are less than 5 characters).
+            // they are less than 10 characters).
             if (bridgesType.contains("obfs4")) {
                 bridgesType = "obfs4";
             } else if (bridgesType.contains("meek-azure")) {
                 bridgesType = "meek";
+            } else if (bridgesType.contains("snowflake")) {
+                bridgesType = "snowflake";
             }
 
             Preference bridgesTypePref = findPreference(PREFS_BRIDGES_TYPE);
