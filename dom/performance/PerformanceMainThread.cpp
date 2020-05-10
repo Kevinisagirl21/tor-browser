@@ -305,7 +305,8 @@ DOMHighResTimeStamp PerformanceMainThread::CreationTime() const {
 void PerformanceMainThread::CreateNavigationTimingEntry() {
   MOZ_ASSERT(!mDocEntry, "mDocEntry should be null.");
 
-  if (!StaticPrefs::dom_enable_performance_navigation_timing()) {
+  if (!StaticPrefs::dom_enable_performance_navigation_timing() ||
+      StaticPrefs::privacy_resistFingerprinting()) {
     return;
   }
 
