@@ -6083,6 +6083,7 @@ var XULBrowserWindow = {
     // Don't need to do anything if the data we use to update the UI hasn't
     // changed
     let uri = gBrowser.currentURI;
+    let onionAliasURI = gBrowser.selectedBrowser.currentOnionAliasURI;
     let spec = uri.spec;
     if (this._state == aState && this._lastLocation == spec) {
       // Switching to a tab of the same URL doesn't change most security
@@ -6100,7 +6101,7 @@ var XULBrowserWindow = {
     try {
       uri = Services.uriFixup.createExposableURI(uri);
     } catch (e) {}
-    gIdentityHandler.updateIdentity(this._state, uri);
+    gIdentityHandler.updateIdentity(this._state, uri, onionAliasURI);
   },
 
   // simulate all change notifications after switching tabs
