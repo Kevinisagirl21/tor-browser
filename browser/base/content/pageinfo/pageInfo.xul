@@ -294,6 +294,12 @@
                      control="security-identity-domain-value"/>
               <textbox id="security-identity-domain-value" readonly="true"/>
             </row>
+            <!-- Onion Alias -->
+            <row id="security-view-identity-onionalias-row">
+              <label id="security-view-identity-onionalias"
+                     control="security-view-identity-onionalias-value"/>
+              <textbox id="security-view-identity-onionalias-value" readonly="true"/>
+            </row>
             <!-- Owner -->
             <row>
               <label id="security-identity-owner-label"
