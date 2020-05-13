@@ -412,7 +412,7 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
       );
     }
     onLoadPermission(uri, principal);
-    securityOnLoad(uri, windowInfo);
+    securityOnLoad(uri, windowInfo, browser.currentOnionAliasURI);
   });
 
   // Get the media elements from content script to setup the media tab.
