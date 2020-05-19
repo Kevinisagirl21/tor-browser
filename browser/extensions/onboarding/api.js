@@ -45,6 +45,7 @@ const PREF_WHITELIST = [
   "onboarding-tour-tor-expect-differences",
   "onboarding-tour-tor-onion-services",
   "onboarding-tour-tor-toolbar-update-9-0",
+  "onboarding-tour-tor-learn-more",
 #if 0
 // Firefox tours. To reduce conflicts when rebasing against newer Firefox
 // code, we use the preprocessor to omit this code block.
