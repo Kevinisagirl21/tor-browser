@@ -49,7 +49,6 @@ DIRS += [
     'preferences',
     'privatebrowsing',
     'prompts',
-    'protections',
     'protocolhandler',
     'resistfingerprinting',
     'search',
