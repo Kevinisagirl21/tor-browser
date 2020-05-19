@@ -167,7 +167,7 @@
 
 #onboarding-overlay.onboarding-opened > #onboarding-overlay-dialog {
   width: 960px;
-  height: 510px;
+  height: 540px;
   background: #fff;
   border: 1px solid rgba(9, 6, 13, 0.2); /* #09060D, 0.2 opacity */
   border-radius: 3px;
@@ -538,6 +538,9 @@ a#onboarding-tour-tor-expect-differences-button:visited,
 a#onboarding-tour-tor-onion-services-button,
 a#onboarding-tour-tor-onion-services-button:hover,
 a#onboarding-tour-tor-onion-services-button:visited,
+a#onboarding-tour-tor-learn-more-button,
+a#onboarding-tour-tor-learn-more-button:hover,
+a#onboarding-tour-tor-learn-more-button:visited,
 a#onboarding-tour-screenshots-button,
 a#onboarding-tour-screenshots-button:hover,
 a#onboarding-tour-screenshots-button:visited {
