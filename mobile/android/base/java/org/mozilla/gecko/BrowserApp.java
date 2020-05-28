@@ -146,7 +146,6 @@ import org.mozilla.gecko.tabs.TabHistoryFragment;
 import org.mozilla.gecko.tabs.TabHistoryPage;
 import org.mozilla.gecko.tabs.TabsPanel;
 import org.mozilla.gecko.telemetry.TelemetryCorePingDelegate;
-import org.mozilla.gecko.telemetry.TelemetryInstallationPingDelegate;
 import org.mozilla.gecko.telemetry.TelemetryUploadService;
 import org.mozilla.gecko.telemetry.measurements.SearchCountMeasurements;
 import org.mozilla.gecko.telemetry.TelemetryActivationPingDelegate;
@@ -336,7 +335,6 @@ public class BrowserApp extends GeckoApp
 
     private final TelemetryCorePingDelegate mTelemetryCorePingDelegate = new TelemetryCorePingDelegate();
     private final TelemetryActivationPingDelegate mTelemetryActivationPingDelegate = new TelemetryActivationPingDelegate();
-    private final TelemetryInstallationPingDelegate mTelemetryInstallationPingDelegate = new TelemetryInstallationPingDelegate();
 
     private final List<BrowserAppDelegate> delegates = Collections.unmodifiableList(Arrays.asList(
             new ScreenshotDelegate(),
@@ -344,9 +342,8 @@ public class BrowserApp extends GeckoApp
             new ReaderViewBookmarkPromotion(),
             mTelemetryCorePingDelegate,
             mTelemetryActivationPingDelegate,
-            mTelemetryInstallationPingDelegate,
             new OfflineTabStatusDelegate(),
-            new AdjustBrowserAppDelegate(mTelemetryCorePingDelegate, mTelemetryInstallationPingDelegate)
+            new AdjustBrowserAppDelegate(mTelemetryCorePingDelegate)
     ));
 
     @NonNull
