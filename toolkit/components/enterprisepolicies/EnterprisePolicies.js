@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// To avoid accessing the Windows Registry or macOS' file system attributes,
-// Tor Browser only supports policies.json.
-#define JSON_POLICIES_ONLY MOZ_PROXY_BYPASS_PROTECTION
+// To ensure that policies intended for Firefox or another browser will not
+// be used, Tor Browser only looks for policies in ${InstallDir}/distribution
+#define AVOID_SYSTEM_POLICIES MOZ_PROXY_BYPASS_PROTECTION
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -15,7 +15,7 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-#ifndef JSON_POLICIES_ONLY
+#ifndef AVOID_SYSTEM_POLICIES
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.jsm",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.jsm",
@@ -117,7 +117,7 @@ EnterprisePoliciesManager.prototype = {
 
   _chooseProvider() {
     let provider = null;
-#ifndef JSON_POLICIES_ONLY
+#ifndef AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "win") {
       provider = new WindowsGPOPoliciesProvider();
     } else if (AppConstants.platform == "macosx") {
@@ -481,6 +481,7 @@ class JSONPoliciesProvider {
   _getConfigurationFile() {
     let configFile = null;
 
+#ifndef AVOID_SYSTEM_POLICIES
     if (AppConstants.platform == "linux") {
       let systemConfigFile = Cc["@mozilla.org/file/local;1"].createInstance(
         Ci.nsIFile
@@ -493,6 +494,7 @@ class JSONPoliciesProvider {
         return systemConfigFile;
       }
     }
+#endif
 
     try {
       configFile = Services.dirsvc.get("XREAppDist", Ci.nsIFile);
@@ -569,7 +571,7 @@ class JSONPoliciesProvider {
   }
 }
 
-#ifndef JSON_POLICIES_ONLY
+#ifndef AVOID_SYSTEM_POLICIES
 class WindowsGPOPoliciesProvider {
   constructor() {
     this._policies = null;
