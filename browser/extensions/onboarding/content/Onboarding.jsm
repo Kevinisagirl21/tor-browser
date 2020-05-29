@@ -124,7 +124,6 @@ var onboardingTourset = {
   "tor-network-9.0": {
     id: "onboarding-tour-tor-network-9-0",
     tourNameId: "onboarding.tour-tor-network",
-    highlightId: "onboarding.tour-tor-update.prefix-new",
     getPage(win) {
       let div = win.document.createElement("div");
 
@@ -249,7 +248,6 @@ var onboardingTourset = {
   "toolbar-update-9.0": {
     id: "onboarding-tour-tor-toolbar-update-9-0",
     tourNameId: "onboarding.tour-tor-toolbar",
-    highlightId: "onboarding.tour-tor-update.prefix-updated",
     getPage(win) {
       let div = win.document.createElement("div");
 
