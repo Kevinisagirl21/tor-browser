@@ -333,7 +333,7 @@ var TorStrings = {
 
     let retval = {
       learnMore: getString("learnMore", "Learn more"),
-      learnMoreURL: `https://2019.www.torproject.org/docs/tor-manual-dev.html.${getLocale()}#_client_authorization`,
+      learnMoreURL: `https://support.torproject.org/${getLocale()}/onionservices/client-auth/`,
       errorPage: {
         browser: getString("errorPage.browser", "Browser"),
         network: getString("errorPage.network", "Network"),
