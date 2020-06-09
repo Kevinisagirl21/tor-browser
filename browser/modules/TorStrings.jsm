@@ -434,7 +434,7 @@ var TorStrings = {
       tryThis: getString("tryThis", "Try this: Onionsite"),
       onionAvailable: getString("onionAvailable", "Onionsite available"),
       learnMore: getString("learnMore", "Learn more"),
-      learnMoreURL: `https://tb-manual.torproject.org/${getLocale()}`, // TODO: replace when manual page is available.
+      learnMoreURL: `https://tb-manual.torproject.org/${getLocale()}/onion-services/`,
       always: getString("always", "Always"),
       askEverytime: getString("askEverytime", "Ask you every time"),
       prioritizeOnionsDescription: getString(
