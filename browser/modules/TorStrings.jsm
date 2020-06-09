@@ -381,7 +381,7 @@ var TorStrings = {
       },
       authPrompt: {
         description:
-          getString("authPrompt.description", "%S is requesting your private key."),
+          getString("authPrompt.description2", "%S is requesting that you authenticate."),
         keyPlaceholder: getString("authPrompt.keyPlaceholder", "Enter your key"),
         done: getString("authPrompt.done", "Done"),
         doneAccessKey: getString("authPrompt.doneAccessKey", "d"),
