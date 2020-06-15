@@ -36,6 +36,7 @@ ac_add_options --enable-tests
 ac_add_options --enable-debug
 ac_add_options --disable-crashreporter
 ac_add_options --disable-webrtc
+ac_add_options --disable-parental-controls
 ac_add_options --disable-eme
 ac_add_options --enable-proxy-bypass-protection
 
