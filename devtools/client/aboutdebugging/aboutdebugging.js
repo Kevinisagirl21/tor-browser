@@ -89,7 +89,7 @@ const AboutDebugging = {
     this.actions.recordTelemetryEvent("open_adbg", { width });
 
     await l10n.init([
-      "branding/tor-browser-brand.ftl",
+      "branding/brand.ftl",
       "devtools/client/aboutdebugging.ftl",
     ]);
 
