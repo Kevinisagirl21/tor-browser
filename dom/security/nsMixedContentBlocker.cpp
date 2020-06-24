@@ -746,16 +746,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     return NS_OK;
   }
   if (!parentIsHttps) {
-    nsAutoCString parentHost;
-    rv = innerRequestingLocation->GetHost(parentHost);
-    if (NS_FAILED(rv)) {
-      NS_ERROR("requestingLocation->GetHost failed");
-      *aDecision = REJECT_REQUEST;
-      return NS_OK;
-    }
-
-    bool parentIsOnion =
-        StringEndsWith(parentHost, NS_LITERAL_CSTRING(".onion"));
+    bool parentIsOnion = IsPotentiallyTrustworthyOnion(innerRequestingLocation);
     if (!parentIsOnion) {
       *aDecision = ACCEPT;
       return NS_OK;
