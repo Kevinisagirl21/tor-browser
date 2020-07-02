@@ -3735,16 +3735,17 @@ void Document::GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const {
 static bool IsValidOnionLocation(nsIURI* aDocumentURI,
                                  nsIURI* aOnionLocationURI) {
   bool isHttpish;
-  nsAutoCString onionHost;
+  nsAutoCString host;
   return aDocumentURI && aOnionLocationURI &&
          NS_SUCCEEDED(aDocumentURI->SchemeIs("https", &isHttpish)) &&
-         isHttpish &&
+         isHttpish && NS_SUCCEEDED(aDocumentURI->GetAsciiHost(host)) &&
+         !StringEndsWith(host, NS_LITERAL_CSTRING(".onion")) &&
          ((NS_SUCCEEDED(aOnionLocationURI->SchemeIs("http", &isHttpish)) &&
            isHttpish) ||
           (NS_SUCCEEDED(aOnionLocationURI->SchemeIs("https", &isHttpish)) &&
            isHttpish)) &&
-         NS_SUCCEEDED(aOnionLocationURI->GetAsciiHost(onionHost)) &&
-         StringEndsWith(onionHost, NS_LITERAL_CSTRING(".onion"));
+         NS_SUCCEEDED(aOnionLocationURI->GetAsciiHost(host)) &&
+         StringEndsWith(host, NS_LITERAL_CSTRING(".onion"));
 }
 
 void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
