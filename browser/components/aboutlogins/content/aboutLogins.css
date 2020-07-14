@@ -69,6 +69,11 @@ login-item {
   grid-area: login;
 }
 
+/* Do not promote Mozilla Sync in Tor Browser. */
+login-intro {
+  display: none !important;
+}
+
 #branding-logo {
   flex-basis: var(--sidebar-width);
   flex-shrink: 0;
@@ -83,7 +88,8 @@ login-item {
   }
 }
 
-:root:not(.official-branding) #branding-logo {
+/* Hide "Firefox LockWise" branding in Tor Browser. */
+#branding-logo {
   visibility: hidden;
 }
 
