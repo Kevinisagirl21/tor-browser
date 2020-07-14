@@ -62,6 +62,7 @@ const PASSWORD_SYNC_NOTIFICATION_ID = "enable-password-sync";
 
 const SHOW_PASSWORD_SYNC_NOTIFICATION_PREF =
   "signon.management.page.showPasswordSyncNotification";
+const NOCERTDB_PREF = "security.nocertdb";
 
 // about:logins will always use the privileged content process,
 // even if it is disabled for other consumers such as about:newtab.
@@ -265,6 +266,7 @@ class AboutLoginsParent extends JSWindowActorParent {
             importVisible:
               Services.policies.isAllowed("profileImport") &&
               AppConstants.platform != "linux",
+            canCreateLogins: !Services.prefs.getBoolPref(NOCERTDB_PREF, false),
           });
 
           await AboutLogins._sendAllLoginRelatedObjects(
