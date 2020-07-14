@@ -85,3 +85,13 @@
 .menuitem-mobile-android {
   background-image: url("chrome://browser/skin/logo-android.svg");
 }
+
+/*
+ * Do not promote LockWise mobile apps in Tor Browser: hide the menu items
+ * and the separator line that precedes them.
+ */
+.menuitem-mobile-android,
+.menuitem-mobile-ios,
+button[data-event-name="AboutLoginsGetHelp"] + hr {
+  display: none !important;
+}
