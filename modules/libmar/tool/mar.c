@@ -30,11 +30,7 @@ int mar_repackage_and_sign(const char* NSSConfigDir,
                            const char* src, const char* dest);
 
 static void print_version() {
-#ifdef TOR_BROWSER_UPDATE
-  printf("Version: %s\n", TOR_BROWSER_VERSION_QUOTED);
-#else
   printf("Version: %s\n", MOZ_APP_VERSION);
-#endif
   printf("Default Channel ID: %s\n", MAR_CHANNEL_ID);
 }
 
@@ -129,13 +125,8 @@ static int mar_test(const char* path) {
 
 int main(int argc, char** argv) {
   const char* certNames[MAX_SIGNATURES];
-#ifdef TOR_BROWSER_UPDATE
-  char* MARChannelID = MAR_CHANNEL_ID;
-  char* productVersion = TOR_BROWSER_VERSION_QUOTED;
-#else
   char* MARChannelID = NULL;
   char* productVersion = NULL;
-#endif
   int rv = -1;
 #if !defined(NO_SIGN_VERIFY)
   char* NSSConfigDir = NULL;
