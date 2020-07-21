@@ -358,7 +358,7 @@ const SecurityLevelPreferences =
       labelSummary.textContent = stringStruct.summary;
 
       let labelRestoreDefaults = vbox.querySelector("#securityLevel-restoreDefaults");
-      labelRestoreDefaults.setAttribute("value", SecurityLevelStrings.restoreDefaults);
+      labelRestoreDefaults.setAttribute("value", TorStrings.securityLevel.restoreDefaults);
       labelRestoreDefaults.addEventListener("click",  SecurityLevelPreferences.restoreDefaults);
 
       let description1 = vbox.querySelector("#securityLevel-description1");
