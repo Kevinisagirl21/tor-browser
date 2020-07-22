@@ -734,9 +734,10 @@ nsBrowserContentHandler.prototype = {
               "startup.homepage_override_url"
             );
             let update = UpdateManager.activeUpdate;
+            let old_version = old_tbversion ? old_tbversion: old_mstone;
             if (
               update &&
-              Services.vc.compare(update.appVersion, old_mstone) > 0
+              Services.vc.compare(update.appVersion, old_version) > 0
             ) {
               overridePage = getPostUpdateOverridePage(update, overridePage);
               // Send the update ping to signal that the update was successful.
