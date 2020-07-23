@@ -24,11 +24,8 @@ MOZ_APP_ID={ec8030f7-c20a-464f-9b0e-13a3a9e97384}
 # of values.
 # The MAR_CHANNEL_ID must not contain the following 3 characters: ",\t "
 if test "$MOZ_UPDATE_CHANNEL" = "alpha"; then
-  # alpha is currently using the -release channel id. However we accept
-  # both -alpha and -release channel ID for the alpha so that we can
-  # switch it to -alpha at some point. See bug 32498.
-  ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-alpha,torbrowser-torproject-release
-  MAR_CHANNEL_ID=torbrowser-torproject-release
+  ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-alpha
+  MAR_CHANNEL_ID=torbrowser-torproject-alpha
 elif test "$MOZ_UPDATE_CHANNEL" = "nightly"; then
   ACCEPTED_MAR_CHANNEL_IDS=torbrowser-torproject-nightly
   MAR_CHANNEL_ID=torbrowser-torproject-nightly
