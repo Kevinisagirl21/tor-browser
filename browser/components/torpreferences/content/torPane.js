@@ -196,14 +196,16 @@ const gTorPane = (function() {
         TorStrings.settings.useBridge
       );
       this._useBridgeCheckbox.addEventListener("command", e => {
-        gTorPane.onToggleBridge(e.target.checked).onUpdateBridgeSettings();
+        const checked = this._useBridgeCheckbox.checked;
+        gTorPane.onToggleBridge(checked).onUpdateBridgeSettings();
       });
       this._bridgeSelectionRadiogroup = prefpane.querySelector(
         selectors.bridges.bridgeSelectionRadiogroup
       );
       this._bridgeSelectionRadiogroup.value = TorBridgeSource.BUILTIN;
       this._bridgeSelectionRadiogroup.addEventListener("command", e => {
-        gTorPane.onSelectBridgeOption(e.target.value).onUpdateBridgeSettings();
+        const value = this._bridgeSelectionRadiogroup.value;
+        gTorPane.onSelectBridgeOption(value).onUpdateBridgeSettings();
       });
 
       // Builtin bridges
@@ -294,7 +296,8 @@ const gTorPane = (function() {
         TorStrings.settings.useLocalProxy
       );
       this._useProxyCheckbox.addEventListener("command", e => {
-        gTorPane.onToggleProxy(e.target.checked).onUpdateProxySettings();
+        const checked = this._useProxyCheckbox.checked;
+        gTorPane.onToggleProxy(checked).onUpdateProxySettings();
       });
       this._proxyTypeLabel = prefpane.querySelector(
         selectors.advanced.proxyTypeLabel
@@ -316,7 +319,8 @@ const gTorPane = (function() {
         selectors.advanced.proxyTypeList
       );
       this._proxyTypeMenulist.addEventListener("command", e => {
-        gTorPane.onSelectProxyType(e.target.value).onUpdateProxySettings();
+        const value = this._proxyTypeMenulist.value;
+        gTorPane.onSelectProxyType(value).onUpdateProxySettings();
       });
       for (let currentProxy of mockProxies) {
         let menuEntry = document.createXULElement("menuitem");
@@ -398,7 +402,8 @@ const gTorPane = (function() {
         TorStrings.settings.useFirewall
       );
       this._useFirewallCheckbox.addEventListener("command", e => {
-        gTorPane.onToggleFirewall(e.target.checked).onUpdateFirewallSettings();
+        const checked = this._useFirewallCheckbox.checked;
+        gTorPane.onToggleFirewall(checked).onUpdateFirewallSettings();
       });
       this._allowedPortsLabel = prefpane.querySelector(
         selectors.advanced.firewallAllowedPortsLabel
