@@ -2248,7 +2248,7 @@ var gBrowserInit = {
         //                 [9]: allowInheritPrincipal (bool)
         //                 [10]: csp (nsIContentSecurityPolicy)
         //                 [11]: nsOpenWindowInfo
-        //                 [12]: onionUrlbarRewritesAllowed
+        //                 [12]: onionUrlbarRewritesAllowed (bool)
         let userContextId =
           window.arguments[5] != undefined
             ? window.arguments[5]
@@ -5290,7 +5290,7 @@ var XULBrowserWindow = {
       // other parts of the code (like the bookmarks UI), so we save it.
       if (gBrowser.selectedBrowser.onionUrlbarRewritesAllowed) {
         gBrowser.selectedBrowser.currentOnionAliasURI = OnionAliasStore.getShortURI(
-          gBrowser.selectedBrowser.currentURI
+          aLocationURI
         );
       } else {
         gBrowser.selectedBrowser.currentOnionAliasURI = null;
