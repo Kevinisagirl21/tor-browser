@@ -28,7 +28,7 @@
         data-l10n-id="aboutDialog-title"
 #endif
         role="dialog"
-        aria-describedby="version distribution distributionId communityDesc contributeDesc trademark"
+        aria-describedby="version distribution distributionId projectDesc helpDesc trademark trademarkTor"
         >
 #ifdef XP_MACOSX
 #include macWindow.inc.xhtml
@@ -132,6 +132,9 @@
               <label is="text-link" useoriginprincipal="true" href="about:credits" data-l10n-name="community-exp-creditsLink"></label>
             </description>
           </vbox>
+          <!-- Keep communityDesc and contributeDesc to avoid JS errors trying to hide them -->
+          <description class="text-blurb" id="communityDesc" data-l10n-id="community-2" hidden="true"></description>
+          <description class="text-blurb" id="contributeDesc" data-l10n-id="helpus" hidden="true"></description>
           <description class="text-blurb" id="projectDesc">
             &project.start;
             <label is="text-link" href="https://www.torproject.org/">
