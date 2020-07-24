@@ -1,0 +1,24 @@
+<!-- Copyright (c) 2022, The Tor Project, Inc.
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!ENTITY project.start           "&brandShortName; is developed by ">
+<!-- LOCALIZATION NOTE (project.tpoLink): This is a link title that links to https://www.torproject.org -->
+<!ENTITY project.tpoLink         "the &vendorShortName;">
+<!ENTITY project.end             ", a nonprofit working to defend your privacy and freedom online.">
+
+<!ENTITY help.start              "Want to help? ">
+<!-- LOCALIZATION NOTE (help.donate): This is a link title that links to https://donate.torproject.org/ -->
+<!ENTITY help.donateLink         "Donate">
+<!ENTITY help.or                 " or ">
+<!-- LOCALIZATION NOTE (help.getInvolvedLink): This is a link title that links to https://community.torproject.org/ -->
+<!ENTITY help.getInvolvedLink    "get involved">
+<!ENTITY help.end                "!">
+<!-- LOCALIZATION NOTE (bottom.questions): This is a link title that links to https://support.torproject.org/ -->
+<!ENTITY bottomLinks.questions   "Questions?">
+<!-- LOCALIZATION NOTE (bottom.questions): This is a link title that links to https://community.torproject.org/relay/ -->
+<!ENTITY bottomLinks.grow        "Help the Tor Network Grow!">
+<!-- LOCALIZATION NOTE (bottom.questions): This is a link title that links to about:license -->
+<!ENTITY bottomLinks.license  "Licensing Information">
+<!ENTITY tor.TrademarkStatement   "'Tor' and the 'Onion Logo' are registered trademarks of the Tor Project, Inc.">
