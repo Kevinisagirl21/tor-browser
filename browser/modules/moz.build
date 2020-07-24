@@ -148,6 +148,7 @@ EXTRA_JS_MODULES += [
     "TabUnloader.jsm",
     "TorProtocolService.jsm",
     "TorSettings.jsm",
+    "TorStrings.jsm",
     "TransientPrefs.jsm",
     "webrtcUI.jsm",
     "ZoomUI.jsm",
