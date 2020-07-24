@@ -16,7 +16,11 @@
 <?xml-stylesheet href="chrome://browser/content/downloads/downloads.css"?>
 <?xml-stylesheet href="chrome://browser/skin/downloads/allDownloadsView.css"?>
 
-<!DOCTYPE window>
+<!DOCTYPE window [
+#ifdef XP_MACOSX
+#include ../../../base/content/browser-doctype.inc
+#endif
+]>
 
 <window id="places"
         data-l10n-id="places-library3"
