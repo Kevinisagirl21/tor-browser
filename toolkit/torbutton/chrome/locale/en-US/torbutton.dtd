@@ -1,0 +1,17 @@
+<!-- Copyright (c) 2022, The Tor Project, Inc.
+   - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!ENTITY torbutton.context_menu.new_circuit "New Tor Circuit for this Site">
+<!ENTITY torbutton.context_menu.new_circuit_sentence_case "New Tor circuit for this site">
+<!ENTITY torbutton.context_menu.new_circuit_key "C">
+
+<!ENTITY torbutton.circuit_display.title "Tor Circuit">
+<!-- Old circuit display strings used up to 12.0 - remove when 12.5 becomes
+   - stable. -->
+<!ENTITY torbutton.circuit_display.new_circuit "New Circuit for this Site">
+
+<!-- Onion services strings. Strings are kept here for ease of translation. -->
+<!ENTITY torbutton.onionServices.authPrompt.tooltip "Open onion service client authentication prompt">
+<!ENTITY torbutton.onionServices.authPrompt.persistCheckboxLabel "Remember this key">
