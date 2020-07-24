@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Socruithe Líonra Tor">
+<!ENTITY torsettings.wizard.title.default "Ceangail le Tor">
+<!ENTITY torsettings.wizard.title.configure "Socruithe Líonra Tor">
+<!ENTITY torsettings.wizard.title.connecting "Ceangal á bhunú">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Teanga Bhrabhsálaí Tor">
+<!ENTITY torlauncher.localePicker.prompt "Roghnaigh teanga.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Cliceáil “Ceangail” chun ceangal a bhunú le Tor.">
+<!ENTITY torSettings.configurePrompt "Cliceáil “Cumraigh” chun na socruithe líonra a athrú má tá tú i do chónaí i dtír a dhéanann cinsireacht ar Tor (mar shampla san Éigipt, sa tSín, nó sa Tuirc), nó má tá tú ag ceangal ó líonra príobháideach a úsáideann seachfhreastalaí.">
+<!ENTITY torSettings.configure "Cumraigh">
+<!ENTITY torSettings.connect "Ceangail">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "An fanacht go dtosóidh Tor...">
+<!ENTITY torsettings.restartTor "Atosaigh Tor">
+<!ENTITY torsettings.reconfigTor "Athchumraigh">
+
+<!ENTITY torsettings.discardSettings.prompt "Chumraigh tú droichid Tor nó shocraigh tú seachfhreastalaí áitiúil roimhe seo.&amp;160; Chun ceangal díreach le líonra Tor a bhunú, caithfidh tú na socruithe seo a scriosadh.">
+<!ENTITY torsettings.discardSettings.proceed "Scrios na Socruithe agus Ceangail">
+
+<!ENTITY torsettings.optional "Roghnach">
+
+<!ENTITY torsettings.useProxy.checkbox "Úsáidim seachfhreastalaí chun ceangal leis an Idirlíon">
+<!ENTITY torsettings.useProxy.type "Cineál Seachfhreastalaí">
+<!ENTITY torsettings.useProxy.type.placeholder "roghnaigh cineál an tseachfhreastalaí">
+<!ENTITY torsettings.useProxy.address "Seoladh">
+<!ENTITY torsettings.useProxy.address.placeholder "Seoladh IP nó óstainm">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Ainm Úsáideora">
+<!ENTITY torsettings.useProxy.password "Focal faire">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Téann an ríomhaire seo trí bhalla dóiteáin nach gceadaíonn ceangail ach le poirt áirithe">
+<!ENTITY torsettings.firewall.allowedPorts "Poirt a Cheadaítear">
+<!ENTITY torsettings.useBridges.checkbox "Déantar cinsireacht ar Tor sa tír seo">
+<!ENTITY torsettings.useBridges.default "Roghnaigh droichead ionsuite">
+<!ENTITY torsettings.useBridges.default.placeholder "roghnaigh droichead">
+<!ENTITY torsettings.useBridges.bridgeDB "Iarr droichead ó torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Cuir isteach na carachtair a fheiceann tú sa bpictiúr">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Faigh dúshlán nua">
+<!ENTITY torsettings.useBridges.captchaSubmit "Seol">
+<!ENTITY torsettings.useBridges.custom "Úsáid droichead ar m'eolas">
+<!ENTITY torsettings.useBridges.label "Cuir isteach eolas faoi dhroichead ó fhoinse iontaofa.">
+<!ENTITY torsettings.useBridges.placeholder "clóscríobh seoladh:port (ceann amháin ar gach líne)">
+
+<!ENTITY torsettings.copyLog "Cóipeáil Logchomhad Tor go dtí an Ghearrthaisce">
+
+<!ENTITY torsettings.proxyHelpTitle "Cabhair le Seachfhreastalaithe">
+<!ENTITY torsettings.proxyHelp1 "Uaireanta úsáidtear seachfhreastalaí áitiúil nuair a cheanglaítear ó líonra i gcomhlacht, i scoil, nó in ollscoil.&#160;Mura bhfuil tú cinnte an dteastaíonn seachfhreastalaí uait, caith súil ar na socruithe Idirlín i mbrabhsálaí eile, nó ar shocruithe líonra do chórais.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Cabhair le Droichid">
+<!ENTITY torsettings.bridgeHelp1 "Tá sé níos deacra cosc a chur ar cheangail le Líonra Tor nuair a úsáideann tú droichead, cineál athsheachadán neamhliostaithe.&#160;Úsáideann gach droichead modh difriúil leis an gcinsireacht a sheachaint.&#160;Mar shampla, cuireann na droichid obfs cuma randamach ar do thrácht líonra, agus leis na cinn meek, dealraíonn sé go bhfuil tú ag ceangal leis an tseirbhís sin seachas le Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Mar gheall ar an tslí a gcuireann tíortha áirithe cosc ar Tor, feidhmíonn droichid áirithe i dtíortha áirithe ach ní fheidhmíonn siad i dtíortha eile.&amp;160;Mura bhfuil tú cinnte faoi na droichid a fheidhmeoidh i do thírse, tabhair cuairt ar torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Fan tamall agus ceangal le líonra Tor á bhunú.&#160; Seans go dtógfaidh seo cúpla nóiméad.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Ceangal">
+<!ENTITY torPreferences.torSettings "Socruithe Tor">
+<!ENTITY torPreferences.torSettingsDescription "Seolann Brabhsálaí Tor do chuid tráchta thar líonra Tor, líonra faoi stiúir na mílte oibrí deonach timpeall an domhain." >
+<!ENTITY torPreferences.learnMore "Tuilleadh eolais">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Test">
+<!ENTITY torPreferences.statusInternetOnline "Online">
+<!ENTITY torPreferences.statusInternetOffline "As líne">
+<!ENTITY torPreferences.statusTorLabel "Tor Network:">
+<!ENTITY torPreferences.statusTorConnected "Connected">
+<!ENTITY torPreferences.statusTorNotConnected "Not Connected">
+<!ENTITY torPreferences.statusTorBlocked "Potentially Blocked">
+<!ENTITY torPreferences.learnMore "Tuilleadh eolais">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Quickstart">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings.">
+<!ENTITY torPreferences.quickstartCheckbox "Always connect automatically">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Droichid">
+<!ENTITY torPreferences.bridgesDescription "Cabhraíonn droichid leat teacht ar líonra Tor ó áiteanna ina bhfuil cosc ar Tor. Seans go bhfeidhmeodh droichead amháin níos fearr ná cinn eile, ag brath ar an áit ina bhfuil tú.">
+<!ENTITY torPreferences.bridgeLocation "Your location">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automatic">
+<!ENTITY torPreferences.bridgeLocationFrequent "Frequently selected locations">
+<!ENTITY torPreferences.bridgeLocationOther "Other locations">
+<!ENTITY torPreferences.bridgeChooseForMe "Choose a Bridge For Me…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Your Current Bridges">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "You can save one or more bridges, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.">
+<!ENTITY torPreferences.bridgeId "#1 bridge: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Bain">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Disable built-in bridges">
+<!ENTITY torPreferences.bridgeShare "Share this bridge using the QR code or by copying its address:">
+<!ENTITY torPreferences.bridgeCopy "Copy Bridge Address">
+<!ENTITY torPreferences.copied "Cóipeáilte!">
+<!ENTITY torPreferences.bridgeShowAll "Show All Bridges">
+<!ENTITY torPreferences.bridgeRemoveAll "Remove All Bridges">
+<!ENTITY torPreferences.bridgeAdd "Add a New Bridge">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Choose from one of Tor Browser’s built-in bridges">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Select a Built-In Bridge…">
+<!ENTITY torPreferences.bridgeRequest "Iarr Droichead...">
+<!ENTITY torPreferences.bridgeEnterKnown "Enter a bridge address you already know">
+<!ENTITY torPreferences.bridgeAddManually "Add a Bridge Manually…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Ardroghanna">
+<!ENTITY torPreferences.advancedDescription "Configure how Tor Browser connects to the internet">
+<!ENTITY torPreferences.advancedButton "Settings…">
+<!ENTITY torPreferences.viewTorLogs "View the Tor logs">
+<!ENTITY torPreferences.viewLogs "Féach ar na Logchomhaid...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Remove all the bridges?">
+<!ENTITY torPreferences.removeBridgesWarning "This action cannot be undone.">
+<!ENTITY torPreferences.cancel "Cealaigh">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Scan the QR code">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Built-In Bridges">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser includes some specific types of bridges known as “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Iarr Droichead">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Ag dul i dteagmháil le BridgeDB. Fan nóiméad.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Réitigh an CAPTCHA le droichead a iarraidh.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Níl an freagra sin ceart. Bain triail eile as.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Provide Bridge">
+<!ENTITY torPreferences.provideBridgeHeader "Enter bridge information from a trusted source">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Connection Settings">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Configure how Tor Browser connects to the Internet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Comma-seperated values">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Logchomhaid Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Not Connected">
+<!ENTITY torConnect.connectingConcise "Connecting…">
+<!ENTITY torConnect.tryingAgain "Trying again…">
+<!ENTITY torConnect.noInternet "Tor Browser couldn’t reach the Internet">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser could not connect to Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "configure your connection"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Trying a bridge…">
+<!ENTITY torConnect.tryingBridgeAgain "Trying one more time…">
+<!ENTITY torConnect.errorLocation "Tor Browser couldn’t locate you">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Are these location settings correct?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Connection assist">
+<!ENTITY torConnect.breadcrumbLocation "Location settings">
+<!ENTITY torConnect.breadcrumbTryBridge "Try a bridge">
+<!ENTITY torConnect.automatic "Automatic">
+<!ENTITY torConnect.selectCountryRegion "Select Country or Region">
+<!ENTITY torConnect.frequentLocations "Frequently selected locations">
+<!ENTITY torConnect.otherLocations "Other locations">
+<!ENTITY torConnect.restartTorBrowser "Restart Tor Browser">
+<!ENTITY torConnect.configureConnection "Configure Connection…">
+<!ENTITY torConnect.viewLog "View logs…">
+<!ENTITY torConnect.tryAgain "Try Again">
+<!ENTITY torConnect.offline "Internet not reachable">
+<!ENTITY torConnect.connectMessage "Changes to Tor Settings will not take effect until you connect">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser has failed to establish a connection to the Tor Network">
+<!ENTITY torConnect.yourLocation "Your Location">
+<!ENTITY torConnect.tryBridge "Try a Bridge">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.cannotDetermineCountry "Unable to determine user country">
+<!ENTITY torConnect.noSettingsForCountry "No settings available for your location">

@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Những cài đặt của mạng Tor">
+<!ENTITY torsettings.wizard.title.default "Kết nối tới Tor">
+<!ENTITY torsettings.wizard.title.configure "Những cài đặt của mạng Tor">
+<!ENTITY torsettings.wizard.title.connecting "Tạo kết nối">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Ngôn ngữ Trình duyệt Tor">
+<!ENTITY torlauncher.localePicker.prompt "Vui lòng chọn một ngôn ngữ.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Nhấn &quot;Kết nối&quot; để kết nối tới mạng Tor">
+<!ENTITY torSettings.configurePrompt "Nhấn &quot;Cấu hình&quot; để điều chỉnh cài đặt mạng nếu bạn đang ở quốc gia đang kiểm duyệt Tor (chẳng hạn như Ai Cập, Trung Quốc, Thổ Nhĩ Kỳ) hoặc bạn đang kết nối từ mạng riêng tư yêu cầu proxy.">
+<!ENTITY torSettings.configure "Cấu hình">
+<!ENTITY torSettings.connect "Kết nối">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Chờ đợi để Tor khởi động..">
+<!ENTITY torsettings.restartTor "Khởi động lại Tor">
+<!ENTITY torsettings.reconfigTor "Cấu hình lại">
+
+<!ENTITY torsettings.discardSettings.prompt "Bạn phải cấu hình cầu nối Tor hoặc bạn phải nhập cài đặt ủy quyền nội bộ.&#160; Để tạo một kết nối trực tiếp tới mạng lưới Tor, những cài đặt này phải được loại bỏ.">
+<!ENTITY torsettings.discardSettings.proceed "Loại bỏ những cài đặt và kết nối">
+
+<!ENTITY torsettings.optional "Tuỳ chọn">
+
+<!ENTITY torsettings.useProxy.checkbox "Tôi sử dụng proxy để kết nối tới Internet">
+<!ENTITY torsettings.useProxy.type "Loại proxy">
+<!ENTITY torsettings.useProxy.type.placeholder "chọn loại proxy">
+<!ENTITY torsettings.useProxy.address "Địa chỉ nhà">
+<!ENTITY torsettings.useProxy.address.placeholder "Địa chỉ IP hoặc hostname">
+<!ENTITY torsettings.useProxy.port "Cổng">
+<!ENTITY torsettings.useProxy.username "Tên đăng nhập">
+<!ENTITY torsettings.useProxy.password "Mật mã">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCK 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCK 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Máy tính này đi qua một tường lửa mà chỉ cho phép tới một vài cổng">
+<!ENTITY torsettings.firewall.allowedPorts "Cổng được cho phép">
+<!ENTITY torsettings.useBridges.checkbox "Tor đã bị kiểm duyệt ở quốc gia của tôi">
+<!ENTITY torsettings.useBridges.default "Sử dụng cầu nối có sẵn">
+<!ENTITY torsettings.useBridges.default.placeholder "chọn loại cầu nối">
+<!ENTITY torsettings.useBridges.bridgeDB "Yêu cầu một cầu nối từ torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Nhập đối tượng từ hình ảnh">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Nhận thử thách mới">
+<!ENTITY torsettings.useBridges.captchaSubmit "Gửi">
+<!ENTITY torsettings.useBridges.custom "Cung cấp cầu nối mà tôi biết">
+<!ENTITY torsettings.useBridges.label "Nhập thông tin cầu nối từ một nguồn tin cậy.">
+<!ENTITY torsettings.useBridges.placeholder "nhập địa chỉ:cổng (một trên mỗi dòng)">
+
+<!ENTITY torsettings.copyLog "Chép nhật ký của Tor vào Clipboard">
+
+<!ENTITY torsettings.proxyHelpTitle "Trợ giúp proxy">
+<!ENTITY torsettings.proxyHelp1 "Proxy cục bộ có thể cần thiết khi kết nối qua mạng ở công ty hay trường học.&#160;Nếu bạn không chắc rằng có cần dùng proxy hay không, xem cài đặt Internet ở một trình duyệt khác hoặc kiểm tra cài đặt Internet của hệ thống.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Giúp đỡ về Tiếp sức cầu nối">
+<!ENTITY torsettings.bridgeHelp1 "Cầu nối là những rơle không công khai giúp kết nối tới mạng Tor khó bị chặn hơn.&#160; Mỗi loại cầu nối sử dụng một phương thức khác nhau để tránh kiểm duyệt.&#160; Cầu nối obfs khiến lưu lượng của bạn trông như ngẫu nhiên, còn cầu nối meek khiến lưu lượng của bạn trông như đang kết nối tới dịch vụ đó thay vì Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Vì một vài quốc gia chặn Tor theo những cách khác nhau, cầu nối này có thể hoạt động ở quốc gia này nhưng không được ở quốc gia khác.&#160; Nếu bạn không chắc cầu nối nào hoạt động ở quốc gia bạn, hãy truy cập torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Vui lòng chờ trong khi chúng tôi thiết lập kết nối tới mạng lưới Tor.&#160; Việc này có thể mất một vài phút.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Kết nối">
+<!ENTITY torPreferences.torSettings "Cài đặt Tor">
+<!ENTITY torPreferences.torSettingsDescription "Trình duyệt Tor dẫn lưu lượng của bạn qua mạng Tor, vận hành bởi hàng ngàn tình nguyện viên khắp thế giới." >
+<!ENTITY torPreferences.learnMore "Tìm hiểu thêm">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Kiểm tra">
+<!ENTITY torPreferences.statusInternetOnline "Trực tuyến">
+<!ENTITY torPreferences.statusInternetOffline "Ngoại tuyến">
+<!ENTITY torPreferences.statusTorLabel "Tor Network:">
+<!ENTITY torPreferences.statusTorConnected "Đã kết nối">
+<!ENTITY torPreferences.statusTorNotConnected "Not Connected">
+<!ENTITY torPreferences.statusTorBlocked "Potentially Blocked">
+<!ENTITY torPreferences.learnMore "Tìm hiểu thêm">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Quickstart">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings.">
+<!ENTITY torPreferences.quickstartCheckbox "Always connect automatically">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Cầu Nối">
+<!ENTITY torPreferences.bridgesDescription "Cầu nối giúp bạn truy cập mạng Tor ở những nơi mạng Tor bị chặn. Tùy vào vị trí của bạn mà một cầu nối có thể hoạt động tốt hơn cầu nối khác.">
+<!ENTITY torPreferences.bridgeLocation "Your location">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Tự động">
+<!ENTITY torPreferences.bridgeLocationFrequent "Frequently selected locations">
+<!ENTITY torPreferences.bridgeLocationOther "Other locations">
+<!ENTITY torPreferences.bridgeChooseForMe "Choose a Bridge For Me…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Your Current Bridges">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "You can save one or more bridges, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.">
+<!ENTITY torPreferences.bridgeId "#1 bridge: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Gỡ bỏ">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Disable built-in bridges">
+<!ENTITY torPreferences.bridgeShare "Share this bridge using the QR code or by copying its address:">
+<!ENTITY torPreferences.bridgeCopy "Copy Bridge Address">
+<!ENTITY torPreferences.copied "Copied!">
+<!ENTITY torPreferences.bridgeShowAll "Show All Bridges">
+<!ENTITY torPreferences.bridgeRemoveAll "Remove All Bridges">
+<!ENTITY torPreferences.bridgeAdd "Add a New Bridge">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Choose from one of Tor Browser’s built-in bridges">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Select a Built-In Bridge…">
+<!ENTITY torPreferences.bridgeRequest "Yêu cầu Cầu nối...">
+<!ENTITY torPreferences.bridgeEnterKnown "Enter a bridge address you already know">
+<!ENTITY torPreferences.bridgeAddManually "Add a Bridge Manually…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Nâng cao">
+<!ENTITY torPreferences.advancedDescription "Configure how Tor Browser connects to the internet">
+<!ENTITY torPreferences.advancedButton "Settings…">
+<!ENTITY torPreferences.viewTorLogs "View the Tor logs">
+<!ENTITY torPreferences.viewLogs "Xem nhật kí...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Remove all the bridges?">
+<!ENTITY torPreferences.removeBridgesWarning "This action cannot be undone.">
+<!ENTITY torPreferences.cancel "Hủy bỏ">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Scan the QR code">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Built-In Bridges">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser includes some specific types of bridges known as “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Yêu cầu cầu nối">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Đang kết nối tới BridgeDB. Vui lòng đợi.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Giải mã CAPTCHA để yêu cầu cầu nối.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Kết quả không đúng. Vui lòng thử lại.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Provide Bridge">
+<!ENTITY torPreferences.provideBridgeHeader "Nhập thông tin cầu nối từ một nguồn tin cậy.">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Connection Settings">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Configure how Tor Browser connects to the Internet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Comma-seperated values">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Nhật kí Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Not Connected">
+<!ENTITY torConnect.connectingConcise "Đang kết nối...">
+<!ENTITY torConnect.tryingAgain "Trying again…">
+<!ENTITY torConnect.noInternet "Tor Browser couldn’t reach the Internet">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser could not connect to Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "configure your connection"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Trying a bridge…">
+<!ENTITY torConnect.tryingBridgeAgain "Trying one more time…">
+<!ENTITY torConnect.errorLocation "Tor Browser couldn’t locate you">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Are these location settings correct?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Connection assist">
+<!ENTITY torConnect.breadcrumbLocation "Location settings">
+<!ENTITY torConnect.breadcrumbTryBridge "Try a bridge">
+<!ENTITY torConnect.automatic "Tự động">
+<!ENTITY torConnect.selectCountryRegion "Select Country or Region">
+<!ENTITY torConnect.frequentLocations "Frequently selected locations">
+<!ENTITY torConnect.otherLocations "Other locations">
+<!ENTITY torConnect.restartTorBrowser "Restart Tor Browser">
+<!ENTITY torConnect.configureConnection "Configure Connection…">
+<!ENTITY torConnect.viewLog "View logs…">
+<!ENTITY torConnect.tryAgain "Thử lại">
+<!ENTITY torConnect.offline "Internet not reachable">
+<!ENTITY torConnect.connectMessage "Changes to Tor Settings will not take effect until you connect">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser has failed to establish a connection to the Tor Network">
+<!ENTITY torConnect.yourLocation "Your Location">
+<!ENTITY torConnect.tryBridge "Try a Bridge">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.cannotDetermineCountry "Unable to determine user country">
+<!ENTITY torConnect.noSettingsForCountry "No settings available for your location">

@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tor 网络设置">
+<!ENTITY torsettings.wizard.title.default "连接 Tor 网络">
+<!ENTITY torsettings.wizard.title.configure "Tor 网络设置">
+<!ENTITY torsettings.wizard.title.connecting "正在建立连接">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Tor Browser 语言">
+<!ENTITY torlauncher.localePicker.prompt "请选择一种语言。">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "点击“连接”，连接 Tor 网络。">
+<!ENTITY torSettings.configurePrompt "如您所在的国家或地区（如埃及、中国大陆、土耳其）对 Tor 进行审查，或者您的私人网络需要代理，请点击“配置”，调整网络设置。">
+<!ENTITY torSettings.configure "配置">
+<!ENTITY torSettings.connect "连接">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "等待 Tor 启动...">
+<!ENTITY torsettings.restartTor "重新启动 Tor">
+<!ENTITY torsettings.reconfigTor "重新配置">
+
+<!ENTITY torsettings.discardSettings.prompt "您已配置 Tor 网桥，或者您已输入本地代理设置。若要直接连接到 Tor 网络，这些设置必须被移除。">
+<!ENTITY torsettings.discardSettings.proceed "移除设置并连接">
+
+<!ENTITY torsettings.optional "可选">
+
+<!ENTITY torsettings.useProxy.checkbox "使用代理访问互联网">
+<!ENTITY torsettings.useProxy.type "代理服务器类型">
+<!ENTITY torsettings.useProxy.type.placeholder "选择代理类型">
+<!ENTITY torsettings.useProxy.address "地址">
+<!ENTITY torsettings.useProxy.address.placeholder "IP 地址或主机名">
+<!ENTITY torsettings.useProxy.port "端口">
+<!ENTITY torsettings.useProxy.username "用户名">
+<!ENTITY torsettings.useProxy.password "密码">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "该计算机的防火墙仅允许特定端口的互联网连接">
+<!ENTITY torsettings.firewall.allowedPorts "允许的端口">
+<!ENTITY torsettings.useBridges.checkbox "我所在的国家或地区对 Tor 进行了审查">
+<!ENTITY torsettings.useBridges.default "选择内置网桥">
+<!ENTITY torsettings.useBridges.default.placeholder "选择网桥">
+<!ENTITY torsettings.useBridges.bridgeDB "从 torproject.org 获取网桥">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "请输入图中的字符">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "获取新的验证码">
+<!ENTITY torsettings.useBridges.captchaSubmit "提交">
+<!ENTITY torsettings.useBridges.custom "输入已知网桥">
+<!ENTITY torsettings.useBridges.label "输入可信来源提供的网桥：">
+<!ENTITY torsettings.useBridges.placeholder "输入 地址:端口（每行一个）">
+
+<!ENTITY torsettings.copyLog "复制 Tor 日志">
+
+<!ENTITY torsettings.proxyHelpTitle "代理帮助">
+<!ENTITY torsettings.proxyHelp1 "通过公司，学校或大学的网络连接时可能需要本地代理。&#160; 如果您不确定是否需要代理，可查看其他浏览器中的网络设置或查看系统的网络设置。">
+
+<!ENTITY torsettings.bridgeHelpTitle "网桥中继帮助">
+<!ENTITY torsettings.bridgeHelp1 "网桥指未公开的 Tor 节点，通过这种节点连接 Tor 网络时更难以封锁。每种网桥使用不同的方式来突破审查。obfs 类型的网桥使通信看起来像随机信号，而 meek 网桥看起来像连接到相应的服务而不是 Tor 网络。">
+<!ENTITY torsettings.bridgeHelp2 "由于封锁方式不同，某种网桥在一些国家可用，但其他国家可能不可用。如果无法确定您应该使用哪种网桥，请访问 torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "正在连接 Tor 网络，可能需几分钟，请稍等。">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "连接">
+<!ENTITY torPreferences.torSettings "Tor 设置">
+<!ENTITY torPreferences.torSettingsDescription "Tor 浏览器将你和世界数千名志愿者支持的 Tor 网络相连" >
+<!ENTITY torPreferences.learnMore "了解更多">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "互联网：">
+<!ENTITY torPreferences.statusInternetTest "测试">
+<!ENTITY torPreferences.statusInternetOnline "联机">
+<!ENTITY torPreferences.statusInternetOffline "脱机">
+<!ENTITY torPreferences.statusTorLabel "Tor 网络：">
+<!ENTITY torPreferences.statusTorConnected "已连接">
+<!ENTITY torPreferences.statusTorNotConnected "未连接">
+<!ENTITY torPreferences.statusTorBlocked "可能被屏蔽">
+<!ENTITY torPreferences.learnMore "了解更多">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "快速开始">
+<!ENTITY torPreferences.quickstartDescriptionLong "快速开始将在打开 Tor 浏览器时根据您上次使用的连接设置自动地将其连接到 Tor 网络。">
+<!ENTITY torPreferences.quickstartCheckbox "始终自动连接">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "网桥">
+<!ENTITY torPreferences.bridgesDescription "网桥帮助你在 Tor 被阻塞的地方连接 Tor 网络。取决于你在哪里，有的网桥的效果可能比另一个要好。">
+<!ENTITY torPreferences.bridgeLocation "您的位置">
+<!ENTITY torPreferences.bridgeLocationAutomatic "自动">
+<!ENTITY torPreferences.bridgeLocationFrequent "常用位置">
+<!ENTITY torPreferences.bridgeLocationOther "其他位置">
+<!ENTITY torPreferences.bridgeChooseForMe "为我选择一个网桥...">
+<!ENTITY torPreferences.bridgeBadgeCurrent "当前网桥">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "可保存一个或多个网桥，连接时 Tor 将选择使用其中一个。需要时，Tor 可自动切换至其他网桥。">
+<!ENTITY torPreferences.bridgeId "#1 网桥：#2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "移除">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "禁用内置网桥">
+<!ENTITY torPreferences.bridgeShare "通过二维码或复制地址分享网桥：">
+<!ENTITY torPreferences.bridgeCopy "复制网桥地址">
+<!ENTITY torPreferences.copied "已复制！">
+<!ENTITY torPreferences.bridgeShowAll "显示所有网桥">
+<!ENTITY torPreferences.bridgeRemoveAll "移除所有网桥">
+<!ENTITY torPreferences.bridgeAdd "新增网桥">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "选择 Tor 浏览器内置网桥">
+<!ENTITY torPreferences.bridgeSelectBuiltin "选择内置网桥…">
+<!ENTITY torPreferences.bridgeRequest "请求网桥…">
+<!ENTITY torPreferences.bridgeEnterKnown "输入已知网桥">
+<!ENTITY torPreferences.bridgeAddManually "手动新增网桥...">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "高级">
+<!ENTITY torPreferences.advancedDescription "配置 Tor 浏览器联网方式">
+<!ENTITY torPreferences.advancedButton "设置...">
+<!ENTITY torPreferences.viewTorLogs "查看 Tor 日志">
+<!ENTITY torPreferences.viewLogs "查看日志">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "移除所有网桥？">
+<!ENTITY torPreferences.removeBridgesWarning "此操作不可撤销。">
+<!ENTITY torPreferences.cancel "取消">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "扫描二维码">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "内置网桥">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor 浏览器包括一些特定类型的网桥，称为“可插拔传输”。">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 是一种内置网桥，使您的 Tor 流量看起来很随机。它们也比它的前辈，即 obfs3 网桥，更不容易被阻止。">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake 是一个内置的网桥，通过将您的网络连接路由到由志愿者运行的 Snowflake 代理服务器，来抵抗审查。">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure 是一个内置的网桥，使您看起来像在使用微软的网站而不是使用 Tor。">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "正在请求网桥">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "正在连接到 BridgeDB，请等待。">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "请输入验证码以获取网桥。">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "输入错误，请重试。">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "提供网桥">
+<!ENTITY torPreferences.provideBridgeHeader "输入可信来源提供的网桥">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "连接设置">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "配置 Tor 浏览器联网方式">
+<!ENTITY torPreferences.firewallPortsPlaceholder "逗号分隔值">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Tor 日志">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "未连接">
+<!ENTITY torConnect.connectingConcise "正在连接…">
+<!ENTITY torConnect.tryingAgain "正在重试…">
+<!ENTITY torConnect.noInternet "Tor 浏览器无法连接网络">
+<!ENTITY torConnect.noInternetDescription "这可能是由连接问题，而非 Tor 被屏蔽导致的。请检查互联网连接，代理和防火墙设置，然后重试。">
+<!ENTITY torConnect.couldNotConnect "Tor 浏览器无法连接到 Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "配置连接"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "如果 Tor 在您的位置被封锁，尝试一个网桥可能会有帮助。连接助手可以利用您的位置为您选择一个，或者您可以 #1 手动选择。"> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "正在尝试网桥…">
+<!ENTITY torConnect.tryingBridgeAgain "再试一次…">
+<!ENTITY torConnect.errorLocation "Tor 浏览器不能定位您">
+<!ENTITY torConnect.errorLocationDescription "Tor 浏览器需要知道您的位置，以便为您选择合适的网桥。如果您不愿意分享您的位置，可以用#1手动代替。"> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "地点设置是否正确？">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor 浏览器仍然无法连接到Tor。请检查您的位置设置是否正确并重试，或者用#1代替。"> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor 浏览器仍无法连接">
+<!ENTITY torConnect.finalErrorDescription "尽管作了努力，连接助手仍无法连接 Tor。请转而尝试排查连接问题，并手动添加网桥。">
+<!ENTITY torConnect.breadcrumbAssist "连接助手">
+<!ENTITY torConnect.breadcrumbLocation "地点设置">
+<!ENTITY torConnect.breadcrumbTryBridge "尝试网桥">
+<!ENTITY torConnect.automatic "自动">
+<!ENTITY torConnect.selectCountryRegion "选择国家或地区">
+<!ENTITY torConnect.frequentLocations "常用位置">
+<!ENTITY torConnect.otherLocations "其他位置">
+<!ENTITY torConnect.restartTorBrowser "重启 Tor 浏览器">
+<!ENTITY torConnect.configureConnection "配置连接…">
+<!ENTITY torConnect.viewLog "查看日志...">
+<!ENTITY torConnect.tryAgain "重试">
+<!ENTITY torConnect.offline "互联网未连接">
+<!ENTITY torConnect.connectMessage "在您连接之前对 Tor 设置的更改将不会生效">
+<!ENTITY torConnect.tryAgainMessage "Tor 浏览器未能与 Tor 网络建立连接">
+<!ENTITY torConnect.yourLocation "您的位置">
+<!ENTITY torConnect.tryBridge "尝试网桥">
+<!ENTITY torConnect.autoBootstrappingFailed "自动配置失败">
+<!ENTITY torConnect.autoBootstrappingFailed "自动配置失败">
+<!ENTITY torConnect.cannotDetermineCountry "无法获取用户所在地区">
+<!ENTITY torConnect.noSettingsForCountry "您的位置没有可用的设置">

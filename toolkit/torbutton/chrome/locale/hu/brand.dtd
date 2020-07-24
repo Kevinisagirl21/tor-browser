@@ -1,0 +1,19 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!ENTITY  brandShorterName      "Tor Böngésző">
+<!ENTITY  brandShortName        "Tor Böngésző">
+<!ENTITY  brandFullName         "Tor Böngésző">
+<!ENTITY  vendorShortName       "Tor Projekt">
+<!ENTITY  trademarkInfo.part1   "A 'Tor' és az 'Onion Logo' a Tor Project, Inc. bejegyzett védjegyei.">
+<!-- LOCALIZATION NOTE (brandProductName):
+   This brand name can be used in messages where the product name needs to
+   remain unchanged across different versions (Nightly, Beta, etc.). -->
+<!ENTITY  brandProductName      "Tor Böngésző">
+
+<!-- The following strings are for bug #10280's UI. We place them here for our translators -->
+<!ENTITY plugins.installed.find "Kattintson telepített beépülők betöltéséhez">
+<!ENTITY plugins.installed.enable "Beépülő modulok engedélyezése">
+<!ENTITY plugins.installed.disable "Beépülő modulok tiltása ">
+<!ENTITY plugins.installed.disable.tip "Kattintson a rendszer beépülő modulok betöltésének megakadályozásához.">

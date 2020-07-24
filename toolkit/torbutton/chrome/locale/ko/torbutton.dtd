@@ -1,0 +1,56 @@
+<!ENTITY torbutton.context_menu.new_identity "신원 재설정">
+<!ENTITY torbutton.context_menu.new_identity_sentence_case "신원 재설정">
+<!ENTITY torbutton.context_menu.new_identity_key "I">
+<!ENTITY torbutton.context_menu.new_circuit "Tor 우회로 재구성">
+<!ENTITY torbutton.context_menu.new_circuit_sentence_case "Tor 우회로 재구성">
+<!ENTITY torbutton.context_menu.new_circuit_key "C">
+<!ENTITY torbutton.context_menu.networksettings "Tor 네트워크 설정...">
+<!ENTITY torbutton.context_menu.networksettings.key "N">
+<!ENTITY torbutton.context_menu.downloadUpdate "Tor 브라우저 업데이트 확인하기..">
+<!ENTITY torbutton.context_menu.downloadUpdate.key "U">
+<!ENTITY torbutton.context_menu.cookieProtections "쿠키 보호...">
+<!ENTITY torbutton.context_menu.cookieProtections.key "C">
+<!ENTITY torbutton.button.tooltip "클릭하여 Torbutton 설정 초기하기">
+<!ENTITY torbutton.prefs.security_settings "Tor 브라우저 보안 설정">
+<!ENTITY torbutton.cookiedialog.title "쿠키 보호 관리">
+<!ENTITY torbutton.cookiedialog.lockCol "보호됨">
+<!ENTITY torbutton.cookiedialog.domainCol "호스트">
+<!ENTITY torbutton.cookiedialog.nameCol "이름">
+<!ENTITY torbutton.cookiedialog.pathCol "경로">
+<!ENTITY torbutton.cookiedialog.protectCookie "쿠키 보호">
+<!ENTITY torbutton.cookiedialog.removeCookie "쿠키 삭제">
+<!ENTITY torbutton.cookiedialog.unprotectCookie "쿠키 보호하지 않음">
+<!ENTITY torbutton.cookiedialog.removeAllBut "보호된 것 빼고 모두 지우기">
+<!ENTITY torbutton.cookiedialog.saveAllCookies "새로운 쿠키 보호">
+<!ENTITY torbutton.cookiedialog.doNotSaveAllCookies "새로운 쿠키를 보호하지 않음">
+<!ENTITY torbutton.prefs.sec_caption "보안 등급">
+<!ENTITY torbutton.prefs.sec_caption_tooltip "보안 슬라이더를 사용하면 특정 브라우저 기능이 비활성화되어 브라우저가 해킹 시도에 취약해질 수 있습니다.">
+<!ENTITY torbutton.prefs.sec_standard_label "표준">
+<!ENTITY torbutton.prefs.sec_standard_description "모든 Tor 브라우저와 웹사이트의 기능들이 활성화 됩니다.">
+<!ENTITY torbutton.prefs.sec_safer_label "매우 안전함">
+<!ENTITY torbutton.prefs.sec_safer_description "웹사이트 내 위험하다고 판단되는 기능을 비활성화합니다. 몇몇 사이트의 기능을 사용할 수 없게 됩니다.">
+<!ENTITY torbutton.prefs.sec_safer_list_label "더 안전한 설정을 사용 중입니다.">
+<!ENTITY torbutton.prefs.sec_safest_label "가장 안전함">
+<!ENTITY torbutton.prefs.sec_safest_description "정적 사이트와 기본 서비스에 필요한 기능에만 허용됩니다. 이 변경사항들은 이미지, 미디어, 스크립트에 영향을 줍니다.">
+<!ENTITY torbutton.prefs.sec_safest_list_label "가장 안전한 설정을 사용 중입니다.">
+<!ENTITY torbutton.prefs.sec_learn_more_label "더 알아보기">
+<!ENTITY torbutton.prefs.sec_js_on_https_sites_only "JavaScript가 HTTPS을 적용되지 않은 사이트에서 비활성화 됩니다.">
+<!ENTITY torbutton.prefs.sec_js_disabled "자바스크립트가 기본적으로 비활성화 됩니다.">
+<!ENTITY torbutton.prefs.sec_limit_typography "일부 글꼴, 수학기호가 비활성화 됩니다.">
+<!ENTITY torbutton.prefs.sec_limit_graphics_and_typography "일부 글꼴, 상징, 수학 기호, 사진이 비활성화 됩니다.">
+<!ENTITY torbutton.prefs.sec_click_to_play_media "오디오와 비디오(HTML5로 표현된), 그리고 WebGL 은 클릭하여 재생합니다.">
+<!ENTITY torbutton.prefs.sec_custom_warning "사용자 맞춤">
+<!ENTITY torbutton.prefs.sec_overview "보안과 익명성을 공격하는 데 사용될 수 있는 특정한 웹의 기능을 해제합니다.">
+<!ENTITY torbutton.prefs.sec_standard_tooltip "보안 등급 : 표준">
+<!ENTITY torbutton.prefs.sec_safer_tooltip "보안 등급 : 매우 안전함">
+<!ENTITY torbutton.prefs.sec_safest_tooltip "보안 등급 : 가장 안전함">
+<!ENTITY torbutton.prefs.sec_custom_summary "사용자 지정 브라우저 설정으로 인해 비정상적인 보안 설정이 발생했습니다. 보안 및 개인정보 보호를 위하여 보안 수준의 기본값 중 하나를 선택하는 것이 좋습니다.">
+<!ENTITY torbutton.prefs.sec_restore_defaults "기본값으로 복구">
+<!ENTITY torbutton.prefs.sec_advanced_security_settings "고급 보안 설정">
+<!ENTITY torbutton.prefs.sec_change "변경...">
+<!ENTITY torbutton.circuit_display.title "Tor 우회로">
+<!ENTITY torbutton.circuit_display.new_circuit "Tor 우회로 재구성">
+
+<!-- Onion services strings.  Strings are kept here for ease of translation. -->
+<!ENTITY torbutton.onionServices.authPrompt.tooltip "Onion 서비스 클라이언트 인증 프롬프트 열기">
+<!ENTITY torbutton.onionServices.authPrompt.persistCheckboxLabel "이 키를 기억하기">

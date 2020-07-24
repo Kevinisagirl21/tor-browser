@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "À propos de Tor ">
+
+<!ENTITY aboutTor.viewChangelog.label "Visualiser le journal des changements">
+
+<!ENTITY aboutTor.ready.label "Explorez, en toute confidentialité.">
+<!ENTITY aboutTor.ready2.label "Vous êtes prêt pour l’expérience de navigation la plus confidentielle au monde.">
+<!ENTITY aboutTor.failure.label "Un problème est survenu">
+<!ENTITY aboutTor.failure2.label "Tor ne fonctionne pas dans ce navigateur.">
+
+<!ENTITY aboutTor.search.label "Chercher avec DuckDuckGo">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "Des questions ?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Consultez notre guide d’utilisation du Navigateur Tor »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "G">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Guide d’utilisation du Navigateur Tor">
+
+<!ENTITY aboutTor.tor_mission.label "Le Projet Tor est un organisme sans but lucratif US 501(c)(3) qui fait progresser les droits de la personne et les libertés en créant et en déployant des technologies gratuites d’anonymat et de protection de la vie privée et des données personnelles, à code source ouvert. Nous soutenons leur disponibilité et leur utilisation sans restriction, et promouvons une meilleure compréhension scientifique et populaire.">
+<!ENTITY aboutTor.getInvolved.label "Impliquez-vous »">
+
+<!ENTITY aboutTor.newsletter.tagline "Obtenez les dernières nouvelles au sujet de Tor directement dans votre boîte de réception.">
+<!ENTITY aboutTor.newsletter.link_text "Inscrivez-vous aux nouvelles de Tor.">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor peut être utilisé gratuitement grâce aux dons de personnes telles que vous.">
+<!ENTITY aboutTor.donationBanner.buttonA "Faites un don maintenant">
+
+<!ENTITY aboutTor.alpha.ready.label "Tester. Rigoureusement.">
+<!ENTITY aboutTor.alpha.ready2.label "Vous êtes prêt à tester l’expérience de navigation la plus confidentielle au monde.">
+<!ENTITY aboutTor.alpha.bannerDescription "Le Navigateur Tor Alpha est une version instable du Navigateur Tor que vous pouvez utiliser pour découvrir les nouvelles fonctions, tester leurs performances et communiquer une rétroaction avant parution.">
+<!ENTITY aboutTor.alpha.bannerLink "Signaler un bogue sur le forum de Tor">
+
+<!ENTITY aboutTor.nightly.ready.label "Tester. Rigoureusement.">
+<!ENTITY aboutTor.nightly.ready2.label "Vous êtes prêt à tester l’expérience de navigation la plus confidentielle au monde.">
+<!ENTITY aboutTor.nightly.bannerDescription "Le Navigateur Tor Nightly est une version instable du Navigateur Tor que vous pouvez utiliser pour découvrir les nouvelles fonctions, tester leurs performances et communiquer une rétroaction avant parution.">
+<!ENTITY aboutTor.nightly.bannerLink "Signaler un bogue sur le forum de Tor">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "ALIMENTÉ PAR LA VIE PRIVÉE :">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "RÉSISTANCE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "CHANGEMENT">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "LIBERTÉ">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "FAITES UN DON MAINTENANT">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Votre don sera égalé par les Amis de Tor à concurrence de 100 000 $.">

@@ -1,0 +1,8 @@
+<!ENTITY aboutTBUpdate.changelogTitle "Αρχείο αλλαγών του περιηγητή Tor">
+<!ENTITY aboutTBUpdate.updated "Ο περιηγητής Tor ενημερώθηκε.">
+<!ENTITY aboutTBUpdate.linkPrefix "Για να δείτε το τι έχει αλλάξει σε αυτή την έκδοση, ">
+<!ENTITY aboutTBUpdate.linkLabel  "επισκεφθείτε την ιστοσελίδα μας">
+<!ENTITY aboutTBUpdate.linkSuffix ".">
+<!ENTITY aboutTBUpdate.version "Έκδοση">
+<!ENTITY aboutTBUpdate.releaseDate "Ημερομηνία έκδοσης">
+<!ENTITY aboutTBUpdate.releaseNotes "Σημειώσεις έκδοσης">

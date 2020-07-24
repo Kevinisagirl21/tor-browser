@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tor ağı ayarları">
+<!ENTITY torsettings.wizard.title.default "Tor ağı ile bağlantı kurun">
+<!ENTITY torsettings.wizard.title.configure "Tor ağı ayarları">
+<!ENTITY torsettings.wizard.title.connecting "Bağlantı kuruluyor">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Tor Browser dili">
+<!ENTITY torlauncher.localePicker.prompt "Lütfen bir dil seçin.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Tor ağı ile bağlantı kurmak için &quot;Bağlantı kur&quot; üzerine tıklayın.">
+<!ENTITY torSettings.configurePrompt "Tor ağı ile bağlantı kurulmasını engelleyen bir ülkede bulunuyorsanız (Çin, İran, Suriye gibi) ya da vekil sunucu kullanılması gereken özel bir ağdan bağlantı kuruyorsanız, ağ ayarlarını yapmak için &quot;Yapılandır&quot; üzerine tıklayın.">
+<!ENTITY torSettings.configure "Yapılandır">
+<!ENTITY torSettings.connect "Bağlantı kur">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Tor uygulamasının başlaması bekleniyor…">
+<!ENTITY torsettings.restartTor "Tor uygulamasını yeniden başlat">
+<!ENTITY torsettings.reconfigTor "Yeniden yapılandır">
+
+<!ENTITY torsettings.discardSettings.prompt "Tor Köprülerini yapılandırdınız ya da yerel vekil sunucu ayarları girdiniz.&#160; Tor ağı ile doğrudan bağlantı kurmak için bu ayarlar kaldırılmalıdır.">
+<!ENTITY torsettings.discardSettings.proceed "Ayarları kaldır ve bağlantı kur">
+
+<!ENTITY torsettings.optional "İsteğe bağlı">
+
+<!ENTITY torsettings.useProxy.checkbox "İnternet bağlantısı kurmak için bir vekil sunucu kullanıyorum">
+<!ENTITY torsettings.useProxy.type "Vekil sunucu türü">
+<!ENTITY torsettings.useProxy.type.placeholder "vekil sunucu türünü seçin">
+<!ENTITY torsettings.useProxy.address "Adres">
+<!ENTITY torsettings.useProxy.address.placeholder "IP adresi ya da sunucu adı">
+<!ENTITY torsettings.useProxy.port "Bağlantı noktası">
+<!ENTITY torsettings.useProxy.username "Kullanıcı adı">
+<!ENTITY torsettings.useProxy.password "Parola">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Bu bilgisayarda yalnızca belirli bağlantı noktalarından bağlantı kurulmasına izin veren bir güvenlik duvarı bulunuyor">
+<!ENTITY torsettings.firewall.allowedPorts "Kullanılabilecek bağlantı noktaları">
+<!ENTITY torsettings.useBridges.checkbox "Bulunduğum ülkede Tor ağı engelleniyor">
+<!ENTITY torsettings.useBridges.default "Bir hazır köprü seçin">
+<!ENTITY torsettings.useBridges.default.placeholder "bir köprü seçin">
+<!ENTITY torsettings.useBridges.bridgeDB "torproject.org üzerinden köprü istensin">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Görseldeki karakterleri yazın">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Yeni bir güvenlik kodu isteyin">
+<!ENTITY torsettings.useBridges.captchaSubmit "Gönder">
+<!ENTITY torsettings.useBridges.custom "Bildiğim bir köprüyü kullanacağım">
+<!ENTITY torsettings.useBridges.label "Güvenli bir kaynaktan aldığınız köprü bilgilerini yazın.">
+<!ENTITY torsettings.useBridges.placeholder "adres:bağlantı noktası şeklinde yazın (her satıra bir tane)">
+
+<!ENTITY torsettings.copyLog "Tor günlüğünü panoya kopyala">
+
+<!ENTITY torsettings.proxyHelpTitle "Vekil sunucu yardımı">
+<!ENTITY torsettings.proxyHelp1 "Bir kurum, okul ya da üniversite ağı aracılığıyla bağlantı kurarken yerel bir vekil sunucu gereklidir.&#160;Bir vekil sunucu kullanıp kullanmamanız gerektiğinden emin değilseniz, bilgisayarınızın ağa bağlantı şeklini anlamak için aynı ağdaki başka bir web tarayıcısının İnternet ayarlarına bakın ya da sisteminizin ağ ayarlarını gözden geçirin.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Köprü aktarıcı yardımı">
+<!ENTITY torsettings.bridgeHelp1 "Köprüler, Tor ağı ile bağlantı kurulmasının engellenmesini zorlaştıran ve herkese açık olarak listelenmeyen aktarıcılardır. &#160;Her köprü türü engellemeden kaçınmak için farklı bir yöntem kullanır.&#160; Obfs köprüleri, ağ trafiğinizi rastgele gürültü gibi gösterir. Meek köprüleri ise, trafiğinizi Tor ağı ile değil o hizmet ile bağlantı kurulmuş gibi gösterir.">
+<!ENTITY torsettings.bridgeHelp2 "Bazı ülkelerin Tor ağını engellemeye çalışması nedeniyle bazı köprüler bazı ülkelerde çalışırken başka ülkelerde çalışmayabilir.&#160; Ülkenizde hangi köprülerin çalışacağından emin değilseniz, torproject.org/about/contact.html#support adresine bakabilirsiniz.">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Lütfen Tor ağı ile bağlantı kurulurken bekleyin. Bu işlem birkaç dakika sürebilir.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Bağlantı">
+<!ENTITY torPreferences.torSettings "Tor ayarları">
+<!ENTITY torPreferences.torSettingsDescription "Tor Browser sizi dünyada binlerce gönüllü tarafından işletilen Tor ağına bağlar." >
+<!ENTITY torPreferences.learnMore "Ayrıntılı bilgi alın">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Sınama">
+<!ENTITY torPreferences.statusInternetOnline "Çevrimiçi">
+<!ENTITY torPreferences.statusInternetOffline "Çevrimdışı">
+<!ENTITY torPreferences.statusTorLabel "Tor ağı:">
+<!ENTITY torPreferences.statusTorConnected "Bağlantı kuruldu">
+<!ENTITY torPreferences.statusTorNotConnected "Bağlantı kurulmamış">
+<!ENTITY torPreferences.statusTorBlocked "Olası engelleme">
+<!ENTITY torPreferences.learnMore "Ayrıntılı bilgi alın">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Hızlı başlatma">
+<!ENTITY torPreferences.quickstartDescriptionLong "Hızlı başlatma özelliği, Tor Browser uygulamasının, başlatıldığında, son kullanılan bağlantı ayarları ile Tor ağına otomatik olarak bağlanmasını sağlar.">
+<!ENTITY torPreferences.quickstartCheckbox "Bağlantı her zaman otomatik olarak kurulsun">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Köprüler">
+<!ENTITY torPreferences.bridgesDescription "Köprüler Tor bağlantısının engellendiği yerlerden Tor ağına erişmek için kullanılır.. Bulunduğunuz konuma göre bir köprü türü diğerinden daha uygun olabilir.">
+<!ENTITY torPreferences.bridgeLocation "Konumunuz">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Otomatik">
+<!ENTITY torPreferences.bridgeLocationFrequent "Sık seçilen konumlar">
+<!ENTITY torPreferences.bridgeLocationOther "Diğer konumlar">
+<!ENTITY torPreferences.bridgeChooseForMe "Benim için bir köprü seç…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Geçerli köprüleriniz">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Bir ya da daha fazla köprü kaydedebilirsiniz. Bağlantı kurduğunuzda Tor hangisini kullanacağını seçer ve gerektiğinde otomatik olarak bir başka köprüye geçebilir.">
+<!ENTITY torPreferences.bridgeId "#1 köprü: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Kaldır">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Hazır köprüler kullanılmasın">
+<!ENTITY torPreferences.bridgeShare "QR kodunu kullanarak ya da köprü satırını kopyalayarak bu köprüyü paylaşın.">
+<!ENTITY torPreferences.bridgeCopy "Köprü adresini kopyala">
+<!ENTITY torPreferences.copied "Kopyalandı!">
+<!ENTITY torPreferences.bridgeShowAll "Tüm köprüleri görüntüle">
+<!ENTITY torPreferences.bridgeRemoveAll "Tüm köprüleri sil">
+<!ENTITY torPreferences.bridgeAdd "Yeni köprü ekle">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Bir Tor Browser köprüsü kullanılsın">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Bir hazır köprü seçin…">
+<!ENTITY torPreferences.bridgeRequest "Köprü isteğinde bulun…">
+<!ENTITY torPreferences.bridgeEnterKnown "Bildiğim bir köprüyü yazacağım">
+<!ENTITY torPreferences.bridgeAddManually "El ile köprü ekle…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Gelişmiş">
+<!ENTITY torPreferences.advancedDescription "Tor Browser uygulamasının İnternet bağlantısını yapılandırın">
+<!ENTITY torPreferences.advancedButton "Ayarlar…">
+<!ENTITY torPreferences.viewTorLogs "Tor günlüğü kayıtlarına bakın">
+<!ENTITY torPreferences.viewLogs "Günlüğü görüntüle…">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Tüm köprüler silinsin mi?">
+<!ENTITY torPreferences.removeBridgesWarning "Bu işlem geri alınamaz.">
+<!ENTITY torPreferences.cancel "İptal">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "QR kodunu tarayın">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Hazır köprüler">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser içinde &quot;değiştirilebilir taşıyıcılar&quot; olarak bilinen bazı özel köprü türleri bulunur.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 Tor trafiğinizi rastgele gibi gösteren bir hazır köprü türüdür. Önceki sürümü olan obfs3 köprülerine göre engellenme olasılıkları daha düşüktür.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake, sansürü aşmak için bağlantınızı gönüllüler tarafından işletilen Snowflake vekil sunucuları üzerinden yönelten bir hazır köprüdür.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure Tor yerine bir Microsoft web sitesi kullanıyormuşsunuz gibi gösteren bir hazır köprüdür.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Köprü isteğinde bulunun">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Köprü veritabanı ile bağlantı kuruluyor. Lütfen bekleyin.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Köprü isteğinde bulunmak için güvenlik denetimini geçin.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Çözüm doğru değil. Lütfen yeniden deneyin.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Köprüyü yazın">
+<!ENTITY torPreferences.provideBridgeHeader "Güvenilir bir kaynaktan aldığınız köprü bilgilerini yazın">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Bağlantı ayarları">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Tor Browser için internet bağlantısını yapılandırın">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Virgül ile ayrılmış değerler">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Tor günlüğü kayıtları">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Bağlantı kurulmamış">
+<!ENTITY torConnect.connectingConcise "Bağlantı kuruluyor…">
+<!ENTITY torConnect.tryingAgain "Yeniden deneniyor…">
+<!ENTITY torConnect.noInternet "Tor Browser İnternet bağlantısı kuramadı">
+<!ENTITY torConnect.noInternetDescription "Bunun nedeni Tor bağlantısının engellenmesi yerine bir bağlantı sorunu olabilir. Yeniden denemeden önce İnternet bağlantınızı, vekil sunucu ve güvenlik duvarı ayarlarınızı denetleyin.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser Tor ağı ile bağlantı kuramadı">
+<!ENTITY torConnect.assistDescriptionConfigure "bağlantınızı yapılandırın"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Bulunduğunuz konumda Tor ağı engelleniyorsa, bir köprü kullanmak işe yarayabilir. Bağlantı yardımcısı ile konumunuzu kullanarak bir köprü belirleyebilir ya da birinciyi el ile seçebilirsiniz."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Bir köprü deneniyor...">
+<!ENTITY torConnect.tryingBridgeAgain "Bir kez daha deneniyor…">
+<!ENTITY torConnect.errorLocation "Tor Browser konumunuzu öğrenemedi">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser sizin için doğru köprüyü belirlemek amacıyla konumunuzu öğrenmek istiyor. Konumunuzu belirtmek istemiyorsanız birinciyi el ile seçin."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Bu konum bilgileri doğru mu?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser hala Tor ağı ile bağlantı kuramıyor. Lütfen konum ayarlarınızın doğru olduğunu denetleyip yeniden deneyin ya da #1. "> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser hala bağlantı kuramıyor">
+<!ENTITY torConnect.finalErrorDescription "Tüm çabalarına rağmen, bağlantı yardımı Tor ile bağlantı kuramadı. Bağlantınızda olabilecek sorunlara bakın ve el ile bir köprü eklemeyi deneyin.">
+<!ENTITY torConnect.breadcrumbAssist "Bağlantı yardımcısı">
+<!ENTITY torConnect.breadcrumbLocation "Konum ayarları">
+<!ENTITY torConnect.breadcrumbTryBridge "Bir köprü deneyin">
+<!ENTITY torConnect.automatic "Otomatik">
+<!ENTITY torConnect.selectCountryRegion "Ülke ya da bölgeyi seçin">
+<!ENTITY torConnect.frequentLocations "Sık seçilen konumlar">
+<!ENTITY torConnect.otherLocations "Diğer konumlar">
+<!ENTITY torConnect.restartTorBrowser "Tor Browser uygulamasını yeniden başlat">
+<!ENTITY torConnect.configureConnection "Bağlantıyı yapılandır…">
+<!ENTITY torConnect.viewLog "Günlüğü görüntüle...">
+<!ENTITY torConnect.tryAgain "Yeniden dene">
+<!ENTITY torConnect.offline "İnternet bağlantısı kurulamadı">
+<!ENTITY torConnect.connectMessage "Bağlantı kurulana kadar Tor ayarlarında yapılan değişiklikler etkili olmayacak">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser, Tor ağı ile bağlantı kuramadı">
+<!ENTITY torConnect.yourLocation "Konumunuz">
+<!ENTITY torConnect.tryBridge "Bir köprü deneyin">
+<!ENTITY torConnect.autoBootstrappingFailed "Otomatik olarak yapılandırılamadı">
+<!ENTITY torConnect.autoBootstrappingFailed "Otomatik olarak yapılandırılamadı">
+<!ENTITY torConnect.cannotDetermineCountry "Kullanıcının ülkesi belirlenemedi">
+<!ENTITY torConnect.noSettingsForCountry "Konumunuz için kullanılabilecek bir ayar bulunamadı">

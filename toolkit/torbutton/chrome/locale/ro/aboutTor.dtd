@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "Despre Tor">
+
+<!ENTITY aboutTor.viewChangelog.label "Vezi Schimbări">
+
+<!ENTITY aboutTor.ready.label "Explorează. În mod privat.">
+<!ENTITY aboutTor.ready2.label "Ești gata pentru cel mai sigur mod de navigare din întreaga lume.">
+<!ENTITY aboutTor.failure.label "Ceva a mers prost!">
+<!ENTITY aboutTor.failure2.label "Tor nu funcționează în acest browser.">
+
+<!ENTITY aboutTor.search.label "Caută cu DuckDuckGo">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "Întrebări?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Verifică manualul Tor Browser »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "M">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Manualul Tor Browser">
+
+<!ENTITY aboutTor.tor_mission.label "Tor Project este o organizație non-profit US 501(c)(3) ce promovează drepturile și libertățile omului prin crearea și implementarea de tehnologii gratuite și open source pentru anonimitate și confidențialitate, sprijinind disponibilitatea și utilizarea lor nerestricționată și continuând întelegerea lor științifică și populară.">
+<!ENTITY aboutTor.getInvolved.label "Implică-te »">
+
+<!ENTITY aboutTor.newsletter.tagline "Obțineți ultimele știri de la Tor direct în căsuța de e-mail.">
+<!ENTITY aboutTor.newsletter.link_text "Abonează-te la Tor News.">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor poate fi folosit gratuit datorită donațiilor de la oameni ca tine.">
+<!ENTITY aboutTor.donationBanner.buttonA "Donează Acum">
+
+<!ENTITY aboutTor.alpha.ready.label "Test. Bine.">
+<!ENTITY aboutTor.alpha.ready2.label "Sunteți gata să testați cea mai privată experiență de navigare din lume.">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor Browser Alpha este o versiune instabilă a Tor Browser pe care o puteți utiliza pentru a previzualiza noi caracteristici, pentru a testa performanța acestora și pentru a oferi feedback înainte de lansare.">
+<!ENTITY aboutTor.alpha.bannerLink "Raportați un bug pe Forumul Tor">
+
+<!ENTITY aboutTor.nightly.ready.label "Test. Bine.">
+<!ENTITY aboutTor.nightly.ready2.label "Sunteți gata să testați cea mai privată experiență de navigare din lume.">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly este o versiune instabilă a Tor Browser pe care o puteți utiliza pentru a previzualiza noi caracteristici, pentru a testa performanța acestora și pentru a oferi feedback înainte de lansare.">
+<!ENTITY aboutTor.nightly.bannerLink "Raportați un bug pe Forumul Tor">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "CONFIDENȚIALITATEA ÎN CENTRUL ATENȚIEI:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "REZISTENȚĂ">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "MODIFICARE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "LIBERTATE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "DONAȚI ACUM">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Friends of Tor va oferi o donație egală cu cea făcută de dvs., în limita a 100.000 USD.">

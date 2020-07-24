@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tor hálózati beállítások">
+<!ENTITY torsettings.wizard.title.default "Csatlakozás a Tor-hoz">
+<!ENTITY torsettings.wizard.title.configure "Tor hálózati beállítások">
+<!ENTITY torsettings.wizard.title.connecting "Kapcsolat létrehozása">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Tor Böngésző nyelv">
+<!ENTITY torlauncher.localePicker.prompt "Kérjük válasszon egy nyelvet.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Kattintson a &quot;Csatlakozásra&quot; hogy csatlakozzon a Tor-hoz.">
+<!ENTITY torSettings.configurePrompt "Kattintson a &quot;Konfigurálásra&quot; hogy változtasson a hálózati beállításokon, amennyiben olyan országban él amelyek cenzúrázzák a Tor-t, (mint például Egyiptom, Kína, Törökország) vagy amennyiben olyan privát hálózatról kíván csatlakozni, amelynek proxy-ra van szüksége.">
+<!ENTITY torSettings.configure "Beállít">
+<!ENTITY torSettings.connect "Csatlakozás">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Várakozás a Tor indulására...">
+<!ENTITY torsettings.restartTor "Tor újraindítása">
+<!ENTITY torsettings.reconfigTor "Újrakonfigurál">
+
+<!ENTITY torsettings.discardSettings.prompt "Beállított Tor Hidakat, vagy megadott egy helyi proxy-t.&#160; A közvetlen kapcsolódáshoz ezeket a beállításokat el kell távolítania.">
+<!ENTITY torsettings.discardSettings.proceed "Beállítások eltávolítása és Csatlakozás">
+
+<!ENTITY torsettings.optional "Opcionális">
+
+<!ENTITY torsettings.useProxy.checkbox "Proxy-t használok az Internetre való kapcsolódáshoz">
+<!ENTITY torsettings.useProxy.type "Proxy típus">
+<!ENTITY torsettings.useProxy.type.placeholder "válasszon ki egy proxy típust">
+<!ENTITY torsettings.useProxy.address "Cím">
+<!ENTITY torsettings.useProxy.address.placeholder "IP cím vagy gépnév">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Felhasználónév">
+<!ENTITY torsettings.useProxy.password "Jelszó">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "A számítógép egy tűzfalon keresztül kommunikál, ami csak adott portokon keresztül engedélyezi a kapcsolatokat.">
+<!ENTITY torsettings.firewall.allowedPorts "Engedélyezett portok">
+<!ENTITY torsettings.useBridges.checkbox "A Tor cenzúrázva van az országomban">
+<!ENTITY torsettings.useBridges.default "Válasszon ki egy beépített hidat">
+<!ENTITY torsettings.useBridges.default.placeholder "Válasszon ki egy hidat">
+<!ENTITY torsettings.useBridges.bridgeDB "Híd kérése a torproject.org-tól">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Írja be a képen látható karaktereket">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Új rejtvény kérése">
+<!ENTITY torsettings.useBridges.captchaSubmit "Elküld">
+<!ENTITY torsettings.useBridges.custom "Általam ismert híd megadása">
+<!ENTITY torsettings.useBridges.label "Adja meg a megbízható helyről származó híd adatokat.">
+<!ENTITY torsettings.useBridges.placeholder "írja be cím:port (egyet soronként)">
+
+<!ENTITY torsettings.copyLog "A Tor log Vágólapra másolása">
+
+<!ENTITY torsettings.proxyHelpTitle "Proxy segítség">
+<!ENTITY torsettings.proxyHelp1 "Egy helyi proxy lehet szükséges amennyiben olyan hálózaton keresztül csatlakozik amely, cégen, iskolán, vagy egyetemi hálózaton megy keresztül. &#160;Ha nem biztos benne, hogy szükséges-e proxyt beállítani, akkor nézze meg egy másik böngésző vagy a rendszer hálózati beállításait.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Híd csomópont súgó">
+<!ENTITY torsettings.bridgeHelp1 "A hidak olyan nem listázott csomópontok, amik megnehezítik a Tor kapcsolatok blokkolását.&#160; Minden hídtípus más módszert használ a cenzúra elhárítására.&#160; Az obfs fajták a hálózati forgalmat zajnak álcázzák, a meek fajták pedig egy adott szolgáltatáshoz kapcsolódásnak látszanak a Tor szolgáltatás helyett.">
+<!ENTITY torsettings.bridgeHelp2 "Annak a módja alapján, hogy egyes országok hogyan blokkolják a Tor-t, bizonyos hidak bizonyos országokban működnek, de másokban nem.&#160; Ha nem biztos abban, hogy mely hidak működnek az Ön országában, látogassa meg a torproject.org/about/contact.html#support oldalt.">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Kérjük várjon, amíg létrehozunk egy kapcsolatot a Tor hálózathoz.&#160; Ez eltarthat néhány percig.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Kapcsolat">
+<!ENTITY torPreferences.torSettings "Tor beállítások">
+<!ENTITY torPreferences.torSettingsDescription "A Tor Böngésző átroutolja forgalmát a Tor hálózaton, amit több ezer önkéntes tart fenn, szerte a világon." >
+<!ENTITY torPreferences.learnMore "További információ">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Teszt">
+<!ENTITY torPreferences.statusInternetOnline "Csatlakozva">
+<!ENTITY torPreferences.statusInternetOffline "Offline">
+<!ENTITY torPreferences.statusTorLabel "Tor Hálózat:">
+<!ENTITY torPreferences.statusTorConnected "Csatlakozva">
+<!ENTITY torPreferences.statusTorNotConnected "Nincs csatlakozva">
+<!ENTITY torPreferences.statusTorBlocked "Feltehetőleg blokkolt">
+<!ENTITY torPreferences.learnMore "További információ">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Gyorsindítás">
+<!ENTITY torPreferences.quickstartDescriptionLong "Gyorsindítás automatikusan csatlakoztatja a Tor Böngészőt a Tor Hálózathoz minden indításkor, a legutóbb használt beállítások szerint.">
+<!ENTITY torPreferences.quickstartCheckbox "Mindig csatlakozzon automatikusan">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Hidak">
+<!ENTITY torPreferences.bridgesDescription "A hidak segíthetik a Tor hálózatok elérését olyan helyeken, ahol a Tor blokkolt. Attól függően, hogy hol van egyik híd jobban működhet, mint egy másik.">
+<!ENTITY torPreferences.bridgeLocation "Tartózkodási helye">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automatikus">
+<!ENTITY torPreferences.bridgeLocationFrequent "Gyakran választott helyszínek">
+<!ENTITY torPreferences.bridgeLocationOther "Más helyszínek">
+<!ENTITY torPreferences.bridgeChooseForMe "Ajánljon Nekem egy Hidat...">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Jelenlegi Hídjai">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "You can save one or more bridges, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.">
+<!ENTITY torPreferences.bridgeId "#1 híd: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Eltávolítás">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Beépített hidak letiltása">
+<!ENTITY torPreferences.bridgeShare "Share this bridge using the QR code or by copying its address:">
+<!ENTITY torPreferences.bridgeCopy "Híd Címének Másolása">
+<!ENTITY torPreferences.copied "Másolva!">
+<!ENTITY torPreferences.bridgeShowAll "Összes Híd Mutatása">
+<!ENTITY torPreferences.bridgeRemoveAll "Összes Híd Eltávolítása">
+<!ENTITY torPreferences.bridgeAdd "Új Híd Hozzáadása">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Válasszon egyet a Tor Böngésző beépített hídjai közül">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Beépített Híd Kiválasztása...">
+<!ENTITY torPreferences.bridgeRequest "Híd kérése...">
+<!ENTITY torPreferences.bridgeEnterKnown "Írja be a már ismert híd címét">
+<!ENTITY torPreferences.bridgeAddManually "Híd Hozzáadása Kézzel...">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Speciális">
+<!ENTITY torPreferences.advancedDescription "Állítsa be a Tor Böngésző hogyan csatlakozzon az internethez.">
+<!ENTITY torPreferences.advancedButton "Beállítások...">
+<!ENTITY torPreferences.viewTorLogs "Tor napló megtekintése.">
+<!ENTITY torPreferences.viewLogs "Napló megtekintése...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Remove all the bridges?">
+<!ENTITY torPreferences.removeBridgesWarning "Ezt a műveletet nem lehet visszavonni.">
+<!ENTITY torPreferences.cancel "Mégsem">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "QR kód beolvasása">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Beépített Hidak">
+<!ENTITY torPreferences.builtinBridgeDescription "A Tor Böngésző tartalmaz néhány speciális hidat amiket &quot;cserélhető átvitelnek&quot; hívnak.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "Az obfs4 híd a beépített hidak egy típusa, amivel a Tor adatforgalom véletlenszerűnek látszik. Ezen kívül kisebb eséllyel van blokkolva az elődjéhez, az obfs3-hoz képest.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "A Snowflake a beépített hidak egy típusa, amely segít megkerülni a cenzúrát úgy, hogy a kapcsolatot átirányítja további önkéntesek által üzemeltetett Snowflake proxy-k csoportján.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "A meek-azure olyan beépített híd amely a Tor kapcsolatot Microsoft weboldalak látogatásának álcázza.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Híd kérése">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Kapcsolódás a hídadatbázishoz. Kérjük várjon.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Oldjon meg egy CAPTCHA-t a híd kéréséhez.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "A megoldás nem helyes. Kérjük próbálja újra.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Híd Megadása">
+<!ENTITY torPreferences.provideBridgeHeader "Adja meg a megbízható helyről származó híd adatokat">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Kapcsolat Beállításai">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Állítsa be a Tor Böngésző hogyan csatlakozzon az internethez.">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Vesszővel elválasztott értékek">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Tor Napló">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Nincs csatlakozva">
+<!ENTITY torConnect.connectingConcise "Csatlakozás...">
+<!ENTITY torConnect.tryingAgain "Trying again…">
+<!ENTITY torConnect.noInternet "Tor Browser couldn’t reach the Internet">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "A Tor Böngésző nem tudott csatlakozni a Tor-hoz">
+<!ENTITY torConnect.assistDescriptionConfigure "állítsa be kapcsolatát"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Ha A Tor blokkolva van az ön tartózkodási helyén, híd próbálása segíthet. A csatlakozási segéd képes választani egyet a tartózkodási helye alapján, vagy #1 kézzel."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Próbálkozás híddal">
+<!ENTITY torConnect.tryingBridgeAgain "Trying one more time…">
+<!ENTITY torConnect.errorLocation "A Tor Böngésző nem tudta meghatározni az Ön tartózkodási helyét">
+<!ENTITY torConnect.errorLocationDescription "A Tor Böngészőnek szüksége van az Ön tartózkodási helyére, hogy annak megfelelő hidat tudjon választani. Ha azt inkább nem adná meg, akkor #1 kézzel."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Are these location settings correct?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Csatlakozási segéd">
+<!ENTITY torConnect.breadcrumbLocation "Helyi beállítások">
+<!ENTITY torConnect.breadcrumbTryBridge "Próbálkozás Híddal">
+<!ENTITY torConnect.automatic "Automatikus">
+<!ENTITY torConnect.selectCountryRegion "Select Country or Region">
+<!ENTITY torConnect.frequentLocations "Gyakran választott helyszínek">
+<!ENTITY torConnect.otherLocations "Más helyszínek">
+<!ENTITY torConnect.restartTorBrowser "Tor Böngésző Újraindítása">
+<!ENTITY torConnect.configureConnection "Kapcsolat beállítása...">
+<!ENTITY torConnect.viewLog "Naplók megtekintése...">
+<!ENTITY torConnect.tryAgain "Újrapróbálkozás">
+<!ENTITY torConnect.offline "Nem érhető el az Internet">
+<!ENTITY torConnect.connectMessage "A Tor beállítások módosításai csatlakozás után lépnek életbe.">
+<!ENTITY torConnect.tryAgainMessage "A Tor Böngészőnek nem sikerül létrehoznia a kapcsolatot a Tor hálózathoz">
+<!ENTITY torConnect.yourLocation "Tartózkodási helye">
+<!ENTITY torConnect.tryBridge "Próbálkozás híddal">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatikus beállítás sikertelen">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatikus beállítás sikertelen">
+<!ENTITY torConnect.cannotDetermineCountry "Nem sikerült a felhasználó országát meghatározni">
+<!ENTITY torConnect.noSettingsForCountry "Nincs elérhető beállítás az Ön tartózkodási helyéhez">

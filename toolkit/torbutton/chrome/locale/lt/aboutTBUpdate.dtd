@@ -1,0 +1,8 @@
+<!ENTITY aboutTBUpdate.changelogTitle "Tor Naršyklės keitinių žurnalas">
+<!ENTITY aboutTBUpdate.updated "Tor Naršyklė atnaujinta.">
+<!ENTITY aboutTBUpdate.linkPrefix "Norėdami sužinoti naujausią informaciją apie šią laida, ">
+<!ENTITY aboutTBUpdate.linkLabel  "apsilankykite mūsų internetinėje svetainėje">
+<!ENTITY aboutTBUpdate.linkSuffix ".">
+<!ENTITY aboutTBUpdate.version "Versija">
+<!ENTITY aboutTBUpdate.releaseDate "Laidos data">
+<!ENTITY aboutTBUpdate.releaseNotes "Laidos informacija">

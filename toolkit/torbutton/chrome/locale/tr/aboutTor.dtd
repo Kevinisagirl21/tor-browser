@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "Tor hakkında">
+
+<!ENTITY aboutTor.viewChangelog.label "Değişiklik günlüğünü görüntüle">
+
+<!ENTITY aboutTor.ready.label "Keşfedin. Gizlice.">
+<!ENTITY aboutTor.ready2.label "Dünyanın en kişisel web tarama deneyimine hazırsınız.">
+<!ENTITY aboutTor.failure.label "Bir şeyler ters gitti!">
+<!ENTITY aboutTor.failure2.label "Tor bu tarayıcı ile çalışmıyor.">
+
+<!ENTITY aboutTor.search.label "DuckDuckGo ile arayın">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "Sorularınız mı var?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Tor Browser rehberine bakabilirsiniz">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "M">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Tor Browser rehberi">
+
+<!ENTITY aboutTor.tor_mission.label "Tor Projesi, Birleşik Devletler 501(c)(3) vergi muafiyeti maddesi kapsamında, özgür ve açık kaynaklı anonimlik ve kişisel gizlilik teknolojileri geliştirerek insan hakları ve özgürlüklerini ileriye götürmek, bu teknolojilerin bilimsel ve kültürel olarak bilinirliğini arttırmak ve herkes tarafından erişebilmesini sağlamak amacıyla çalışan, kar amacı gütmeyen bir kuruluştur.">
+<!ENTITY aboutTor.getInvolved.label "Katkıda bulunun »">
+
+<!ENTITY aboutTor.newsletter.tagline "Tor gelişmeleri ile ilgili e-posta almak ister misiniz?">
+<!ENTITY aboutTor.newsletter.link_text "Tor duyurularına abone olun">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor sizin gibi insanların bağışları ile desteklendiği için ücretsiz olarak kullanılabiliyor.">
+<!ENTITY aboutTor.donationBanner.buttonA "Bağış yapın">
+
+<!ENTITY aboutTor.alpha.ready.label "Deneyimleyin. Enine boyuna.">
+<!ENTITY aboutTor.alpha.ready2.label "Dünyanın en kişisel web tarama deneyimini yaşamaya hazırsınız.">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor Browser Alpha, yeni özellikleri önceden görüp başarımlarını sınayabileceğiniz ve yayınlanmadan önce geri bildirim verebileceğiniz kararsız bir Tor Browser sürümüdür.">
+<!ENTITY aboutTor.alpha.bannerLink "Hataları Tor forumunda bildirin">
+
+<!ENTITY aboutTor.nightly.ready.label "Deneyimleyin. Enine boyuna.">
+<!ENTITY aboutTor.nightly.ready2.label "Dünyanın en kişisel web tarama deneyimini yaşamaya hazırsınız.">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly, yeni özellikleri önceden görüp başarımlarını sınayabileceğiniz ve yayınlanmadan önce geri bildirim verebileceğiniz kararsız bir Tor Browser sürümüdür.">
+<!ENTITY aboutTor.nightly.bannerLink "Hataları Tor forumunda bildirin">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "KİŞİSEL GİZLİLİK SAĞLAR:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "DİRENİŞ">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "DEĞİŞİM">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "ÖZGÜRLÜK">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "BAĞIŞ YAPIN">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Friends of Tor, $100.000 tutarını aşmayan bağışlarınız kadar katkıda bulunacak.">

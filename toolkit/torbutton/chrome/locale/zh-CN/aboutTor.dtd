@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "关于 Tor">
+
+<!ENTITY aboutTor.viewChangelog.label "查看更新日志">
+
+<!ENTITY aboutTor.ready.label "私密浏览">
+<!ENTITY aboutTor.ready2.label "您将享受世界上最私密的浏览体验。">
+<!ENTITY aboutTor.failure.label "出错了！">
+<!ENTITY aboutTor.failure2.label "Tor 无法在该浏览器下运行。">
+
+<!ENTITY aboutTor.search.label "通过 DuckDuckGo 搜索">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "有疑问？">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "查阅 Tor 浏览器用户手册 »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "M">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Tor 浏览器用户手册">
+
+<!ENTITY aboutTor.tor_mission.label "The Tor Project 是一家美国 501(c)(3) 非营利机构，致力于通过开发和部署自由且开放源代码的匿名和隐私技术，为其不受限制的可用性和使用提供支持，促进其在科研领域和大众的知名度来支持人权和自由。">
+<!ENTITY aboutTor.getInvolved.label "参与进来 »">
+
+<!ENTITY aboutTor.newsletter.tagline "通过邮件获取 Tor 的最新消息。">
+<!ENTITY aboutTor.newsletter.link_text "订阅 Tor 的最新动态">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor 是免费使用的，因为有和您一样的人捐助。">
+<!ENTITY aboutTor.donationBanner.buttonA "立即捐助">
+
+<!ENTITY aboutTor.alpha.ready.label "测试。 彻底地。">
+<!ENTITY aboutTor.alpha.ready2.label "您将尝试世界上最私密的浏览体验。">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor 浏览器 Alpha 是 Tor 浏览器的一个不稳定的版本，您可以用它来预览一些新特性，测试它的性能并且在正式发行之前提供一些反馈。">
+<!ENTITY aboutTor.alpha.bannerLink "在 Tor 论坛上反馈一个漏洞">
+
+<!ENTITY aboutTor.nightly.ready.label "测试。 彻底地。">
+<!ENTITY aboutTor.nightly.ready2.label "您将尝试世界上最私密的浏览体验。">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor 浏览器 Nightly 是一个不稳定的 Tor 浏览器版本，您可以用来预览新功能，测试其性能，并在发布前提供反馈。">
+<!ENTITY aboutTor.nightly.bannerLink "在 Tor 论坛上反馈一个漏洞">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "隐私助力，如虎添翼：">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "反抗">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "变革">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "自由">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "立即捐助">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Tor 的朋友们将获得你的配捐，金额上限为 100,000 美元。">

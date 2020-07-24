@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "洋蔥路由網路設定">
+<!ENTITY torsettings.wizard.title.default "連線到洋蔥路由網路">
+<!ENTITY torsettings.wizard.title.configure "洋蔥路由網路設定">
+<!ENTITY torsettings.wizard.title.connecting "正在建立連線">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "洋蔥路由瀏覽器的語言">
+<!ENTITY torlauncher.localePicker.prompt "請選擇一種語言。">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "點擊「連接」來連上洋蔥路由網路 ">
+<!ENTITY torSettings.configurePrompt "如果您身處於會封鎖洋蔥路由網路的國家(例如埃及、中國、土耳其)，或者您位於需要使用代理伺服器的私人網路中，請點擊「設定」來調整網路設定。">
+<!ENTITY torSettings.configure "設定">
+<!ENTITY torSettings.connect "連接">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "正在等待洋蔥路由啟動…">
+<!ENTITY torsettings.restartTor "重新啟動洋蔥路由">
+<!ENTITY torsettings.reconfigTor "重新設定">
+
+<!ENTITY torsettings.discardSettings.prompt "您已經有設定洋蔥路由的橋接中繼站或本地端代理伺服器。&#160; 若想要直接連上洋蔥路由網路的話，必須要先移除這部份的設定。">
+<!ENTITY torsettings.discardSettings.proceed "移除設定值並且連線">
+
+<!ENTITY torsettings.optional "選用">
+
+<!ENTITY torsettings.useProxy.checkbox "使用代理服務連線到網際網路">
+<!ENTITY torsettings.useProxy.type "代理伺服器類型">
+<!ENTITY torsettings.useProxy.type.placeholder "選擇代理伺服器類型">
+<!ENTITY torsettings.useProxy.address "地址">
+<!ENTITY torsettings.useProxy.address.placeholder "IP 位址或主機名稱">
+<!ENTITY torsettings.useProxy.port "埠">
+<!ENTITY torsettings.useProxy.username "使用者名稱">
+<!ENTITY torsettings.useProxy.password "密碼">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "這台電腦只允許通過特定的防火牆連接埠來建立連線">
+<!ENTITY torsettings.firewall.allowedPorts "允許的連接埠">
+<!ENTITY torsettings.useBridges.checkbox "我所在的國家會封鎖洋蔥路由">
+<!ENTITY torsettings.useBridges.default "選擇內建的橋接中繼站">
+<!ENTITY torsettings.useBridges.default.placeholder "選擇橋接中繼站">
+<!ENTITY torsettings.useBridges.bridgeDB "從 torproject.org 索取一個橋接中繼站">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "輸入圖片中的文字">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "獲得新的挑戰">
+<!ENTITY torsettings.useBridges.captchaSubmit "提交">
+<!ENTITY torsettings.useBridges.custom "手動輸入一個橋接中繼站">
+<!ENTITY torsettings.useBridges.label "從信任的來源輸入橋接中繼站資訊">
+<!ENTITY torsettings.useBridges.placeholder "中繼站地址：連接埠 (一行一個)">
+
+<!ENTITY torsettings.copyLog "將洋蔥路由的歷程記錄複製到剪貼簿">
+
+<!ENTITY torsettings.proxyHelpTitle "代理協助">
+<!ENTITY torsettings.proxyHelp1 "當您透過公司、學校或者大學網路進行連線時，您可能需要一個本地代理伺服器，如果您不確定是否需要代理伺服器，請參考電腦中其他瀏覽器的網路設定或者系統網路設定。">
+
+<!ENTITY torsettings.bridgeHelpTitle "橋接中繼站之說明">
+<!ENTITY torsettings.bridgeHelp1 "橋接中繼站是未被公開列出的中繼站，透過它們來連接洋蔥路由網路可以更容易突破封鎖。&#160; 不同類型的橋接中繼站會使用不同的方法來突破網路審查與封鎖。&#160; obfs 使您的網路連線活動貌似隨機雜訊，而 meek 則會使您的網路連線活動看起來像是通往特定的網路服務而不是洋蔥路由。">
+<!ENTITY torsettings.bridgeHelp2 "因為某些國家會封鎖洋蔥路由網路的連線，某些橋接中繼站只能在特定的國家裡使用，到了其他地區則會失效。&#160; 如果您不確定哪些橋接中繼站可以在您的國家使用，請前往 torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "請耐心等候，我們正在建立洋蔥路由網路連線，&#160; 這個過程可能需要幾分鐘的時間。">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "連線">
+<!ENTITY torPreferences.torSettings "洋蔥路由設定">
+<!ENTITY torPreferences.torSettingsDescription "洋蔥路由瀏覽器會透過洋蔥路由網路將您的網路連線資料進行繞徑，而洋蔥路由網路則是由全世界數千名志願者所自行架設維運的主機。" >
+<!ENTITY torPreferences.learnMore "瞭解更多">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "測試">
+<!ENTITY torPreferences.statusInternetOnline "上線">
+<!ENTITY torPreferences.statusInternetOffline "離線">
+<!ENTITY torPreferences.statusTorLabel "Tor Network:">
+<!ENTITY torPreferences.statusTorConnected "已連缐">
+<!ENTITY torPreferences.statusTorNotConnected "未連線">
+<!ENTITY torPreferences.statusTorBlocked "Potentially Blocked">
+<!ENTITY torPreferences.learnMore "瞭解更多">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "快速啟動">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings.">
+<!ENTITY torPreferences.quickstartCheckbox "總是自動建立連線">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "橋接中繼站">
+<!ENTITY torPreferences.bridgesDescription "橋接中繼站能夠幫助您突破網路封鎖連上洋蔥路由網路，隨著您所身處的地區不同，每個橋接中繼站的效果也會有所差異。">
+<!ENTITY torPreferences.bridgeLocation "你的位置">
+<!ENTITY torPreferences.bridgeLocationAutomatic "竹">
+<!ENTITY torPreferences.bridgeLocationFrequent "常用位置">
+<!ENTITY torPreferences.bridgeLocationOther "其它位置">
+<!ENTITY torPreferences.bridgeChooseForMe "Choose a Bridge For Me…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Your Current Bridges">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "You can save one or more bridges, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.">
+<!ENTITY torPreferences.bridgeId "#1 bridge: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "移除">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Disable built-in bridges">
+<!ENTITY torPreferences.bridgeShare "Share this bridge using the QR code or by copying its address:">
+<!ENTITY torPreferences.bridgeCopy "Copy Bridge Address">
+<!ENTITY torPreferences.copied "已複製！">
+<!ENTITY torPreferences.bridgeShowAll "Show All Bridges">
+<!ENTITY torPreferences.bridgeRemoveAll "Remove All Bridges">
+<!ENTITY torPreferences.bridgeAdd "Add a New Bridge">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Choose from one of Tor Browser’s built-in bridges">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Select a Built-In Bridge…">
+<!ENTITY torPreferences.bridgeRequest "請求一個橋接中繼站...">
+<!ENTITY torPreferences.bridgeEnterKnown "Enter a bridge address you already know">
+<!ENTITY torPreferences.bridgeAddManually "Add a Bridge Manually…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "進階的">
+<!ENTITY torPreferences.advancedDescription "Configure how Tor Browser connects to the internet">
+<!ENTITY torPreferences.advancedButton "偏好設定...">
+<!ENTITY torPreferences.viewTorLogs "查看 Tor 日誌">
+<!ENTITY torPreferences.viewLogs "查看歷程紀錄…">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Remove all the bridges?">
+<!ENTITY torPreferences.removeBridgesWarning "這個動作無法復原">
+<!ENTITY torPreferences.cancel "取消">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "掃描 QR code">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "內建橋接">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser includes some specific types of bridges known as “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "請求橋接中繼站">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "正在連接到 BridgeDB，請稍候。">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "解決驗證碼來請求橋接">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "解答不正確。請再試一次。">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Provide Bridge">
+<!ENTITY torPreferences.provideBridgeHeader "從一個可信任的來源輸入橋接中繼站資訊">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "連線設定">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Configure how Tor Browser connects to the Internet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "逗號分隔值">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "洋蔥路由歷程紀錄">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "未連線">
+<!ENTITY torConnect.connectingConcise "連線中…">
+<!ENTITY torConnect.tryingAgain "再試一次...">
+<!ENTITY torConnect.noInternet "洋蔥路由瀏覽器無法取得網際網路">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "洋蔥路由瀏覽器無法連線至 Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "設定你的連線"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Trying a bridge…">
+<!ENTITY torConnect.tryingBridgeAgain "再試一次...">
+<!ENTITY torConnect.errorLocation "洋蔥路由瀏覽器無法定位你">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "這些位置設定是否正確？">
+<!ENTITY torConnect.isLocationCorrectDescription "洋蔥路由瀏覽器依然無法連線至 Tor。請檢查你的位置設定是否正確並再試一次，或者#1。"> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Connection assist">
+<!ENTITY torConnect.breadcrumbLocation "地區設定">
+<!ENTITY torConnect.breadcrumbTryBridge "嘗試橋接">
+<!ENTITY torConnect.automatic "竹">
+<!ENTITY torConnect.selectCountryRegion "選擇國家或地區">
+<!ENTITY torConnect.frequentLocations "常用位置">
+<!ENTITY torConnect.otherLocations "其它位置">
+<!ENTITY torConnect.restartTorBrowser "重新啟動洋蔥路由瀏覽器">
+<!ENTITY torConnect.configureConnection "調整連線設定…">
+<!ENTITY torConnect.viewLog "查看日誌...">
+<!ENTITY torConnect.tryAgain "再試一次">
+<!ENTITY torConnect.offline "無法獲得網際網路">
+<!ENTITY torConnect.connectMessage "對於洋蔥路由設定所作的變更要到開始連線時才會生效">
+<!ENTITY torConnect.tryAgainMessage "洋蔥路由瀏覽器通往洋蔥路由網路的連線建立失敗">
+<!ENTITY torConnect.yourLocation "你的位置">
+<!ENTITY torConnect.tryBridge "試用一個橋接中繼站">
+<!ENTITY torConnect.autoBootstrappingFailed "自動設定失敗">
+<!ENTITY torConnect.autoBootstrappingFailed "自動設定失敗">
+<!ENTITY torConnect.cannotDetermineCountry "無法確定使用者國家">
+<!ENTITY torConnect.noSettingsForCountry "你的地區沒有可用的設定">

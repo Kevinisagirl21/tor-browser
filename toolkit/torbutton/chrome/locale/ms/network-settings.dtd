@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tetapan Rangkaian Tor">
+<!ENTITY torsettings.wizard.title.default "Sambung denganTor">
+<!ENTITY torsettings.wizard.title.configure "Tetapan Rangkaian Tor">
+<!ENTITY torsettings.wizard.title.connecting "Menjalinkan Sambungan">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Bahasa Pelayar Tor">
+<!ENTITY torlauncher.localePicker.prompt "Sila pilih satu bahasa.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Klik &quot;Sambung&quot; untuk bersambung dengan Tor.">
+<!ENTITY torSettings.configurePrompt ".Klik &quot;Konfigur&quot; untuk laraskan tetapan rangkaian jika anda berada di negara yang melarang penggunaan Tor (seperti Mesir, China, Turki) atau jika anda menyambung dengan rangkaian persendirian yang memerlukan proksi">
+<!ENTITY torSettings.configure "Konfigur">
+<!ENTITY torSettings.connect "Sambung">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Menunggu Tor untuk dimulakan...">
+<!ENTITY torsettings.restartTor "Mula Semula Tor">
+<!ENTITY torsettings.reconfigTor "Konfigur Semula">
+
+<!ENTITY torsettings.discardSettings.prompt "Anda telah mengkonfigur titi Tor atau telah memasukkan tetapan proksi setempat.&#160; Untuk membuat sambungan terus dengan rangkaian Tor. tetapan ini mesti dibuang.">
+<!ENTITY torsettings.discardSettings.proceed "Buang Tetapan dan Sambung">
+
+<!ENTITY torsettings.optional "Pilihan">
+
+<!ENTITY torsettings.useProxy.checkbox "Saya guna proksi untuk bersambung dengan Internet">
+<!ENTITY torsettings.useProxy.type "Jenis Proxy">
+<!ENTITY torsettings.useProxy.type.placeholder "pilih sejenis proksi">
+<!ENTITY torsettings.useProxy.address "Alamat">
+<!ENTITY torsettings.useProxy.address.placeholder "Alamat IP atau nama hos">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Nama Pengguna">
+<!ENTITY torsettings.useProxy.password "Kata Laluan">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Komputer ini melalui tembok api yang hanya membolehkan sambungan ke port tertentu">
+<!ENTITY torsettings.firewall.allowedPorts "Port Dibenarkan">
+<!ENTITY torsettings.useBridges.checkbox "Tor dilarang penggunaannya di negara saya">
+<!ENTITY torsettings.useBridges.default "Pilih satu titi terbina-dalam">
+<!ENTITY torsettings.useBridges.default.placeholder "pilih satu titi">
+<!ENTITY torsettings.useBridges.bridgeDB "Pinta titi dari torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Masukkan aksara yang tertera dari imej">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Dapatkan satu cabaran baharu">
+<!ENTITY torsettings.useBridges.captchaSubmit "Serah">
+<!ENTITY torsettings.useBridges.custom "Sediakan satu titi yang saya tahu">
+<!ENTITY torsettings.useBridges.label "Masukkan maklumat titi dari sumber yang dipercayai.">
+<!ENTITY torsettings.useBridges.placeholder "taip alamat:port (satu per baris)">
+
+<!ENTITY torsettings.copyLog "Salin log Tor ke Papan Keratan">
+
+<!ENTITY torsettings.proxyHelpTitle "Bantuan Proksi">
+<!ENTITY torsettings.proxyHelp1 "Satu proksi setempat diperlukan semasa menyambung dengan rangkaian syarikat, sekolah, atau universiti.&#160;Jika anda tidak pasti sama ada proksi diperlukan atau sebaliknya, lihat tetapan Internet dalam pelayar yang lain atau periksa tetapan rangkaian sistem anda.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Bantuan Geganti Titi">
+<!ENTITY torsettings.bridgeHelp1 "Titi adalah geganti tidak tersenarai yang menjadikannya lebih sukar menyekat sambungan dengan Rangkaian Tor.&#160; Setiap jenis titi menggunakan kaedah berbeza untuk menghindari sekatan.&#160; Obf menjadikan trafik anda seakan-akan hingar rawak, dan paling teruk menjadikan trafik anda kelihatan mahu bersambung dengan perkhidmatan lain selain dari Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Oleh kerana terdapat beberapa negara menyekat Tor, sesetengah titi berfungsi di negara tertentu tetapi tidak pada negar lain.&#160; Jika anda tidak pasti titi yang manakah sesuai untuk negara anda, sila lawati torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Tunggu sebentar sementara kami menjalinkan sambungan dengan rangkaian Tor.&#160; Ia mengambil masa beberapa minit.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Sambungan">
+<!ENTITY torPreferences.torSettings "Tetapan Tor">
+<!ENTITY torPreferences.torSettingsDescription "Pelayar Tor menghala trafik anda ke dalam Rangkaian Tor, yang dioperasikan oleh beribu-ribu para sukarelawan di serata dunia." >
+<!ENTITY torPreferences.learnMore "Ketahui lebih lanjut">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Test">
+<!ENTITY torPreferences.statusInternetOnline "Online">
+<!ENTITY torPreferences.statusInternetOffline "Luar Talian">
+<!ENTITY torPreferences.statusTorLabel "Tor Network:">
+<!ENTITY torPreferences.statusTorConnected "Connected">
+<!ENTITY torPreferences.statusTorNotConnected "Not Connected">
+<!ENTITY torPreferences.statusTorBlocked "Potentially Blocked">
+<!ENTITY torPreferences.learnMore "Ketahui lebih lanjut">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Quickstart">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings.">
+<!ENTITY torPreferences.quickstartCheckbox "Always connect automatically">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Jambatan, ataupun Bridges">
+<!ENTITY torPreferences.bridgesDescription "Titi membantu anda capai Rangkaian Tor di kawasan yang mana Tor telah disekat. Bergantung pada kedudukan atau lokasi anda, titi ini mungkin berfungsi lebih baik berbanding titi-titi yang lain.">
+<!ENTITY torPreferences.bridgeLocation "Your location">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automatic">
+<!ENTITY torPreferences.bridgeLocationFrequent "Frequently selected locations">
+<!ENTITY torPreferences.bridgeLocationOther "Other locations">
+<!ENTITY torPreferences.bridgeChooseForMe "Choose a Bridge For Me…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Your Current Bridges">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "You can save one or more bridges, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.">
+<!ENTITY torPreferences.bridgeId "#1 bridge: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Buang">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Disable built-in bridges">
+<!ENTITY torPreferences.bridgeShare "Share this bridge using the QR code or by copying its address:">
+<!ENTITY torPreferences.bridgeCopy "Copy Bridge Address">
+<!ENTITY torPreferences.copied "Copied!">
+<!ENTITY torPreferences.bridgeShowAll "Show All Bridges">
+<!ENTITY torPreferences.bridgeRemoveAll "Remove All Bridges">
+<!ENTITY torPreferences.bridgeAdd "Add a New Bridge">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Choose from one of Tor Browser’s built-in bridges">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Select a Built-In Bridge…">
+<!ENTITY torPreferences.bridgeRequest "Pinta satu Titi...">
+<!ENTITY torPreferences.bridgeEnterKnown "Enter a bridge address you already know">
+<!ENTITY torPreferences.bridgeAddManually "Add a Bridge Manually…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Lanjutan">
+<!ENTITY torPreferences.advancedDescription "Configure how Tor Browser connects to the internet">
+<!ENTITY torPreferences.advancedButton "Settings…">
+<!ENTITY torPreferences.viewTorLogs "View the Tor logs">
+<!ENTITY torPreferences.viewLogs "Lihat Log...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Remove all the bridges?">
+<!ENTITY torPreferences.removeBridgesWarning "This action cannot be undone.">
+<!ENTITY torPreferences.cancel "Batal">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Scan the QR code">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Built-In Bridges">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser includes some specific types of bridges known as “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Pohon Titi">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Menghubungi BridgeDB. Tunggu Sebentar.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Selesaikan CAPTCHA untuk meminta satu titi.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Jawapan salah. Cuba sekali lagi.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Provide Bridge">
+<!ENTITY torPreferences.provideBridgeHeader "Enter bridge information from a trusted source">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Connection Settings">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Configure how Tor Browser connects to the Internet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Comma-seperated values">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Log Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Not Connected">
+<!ENTITY torConnect.connectingConcise "Connecting…">
+<!ENTITY torConnect.tryingAgain "Trying again…">
+<!ENTITY torConnect.noInternet "Tor Browser couldn’t reach the Internet">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser could not connect to Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "configure your connection"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Trying a bridge…">
+<!ENTITY torConnect.tryingBridgeAgain "Trying one more time…">
+<!ENTITY torConnect.errorLocation "Tor Browser couldn’t locate you">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Are these location settings correct?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Connection assist">
+<!ENTITY torConnect.breadcrumbLocation "Location settings">
+<!ENTITY torConnect.breadcrumbTryBridge "Try a bridge">
+<!ENTITY torConnect.automatic "Automatic">
+<!ENTITY torConnect.selectCountryRegion "Select Country or Region">
+<!ENTITY torConnect.frequentLocations "Frequently selected locations">
+<!ENTITY torConnect.otherLocations "Other locations">
+<!ENTITY torConnect.restartTorBrowser "Restart Tor Browser">
+<!ENTITY torConnect.configureConnection "Configure Connection…">
+<!ENTITY torConnect.viewLog "View logs…">
+<!ENTITY torConnect.tryAgain "Try Again">
+<!ENTITY torConnect.offline "Internet not reachable">
+<!ENTITY torConnect.connectMessage "Changes to Tor Settings will not take effect until you connect">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser has failed to establish a connection to the Tor Network">
+<!ENTITY torConnect.yourLocation "Your Location">
+<!ENTITY torConnect.tryBridge "Try a Bridge">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatic configuration failed">
+<!ENTITY torConnect.cannotDetermineCountry "Unable to determine user country">
+<!ENTITY torConnect.noSettingsForCountry "No settings available for your location">

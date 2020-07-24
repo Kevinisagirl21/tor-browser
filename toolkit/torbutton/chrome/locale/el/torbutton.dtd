@@ -1,0 +1,56 @@
+<!ENTITY torbutton.context_menu.new_identity "Νέα Ταυτότητα">
+<!ENTITY torbutton.context_menu.new_identity_sentence_case "Νέα ταυτότητα">
+<!ENTITY torbutton.context_menu.new_identity_key "I">
+<!ENTITY torbutton.context_menu.new_circuit "Νέο κύκλωμα Tor για αυτό τον ιστότοπο">
+<!ENTITY torbutton.context_menu.new_circuit_sentence_case "Νέο κύκλωμα Tor για αυτό τον ιστότοπο">
+<!ENTITY torbutton.context_menu.new_circuit_key "C">
+<!ENTITY torbutton.context_menu.networksettings "Ρυθμίσεις Δικτύου Tor...">
+<!ENTITY torbutton.context_menu.networksettings.key "N">
+<!ENTITY torbutton.context_menu.downloadUpdate "Έλεγχος για ενημέρωση του περιηγητή Tor...">
+<!ENTITY torbutton.context_menu.downloadUpdate.key "U">
+<!ENTITY torbutton.context_menu.cookieProtections "Προστασία από Cookies...">
+<!ENTITY torbutton.context_menu.cookieProtections.key "C">
+<!ENTITY torbutton.button.tooltip "Κάντε κλικ για να εκκινήσετε το Torbutton">
+<!ENTITY torbutton.prefs.security_settings "Ρυθμίσεις ασφαλείας του Tor Browser">
+<!ENTITY torbutton.cookiedialog.title "Διαχείριση Προστασίας Cookie">
+<!ENTITY torbutton.cookiedialog.lockCol "Προστατευμένα">
+<!ENTITY torbutton.cookiedialog.domainCol "Οικοδεσπότης">
+<!ENTITY torbutton.cookiedialog.nameCol "Όνομα">
+<!ENTITY torbutton.cookiedialog.pathCol "Μονοπάτι">
+<!ENTITY torbutton.cookiedialog.protectCookie "Προστασία cookie">
+<!ENTITY torbutton.cookiedialog.removeCookie "Αφαίρεση cookie">
+<!ENTITY torbutton.cookiedialog.unprotectCookie "Άρση προστασίας cookie">
+<!ENTITY torbutton.cookiedialog.removeAllBut "Αφαίρεση όλων εκτός των προστατευμένων">
+<!ENTITY torbutton.cookiedialog.saveAllCookies "Προστασία νέων cookie">
+<!ENTITY torbutton.cookiedialog.doNotSaveAllCookies "Να Μη γίνεται Προστασία Νέων Cookie">
+<!ENTITY torbutton.prefs.sec_caption "Επίπεδο ασφάλειας">
+<!ENTITY torbutton.prefs.sec_caption_tooltip "Το Slider Ασφάλειας σας αφήνει να απενεργοποιήσετε ορισμένα χαρακτηριστικά του περιηγητή που μπορεί να τον κάνουν πιο ευάλωτο σε απόπειρες χακαρίσματος.">
+<!ENTITY torbutton.prefs.sec_standard_label "Βασικό">
+<!ENTITY torbutton.prefs.sec_standard_description "Όλες οι λειτουργίες του περιηγητή Tor και των ιστοσελιδών είναι ενεργοποιημένες.">
+<!ENTITY torbutton.prefs.sec_safer_label "Ασφαλέστερο">
+<!ENTITY torbutton.prefs.sec_safer_description "Ορισμένες λειτουργίες που είναι ενδεχομένως επικύνδυνες θα απενεργοποιηθούν. Αυτό ενδέχεται να προκαλέσει προβλήματα με μερικές ιστοσελίδες.">
+<!ENTITY torbutton.prefs.sec_safer_list_label "Στην ασφαλέστερη σύνδεση:">
+<!ENTITY torbutton.prefs.sec_safest_label "Ασφαλέστατο">
+<!ENTITY torbutton.prefs.sec_safest_description "Μόνο βασικές λειτουργίες θα παραμείνουν ενεργοποιημένες, κυρίως αυτές που απαιτούνται για την προβολή ιστοσελιδών με σταθερό περιεχόμενο και την χρήση βασικών υπηρεσιών. Αυτή η ρύθμιση επηρεάζει εικόνες, πολυμέσα, καθώς και δέσμες ενεργειών (&quot;scripts&quot;).">
+<!ENTITY torbutton.prefs.sec_safest_list_label "Στην πιο ασφαλή ρύθμιση:">
+<!ENTITY torbutton.prefs.sec_learn_more_label "Μάθετε περισσότερα">
+<!ENTITY torbutton.prefs.sec_js_on_https_sites_only "Η JavaScript είναι απενεργοποιημένη σε ιστότοπους που δεν έχουν HTTPS.">
+<!ENTITY torbutton.prefs.sec_js_disabled "Η JavaScript είναι απενεργοποιημένη σε όλους τους ιστότοπους από προεπιλογή.">
+<!ENTITY torbutton.prefs.sec_limit_typography "Μερικές γραμματοσειρές και μαθηματικά σύμβολα δεν θα φαίνονται.">
+<!ENTITY torbutton.prefs.sec_limit_graphics_and_typography "Μερικές γραμματοσειρές, εικονίδια, μαθηματικά σύμβολα και εικόνες δεν θα φαίνονται.">
+<!ENTITY torbutton.prefs.sec_click_to_play_media "Η αναπαραγωγή ήχου και βίντεο (πολυμέσα HTML5) και WebGL απαιτεί ένα κλικ από την μεριά σας.">
+<!ENTITY torbutton.prefs.sec_custom_warning "Προσαρμογή ">
+<!ENTITY torbutton.prefs.sec_overview "Απενεργοποιήστε ορισμένα χαρακτηριστικά του διαδικτύου που μπορεί να χρησιμοποιηθούν για επιθέσεις εναντίον της ασφάλειας και της ανωνυμίας σας.">
+<!ENTITY torbutton.prefs.sec_standard_tooltip "Επίπεδο ασφαλείας: Βασικό">
+<!ENTITY torbutton.prefs.sec_safer_tooltip "Επίπεδο ασφαλείας: Ασφαλέστερο">
+<!ENTITY torbutton.prefs.sec_safest_tooltip "Επίπεδο ασφαλείας: Ασφαλέστατο">
+<!ENTITY torbutton.prefs.sec_custom_summary "Οι προσαρμοσμένες προτιμήσεις του περιηγητή σας έχουν οδηγήσει σε ασυνήθιστες ρυθμίσεις ασφάλειας. Για λόγους ασφαλείας και ιδιωτικότητας, προτείνουμε να επιλέξετε ένα από τα προεπιλεγμένα επίπεδα ασφάλειας.">
+<!ENTITY torbutton.prefs.sec_restore_defaults "Επαναφορά προεπιλογών">
+<!ENTITY torbutton.prefs.sec_advanced_security_settings "Ρυθμίσεις ασφαλείας για προχωρημένους...">
+<!ENTITY torbutton.prefs.sec_change "Αλλαγή...">
+<!ENTITY torbutton.circuit_display.title "Κύκλωμα Tor">
+<!ENTITY torbutton.circuit_display.new_circuit "Νέο κύκλωμα για αυτή την ιστοσελίδα">
+
+<!-- Onion services strings.  Strings are kept here for ease of translation. -->
+<!ENTITY torbutton.onionServices.authPrompt.tooltip "Εκτέλεση εντολής αυθεντικοποίησης client υπηρεσίας onion">
+<!ENTITY torbutton.onionServices.authPrompt.persistCheckboxLabel "Απομνημόνευση κλειδιού">

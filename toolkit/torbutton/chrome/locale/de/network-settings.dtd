@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tor-Netzwerkeinstellungen">
+<!ENTITY torsettings.wizard.title.default "Mit Tor verbinden">
+<!ENTITY torsettings.wizard.title.configure "Tor-Netzwerkeinstellungen">
+<!ENTITY torsettings.wizard.title.connecting "Eine Verbindung herstellen">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Tor-Browser-Sprache">
+<!ENTITY torlauncher.localePicker.prompt "Bitte eine Sprache auswählen.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Klicken Sie auf &quot;Verbinden&quot;, um eine Verbindung zu Tor herzustellen.">
+<!ENTITY torSettings.configurePrompt "Klicken Sie auf &quot;Konfigurieren&quot;, um die Netzwerkeinstellungen anzupassen, wenn Sie sich in einem Land befinden, das Tor blockiert (z.B. Ägypten, China, Türkei), oder wenn Sie sich von einem privaten Netzwerk aus verbinden, das einen Proxy benötigt.">
+<!ENTITY torSettings.configure "Konfigurieren">
+<!ENTITY torSettings.connect "Verbinden">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Auf den Start von Tor wird gewartet …">
+<!ENTITY torsettings.restartTor "Tor neu starten">
+<!ENTITY torsettings.reconfigTor "Neu einstellen">
+
+<!ENTITY torsettings.discardSettings.prompt "Sie haben Tor-Brücken konfiguriert oder lokale Proxyeinstellungen eingetragen.&#160; Um eine direkte Verbindung zum Tor-Netzwerk herzustellen, müssen diese Einstellungen entfernt werden.">
+<!ENTITY torsettings.discardSettings.proceed "Einstellungen entfernen und verbinden">
+
+<!ENTITY torsettings.optional "Optional">
+
+<!ENTITY torsettings.useProxy.checkbox "Ich benutze einen Proxy, um mich mit dem Internet zu verbinden">
+<!ENTITY torsettings.useProxy.type "Proxy-Typ">
+<!ENTITY torsettings.useProxy.type.placeholder "Proxy-Typ auswählen">
+<!ENTITY torsettings.useProxy.address "Adresse">
+<!ENTITY torsettings.useProxy.address.placeholder "IP-Adresse oder Rechnername">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Benutzername">
+<!ENTITY torsettings.useProxy.password "Passwort">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Die Verbindung dieses Rechner geht durch eine Firewall, die nur bestimmte Anschlüsse zulässt">
+<!ENTITY torsettings.firewall.allowedPorts "Erlaubte Ports">
+<!ENTITY torsettings.useBridges.checkbox "Tor wird in meinem Land blockiert.">
+<!ENTITY torsettings.useBridges.default "Bereitgestellte Brücke auswählen">
+<!ENTITY torsettings.useBridges.default.placeholder "Brücke auswählen">
+<!ENTITY torsettings.useBridges.bridgeDB "Brücke von torproject.org anfordern">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Geben Sie die Zeichen in dem Bild ein">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Neue Herausforderung bekommen">
+<!ENTITY torsettings.useBridges.captchaSubmit "Übermitteln">
+<!ENTITY torsettings.useBridges.custom "Biete mir eine Brücke an, die ich kenne">
+<!ENTITY torsettings.useBridges.label "Geben Sie Brückeninformationen aus einer vertrauenswürdigen Quelle ein.">
+<!ENTITY torsettings.useBridges.placeholder "Tippen Sie Adresse:Port (eines pro Zeile)">
+
+<!ENTITY torsettings.copyLog "Tor-Protokoll in die Zwischenablage kopieren">
+
+<!ENTITY torsettings.proxyHelpTitle "Proxy-Hilfe">
+<!ENTITY torsettings.proxyHelp1 "Unter Umständen ist ein lokaler Proxy nötig, um sich von einem eingeschränkten Netzwerk eines Unternehmens, einer Schule oder Universität zu verbinden.&#160;Im Zweifelsfall kann die Einstellung in einem anderen Browser oder die System-Netzwerkeinstellung .verglichen werden.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Hilfe zum Brückenrelais">
+<!ENTITY torsettings.bridgeHelp1 "Brücken sind nicht aufgelistete Vermittler, die es schwieriger machen, Verbindungen zum Tor-Netzwerk zu blockieren.&#160; Jede Art von Brücke verwendet eine andere Methode, um Zensur zu vermeiden.&#160; Die vom Typ obfs lassen Ihren Datenverkehr wie Zufallsrauschen aussehen, und die vom Typ meek lassen Ihren Datenverkehr aussehen, als ob Sie eine Verbindung zu diesem jeweiligen Dienst herstellen anstatt zu Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Aufgrund der Art, wie bestimmte Länder versuchen, Tor zu blockieren, funktionieren bestimmte Brücken in gewissen Ländern, nicht aber in anderen.&#160; Wenn Sie sich nicht sicher sind, welche Brücken in Ihrem Land funktionieren, besuchen Sie torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Bitte warten Sie, während eine Verbindung zum Tor-Netzwerk hergestellt wird.&#160; Das kann einige Minuten dauern.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Verbindung">
+<!ENTITY torPreferences.torSettings "Tor-Einstellungen">
+<!ENTITY torPreferences.torSettingsDescription "Der Tor Browser leitet deinen Datenverkehr über das Tor-Netzwerk, das von Tausenden von Freiwilligen auf der ganzen Welt betrieben wird." >
+<!ENTITY torPreferences.learnMore "Mehr erfahren">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Test">
+<!ENTITY torPreferences.statusInternetOnline "Online">
+<!ENTITY torPreferences.statusInternetOffline "Offline">
+<!ENTITY torPreferences.statusTorLabel "Tor-Netzwerk:">
+<!ENTITY torPreferences.statusTorConnected "Verbunden">
+<!ENTITY torPreferences.statusTorNotConnected "Nicht verbunden">
+<!ENTITY torPreferences.statusTorBlocked "Potenziell blockiert">
+<!ENTITY torPreferences.learnMore "Mehr erfahren">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Schnellstart">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart verbindet den Tor Browser automatisch mit dem Tor-Netzwerk, wenn er gestartet wird, basierend auf den zuletzt verwendeten Verbindungseinstellungen.">
+<!ENTITY torPreferences.quickstartCheckbox "Immer automatisch verbinden">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Brücken">
+<!ENTITY torPreferences.bridgesDescription "Brücken helfen dir beim Zugriff auf das Tor-Netzwerk an Orten, an denen Tor blockiert ist. Je nachdem, wo du dich befindest, kann eine Brücke besser funktionieren als eine andere.">
+<!ENTITY torPreferences.bridgeLocation "Dein Standort">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automatisch">
+<!ENTITY torPreferences.bridgeLocationFrequent "Häufig ausgewählte Standorte">
+<!ENTITY torPreferences.bridgeLocationOther "Andere Standorte">
+<!ENTITY torPreferences.bridgeChooseForMe "Wähle eine Brücke für mich …">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Deine aktuellen Brücken">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Du kannst eine oder mehrere Brücken speichern und Tor wählt diejenige aus, die verwendet werden soll, wenn du dich verbindest. Tor wechselt bei Bedarf automatisch zu einer anderen Brücke.">
+<!ENTITY torPreferences.bridgeId "#1 Brücke: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Entfernen">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Eingebaute Brücken deaktivieren">
+<!ENTITY torPreferences.bridgeShare "Teile diese Brücke, indem du den QR-Code zeigst oder ihre Adresse kopierst.">
+<!ENTITY torPreferences.bridgeCopy "Kopiere die Brücken-Adresse">
+<!ENTITY torPreferences.copied "Kopiert!">
+<!ENTITY torPreferences.bridgeShowAll "Zeige alle Brücken">
+<!ENTITY torPreferences.bridgeRemoveAll "Entferne alle Brücken">
+<!ENTITY torPreferences.bridgeAdd "Eine neue Brücke hinzufügen">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Eine der eingebauten Brücken von Tor Browser auswählen ">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Eine bereitgestellte Brücke auswählen ...">
+<!ENTITY torPreferences.bridgeRequest "Brücke anfordern...">
+<!ENTITY torPreferences.bridgeEnterKnown "Eine bereits bekannte Brücken-Adresse auswählen">
+<!ENTITY torPreferences.bridgeAddManually "Brücke manuell hinzufügen …">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Fortgeschritten">
+<!ENTITY torPreferences.advancedDescription "Konfigurieren, wie Tor Browser sich mit dem Internet verbindet">
+<!ENTITY torPreferences.advancedButton "Einstellungen ...">
+<!ENTITY torPreferences.viewTorLogs "Tor-Logs ansehen">
+<!ENTITY torPreferences.viewLogs "Logs ansehen …">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Alle Brücken entfernen?">
+<!ENTITY torPreferences.removeBridgesWarning "Dieser Vorgang kann nicht rückgängig gemacht werden.">
+<!ENTITY torPreferences.cancel "Abbrechen">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Den QR-Code scannen">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Bereitgestellte Brücken">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser enthält einige spezielle Arten von Brücken, die als &quot;austauschbare Übertragungsarten&quot; bekannt sind.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 ist eine Art von eingebauter Brücke, die deinen Tor-Verkehr zufällig aussehen lässt. Es ist auch weniger wahrscheinlich, dass sie blockiert werden als ihre Vorgänger, die obfs3-Brücken.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake ist eine integrierte Brücke, die die Zensur umgeht, indem sie deine Verbindung über Snowflake-Proxys weiterleitet, die von Freiwilligen betrieben werden.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure ist eine eingebaute Brücke, die es so aussehen lässt, als würdest du eine Microsoft-Webseite benutzen, anstatt Tor zu verwenden.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Brücke anfordern">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Kontaktiere BridgeDB. Bitte warten.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Löse das CAPTCHA, um eine Brücke anzufordern.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Die Lösung ist nicht korrekt. Bitte versuchen Sie es erneut.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Brücke bereitstellen">
+<!ENTITY torPreferences.provideBridgeHeader "Brückeninformationen von einer vertrauenswürdigen Quelle eingeben">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Verbindungseinstellungen">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Konfigurieren, wie Tor Browser sich mit dem Internet verbindet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Kommagetrennte Werte">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Tor Logs">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Nicht verbunden">
+<!ENTITY torConnect.connectingConcise "Verbinde…">
+<!ENTITY torConnect.tryingAgain "Erneuter Versuch ...">
+<!ENTITY torConnect.noInternet "Tor Browser konnte das Internet nicht erreichen">
+<!ENTITY torConnect.noInternetDescription "Dies könnte durch ein Verbindungsproblem kommen statt durch eine mögliche Blockierung von Tor. Überprüfe deine Internetverbindung, Proxy- und Firewall-Einstellungen bevor du es erneut versuchst.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser konnte sich nicht mit Tor verbinden">
+<!ENTITY torConnect.assistDescriptionConfigure "Deine Verbindung konfigurieren"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Wenn Tor an deinem Standort blockiert ist, kann es helfen, eine Brücke zu benutzen. Der Verbindungsassistent kann eine für dich anhand deines Standorts auswählen, oder du kannst stattdessen manuell eine wählen."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Eine Brücke versuchen ...">
+<!ENTITY torConnect.tryingBridgeAgain "Noch ein weiterer Versuch ...">
+<!ENTITY torConnect.errorLocation "Tor Browser konnte dich nicht lokalisieren">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser muss deinen Standort kennen, um die richtige Brücke für dich zu wählen. Wenn du deinen Standort nicht teilen möchtest, wähle stattdessen eine manuell."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Sind diese Standorteinstellungen korrekt?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser konnte sich immer noch nicht mit Tor verbinden. Bitte überprüfe, ob deine Standorteinstellungen korrekt sind und versuche es erneut, oder stattdessen #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor-Browser kann sich immer noch nicht verbinden">
+<!ENTITY torConnect.finalErrorDescription "Trotz größtem Einsatz war der Verbindungsassistent nicht in der Lage, zu Tor zu verbinden. Versuche deine Verbindung zu überprüfen und manuell eine Brücke hinzuzufügen.">
+<!ENTITY torConnect.breadcrumbAssist "Verbindungsassistent">
+<!ENTITY torConnect.breadcrumbLocation "Standorteinstellungen">
+<!ENTITY torConnect.breadcrumbTryBridge "Eine Brücke versuchen">
+<!ENTITY torConnect.automatic "Automatisch">
+<!ENTITY torConnect.selectCountryRegion "Land oder Region auswählen">
+<!ENTITY torConnect.frequentLocations "Häufig ausgewählte Standorte">
+<!ENTITY torConnect.otherLocations "Andere Standorte">
+<!ENTITY torConnect.restartTorBrowser "Tor Browser neu starten">
+<!ENTITY torConnect.configureConnection "Verbindung konfigurieren ...">
+<!ENTITY torConnect.viewLog "Logs ansehen …">
+<!ENTITY torConnect.tryAgain "Noch einmal versuchen">
+<!ENTITY torConnect.offline "Internet nicht erreichbar">
+<!ENTITY torConnect.connectMessage "Änderungen an den Tor-Einstellungen werden erst wirksam, wenn du dich verbindest">
+<!ENTITY torConnect.tryAgainMessage "Verbindung des Tor Browser mit dem Tor-Netzwerk ist fehlgeschlagen">
+<!ENTITY torConnect.yourLocation "Dein Standort">
+<!ENTITY torConnect.tryBridge "Eine Brücke versuchen">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatische Konfiguration fehlgeschlagen">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatische Konfiguration fehlgeschlagen">
+<!ENTITY torConnect.cannotDetermineCountry "Benutzerland kann nicht ermittelt werden">
+<!ENTITY torConnect.noSettingsForCountry "Keine Einstellungen für deinen Standort verfügbar">

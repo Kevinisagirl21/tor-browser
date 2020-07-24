@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "Σχετικά με το Tor">
+
+<!ENTITY aboutTor.viewChangelog.label "Προβολή αρχείου αλλαγών">
+
+<!ENTITY aboutTor.ready.label "Εξερευνήστε. Ιδιωτικά.">
+<!ENTITY aboutTor.ready2.label "Είστε έτοιμος για την πιο ιδιωτική εμπειρία περιήγησης.">
+<!ENTITY aboutTor.failure.label "Κάτι πήγε στραβά!">
+<!ENTITY aboutTor.failure2.label "Το Tor δεν λειτουργεί σε αυτόν τον περιηγητή.">
+
+<!ENTITY aboutTor.search.label "Αναζήτηση με DuckDuckGo">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "Έχετε ερωτήσεις?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Κοιτάξτε το εγχειρίδιο μας για τον Περιηγητή Tor »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "M">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Εγχειρίδιο του Περιηγητή Tor">
+
+<!ENTITY aboutTor.tor_mission.label "Το Tor Project είναι ένας μη-κερδοσκοπικός οργανισμός US 501(c)(3), που προωθεί τα ανθρώπινα δικαιώματα και τις ελευθερίες δημιουργώντας και παρέχοντας τεχνολογίες ανωνυμίας και ιδιωτικότητας ελεύθερου και ανοιχτου λογισμικού, υποστηρίζοντας την απροόσκοπτη διαθεσιμότητα και χρήση τους, και προωθώντας την επιστημονική και κοινή κατανόησή τους.">
+<!ENTITY aboutTor.getInvolved.label "Βοηθήστε κι εσείς »">
+
+<!ENTITY aboutTor.newsletter.tagline "Λάβετε τα τελευταία νέα του Tor κατευθείαν στα εισερχόμενα σας.">
+<!ENTITY aboutTor.newsletter.link_text "Εγγραφτείτε για τα νέα του Tor.">
+<!ENTITY aboutTor.donationBanner.freeToUse "Το Tor είναι δωρεάν επειδή στηρίζεται σε δωρεές από άτομα σαν κι εσάς.">
+<!ENTITY aboutTor.donationBanner.buttonA "Κάντε μια δωρεά τώρα">
+
+<!ENTITY aboutTor.alpha.ready.label "Δοκιμάστε. Προσεκτικά.">
+<!ENTITY aboutTor.alpha.ready2.label "Είστε έτοιμος να δοκιμάσετε την πιο ιδιωτική εμπειρία περιήγησης στον κόσμο.">
+<!ENTITY aboutTor.alpha.bannerDescription "Ο Περιηγητής Tor Alpha είναι μια ασταθής έκδοση του Περιηγητή Tor που μπορείτε να χρησιμοποιήσετε για να δοκιμάσετε νέες δυνατότητες, να ελέγξετε την ποιότητά τους και να μοιραστείτε την άποψή σας πριν τις εντάξουμε στην κύρια έκδοση.">
+<!ENTITY aboutTor.alpha.bannerLink "Αναφορά σφάλματος στο Tor Φόρουμ">
+
+<!ENTITY aboutTor.nightly.ready.label "Ελέγξτε. Προσεκτικά.">
+<!ENTITY aboutTor.nightly.ready2.label "Είστε έτοιμος να δοκιμάσετε την πιο ιδιωτική εμπειρία περιήγησης στον κόσμο.">
+<!ENTITY aboutTor.nightly.bannerDescription "Ο Περιηγητής Tor Nightly είναι μία ασταθής έκδοση του Περιηγητή Tor που μπορείτε να χρησιμοποιήσετε για να δοκιμάσετε νέες δυνατότητες, να ελέγξετε την ποιότητά τους και να μοιραστείτε την άποψή σας μαζί μας πριν τις εντάξουμε στην κύρια έκδοση.">
+<!ENTITY aboutTor.nightly.bannerLink "Αναφορά σφάλματος στο Tor Φόρουμ">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "POWERED BY PRIVACY:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "RESISTANCE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "CHANGE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "FREEDOM">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "ΚΑΝΕ ΔΩΡΕΑ ΤΩΡΑ">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Η Friends of Tor θα δωρίσει το ίδιο ποσό με τη δωρεά σας, μέχρι $100.000.">

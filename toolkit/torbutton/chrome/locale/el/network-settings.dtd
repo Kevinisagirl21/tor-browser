@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Ρυθμίσεις Δικτύου Tor">
+<!ENTITY torsettings.wizard.title.default "Σύνδεση στο Tor">
+<!ENTITY torsettings.wizard.title.configure "Ρυθμίσεις Δικτύου Tor">
+<!ENTITY torsettings.wizard.title.connecting "Γίνεται σύνδεση">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Γλώσσα Περιηγητή Tor">
+<!ENTITY torlauncher.localePicker.prompt "Παρακαλούμε επιλέξτε μία γλώσσα.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Κάντε κλικ στο κουμπί &quot;Σύνδεση&quot; για να συνδεθείτε στο Tor.">
+<!ENTITY torSettings.configurePrompt "Κάντε κλικ στις &quot;Ρυθμίσεις&quot; για να προσαρμόσετε τις ρυθμίσεις δικτύου αν βρίσκεστε σε χώρα που λογοκρίνει το Tor (π.χ. η Αίγυπτος, η Κίνα, η Τουρκία) ή αν συνδέεστε από ένα περιορισμένο δίκτυο που απαιτεί διακομιστή μεσολάβησης.">
+<!ENTITY torSettings.configure "Ρυθμίσεις">
+<!ENTITY torSettings.connect "Σύνδεση">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Αναμονή έναρξης του Tor... ">
+<!ENTITY torsettings.restartTor "Eπανεκκίνηση Tor">
+<!ENTITY torsettings.reconfigTor "Αναδιαμόρφωση">
+
+<!ENTITY torsettings.discardSettings.prompt "Έχετε ρυθμίσει γέφυρες Tor ή/και διακομιστές μεσολάβησης.&#160; Αν θέλετε να συνδεθείτε στο δίκτυο Tor απευθείας, θα πρέπει πρώτα να αφαιρεθούν οι ρυθμίσεις αυτές.">
+<!ENTITY torsettings.discardSettings.proceed "Αφαίρεση ρυθμίσεων και σύνδεση">
+
+<!ENTITY torsettings.optional "Προαιρετικό">
+
+<!ENTITY torsettings.useProxy.checkbox "Χρήση διακομιστή μεσολάβησης για σύνδεση στο διαδίκτυο.">
+<!ENTITY torsettings.useProxy.type "Τύπος διακομιστή μεσολάβησης">
+<!ENTITY torsettings.useProxy.type.placeholder "επιλογή είδους διαμεσολαβητή">
+<!ENTITY torsettings.useProxy.address "Διεύθυνση">
+<!ENTITY torsettings.useProxy.address.placeholder "Διεύθυνση ΙΡ η όνομα υπολογιστή ">
+<!ENTITY torsettings.useProxy.port "Θύρα">
+<!ENTITY torsettings.useProxy.username "Όνομα χρήστη">
+<!ENTITY torsettings.useProxy.password "Κωδικός πρόσβασης">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Ο υπολογιστής χρησιμοποιεί τείχος προστασίας και επιτρέπει μόνο συγκεκριμένες θύρες για σύνδεση">
+<!ENTITY torsettings.firewall.allowedPorts "Επιτρεπόμενες θύρες">
+<!ENTITY torsettings.useBridges.checkbox "Το Tor είναι αποκλεισμένο στη χώρα μου.">
+<!ENTITY torsettings.useBridges.default "Θέλω μια ενσωματωμένη γέφυρα">
+<!ENTITY torsettings.useBridges.default.placeholder "επιλέξτε μία γέφυρα">
+<!ENTITY torsettings.useBridges.bridgeDB "Θέλω μία γέφυρα από το torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Πληκτρολογήστε τους χαρακτήρες της εικόνας">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Πάρτε μία νέα πρόκληση.">
+<!ENTITY torsettings.useBridges.captchaSubmit "Υποβολή">
+<!ENTITY torsettings.useBridges.custom "Θέλω να εισάγω την διεύθυνση μίας γέφυρας που γνωρίζω">
+<!ENTITY torsettings.useBridges.label "Εισαγάγετε πληροφορίες γέφυρας από αξιόπιστη πηγή.">
+<!ENTITY torsettings.useBridges.placeholder "Πληκτρολογήστε διεύθυνση:θύρα (μια σε κάθε σειρά)">
+
+<!ENTITY torsettings.copyLog "Αντιγραφή αρχείου καταγραφής στο πρόχειρο">
+
+<!ENTITY torsettings.proxyHelpTitle "Βοήθεια διακομιστή μεσολάβησης">
+<!ENTITY torsettings.proxyHelp1 "Ο τοπικός διακομιστής μεσολάβησης μπορεί να χρειαστεί, όταν συνδέεστε από μία εταιρία, ένα σχολείο ή ένα δίκτυο πανεπιστημίου.&#160;Αν δεν είστε σίγουροι αν χρειάζεστε διακομιστή μεσολάβησης, ελέγξτε τις ρυθμίσεις ίντερνετ ενός άλλου περιηγητή ή τις ρυθμίσεις του δικτύου σας. ">
+
+<!ENTITY torsettings.bridgeHelpTitle "Βοήθεια με Αναμεταδότες Γέφυρες">
+<!ENTITY torsettings.bridgeHelp1 "Οι γέφυρες είναι μη καταχωρημένοι αναμεταδότες που κάνουν πιο δύσκολο τον αποκλεισμό της σύνδεσης στο δίκτυο Tor.&#160; Κάθε τύπος γέφυρας χρησιμοποιεί διαφορετική μέθοδο για να αποφύγει τον αποκλεισμό.&#160; Οι obfs κάνουν τις κινήσεις σας να μοιάζουν με τυχαίο θόρυβο και οι meek κάνουν τις συνδέσεις σας να μοιάζουν πως γίνονται μέσω της αντίστοιχης υπηρεσίας αντί του Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Λόγω του τρόπου που προσπαθούν κάποιες χώρες να αποκλείσουν το Tor, κάποιες γέφυρες λειτουργούν σε κάποιες χώρες, ενώ σε άλλες όχι.&#160; Αν δεν είστε σίγουρος για το ποιές γέφυρες λειτουργούν στη χώρα σας, επισκεφτείτε το torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Παρακαλούμε περιμένετε καθώς δημιουργούμε σύνδεση στο δίκτυο Tor.&#160; Μπορεί να διαρκέσει μερικά λεπτά.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Σύνδεση">
+<!ENTITY torPreferences.torSettings "Ρυθμίσεις Tor">
+<!ENTITY torPreferences.torSettingsDescription "Ο Περιηγητής Tor δρομολογεί την κίνηση δικτύου σας μέσα από το δίκτυο Tor, που λειτουργεί χάρη σε χιλιάδες εθελοντές σε όλο τον κόσμο." >
+<!ENTITY torPreferences.learnMore "Μάθετε περισσότερα">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Διαδίκτυο:">
+<!ENTITY torPreferences.statusInternetTest "Δοκιμή">
+<!ENTITY torPreferences.statusInternetOnline "Συνδεδεμένο">
+<!ENTITY torPreferences.statusInternetOffline "Εκτός σύνδεσης">
+<!ENTITY torPreferences.statusTorLabel "Δίκτυο Tor:">
+<!ENTITY torPreferences.statusTorConnected "Είστε συνδεδεμένος/η">
+<!ENTITY torPreferences.statusTorNotConnected "Αποσυνδεδεμένο">
+<!ENTITY torPreferences.statusTorBlocked "Ενδεχομένως αποκλεισμένο">
+<!ENTITY torPreferences.learnMore "Μάθετε περισσότερα">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Γρήγορη Έναρξη">
+<!ENTITY torPreferences.quickstartDescriptionLong "Η Γρήγορη Έναρξη συνδέει αυτόματα τον Περιηγητή Tor με το δίκτυο Tor κατά την έναρξη, με τις πιο πρόσφατες ρυθμίσεις σύνδεσης που έχουμε χρησιμοποιήσει.">
+<!ENTITY torPreferences.quickstartCheckbox "Να γίνεται πάντα σύνδεση αυτόματα">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Γέφυρες">
+<!ENTITY torPreferences.bridgesDescription "Οι γέφυρες σας βοηθούν να αποκτήσετε πρόσβαση στο δίκτυο Tor σε μέρη όπου αυτό λογοκρίνεται. Ανάλογα με την τοποθεσία σας, κάποιες γέφυρες ενδέχεται να δουλέψουν καλύτερα από άλλες.">
+<!ENTITY torPreferences.bridgeLocation "Η τοποθεσία σας">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Αυτόματο">
+<!ENTITY torPreferences.bridgeLocationFrequent "Συχνά επιλεγμένα μέρη">
+<!ENTITY torPreferences.bridgeLocationOther "Άλλα μέρη">
+<!ENTITY torPreferences.bridgeChooseForMe "Διάλεξε μια γέφυρα για μένα...">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Οι τρέχουσες γέφυρές σας">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Μπορείτε να αποθηκέυσετε μία ή περισσότερες γέφυρες, και το Tor θα επιλέξει ποιά από αυτές θα χρησιμοποιήσει κατά την σύνδεση στο δίκτυο. Εφόσον χρειαστεί, το Tor θα χρησιμοποιήσει κάποια άλλη από αυτές τις γέφυρες αυτόματα.">
+<!ENTITY torPreferences.bridgeId "#1 γέφυρα: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Αφαίρεση">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Απενεργοποίηση ενσωματωμένων γεφυρών">
+<!ENTITY torPreferences.bridgeShare "Μπορείτε να μοιραστείτε την γέφυρα αυτή αντιγράφοντας την διεύθυνσή της ή μέσω του κωδικού QR:">
+<!ENTITY torPreferences.bridgeCopy "Αντιγραφή διεύθυνσης γέφυρας">
+<!ENTITY torPreferences.copied "Αντιγράφηκε!">
+<!ENTITY torPreferences.bridgeShowAll "Εμφάνιση όλων των γεφυρών">
+<!ENTITY torPreferences.bridgeRemoveAll "Αφαίρεση όλων των γεφυρών">
+<!ENTITY torPreferences.bridgeAdd "Προσθήκη νέας γέφυρας">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Επιλέξτε μία από τις ενσωματωμένες γέφυρες">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Επιλογή ενσωματωμένης γέφυρας...">
+<!ENTITY torPreferences.bridgeRequest "Ζητήστε μια γέφυρα...">
+<!ENTITY torPreferences.bridgeEnterKnown "Εισαγάγετε τη διεύθυνση γέφυρας που ήδη γνωρίζετε">
+<!ENTITY torPreferences.bridgeAddManually "Εισαγωγή διεύθυνσης γέφυρας...">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Για προχωρημένους">
+<!ENTITY torPreferences.advancedDescription "Ελέγξτε πώς ο Περιηγητής Tor συνδέεται στο διαδίκτυο.">
+<!ENTITY torPreferences.advancedButton "Ρυθμίσεις...">
+<!ENTITY torPreferences.viewTorLogs "Προβολή αρχείων καταγραφής του Tor">
+<!ENTITY torPreferences.viewLogs "Προβολή αρχείων καταγραφής...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Αφαίρεση όλων των γεφυρών;">
+<!ENTITY torPreferences.removeBridgesWarning "Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.">
+<!ENTITY torPreferences.cancel "Ακύρωση">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Σάρωση του κωδικού QR">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Ενσωματωμένες γέφυρες">
+<!ENTITY torPreferences.builtinBridgeDescription "Το Tor Browser περιλαμβάνει μερικούς ειδικούς τύπους γεφυρών γνωστούς ως “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "Το Obfs4 είναι ένας τύπος ενσωματωμένης γέφυρας που κάνει την κίνηση σας στο Tor φαίνεται τυχαία. Είναι επίσης λιγότερο πιθανό να μπλοκαριστούν από τους προκατόχους τους, γέφυρες obfs3.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Το Snowflake είναι μια ενσωματωμένη γέφυρα που νικά τη λογοκρισία δρομολογώντας τη σύνδεσή σας μέσω μεσολαβητών Snowflake, που τους τρέχουν εθελοντές.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "Το meek-azure είναι μια ενσωματωμένη γέφυρα που το κάνει να φαίνεται ότι χρησιμοποιείτε μια ιστοσελίδα της Microsoft αντί να χρησιμοποιείτε το Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Αίτηση γέφυρας">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Επικοινωνία με BridgeDB. Παρακαλούμε περιμένετε.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Λύστε το CAPTCHA για να αιτηθείτε γέφυρα.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Η επίλυση δεν είναι σωστή. Παρακαλούμε προσπαθήστε ξανά.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Παρέχετε μια γέφυρα">
+<!ENTITY torPreferences.provideBridgeHeader "Εισάγετε τις πληροφορίες της γέφυρας σας που έχετε λάβει από μια αξιόπιστη πηγή">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Ρυθμίσεις σύνδεσης">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Ρυθμίστε τον τρόπο σύνδεσης του Tor Browser στο διαδίκτυο">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Τιμές διαχωρισμένες με κόμμα">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Αρχεία καταγραφών Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Αποσυνδεδεμένο">
+<!ENTITY torConnect.connectingConcise "Γίνεται σύνδεση...">
+<!ENTITY torConnect.tryingAgain "Δοκιμή ξανά...">
+<!ENTITY torConnect.noInternet "Ο Περιηγητής Tor δεν έχει πρόσβαση στο διαδίκτυο">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Ο Περιηγητής Tor δεν μπορεί να συνδεθεί στο Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "ρύθμιση της σύνδεσής σας"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Εάν το Tor είναι αποκλεισμένο στην τοποθεσία σας, η δοκιμή μιας γέφυρας ίσως βοηθήσει. Η βοήθεια σύνδεσης μπορεί να επιλέξει για εσάς ή μπορείτε να το κάνετε #1 μόνοι σας."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Δοκιμή μιας γέφυρας...">
+<!ENTITY torConnect.tryingBridgeAgain "Δοκιμή ακόμη μία φορά...">
+<!ENTITY torConnect.errorLocation "Ο Περιηγητής Tor δεν μπόρεσε να σας εντοπίσει">
+<!ENTITY torConnect.errorLocationDescription "Ο Περιηγητής Tor πρέπει να γνωρίζει την τοποθεσία σας έτσι ώστε να μπορέσει να επιλέξει τη σωστή γέφυρα για εσάς. Αν προτιμάτε να μην κοινοποιήσετε την τοποθεσία σας, #1 χειροκίνητα."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Αυτές οι ρυθμίσεις τοποθεσίας είναι σωστές;">
+<!ENTITY torConnect.isLocationCorrectDescription "Ο Περιηγητής Tor συνεχίζει να μην μπορεί να συνδεθεί στο Tor. Ελέγξτε τις ρυθμίσεις τοποθεσίας σας και προσπαθήστε πάλι ή #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Βοήθεια σύνδεσης">
+<!ENTITY torConnect.breadcrumbLocation "Ρυθμίσεις τοποθεσίας">
+<!ENTITY torConnect.breadcrumbTryBridge "Δοκιμή γέφυρας">
+<!ENTITY torConnect.automatic "Αυτόματο">
+<!ENTITY torConnect.selectCountryRegion "Επιλογή χώρας ή εθνικότητας">
+<!ENTITY torConnect.frequentLocations "Συχνά επιλεγμένα μέρη">
+<!ENTITY torConnect.otherLocations "Άλλα μέρη">
+<!ENTITY torConnect.restartTorBrowser "Επανεκκίνηση του Περιηγητή Tor">
+<!ENTITY torConnect.configureConnection "Ρύθμιση σύνδεσης...">
+<!ENTITY torConnect.viewLog "Προβολή αρχείων καταγραφής...">
+<!ENTITY torConnect.tryAgain "Προσπάθησε ξανά">
+<!ENTITY torConnect.offline "Δεν υπάρχει πρόσβαση στο διαδίκτυο">
+<!ENTITY torConnect.connectMessage "Οι αλλαγές των ρυθμίσεων του Tor θα εφαρμοστούν όταν συνδεθείτε με το δίκτυο Tor.">
+<!ENTITY torConnect.tryAgainMessage "Η σύνδεση του Tor Browser με το δίκτυο Tor απέτυχε.">
+<!ENTITY torConnect.yourLocation "Η τοποθεσία σας">
+<!ENTITY torConnect.tryBridge "Δοκιμάστε μια γέφυρα">
+<!ENTITY torConnect.autoBootstrappingFailed "Η αυτόματη παραμετροποίηση απέτυχε">
+<!ENTITY torConnect.autoBootstrappingFailed "Η αυτόματη παραμετροποίηση απέτυχε">
+<!ENTITY torConnect.cannotDetermineCountry "Δεν είναι δυνατός ο προσδιορισμός της χώρας χρήστη">
+<!ENTITY torConnect.noSettingsForCountry "Δεν υπάρχουν διαθέσιμες ρυθμίσεις για την τοποθεσίας σας">

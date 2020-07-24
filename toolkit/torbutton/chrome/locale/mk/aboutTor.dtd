@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "За Tor">
+
+<!ENTITY aboutTor.viewChangelog.label "Види Листа на промени">
+
+<!ENTITY aboutTor.ready.label "Истражувај. Приватно.">
+<!ENTITY aboutTor.ready2.label "Подготвени сте за најприватното прелистувачко искуство во светот.">
+<!ENTITY aboutTor.failure.label "Настана грешка!">
+<!ENTITY aboutTor.failure2.label "Tor не работи во овој прелистувач.">
+
+<!ENTITY aboutTor.search.label "Пребарај со DuckDuckGo">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "Прашања?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Провери го Tor Browser Упатството »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "М">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Tor Browser Упатство">
+
+<!ENTITY aboutTor.tor_mission.label "Tor Project е US 501(c)(3) не-профитна организација која ги унапредува човековите права и слободи со креирање и имплементирање на слободни и отворен-код технологии за анонимност и приватност, поддржувајќи ги нивната неограничена достапност и употреба, како и нивното понатамошно научно и популарно разбирање.">
+<!ENTITY aboutTor.getInvolved.label "Приклучете се »">
+
+<!ENTITY aboutTor.newsletter.tagline "Добијте ги најновите вести од Tor директно во вашето сандаче.">
+<!ENTITY aboutTor.newsletter.link_text "Пријавете се за Tor Вести.">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor е бесплатен за користење благодарение на донациите од луѓе како вас.">
+<!ENTITY aboutTor.donationBanner.buttonA "Донирај сега">
+
+<!ENTITY aboutTor.alpha.ready.label "Тест. Темелен.">
+<!ENTITY aboutTor.alpha.ready2.label "Подготвени сте да го тестирате најприватното прелистувачко искуство.">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor Browser Alpha е нестабилна верзија на Tor Browser која може да ја користите за однапред да ги увидите новите можности, да ги тестирате нивните перформанси и да пружите повратни информации пред новата стабилна верзија.">
+<!ENTITY aboutTor.alpha.bannerLink "Пријавете грешка на Tor Forum">
+
+<!ENTITY aboutTor.nightly.ready.label "Тест. Темелен.">
+<!ENTITY aboutTor.nightly.ready2.label "Подготвени сте да го тестирате најприватното прелистувачко искуство.">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly е нестабилна верзија на Tor Browser која може да ја користите за преглед на новите можности, да ги тестирате нивните перформанси и да пружите повратни информации пред новата стабилна верзија.">
+<!ENTITY aboutTor.nightly.bannerLink "Пријавете грешка на Tor Forum">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "СОЗДАДЕНО ОД ПРИВАТНОСТ:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "ОТПОР">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "ПРОМЕНА">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "СЛОБОДА">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "ДОНИРАЈТЕ СЕГА">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "Вашата донација ќе се поклопи со Friends of Tor, до $100.000.">

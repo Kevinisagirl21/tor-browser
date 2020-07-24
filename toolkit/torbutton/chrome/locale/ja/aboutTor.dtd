@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "Tor について">
+
+<!ENTITY aboutTor.viewChangelog.label "変更履歴を表示">
+
+<!ENTITY aboutTor.ready.label "プライベートなブラウジングを開始">
+<!ENTITY aboutTor.ready2.label "世界で最もプライベートなブラウジングを行う準備が完了しました。">
+<!ENTITY aboutTor.failure.label "何かが間違っています!">
+<!ENTITY aboutTor.failure2.label "Tor は現在、このブラウザーで動作していません。">
+
+<!ENTITY aboutTor.search.label "DuckDuckGo で検索">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "質問がありますか?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "Tor Browser マニュアルをチェック »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "M">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Tor Browser マニュアル">
+
+<!ENTITY aboutTor.tor_mission.label "Tor Project はフリー・オープンソースの匿名性技術・プライバシー技術の開発と展開によって人権と自由を向上し、その制限されない有効性と利用を支援し、また、人々の正確な理解を促進している US 501(c)(3) 非営利団体です。">
+<!ENTITY aboutTor.getInvolved.label "参加しよう »">
+
+<!ENTITY aboutTor.newsletter.tagline "Tor からの最新ニュースを受信トレイに。">
+<!ENTITY aboutTor.newsletter.link_text "Tor ニュースに申し込む。">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor は皆さんからの寄付に支えられています。">
+<!ENTITY aboutTor.donationBanner.buttonA "今すぐ寄付">
+
+<!ENTITY aboutTor.alpha.ready.label "徹底的にテストする">
+<!ENTITY aboutTor.alpha.ready2.label "世界で最もプライベートなブラウジングをテストする準備が完了しました。">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor Browser Alpha は Tor Browser の不安定版で、新機能のプレビュー、パフォーマンスのテスト、リリース前のフィードバックなどのために使用できます。">
+<!ENTITY aboutTor.alpha.bannerLink "Tor Forum にバグを報告">
+
+<!ENTITY aboutTor.nightly.ready.label "徹底的にテストする">
+<!ENTITY aboutTor.nightly.ready2.label "世界で最もプライベートなブラウジングをテストする準備が完了しました。">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly は Tor Browser の不安定版で、新機能のプレビュー、パフォーマンスのテスト、リリース前のフィードバックなどのために使用できます。">
+<!ENTITY aboutTor.nightly.bannerLink "Tor Forum にバグを報告">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "POWERED BY PRIVACY:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "RESISTANCE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "CHANGE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "FREEDOM">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "今すぐ寄付する">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "あなたが寄付した額と同額を、Torのパートナーも寄付します (最大100,000ドル)">

@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Síťové nastavení Toru">
+<!ENTITY torsettings.wizard.title.default "Připojení k síti Tor">
+<!ENTITY torsettings.wizard.title.configure "Nastavení sítě Tor">
+<!ENTITY torsettings.wizard.title.connecting "Navazování spojení">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Jazyk prohlížeče Tor">
+<!ENTITY torlauncher.localePicker.prompt "Zvolte prosím jazyk.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Pro připojení k síti Tor klepněte na tlačítko „Připojit“.">
+<!ENTITY torSettings.configurePrompt "Pokud jste v zemi, která síť Tor omezuje (např. Egypt, Čína, Turecko), nebo pokud se připojujete ze sítě, která vyžaduje použití proxy, klepněte na tlačítko „Nastavení“ pro úpravu nastavení sítě.">
+<!ENTITY torSettings.configure "Nastavení">
+<!ENTITY torSettings.connect "Připojit">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Čekání na start Toru">
+<!ENTITY torsettings.restartTor "Restartovat Tor">
+<!ENTITY torsettings.reconfigTor "Přenastavit">
+
+<!ENTITY torsettings.discardSettings.prompt "Nastavili jste síťový most nebo lokální proxy.&#160; Pro připojení k síti Tor přímo tato nastavení odstraňte.">
+<!ENTITY torsettings.discardSettings.proceed "Odstranit nastavení a připojit se">
+
+<!ENTITY torsettings.optional "Volitelné">
+
+<!ENTITY torsettings.useProxy.checkbox "Pro připojení k internetu používám proxy">
+<!ENTITY torsettings.useProxy.type "Typ proxy">
+<!ENTITY torsettings.useProxy.type.placeholder "vyberte typ proxy">
+<!ENTITY torsettings.useProxy.address "Adresa">
+<!ENTITY torsettings.useProxy.address.placeholder "IP adresa nebo název serveru">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Uživatelské jméno">
+<!ENTITY torsettings.useProxy.password "Heslo">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Tento počítač používá firewall, který povoluje připojení pouze přes některé porty.">
+<!ENTITY torsettings.firewall.allowedPorts "Povolené porty">
+<!ENTITY torsettings.useBridges.checkbox "Tor je v mé zemi cenzurován">
+<!ENTITY torsettings.useBridges.default "Vyberte vestavěný most">
+<!ENTITY torsettings.useBridges.default.placeholder "vyberte most">
+<!ENTITY torsettings.useBridges.bridgeDB "Vyžádat most od torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Zadejte písmena z obrázku">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Nový obrázek">
+<!ENTITY torsettings.useBridges.captchaSubmit "Odeslat">
+<!ENTITY torsettings.useBridges.custom "Zadat známý most">
+<!ENTITY torsettings.useBridges.label "Zadejte informace o mostu z důvěryhodného zdroje.">
+<!ENTITY torsettings.useBridges.placeholder "zadávejte ve tvaru adresa:port (jedna položka na řádek)">
+
+<!ENTITY torsettings.copyLog "Zkopírovat protokol Toru do schránky">
+
+<!ENTITY torsettings.proxyHelpTitle "Nápověda k proxy">
+<!ENTITY torsettings.proxyHelp1 "Pří připojení skrze síť firmy, školy nebo univerzity může být vyžadována lokální proxy.&#160;Pokud si nejste jisti, jestli je proxy potřeba, podívejte se do nastavení internetu jiného prohlížeče, nebo do systémového nastavení sítě.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Nápověda o  mostních uzlech">
+<!ENTITY torsettings.bridgeHelp1 "Mosty jsou neveřejné uzly, které znesnadňují blokování sítě Tor.&#160; Každý typ mostu používá odlišný způsob jak zabránit cenzuře.&#160; Obfs mosty dělají z vašich dat náhodný šum a meek mosty vytvářejí dojem, že se připojujete k dané službě a ne k Toru.">
+<!ENTITY torsettings.bridgeHelp2 "Protože se některé země snaží zablokovat Tor, některé typy mostů fungují pouze v některých zemích.&#160; Pokud si nejste jisti typy mostů, které fungují ve vaší zemi, navštivte torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Počkejte prosím na vytvoření spojení do sítě Tor.&#160; Může to trvat několik minut.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Připojení">
+<!ENTITY torPreferences.torSettings "Nastavení sítě Tor">
+<!ENTITY torPreferences.torSettingsDescription "Prohlížeč Tor vás připojí k síti Tor, provozované tisíci dobrovolníků po celém světě." >
+<!ENTITY torPreferences.learnMore "Zjistit více">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Test">
+<!ENTITY torPreferences.statusInternetOnline "Online">
+<!ENTITY torPreferences.statusInternetOffline "Offline">
+<!ENTITY torPreferences.statusTorLabel "Síť Tor:">
+<!ENTITY torPreferences.statusTorConnected "Připojeno">
+<!ENTITY torPreferences.statusTorNotConnected "Nepřipojeno">
+<!ENTITY torPreferences.statusTorBlocked "Potenciálně Blokováno">
+<!ENTITY torPreferences.learnMore "Zjistit více">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Rychlý start">
+<!ENTITY torPreferences.quickstartDescriptionLong "Rychlý Start připojí Prohlížeč Tor do Sítě Tor automaticky při startu, za použitím naposledy použitého nastavení.">
+<!ENTITY torPreferences.quickstartCheckbox "Vždy připojit automaticky">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Mosty">
+<!ENTITY torPreferences.bridgesDescription "Mosty pomáhají v přístupu k sítě Tor na místech, kde je Tor blokován. Podle toho, kde se nacházíte, mohou některé mosty fungovat lépe než jiné.">
+<!ENTITY torPreferences.bridgeLocation "Vaše umístění">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automaticky">
+<!ENTITY torPreferences.bridgeLocationFrequent "Často použitá umístění">
+<!ENTITY torPreferences.bridgeLocationOther "Jiná umístění">
+<!ENTITY torPreferences.bridgeChooseForMe "Vyber pro mě Most…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Vaše aktuální Mosty">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Můžete uložit jeden nebo více mostů a Tor vybere, který z nich bude použit při připojování. Tor automaticky přepne na jiný most pokud to bude potřeba.">
+<!ENTITY torPreferences.bridgeId "#1 most: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Smazat">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Vypnout vestavěné mosty">
+<!ENTITY torPreferences.bridgeShare "Sdílejte tento most pomocí QR kódu nebo kopírováním jeho adresy:">
+<!ENTITY torPreferences.bridgeCopy "Kopírovat Adresu Mostu">
+<!ENTITY torPreferences.copied "Zkopírováno!">
+<!ENTITY torPreferences.bridgeShowAll "Zobrazit Všechny Mosty">
+<!ENTITY torPreferences.bridgeRemoveAll "Odebrat Všechny Mosty">
+<!ENTITY torPreferences.bridgeAdd "Přidat Nový Most">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Vyberte z vestavěných mostů Prohlížeče Tor">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Vyberte vestavěný Most…">
+<!ENTITY torPreferences.bridgeRequest "Požádat o most…">
+<!ENTITY torPreferences.bridgeEnterKnown "Vložte adresu mostu, kterou již znáte">
+<!ENTITY torPreferences.bridgeAddManually "Přidat Most Manuálně…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Rozšířené">
+<!ENTITY torPreferences.advancedDescription "Nastavte jak se má Prohlížeč Tor připojovat do internetu">
+<!ENTITY torPreferences.advancedButton "Nastavení…">
+<!ENTITY torPreferences.viewTorLogs "Zobrazit logy Tor">
+<!ENTITY torPreferences.viewLogs "Zobrazit protokol…">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Odebrat Všechny Mosty?">
+<!ENTITY torPreferences.removeBridgesWarning "Takto akce nepůjde vzít zpět.">
+<!ENTITY torPreferences.cancel "Zrušit">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Skenovat QR kód">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Vestavěné Mosty">
+<!ENTITY torPreferences.builtinBridgeDescription "Prohlížeč Tor zahrnuje některé specifické typy mostů známé jako “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 je typ vestavěného mostu který zajišťuje že data vypadají náhodně. Tyto mosty nejsou tak často blokovány jako jejich předchůdci, obfs3 mosty.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake je vestavěný most kterým je obcházena cenzura přesměrováním připojení přes Snowflake proxy, které provozují dobrovolníci.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure je vestavěný most díky kterému se bude zdát, že používáte web Microsoftu místo Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Požádat o most">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Kontaktování BridgeDB. Čekejte prosím.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Pro vyžádání mostu prosím opište kód CAPTCHA.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Neopsali jste kód správně. Zkuste to prosím znovu.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Zadejte Most">
+<!ENTITY torPreferences.provideBridgeHeader "Zadejte informace o bridgi z důvěryhodného zdroje">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Nastavení Připojení">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Nastavte jak se bude Prohlížeč Tor připojovat k internetu">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Hodnoty oddělené čárkami">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Protokol sítě Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Nepřipojeno">
+<!ENTITY torConnect.connectingConcise "Spojuji...">
+<!ENTITY torConnect.tryingAgain "Zkouším to znovu...">
+<!ENTITY torConnect.noInternet "Prohlížeč Tor se nemohl připojit k internetu">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Prohlížeč Tor se nemohl připojit k síti Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "nastavte své připojení"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Pokud je Tor blokován tam, kde nyní jste, zkuste použít most. Asistent připojení vám pomůže most vybrat na základě vašeho umístění a nebo to můžete udělat #1 manuálně."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Zkouším most…">
+<!ENTITY torConnect.tryingBridgeAgain "Zkouším to ještě jednou...">
+<!ENTITY torConnect.errorLocation "Prohlížeč Tor vás nedokáže lokalizovat">
+<!ENTITY torConnect.errorLocationDescription "Prohlížeč Tor potřebuje znát vaše umístě k tomu, aby vám vybral nejvhodnější most. Pokud nechcete uvést umístění, můžete zvolit #1 manuální metodu."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Jsou tato nastavení umístění v pořádku?">
+<!ENTITY torConnect.isLocationCorrectDescription "Prohlížeč Tor se stále nemohl připojit k Tor. Prosím zkontrolujte vaše nastavení umístění a zkuste to znovu a nebo #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Asistent připojení">
+<!ENTITY torConnect.breadcrumbLocation "Nastavení umístění">
+<!ENTITY torConnect.breadcrumbTryBridge "Zkusit most">
+<!ENTITY torConnect.automatic "Automaticky">
+<!ENTITY torConnect.selectCountryRegion "Vyberte Zemi nebo Region">
+<!ENTITY torConnect.frequentLocations "Často použitá umístění">
+<!ENTITY torConnect.otherLocations "Jiná umístění">
+<!ENTITY torConnect.restartTorBrowser "Restartovat Prohlížeč Tor">
+<!ENTITY torConnect.configureConnection "Nastavit Připojení…">
+<!ENTITY torConnect.viewLog "Zobrazit logy...">
+<!ENTITY torConnect.tryAgain "Zkusit znovu">
+<!ENTITY torConnect.offline "Internet není dostupný">
+<!ENTITY torConnect.connectMessage "Změny v nastavení Tor se neprojeví, dokud se nepřipojíte">
+<!ENTITY torConnect.tryAgainMessage "Tor prohlížeči se nepodařilo navázat spojení se sítí Tor">
+<!ENTITY torConnect.yourLocation "Vaše umístění">
+<!ENTITY torConnect.tryBridge "Zkusit Most">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatické nastavení selhalo">
+<!ENTITY torConnect.autoBootstrappingFailed "Automatické nastavení selhalo">
+<!ENTITY torConnect.cannotDetermineCountry "Nebylo možné rozpoznat zemi uživatele">
+<!ENTITY torConnect.noSettingsForCountry "Žádná nastavení nejsou k dispozici pro vaše umístění">

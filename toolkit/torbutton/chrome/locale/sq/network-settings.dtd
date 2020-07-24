@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Rregullime Rrjeti Tor">
+<!ENTITY torsettings.wizard.title.default "Lidhu me Tor-in">
+<!ENTITY torsettings.wizard.title.configure "Rregullime Rrjeti Tor">
+<!ENTITY torsettings.wizard.title.connecting "Vendosje Lidhjeje">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Gjuha e Shfletuesit Tor">
+<!ENTITY torlauncher.localePicker.prompt "Ju lutemi, përzgjidhni një gjuhë.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Që të lidheni me Tor-in, klikoni mbi “Lidhu”.">
+<!ENTITY torSettings.configurePrompt "Klikoni mbi “Formësoje” që të përimtoni rregullime rrjeti, nëse gjendeni në një vend që censuron Tor-in (bie fjala, Egjipt, Kinë, Turqi) ose nëse po lidheni nga një rrjet privat që lyp doemos një ndërmjetës.">
+<!ENTITY torSettings.configure "Formësojeni">
+<!ENTITY torSettings.connect "Lidhu">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Po pritet që të niset Tor-i…">
+<!ENTITY torsettings.restartTor "Riniseni Tor-in">
+<!ENTITY torsettings.reconfigTor "Riformësojeni">
+
+<!ENTITY torsettings.discardSettings.prompt "Keni formësuar ura Tor ose keni dhënë rregullime ndërmjetësi vendor.&#160; Për të bërë një lidhje të drejtpërdrejtë me rrjetin Tor, këto rregullime duhet të hiqen.">
+<!ENTITY torsettings.discardSettings.proceed "Hiqi Rregullimet dhe Lidhu">
+
+<!ENTITY torsettings.optional "Opsional">
+
+<!ENTITY torsettings.useProxy.checkbox "Për t’u lidhur në Internet, unë përdor një ndërmjetës">
+<!ENTITY torsettings.useProxy.type "Lloj Ndërmjetësi">
+<!ENTITY torsettings.useProxy.type.placeholder "përzgjidhni një lloj ndërmjetësi">
+<!ENTITY torsettings.useProxy.address "Adresë">
+<!ENTITY torsettings.useProxy.address.placeholder "Adresë IP ose emër strehë">
+<!ENTITY torsettings.useProxy.port "Portë">
+<!ENTITY torsettings.useProxy.username "Emër përdoruesi">
+<!ENTITY torsettings.useProxy.password "Fjalëkalim">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Ky kompjuter kalon përmes një firewall-i, i cili lejon lidhje vetëm me disa porta.">
+<!ENTITY torsettings.firewall.allowedPorts "Porta të Lejuara">
+<!ENTITY torsettings.useBridges.checkbox "TOR censurohet në vendin tim">
+<!ENTITY torsettings.useBridges.default "Përzgjidhni një Urë të Brendshme">
+<!ENTITY torsettings.useBridges.default.placeholder "përzgjidhni një urë">
+<!ENTITY torsettings.useBridges.bridgeDB "Kërkoni një urë nga torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Jepni shenjat prej figure">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Merrni një provë të re">
+<!ENTITY torsettings.useBridges.captchaSubmit "Parashtrojeni">
+<!ENTITY torsettings.useBridges.custom "Furnizo një urë që njoh">
+<!ENTITY torsettings.useBridges.label "Jepni të dhëna ure prej një burimi të besuar.">
+<!ENTITY torsettings.useBridges.placeholder "shtypni adresë:portë (një për rresht)">
+
+<!ENTITY torsettings.copyLog "Kopjo Regjistër Tor në Të papastër">
+
+<!ENTITY torsettings.proxyHelpTitle "Ndihmë për Ndërmjetës">
+<!ENTITY torsettings.proxyHelp1 "Kur bëhet lidhje përmes një rrjeti shoqërie, shkolle apo universiteti, mund të duhet një ndërmjetës vendor.&#160;Nëse s’jeni i sigurt nëse duhet apo jo një ndërmjetës, shihni rregullimet për Internet në një shfletues tjetër ose kontrolloni te rregullimet e rrjetit për sistemin tuaj.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Ndihmë mbi Rele Ura">
+<!ENTITY torsettings.bridgeHelp1 "Urat janë rele jo të pranishme në lista, që e bëjnë më të vështirë bllokimin e lidhjeve me Rrjetin Tor.&#160; Çdo lloj ure përdor një metodë të ndryshme për shmangie censurimi.&#160; Ato me errësim e bëjnë trafikun tuaj të duket si zhurmë e parregullt, dhe ato të llojit “meek” e bëjnë trafikun tuaj të duket sikur po bëhet lidhje me shërbimin e synuar, në vend se me Tor-in.">
+<!ENTITY torsettings.bridgeHelp2 "Për shkak të mënyrave se si disa vende rreken të bllokojnë Tor-in, disa ura funksionojnë në disa nga vendet, por jo në të tjera.&#160; Nëse s’jeni i sigurt se cilat ura funksionojnë në vendin tuaj, vizitoni torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Ju lutemi, prisni, teksa vendosim një lidhje me rrjetin e Tor.&#160; Kjo mund të kërkojë disa minuta.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Spojenie">
+<!ENTITY torPreferences.torSettings "Rregullime Tor">
+<!ENTITY torPreferences.torSettingsDescription "Shfletuesi Tor e kalon trafikun tuaj përmes Rrjetit Tor, i mbajtur në këmbë nga mijëra vullnetarë anembanë botës." >
+<!ENTITY torPreferences.learnMore "Mësoni më tepër">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Provë">
+<!ENTITY torPreferences.statusInternetOnline "I lidhur">
+<!ENTITY torPreferences.statusInternetOffline "Jo në linjë">
+<!ENTITY torPreferences.statusTorLabel "Rrjeti Tor:">
+<!ENTITY torPreferences.statusTorConnected "I lidhur">
+<!ENTITY torPreferences.statusTorNotConnected "Jo i Lidhur">
+<!ENTITY torPreferences.statusTorBlocked "Potencialisht e Bllokuar">
+<!ENTITY torPreferences.learnMore "Mësoni më tepër">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Nisje e shpejtë">
+<!ENTITY torPreferences.quickstartDescriptionLong "Quickstart-i bën automatikisht lidhjen e Shfletuesit Tor me Rrjetin Tor, kur niset, bazuar në rregullimet e përdorura për lidhjen e fundit.">
+<!ENTITY torPreferences.quickstartCheckbox "Lidhu përherë automatikisht">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Ura">
+<!ENTITY torPreferences.bridgesDescription "Urat ju ndihmojnë të përdorni Rrjetin Tor në vende ku Tor-i është i bllokuar. Në varësi të vendit ku ndodheni, një urë mund të punojë më mirë se një tjetër.">
+<!ENTITY torPreferences.bridgeLocation "Vendndodhja juaj">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Automatike">
+<!ENTITY torPreferences.bridgeLocationFrequent "Vendndodhje të përzgjedhura rëndom">
+<!ENTITY torPreferences.bridgeLocationOther "Vendndodhje të tjera">
+<!ENTITY torPreferences.bridgeChooseForMe "Zgjidhni një Urë Për Mua…">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Urat Tuaja të Tanishme">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Mund të ruani një ose më tepër ura dhe Tor-i do të zgjedhë cilën të përdoret, kur lidheni. Tor-i do të kalojë automatikisht në përdorimin e një tjetër ure, kur kjo është e nevojshme.">
+<!ENTITY torPreferences.bridgeId "Ura #1: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Hiqe">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Çaktivizo ura të brendshme">
+<!ENTITY torPreferences.bridgeShare "Ndajeni me të tjerët këtë urë duke u dhënë kodin QR, ose duke kopjuar adresën e saj:">
+<!ENTITY torPreferences.bridgeCopy "Kopjo Adresë Ure">
+<!ENTITY torPreferences.copied "U kopjua!">
+<!ENTITY torPreferences.bridgeShowAll "Shfaqi Krejt Urat">
+<!ENTITY torPreferences.bridgeRemoveAll "Hiqi Krejt Urat">
+<!ENTITY torPreferences.bridgeAdd "Shtoni një Urë të Re">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Zgjidhni një nga urat e brendshme të Shfletuesit Tor">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Përzgjidhni një Urë të Brendshme…">
+<!ENTITY torPreferences.bridgeRequest "Kërkoni një Urë…">
+<!ENTITY torPreferences.bridgeEnterKnown "Jepni një adresë ure që njihni tashmë">
+<!ENTITY torPreferences.bridgeAddManually "Shtoni një Urë Dorazi…">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Të mëtejshme">
+<!ENTITY torPreferences.advancedDescription "Formësoni se si lidhet në Internet Shfletuesi Tor">
+<!ENTITY torPreferences.advancedButton "Rregullime…">
+<!ENTITY torPreferences.viewTorLogs "Shihni regjistrat e Tor-it">
+<!ENTITY torPreferences.viewLogs "Shihni Regjistra…">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Të hiqen krejt urat?">
+<!ENTITY torPreferences.removeBridgesWarning "Ky veprim s’mund të zhbëhet.">
+<!ENTITY torPreferences.cancel "Anuloje">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Skanoni kodin QR">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Ura të Brendshme">
+<!ENTITY torPreferences.builtinBridgeDescription "Shfletuesi Tor përfshin disa lloje specifike urash, të njohura si “transporte të shtueshëm”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 është një lloj urash të brendshme që e bëjnë trafikun tuaj Tor të duket si kuturu. Për to gjithashtu ka më pak gjasa të bllokohen, se sa pararendëset e tyre, urat obfs3.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake-u është një urë e brendshme që mposht censurimin duke e kaluar lidhjen tuaj përmes ndërmjetësish Snowflake, të mbajtura në punë nga vullnetarë.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure është një urë e brendshme që bën të duket sikur po përdorni një sajt Microsoft, në vend të Tor-it që po përdorni.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Kërkoni Urë">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Po lidhet me BridgeDB. Ju lutemi, Pritni.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Që të kërkoni një urë, zgjidhni CAPTCHA-n.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Zgjidhja s’është e saktë. Ju lutemi, riprovoni.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Jepni një Urë">
+<!ENTITY torPreferences.provideBridgeHeader "Jepni të dhëna ure prej një burimi të besuar">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Rregullime Lidhjeje">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Formësoni se si lidhet në Internet Shfletuesi Tor">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Vlera të ndara me presje">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Regjistra Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Jo i Lidhur">
+<!ENTITY torConnect.connectingConcise "Po lidhet…">
+<!ENTITY torConnect.tryingAgain "Po riprovohet…">
+<!ENTITY torConnect.noInternet "Shfletuesi Tor s’u lidh dot me Internetin">
+<!ENTITY torConnect.noInternetDescription "Kjo mund të vijë nga një problem lidhjeje, në vend se nga bllokimi i Tor-it. Përpara se të riprovoni, kontrolloni lidhjen tuaj Internet, rregullimet për ndërmjetësin dhe për firewall-in.">
+<!ENTITY torConnect.couldNotConnect "Shfletuesi Tor s’u lidh dot me Tor-in">
+<!ENTITY torConnect.assistDescriptionConfigure "formësoni lidhjen tuaj"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Nëse Tor-i është i bllokuar në vendndodhjen tuaj, provimi i një ure mund të ndihmonte. Ndihmësi i lidhjeve mund të zgjedhë një për ju duke përdorur vendndodhjen tuaj, ose mundeni të #1 dorazi."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Provoni një urë…">
+<!ENTITY torConnect.tryingBridgeAgain "Po provohet edhe një herë…">
+<!ENTITY torConnect.errorLocation "Shfletuesi Tor s’ju lokalizoi dot">
+<!ENTITY torConnect.errorLocationDescription "Shfletuesi Tor lypset të njohë vendndodhjen tuaj, që të mund të zgjedhë urën e duhur për ju. Nëse s’doni ta jepni vendndodhjen tuaj, #1 dorazi."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "A janë të sakta këto rregullime vendndodhjeje?">
+<!ENTITY torConnect.isLocationCorrectDescription "Shfletuesi Tor prapë s’u lidh dot me Tor-in. Ju lutemi, kontrolloni se rregullimet e vendndodhjes tuaj janë të sakta dhe riprovoni, ose #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Shfletuesi Tor ende s’lidhet dot">
+<!ENTITY torConnect.finalErrorDescription "Pavarësisht përpjekjeve më të mira, ndihmësi i lidhjes s’qe në gjendje të lidhet me Tor-in. Provoni të diagnostikoni lidhjen dhe tuaj dhe të shtoni një urë dorazi.">
+<!ENTITY torConnect.breadcrumbAssist "Ndihmës lidhjeje">
+<!ENTITY torConnect.breadcrumbLocation "Rregullime vendndodhjeje">
+<!ENTITY torConnect.breadcrumbTryBridge "Provoni një urë">
+<!ENTITY torConnect.automatic "Automatike">
+<!ENTITY torConnect.selectCountryRegion "Përzgjidhni Vend ose Rajon">
+<!ENTITY torConnect.frequentLocations "Vendndodhje të përzgjedhura rëndom">
+<!ENTITY torConnect.otherLocations "Vendndodhje të tjera">
+<!ENTITY torConnect.restartTorBrowser "Rinisni Shfletuesin Tor">
+<!ENTITY torConnect.configureConnection "Formësoni Lidhje…">
+<!ENTITY torConnect.viewLog "Shihni regjistra…">
+<!ENTITY torConnect.tryAgain "Riprovoni">
+<!ENTITY torConnect.offline "S’kapet dot Interneti">
+<!ENTITY torConnect.connectMessage "Ndryshimet te Rregullimet e Tor-it s’do të hyjnë në fuqi para se të lidheni">
+<!ENTITY torConnect.tryAgainMessage "Shfletuesi Tor dështoi në vendosjen e një lidhjeje me Rrjetin Tor">
+<!ENTITY torConnect.yourLocation "Vendndodhja Juaj">
+<!ENTITY torConnect.tryBridge "Provoni një Urë">
+<!ENTITY torConnect.autoBootstrappingFailed "Formësimi i vetvetishëm dështoi">
+<!ENTITY torConnect.autoBootstrappingFailed "Formësimi i vetvetishëm dështoi">
+<!ENTITY torConnect.cannotDetermineCountry "S’arrihet të përcaktohet vend përdoruesi">
+<!ENTITY torConnect.noSettingsForCountry "S’ka rregullime për vendndodhjen tuaj">

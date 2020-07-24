@@ -1,0 +1,8 @@
+<!ENTITY aboutTBUpdate.changelogTitle "Tor ဘရောင်ဇာ ChangeLog (ပြောင်းလဲမှုမှတ်တမ်း)">
+<!ENTITY aboutTBUpdate.updated "Tor ဘရောင်ဇာကို အပ်ဒိတ်ပြုလုပ်ထားသည်။">
+<!ENTITY aboutTBUpdate.linkPrefix "ဤထုတ်လွှတ်မှုနှင့် ပတ်သက်၍ နောက်ဆုံးပေါ် သတင်းအချက်အလက်များအတွက်">
+<!ENTITY aboutTBUpdate.linkLabel  "ကျွန်ုပ်တို့၏ဝက်ဘ်ဆိုက်သို့ ဝင်ရောက်ကြည့်ရှုပါ">
+<!ENTITY aboutTBUpdate.linkSuffix "။">
+<!ENTITY aboutTBUpdate.version "ဗားရှင်း">
+<!ENTITY aboutTBUpdate.releaseDate "ဖြန့်ချီသည့်ရက်စွဲ">
+<!ENTITY aboutTBUpdate.releaseNotes "ဖြန့်ချီမှတ်ချက်များ">

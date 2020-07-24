@@ -1,0 +1,60 @@
+<!--
+   - Copyright (c) 2019, The Tor Project, Inc.
+   - See LICENSE for licensing information.
+   - vim: set sw=2 sts=2 ts=8 et syntax=xml:
+  -->
+
+<!ENTITY aboutTor.title "Tor အကြောင်း">
+
+<!ENTITY aboutTor.viewChangelog.label "ပြောင်းလဲမှတ်တမ်း ကြည့်မယ်">
+
+<!ENTITY aboutTor.ready.label "လုံခြုံစွာ သုံးစွဲပါ။">
+<!ENTITY aboutTor.ready2.label "သင်သည် အင်တာနက်ကို အလုံခြုံဆုံးစွာ သုံးစွဲဖို့ အဆင်သင့်ဖြစ်ပါပြီ။">
+<!ENTITY aboutTor.failure.label "တစ်ခုခု မှားယွင်းသွားပါသည်!">
+<!ENTITY aboutTor.failure2.label "ဤ ဘရောင်ဇာတွင် Tor အလုပ်မလုပ်ပါ။">
+
+<!ENTITY aboutTor.search.label "DuckDuckGo ဖြင့် ရှာဖွေမယ်">
+<!ENTITY aboutTor.searchDDGPost.link "https://duckduckgo.com">
+
+<!ENTITY aboutTor.torbrowser_user_manual_questions.label "မေးစရာများ ရှိဦးမလား?">
+<!ENTITY aboutTor.torbrowser_user_manual_link.label "ကျွန်ုပ်တို့ Tor ဘရောင်ဇာ လက်စွဲစာအုပ်အား ကြည့်ကြည့်ပါ »">
+<!-- The next two entities are used within the browser's Help menu. -->
+<!ENTITY aboutTor.torbrowser_user_manual.accesskey "လ">
+<!ENTITY aboutTor.torbrowser_user_manual.label "Tor ဘရောင်ဇာ လက်စွဲစာအုပ်">
+
+<!ENTITY aboutTor.tor_mission.label "Tor Project သည် လူ့အခွင့်အရေးနှင့် လွတ်လပ်ရေးခွင့်များကို တိုးတက်စေရန် အမေရိကန် အကျိုးအမြတ်မယူသော ၅၀၁(ဂ)(၃) အဖွဲ့အစည်းတစ်ခု ဖြစ်ပါသည်။ လွတ်လပ်၍ အမည်ဝှက်ကာ အများသုံးနိုင်ပြီး ပုဂ္ဂိုလ်လုံခြုံရေးစောင့်ရှောက်သော နည်းပညာများ အသုံးပြုပါသည်။ ၎င်းနည်းပညာများကို အကန့်အသတ်မရှိစွာ သုံးစွဲနိုင်ခြင်းနှင့် သိပ္ပံဆိုင်ရာနှင့် ပြည်သူများနားလည်နိုင်စေရန် ပံ့ပိုးထောက်ပံ့ပါသည်။">
+<!ENTITY aboutTor.getInvolved.label "ပါဝင်ပါ »">
+
+<!ENTITY aboutTor.newsletter.tagline "Tor မှ နောက်ဆုံးသတင်းများကို သင့် စာဝင်ပုံးထဲတန်း ရယူလိုက်ပါ။">
+<!ENTITY aboutTor.newsletter.link_text "Tor News သတင်းများအတွက် အမည် စာရင်းသွင်းလိုက်ပါ။">
+<!ENTITY aboutTor.donationBanner.freeToUse "Tor သည် သင့်လို သုံးသူများမှ လှူဒါန်းငွေကြောင့် အခမဲ့သုံးနိုင်ပါသည်။">
+<!ENTITY aboutTor.donationBanner.buttonA "အခုဘဲ လှူမယ်">
+
+<!ENTITY aboutTor.alpha.ready.label "စစ်ဆေးခြင်း,နှံ့နှံ့စပ်စပ်">
+<!ENTITY aboutTor.alpha.ready2.label "သင်ဟာ ကမ္ဘာပေါ်မှာ သီးသန့်အဖြစ်ဆုံး ရှာဖွေရေးအတွေ့အကြုံရရှိဖို့ စမ်းသပ်ရန်အဆင်သင့် ဖြစ်နေပါပြီ">
+<!ENTITY aboutTor.alpha.bannerDescription "Tor Browser Alpha ဟာ ထုတ်လုပ်မှုမတိုင်ခင် ၎င်းတို့၏အင်္ဂါရပ်အသစ်များကို နမူနာကြည့်ရန်အသုံးပြုနိုင်ဖို့,လုပ်ဆောင်ချက်များကိုစမ်းသပ်ဖို့ နဲ့ အကြံပြုချက်များပေးနိုင်ဖို့အတွက် ပြုလုပ်ထားသော Tor Browser ရဲ့ မတည်ငြိမ်သောဗားရှင်းတစ်ခုဖြစ်ပါသည်။">
+<!ENTITY aboutTor.alpha.bannerLink "Tor ဖိုရမ်ပေါ်မှာ bug ကို အစီရင်ခံပါ">
+
+<!ENTITY aboutTor.nightly.ready.label "စစ်ဆေးခြင်း,နှံ့နှံ့စပ်စပ်">
+<!ENTITY aboutTor.nightly.ready2.label "သင်ဟာ ကမ္ဘာပေါ်မှာ သီးသန့်အဖြစ်ဆုံး ရှာဖွေရေးအတွေ့အကြုံရရှိဖို့ စမ်းသပ်ရန်အဆင်သင့် ဖြစ်နေပါပြီ">
+<!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly ဟာ ထုတ်လုပ်မှုမတိုင်ခင် ၎င်းတို့၏အင်္ဂါရပ်အသစ်များကို နမူနာကြည့်ရန်အသုံးပြုနိုင်ဖို့,လုပ်ဆောင်ချက်များကိုစမ်းသပ်ဖို့ နဲ့ အကြံပြုချက်များပေးနိုင်ဖို့အတွက် ပြုလုပ်ထားသော Tor Browser ရဲ့ မတည်ငြိမ်သောဗားရှင်းတစ်ခုဖြစ်ပါသည်။">
+<!ENTITY aboutTor.nightly.bannerLink "Tor ဖိုရမ်ပေါ်မှာ bug ကို အစီရင်ခံပါ">
+
+<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
+<!ENTITY aboutTor.yec2022.powered_by_privacy "POWERED BY PRIVACY:">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
+<!ENTITY aboutTor.yec2022.resistance "RESISTANCE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
+<!ENTITY aboutTor.yec2022.change "CHANGE">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
+<!ENTITY aboutTor.yec2022.freedom "FREEDOM">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
+<!ENTITY aboutTor.yec2022.donate_now "ယခု လှူရန်">
+<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
+also format it like the name of an organization in whichever way that is appropriate for your locale.
+
+Please keep the currency in USD.
+Thank you!
+-->
+<!ENTITY aboutTor.yec2022.donation_matching "သင့်လှူဒါန်းမှုကို Tor ၏ မိတ်ဆွေများမှ တွဲပေးပါမည်၊ $100,000 အထိ လှူနိုင်ပါသည်။">

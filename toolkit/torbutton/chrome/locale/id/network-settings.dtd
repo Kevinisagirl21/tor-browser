@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Pengaturan Jaringan Tor">
+<!ENTITY torsettings.wizard.title.default "Hubungkan ke Tor">
+<!ENTITY torsettings.wizard.title.configure "Pengaturan Jaringan Tor">
+<!ENTITY torsettings.wizard.title.connecting "Membuat sambungan">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Bahasa Tor Browser">
+<!ENTITY torlauncher.localePicker.prompt "Silahkan pilih bahasa.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Klik &quot;Connect&quot; untuk tersambung ke Tor.">
+<!ENTITY torSettings.configurePrompt "Klik &quot;Configure&quot; untuk mengubah pengaturan jaringan jika Anda berada di negara yang menyensor Tor (seperti Mesir, Tiongkok, Turki) atau anda ingin terhubung dari jaringan pribadi yang menggunakan proxy.">
+<!ENTITY torSettings.configure "Konfigur">
+<!ENTITY torSettings.connect "Sambung">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Menunggu Tor untuk memulai...">
+<!ENTITY torsettings.restartTor "Muat Ulang Tor">
+<!ENTITY torsettings.reconfigTor "Konfigurasi ulang">
+
+<!ENTITY torsettings.discardSettings.prompt "Kamu telah mengatur jembatan Tor atau kamu telah memasukkan pengaturan proksi lokal.&#160; Untuk membuat koneksi langsung ke jaringan Tor, pengaturan ini harus dihapus.">
+<!ENTITY torsettings.discardSettings.proceed "Buang Pengaturan dan Sambung">
+
+<!ENTITY torsettings.optional "Opsional">
+
+<!ENTITY torsettings.useProxy.checkbox "Saya menggunakan proxy untuk terhubung ke Internet">
+<!ENTITY torsettings.useProxy.type "Tipe Proxy">
+<!ENTITY torsettings.useProxy.type.placeholder "pilih jenis proxy">
+<!ENTITY torsettings.useProxy.address "Alamat">
+<!ENTITY torsettings.useProxy.address.placeholder "alamat IP atau nama host">
+<!ENTITY torsettings.useProxy.port "Port">
+<!ENTITY torsettings.useProxy.username "Nama Pengguna">
+<!ENTITY torsettings.useProxy.password "Kata sandi">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Komputer ini pergi melalui firewall yang hanya mengizinkan koneksi untuk beberapa port">
+<!ENTITY torsettings.firewall.allowedPorts "Port yang diizinkan">
+<!ENTITY torsettings.useBridges.checkbox "Tor disensor di negara saya">
+<!ENTITY torsettings.useBridges.default "Pilih satu built-in bridge">
+<!ENTITY torsettings.useBridges.default.placeholder "pilih satu bridge">
+<!ENTITY torsettings.useBridges.bridgeDB "Meminta sebuah bridge ke torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Masukkan karakter-karakter dari gambar tesebut.">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Dapatkan tantangan baru">
+<!ENTITY torsettings.useBridges.captchaSubmit "Kirim">
+<!ENTITY torsettings.useBridges.custom "Sediakan sebuah bridge yang saya tahu">
+<!ENTITY torsettings.useBridges.label "Masukkan informasi bridge dari sumber terpercaya">
+<!ENTITY torsettings.useBridges.placeholder "masukkan alamat:port (satu entri per baris)">
+
+<!ENTITY torsettings.copyLog "Salin Log Tor Ke Clipboard">
+
+<!ENTITY torsettings.proxyHelpTitle "Bantuan untuk Proxy">
+<!ENTITY torsettings.proxyHelp1 "Proksi lokal mungkin diperlukan saat menyambung melalui jaringan perusahaan, sekolah, atau universitas.&#160;Jika Anda tidak yakin apakah proxy diperlukan, lihat setelan Internet di browser lain atau periksa setelan jaringan sistem Anda.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Bantuan Bridge Relay">
+<!ENTITY torsettings.bridgeHelp1 "Bridges adalah relays yang tidak terdaftar, yang membuat pemblokiran sambungan di Jaringan Tor lebih sulit dilakukan.&#160; Setiap jenis bridge menggunakan metode yang berbeda untuk menghindari sensor.&#160; Jenis obfs membuat sambungan Anda terlihat seperti kegiatan acak dan jenis meek membuat sambungan Anda terlihat tersambung ke layanan tersebut, bukan ke Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Karena beberapa negara mencoba untuk memblokir Tor, beberapa jenis bridge berfungsi di beberapa negara tapi tidak di negara lain.&#160; Jika Anda tidak yakin tentang jenis bridge yang berfungsi negara Anda, kunjungi torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Mohon menunggu sambil kami membuat sambungan ke jaringan Tor.&#160; Ini akan memakan waktu beberapa menit">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Koneksi">
+<!ENTITY torPreferences.torSettings "Pengaturan Tor">
+<!ENTITY torPreferences.torSettingsDescription "Tor Browser mengalihkan lalulintas kamu melalui Jaringan Tor, di jalankan oleh ribuan sukarelawan di seluruh dunia." >
+<!ENTITY torPreferences.learnMore "Pelajari lebih lanjut">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Internet:">
+<!ENTITY torPreferences.statusInternetTest "Tes">
+<!ENTITY torPreferences.statusInternetOnline "Daring">
+<!ENTITY torPreferences.statusInternetOffline "Luring">
+<!ENTITY torPreferences.statusTorLabel "Jaringan Tor:">
+<!ENTITY torPreferences.statusTorConnected "Terhubung">
+<!ENTITY torPreferences.statusTorNotConnected "Tidak terhubung">
+<!ENTITY torPreferences.statusTorBlocked "Berpotensi diblokir">
+<!ENTITY torPreferences.learnMore "Pelajari lebih lanjut">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Quickstart">
+<!ENTITY torPreferences.quickstartDescriptionLong "&quot;Quickstart&quot; menghubungkan Tor Browser dengan jaringan Tor secara otomatis saat diluncurkan, berdasarkan pengaturan koneksi yang terakhir dipakai.">
+<!ENTITY torPreferences.quickstartCheckbox "Selalu terhubung secara otomatis">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Jembatan-jembatan">
+<!ENTITY torPreferences.bridgesDescription "Jembatan membantu Anda mengakses Jaringan Tor dimana Tor diblokir. Tergantung pada dimana Anda tinggal, satu jembatan mungkin dapat bekerja lebih baik daripada yang lainnya.">
+<!ENTITY torPreferences.bridgeLocation "Lokasi Anda">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Otomatis">
+<!ENTITY torPreferences.bridgeLocationFrequent "Lokasi yang sering terpilih">
+<!ENTITY torPreferences.bridgeLocationOther "Lokasi lainnya">
+<!ENTITY torPreferences.bridgeChooseForMe "Pilih Jembatan untuk Saya...">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Jembatan Anda saat ini">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Anda dapat menyimpan satu atau lebih jembatan, dan Tor akan memilih salah satu untuk digunakan saat Anda terhubung. Tor akan otomatis mengalihkan kepada jembatan lain saat dibutuhkan.">
+<!ENTITY torPreferences.bridgeId "#1 jembatan: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Hapus">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Nonaktifkan bridge bawaan">
+<!ENTITY torPreferences.bridgeShare "Bagikan bridge ini menggunakan kode QR atau dengan menyalin alamatnya:">
+<!ENTITY torPreferences.bridgeCopy "Salin Alamat Bridge">
+<!ENTITY torPreferences.copied "Disalin!">
+<!ENTITY torPreferences.bridgeShowAll "Perlihatkan Semua Bridge">
+<!ENTITY torPreferences.bridgeRemoveAll "Hapus Semua Bridge">
+<!ENTITY torPreferences.bridgeAdd "Tambahkan Bridge Baru">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Pilih dari salah satu bridge bawaan Tor Browser">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Pilih Bridge Bawaan...">
+<!ENTITY torPreferences.bridgeRequest "Meminta sebuah bridge...">
+<!ENTITY torPreferences.bridgeEnterKnown "Masukkan alamat bridge yang telah Anda ketahui">
+<!ENTITY torPreferences.bridgeAddManually "Tambahkan bridge secara manual...">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Advanced ">
+<!ENTITY torPreferences.advancedDescription "Konfigurasi bagaimana Tor Browser terhubung ke internet">
+<!ENTITY torPreferences.advancedButton "Pengaturan...">
+<!ENTITY torPreferences.viewTorLogs "Tampilkan log Tor">
+<!ENTITY torPreferences.viewLogs "Lihat Catatan....">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Hapus semua bridge?">
+<!ENTITY torPreferences.removeBridgesWarning "Aksi ini tidak dapat dibatalkan.">
+<!ENTITY torPreferences.cancel "Cancel">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Pindai kode QR">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Bridge Bawaan">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser menyertakan beberapa tipe bridge spesifik yang dikenal sebagai &quot;pluggable transports&quot;.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 adalah tipe bridge bawaan yang membuat lalu lintas Tor Anda terlihat acak. Mereka juga memiliki kemungkinan yang lebih kecil untuk diblokir dibandingkan dengan pendahulunya, bridge obfs3.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake adalah bridge bawaan yang mengalahkan sensor dengan merouting koneksi Anda melalui proxy Snowflake, yang dijalankan oleh sukarelawan.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure adalah bridge bawaan yang membuat Anda terlihat sedang menggunakan sebuah situs web Microsoft alih-alih menggunakan Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Minta Jembatan">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Menghubungi BridgeDB. Mohon tunggu.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Selesaikan CAPTCHA untuk meminta sebuah bridge.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Solusinya tidak tepat. Silakan coba lagi.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Sediakan Bridge">
+<!ENTITY torPreferences.provideBridgeHeader "Masukkan informasi bridge dari sumber yang terpercaya">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Pengaturan Koneksi">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Konfigurasi bagaimana Tor Browser tersambung ke Internet">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Nilai yang dipisahkan koma">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Catatan Tor">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Tidak terhubung">
+<!ENTITY torConnect.connectingConcise "Menyambung…">
+<!ENTITY torConnect.tryingAgain "Mencoba lagi...">
+<!ENTITY torConnect.noInternet "Tor Browser tidak dapat menjangkau Internet">
+<!ENTITY torConnect.noInternetDescription "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser tidak dapat menyambung ke Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "Konfigurasi koneksi Anda"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Jika Tor diblokir di lokasi Anda, mencoba bridge mungkin membantu. Pembantu koneksi bisa memilih satu untuk Anda menggunakan lokasi Anda, atau Anda bisa #1 secara manual sebagai gantinya."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Mencoba sebuah bridge...">
+<!ENTITY torConnect.tryingBridgeAgain "Mencoba sekali lagi...">
+<!ENTITY torConnect.errorLocation "Tor Browser tidak dapat menemukan Anda">
+<!ENTITY torConnect.errorLocationDescription "Tor Browser perlu mengetahui lokasi Anda untuk memilih bridge yang benar untuk Anda. Jika Anda tidak ingin membagi lokasi Anda, #1 secara manual sebagai gantinya"> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Apakah pengaturan lokasi ini benar?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser tetap tidak dapat terhubung dengan Tor. Pastikan pengaturan lokasi Anda  sudah benar dan coba kembali, atau #1 sebagai gantinya."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser still cannot connect">
+<!ENTITY torConnect.finalErrorDescription "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.">
+<!ENTITY torConnect.breadcrumbAssist "Pembantu Koneksi">
+<!ENTITY torConnect.breadcrumbLocation "Pengaturan lokasi">
+<!ENTITY torConnect.breadcrumbTryBridge "Mencoba sebuah bridge">
+<!ENTITY torConnect.automatic "Otomatis">
+<!ENTITY torConnect.selectCountryRegion "Pilih Negara atau Wilayah">
+<!ENTITY torConnect.frequentLocations "Lokasi yang sering terpilih">
+<!ENTITY torConnect.otherLocations "Lokasi lainnya">
+<!ENTITY torConnect.restartTorBrowser "Memulai ulang Tor Browser">
+<!ENTITY torConnect.configureConnection "Konfigurasi Koneksi...">
+<!ENTITY torConnect.viewLog "Tampilkan log...">
+<!ENTITY torConnect.tryAgain "Coba Lagi">
+<!ENTITY torConnect.offline "Internet tidak dapat dijangkau">
+<!ENTITY torConnect.connectMessage "Perubahan pada Pengaturan Tor tidak akan berlaku sampai Anda terhubung">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser telah gagal membuat  koneksi ke Jaringan Tor">
+<!ENTITY torConnect.yourLocation "Lokasi Anda">
+<!ENTITY torConnect.tryBridge "Coba Sebuah Bridge">
+<!ENTITY torConnect.autoBootstrappingFailed "Konfigurasi otomatis gagal">
+<!ENTITY torConnect.autoBootstrappingFailed "Konfigurasi otomatis gagal">
+<!ENTITY torConnect.cannotDetermineCountry "Tidak dapat menentukan negara pengguna">
+<!ENTITY torConnect.noSettingsForCountry "Tidak ada pengaturan yang tersedia untuk lokasi Anda">

@@ -1,0 +1,179 @@
+<!ENTITY torsettings.dialog.title "Tor мрежни поставки">
+<!ENTITY torsettings.wizard.title.default "Поврзи се на Tor">
+<!ENTITY torsettings.wizard.title.configure "Tor мрежни поставки">
+<!ENTITY torsettings.wizard.title.connecting "Воспоставување на врска">
+
+<!-- For locale picker: -->
+<!ENTITY torlauncher.localePicker.title "Tor Browser јазик">
+<!ENTITY torlauncher.localePicker.prompt "Одберете јазик.">
+
+<!-- For "first run" wizard: -->
+
+<!ENTITY torSettings.connectPrompt "Кликнете на &quot;Поврзи&quot; да се поврзете на Tor.">
+<!ENTITY torSettings.configurePrompt "Кликнете на &quot;Конфигурирај&quot; за да ги конфигурирате мрежните поставки ако сте во земја која го цензурира Tor (како Египет, Кина, Турција) или ако се поврзувате од приватна мрежа која бара прокси.">
+<!ENTITY torSettings.configure "Конфигурирај">
+<!ENTITY torSettings.connect "Поврзи">
+
+<!-- Other: -->
+
+<!ENTITY torsettings.startingTor "Почекај за стартување на Tor...">
+<!ENTITY torsettings.restartTor "Рестартирај го Tor">
+<!ENTITY torsettings.reconfigTor "Пре-конфигурирај">
+
+<!ENTITY torsettings.discardSettings.prompt "Имате конфигурирано Tor мостови или имате внесено локални прокси поставки.&#160; За директно да се поврзете на Tor мрежата, овие поставки мораат да бидат избришани.">
+<!ENTITY torsettings.discardSettings.proceed "Избриши ги поставките и поврзи се">
+
+<!ENTITY torsettings.optional "Опционално">
+
+<!ENTITY torsettings.useProxy.checkbox "Користам прокси за поврзување на Интернет">
+<!ENTITY torsettings.useProxy.type "Тип на Прокси">
+<!ENTITY torsettings.useProxy.type.placeholder "одбери тип на прокси">
+<!ENTITY torsettings.useProxy.address "Адреса">
+<!ENTITY torsettings.useProxy.address.placeholder "IP адреси или име на хост">
+<!ENTITY torsettings.useProxy.port "Порта">
+<!ENTITY torsettings.useProxy.username "Корисничко име">
+<!ENTITY torsettings.useProxy.password "Лозинка">
+<!ENTITY torsettings.useProxy.type.socks4 "SOCKS 4">
+<!ENTITY torsettings.useProxy.type.socks5 "SOCKS 5">
+<!ENTITY torsettings.useProxy.type.http "HTTP / HTTPS">
+<!ENTITY torsettings.firewall.checkbox "Овој компјутер оди преку заштитен ѕид кој дозволува поврзувања до одредени порти">
+<!ENTITY torsettings.firewall.allowedPorts "Дозволени порти">
+<!ENTITY torsettings.useBridges.checkbox "Tor е цензуриран во мојата држава">
+<!ENTITY torsettings.useBridges.default "Селектирајте вграден Мост">
+<!ENTITY torsettings.useBridges.default.placeholder "одбери мост">
+<!ENTITY torsettings.useBridges.bridgeDB "Барање за мост од torproject.org">
+<!ENTITY torsettings.useBridges.captchaSolution.placeholder "Внесете ги карактерите од сликата">
+<!ENTITY torsettings.useBridges.reloadCaptcha.tooltip "Пробајте нов предизвик">
+<!ENTITY torsettings.useBridges.captchaSubmit "Испрати">
+<!ENTITY torsettings.useBridges.custom "Обезбеди мост кој го знам">
+<!ENTITY torsettings.useBridges.label "Внесете информации за мост од доверлив извор.">
+<!ENTITY torsettings.useBridges.placeholder "внеси адреса:порта (по една во секој ред)">
+
+<!ENTITY torsettings.copyLog "Копирај го Tor логот за залепување">
+
+<!ENTITY torsettings.proxyHelpTitle "Прокси помош">
+<!ENTITY torsettings.proxyHelp1 "Може да ви биде потребно локално прокси кога се поврзувате преку мрежа на компанија, училиште, или универзитет.&#160;Ако не сте сигурни дали е потребно прокси, погледнете во Интернет поставки во друг прелистувач или проверете ги мрежните поставки на системот.">
+
+<!ENTITY torsettings.bridgeHelpTitle "Помош за мост реле">
+<!ENTITY torsettings.bridgeHelp1 "Мостовите се неизлистани релеа кои го прават потешко блокирањето на поврзувањата кон Tor мрежата.&#160; Секој тип на мост користи различен метод за избегнување на цензурирањето.&#160; obfs мостот го прави протокот на информации да изгледа нормален, а meek прави како да е од некој стандарден прелистувач наместо од Tor.">
+<!ENTITY torsettings.bridgeHelp2 "Поради тоа колку конкретно државите се обидуваат да го блокираат Tor, конкретни мостови работат во едни конкретни држави но не и во други.&#160; Ако не сте сигурни кои мостови работат во вашата држава, посетете ја torproject.org/about/contact.html#support">
+
+<!-- Progress -->
+<!ENTITY torprogress.pleaseWait "Ве молиме почекајте додека се воспостави поврзувањето со Тор мрежата.&#160; Ова може да потрае неколку минути.">
+
+<!-- #31286 about:preferences strings -->
+<!ENTITY torPreferences.categoryTitle "Поврзување">
+<!ENTITY torPreferences.torSettings "Tor Поставки">
+<!ENTITY torPreferences.torSettingsDescription "Tor Browser го рутира вашиот сообраќај преку Tor мрежата, водена од илјадници волонтери ширум светот." >
+<!ENTITY torPreferences.learnMore "Научете повеќе">
+<!-- Status -->
+<!ENTITY torPreferences.statusInternetLabel "Интернет:">
+<!ENTITY torPreferences.statusInternetTest "Тест">
+<!ENTITY torPreferences.statusInternetOnline "Вклучен">
+<!ENTITY torPreferences.statusInternetOffline "Исклучен">
+<!ENTITY torPreferences.statusTorLabel "Tor Мрежа:">
+<!ENTITY torPreferences.statusTorConnected "Поврзано">
+<!ENTITY torPreferences.statusTorNotConnected "Неповрзано">
+<!ENTITY torPreferences.statusTorBlocked "Потенцијално блокирано">
+<!ENTITY torPreferences.learnMore "Научете повеќе">
+<!-- Quickstart -->
+<!ENTITY torPreferences.quickstart "Брз почеток">
+<!ENTITY torPreferences.quickstartDescriptionLong "Брз почеток го поврзува Tor Browser на Tor Мрежата автоматски при стартување, врз основа на вашите последни користени мрежни поставки.">
+<!ENTITY torPreferences.quickstartCheckbox "Секогаш поврзи автоматски">
+<!-- Bridge settings -->
+<!ENTITY torPreferences.bridges "Мостови">
+<!ENTITY torPreferences.bridgesDescription "Мостовите ви помагаат да пристапите на Tor мрежата на места каде Tor е блокиран. Зависно од тоа каде сте, еден мост може да работи подобро од друг.">
+<!ENTITY torPreferences.bridgeLocation "Ваша локација">
+<!ENTITY torPreferences.bridgeLocationAutomatic "Автоматски">
+<!ENTITY torPreferences.bridgeLocationFrequent "Често избрани локации">
+<!ENTITY torPreferences.bridgeLocationOther "Останати локации">
+<!ENTITY torPreferences.bridgeChooseForMe "Одбери Мост за мене...">
+<!ENTITY torPreferences.bridgeBadgeCurrent "Ваши моментални мостови">
+<!ENTITY torPreferences.bridgeBadgeCurrentDescription "Можете да зачувате еден или повеќе мостови, и Tor ќе избере кој да го користи при поврзување. Tor автоматски ќе го замени мостот со друг кога ќе биде потребно.">
+<!ENTITY torPreferences.bridgeId "#1 мост: #2"> <!-- #1 = bridge type; #2 = bridge emoji id -->
+<!ENTITY torPreferences.remove "Избриши">
+<!ENTITY torPreferences.bridgeDisableBuiltIn "Оневозможи вградени мостови">
+<!ENTITY torPreferences.bridgeShare "Споделете го овој мост користејќи го QR кодот или со копирање на оваа адреса:">
+<!ENTITY torPreferences.bridgeCopy "Копирај ја Мост адресата">
+<!ENTITY torPreferences.copied "Копирано!">
+<!ENTITY torPreferences.bridgeShowAll "Покажи ги сите мостови">
+<!ENTITY torPreferences.bridgeRemoveAll "Избриши ги сите мостови">
+<!ENTITY torPreferences.bridgeAdd "Додади нов Мост">
+<!ENTITY torPreferences.bridgeSelectBrowserBuiltin "Одберете еден од вградените мостови во Tor Browser">
+<!ENTITY torPreferences.bridgeSelectBuiltin "Селектирајте вграден Мост...">
+<!ENTITY torPreferences.bridgeRequest "Барање за мост...">
+<!ENTITY torPreferences.bridgeEnterKnown "Внесете адреса на мост која веќе ја знаете">
+<!ENTITY torPreferences.bridgeAddManually "Додадете Мост рачно...">
+<!-- Advanced settings -->
+<!ENTITY torPreferences.advanced "Напредно">
+<!ENTITY torPreferences.advancedDescription "Конфигурирајте како Tor Browser да се поврзува на Интернет">
+<!ENTITY torPreferences.advancedButton "Поставки...">
+<!ENTITY torPreferences.viewTorLogs "Види ги Tor логовите">
+<!ENTITY torPreferences.viewLogs "Види логови...">
+<!-- Remove all bridges dialog -->
+<!ENTITY torPreferences.removeBridgesQuestion "Избриши ги сите мостови?">
+<!ENTITY torPreferences.removeBridgesWarning "Оваа акција е неповратна.">
+<!ENTITY torPreferences.cancel "Откажи">
+<!-- Scan bridge QR dialog -->
+<!ENTITY torPreferences.scanQrTitle "Скенирајте го QR кодот">
+<!-- Builtin bridges dialog -->
+<!ENTITY torPreferences.builtinBridgeTitle "Вградени Мостови">
+<!ENTITY torPreferences.builtinBridgeDescription "Tor Browser вклучува некои специфични типови на мостови познати како “pluggable transports”.">
+<!ENTITY torPreferences.builtinBridgeObfs4 "obfs4">
+<!ENTITY torPreferences.builtinBridgeObfs4Description "obfs4 е тип на вграден мост кој прави вашиот Tor сообраќај да изгледа случајно. Исто така тие се помалку веројатни да бидат блокирани отколку нивните претходници, obfs3 мостовите.">
+<!ENTITY torPreferences.builtinBridgeSnowflake "Snowflake">
+<!ENTITY torPreferences.builtinBridgeSnowflakeDescription "Snowflake е вграден мост кој ја победува цензурата преку рутирање на вашето поврзување преку Snowflake проксија, управувани од волонтери.">
+<!ENTITY torPreferences.builtinBridgeMeekAzure "meek-azure">
+<!ENTITY torPreferences.builtinBridgeMeekAzureDescription "meek-azure е вграден мост кој прави да изгледа дека користите веб страна на Microsoft наместо дека го користите Tor.">
+<!-- Request bridges dialog -->
+<!ENTITY torPreferences.requestBridgeDialogTitle "Побарај Мост">
+<!ENTITY torPreferences.requestBridgeDialogWaitPrompt "Контактирај BridgeDB. Ве молиме почекајте.">
+<!ENTITY torPreferences.requestBridgeDialogSolvePrompt "Решете ја ЗАДАЧАТА за да побарате мост.">
+<!ENTITY torPreferences.requestBridgeErrorBadSolution "Решението е погрешно. Ве молиме обидете се повторно.">
+<!-- Provide bridge dialog -->
+<!ENTITY torPreferences.provideBridgeTitle "Обезбеди Мост">
+<!ENTITY torPreferences.provideBridgeHeader "Внесете информации за мост од доверлив извор">
+<!-- Connection settings dialog -->
+<!ENTITY torPreferences.connectionSettingsDialogTitle "Поставки на поврзување">
+<!ENTITY torPreferences.connectionSettingsDialogHeader "Конфигурирајте како Tor Browser да се поврзува на Интернет">
+<!ENTITY torPreferences.firewallPortsPlaceholder "Разделени-со-запирка вредности">
+<!-- Log dialog -->
+<!ENTITY torPreferences.torLogsDialogTitle "Tor Логови">
+
+<!-- #24746 about:torconnect strings -->
+<!ENTITY torConnect.notConnectedConcise "Неповрзано">
+<!ENTITY torConnect.connectingConcise "Се поврзува...">
+<!ENTITY torConnect.tryingAgain "Обидете се повторно...">
+<!ENTITY torConnect.noInternet "Tor Browser не може да се поврзе на Интернет">
+<!ENTITY torConnect.noInternetDescription "Ова може да биде за време грешка при поврзување повеќе отколку кога Tor е блокиран. Проверете го вашето Интернет поврзување, прокси и поставките на заштитниот ѕид пред да се обидете повторно.">
+<!ENTITY torConnect.couldNotConnect "Tor Browser не може да се поврзе на Tor">
+<!ENTITY torConnect.assistDescriptionConfigure "Прилагодете го вашето поврзување"> <!-- used as a text to insert as a link on several strings (#1) -->
+<!ENTITY torConnect.assistDescription "Ако Tor е блокиран на вашата локација, пробувањето мост може да помогне. Поврзувањето може да ви помогне да одберете еден мост за користење на вашата локација, или наместо тоа можете #1 рачно."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.tryingBridge "Пробај мост...">
+<!ENTITY torConnect.tryingBridgeAgain "Обидетете се уште еднаш...">
+<!ENTITY torConnect.errorLocation "Tor Browser не може да ве лоцира">
+<!ENTITY torConnect.errorLocationDescription "На Tor Browser му треба да ја знае вашата локација за да може да одбере правилен мост за вас. Доколку преферирате да не ја споделите вашата локација, наместо тоа можете рачно #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.isLocationCorrect "Дали овие поставки за локација се точни?">
+<!ENTITY torConnect.isLocationCorrectDescription "Tor Browser сеуште не може да се поврзе на Tor. Ве молиме проверете дали вашите поставки на локација се точни и обидете се повторно, или #1."> <!-- #1 = "configure your connection" link -->
+<!ENTITY torConnect.finalError "Tor Browser сеуште не може да се поврзе">
+<!ENTITY torConnect.finalErrorDescription "И покрај најголемите напори, Помошта при Поврзување не беше во можност да се поврзе на Tor. Обидетете да се справите со проблемот при поврзувањето со помош на рачно додавање на мост.">
+<!ENTITY torConnect.breadcrumbAssist "Помош за поврзување">
+<!ENTITY torConnect.breadcrumbLocation "Поставки за локација">
+<!ENTITY torConnect.breadcrumbTryBridge "Пробај мост">
+<!ENTITY torConnect.automatic "Автоматски">
+<!ENTITY torConnect.selectCountryRegion "Одберете Држава или Регион">
+<!ENTITY torConnect.frequentLocations "Често избрани локации">
+<!ENTITY torConnect.otherLocations "Останати локации">
+<!ENTITY torConnect.restartTorBrowser "Рестартирај го Tor Browser">
+<!ENTITY torConnect.configureConnection "Прилагодување на Поврзувањето...">
+<!ENTITY torConnect.viewLog "Види логови...">
+<!ENTITY torConnect.tryAgain "Обиди се повторно">
+<!ENTITY torConnect.offline "Интернетот не е достапен.">
+<!ENTITY torConnect.connectMessage "Промените во Tor Поставки нема да имаат ефект се додека не се поврзете">
+<!ENTITY torConnect.tryAgainMessage "Tor Browser не успеа да воспостави поврзување со Tor мрежата.">
+<!ENTITY torConnect.yourLocation "Ваша локација">
+<!ENTITY torConnect.tryBridge "Пробај мост">
+<!ENTITY torConnect.autoBootstrappingFailed "Автоматското прилагодување не успеа">
+<!ENTITY torConnect.autoBootstrappingFailed "Автоматското прилагодување не успеа">
+<!ENTITY torConnect.cannotDetermineCountry "Не беше возможно утврдување на државата на корисникот">
+<!ENTITY torConnect.noSettingsForCountry "Нема достапни поставки за вашата локација">
