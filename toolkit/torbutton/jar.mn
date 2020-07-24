@@ -17,6 +17,17 @@ torbutton.jar:
 % resource torbutton-abouttor resource://torbutton/content/aboutTor/resources/ contentaccessible=yes
 % resource torbutton-assets resource://torbutton/skin/ contentaccessible=yes
 
+# browser branding
+% override chrome://branding/locale/brand.dtd chrome://torbutton/locale/brand.dtd
+% override chrome://branding/locale/brand.properties chrome://torbutton/locale/brand.properties
+% category l10n-registry torbutton resource://torbutton/locale/{locale}/
+
+# Strings for the about:tbupdate page
+% override chrome://browser/locale/aboutTBUpdate.dtd chrome://torbutton/locale/aboutTBUpdate.dtd
+
+% locale torbutton en-US %locale/en-US/
+  locale/en-US/ (chrome/locale/en-US/*)
+
 % skin torbutton classic/1.0 %skin/
 
 # Firefox 4-style component registration
