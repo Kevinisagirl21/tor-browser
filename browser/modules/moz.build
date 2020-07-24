@@ -145,6 +145,7 @@ EXTRA_JS_MODULES += [
     "SitePermissions.jsm",
     "TabsList.jsm",
     "TabUnloader.jsm",
+    "TorStrings.jsm",
     "TransientPrefs.jsm",
     "webrtcUI.jsm",
     "ZoomUI.jsm",
