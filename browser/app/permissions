@@ -12,11 +12,6 @@
 origin	uitour	1	https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/
 origin	uitour	1	about:tor
 
-# XPInstall
-origin	install	1	https://addons.mozilla.org
-
 # Remote troubleshooting
 origin	remote-troubleshooting	1	https://support.mozilla.org
 
-# addon install
-origin	install	1	https://fpn.firefox.com
