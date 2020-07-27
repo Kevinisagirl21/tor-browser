@@ -17,11 +17,6 @@ origin	uitour	1	https://truecolors.firefox.com
 origin	uitour	1	about:home
 origin	uitour	1	about:newtab
 
-# XPInstall
-origin	install	1	https://addons.mozilla.org
-
 # Remote troubleshooting
 origin	remote-troubleshooting	1	https://support.mozilla.org
 
-# addon install
-origin	install	1	https://fpn.firefox.com
