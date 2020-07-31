@@ -63,6 +63,8 @@ pref("browser.sessionstore.privacy_level", 2);
 // Use the in-memory media cache and increase its maximum size (#29120)
 pref("browser.privatebrowsing.forceMediaMemoryCache", true);
 pref("media.memory_cache_max_size", 16384);
+// Disable site-specific browsing to avoid sharing site icons with the OS.
+pref("browser.ssb.enabled", false);
 
 // Misc privacy: Remote
 pref("browser.send_pings", false);
