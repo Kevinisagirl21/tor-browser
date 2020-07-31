@@ -130,6 +130,8 @@ pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
 // Disable randomised Firefox HTTP cache decay user test groups (Bug: 13575)
 pref("security.webauth.webauthn", false); // Bug 26614: Disable Web Authentication API for now
 pref("browser.cache.frecency_experiment", -1);
+// Disable intermediate preloading (Bug 30682)
+pref("security.remote_settings.intermediates.enabled", false);
 // Bug 2874: Block Components.interfaces from content
 pref("dom.use_components_shim", false);
 // Enable letterboxing
