@@ -413,6 +413,12 @@
         <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
     </style>
 
+    <style name="Header24TextStyle" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">?textPrimary</item>
+        <item name="android:textSize">24sp</item>
+        <item name="fontFamily">@font/metropolis_semibold</item>
+    </style>
+
     <style name="Header20TextStyle" parent="TextAppearance.MaterialComponents.Body1" tools:ignore="UnusedResources">
         <item name="android:textColor">?attr/textPrimary</item>
         <item name="android:textSize">20sp</item>
