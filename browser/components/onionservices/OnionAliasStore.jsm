@@ -65,6 +65,7 @@ class _OnionAliasStore {
     this._removeObserver = () => {};
     this._canLoadRules = false;
     this._rulesetTimestamp = null;
+    this._updateChannelInstalled = false;
   }
 
   async _periodicRulesetCheck() {
@@ -99,24 +100,25 @@ class _OnionAliasStore {
   async init() {
     this.httpsEverywhereControl = new HttpsEverywhereControl();
 
-    // Install update channel
-    await this.httpsEverywhereControl.installTorOnionUpdateChannel();
-
     // Setup .tor.onion rule loading.
     // The http observer is a fallback, and is removed in _loadRules() as soon as we are able
     // to load some rules from HTTPS Everywhere.
     this._loadHttpObserver();
     try {
+      await this.httpsEverywhereControl.installTorOnionUpdateChannel();
+      this._updateChannelInstalled = true;
       await this.httpsEverywhereControl.getTorOnionRules();
       this._canLoadRules = true;
     } catch (e) {
       // Loading rules did not work, probably because "get_simple_rules_ending_with" is not yet
       // working in https-everywhere. Use an http observer as a fallback for learning the rules.
-      log.debug("Could not load rules, using http observer as fallback");
+      log.debug(`Could not load rules: ${e.message}`);
     }
 
     // Setup checker for https-everywhere ruleset updates
-    this._periodicRulesetCheck();
+    if (this._updateChannelInstalled) {
+      this._periodicRulesetCheck();
+    }
   }
 
   /**

@@ -2248,6 +2248,7 @@ var gBrowserInit = {
         //                 [9]: allowInheritPrincipal (bool)
         //                 [10]: csp (nsIContentSecurityPolicy)
         //                 [11]: nsOpenWindowInfo
+        //                 [12]: onionUrlbarRewritesAllowed (bool)
         let userContextId =
           window.arguments[5] != undefined
             ? window.arguments[5]
@@ -2267,7 +2268,8 @@ var gBrowserInit = {
           // TODO fix allowInheritPrincipal to default to false.
           // Default to true unless explicitly set to false because of bug 1475201.
           window.arguments[9] !== false,
-          window.arguments[10]
+          window.arguments[10],
+          window.arguments[12]
         );
         window.focus();
       } else {
@@ -3153,7 +3155,8 @@ function loadURI(
   forceAboutBlankViewerInCurrent,
   triggeringPrincipal,
   allowInheritPrincipal = false,
-  csp = null
+  csp = null,
+  onionUrlbarRewritesAllowed = false
 ) {
   if (!triggeringPrincipal) {
     throw new Error("Must load with a triggering Principal");
@@ -3171,6 +3174,7 @@ function loadURI(
       csp,
       forceAboutBlankViewerInCurrent,
       allowInheritPrincipal,
+      onionUrlbarRewritesAllowed,
     });
   } catch (e) {
     Cu.reportError(e);
@@ -5282,16 +5286,14 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
-      // The onion memorable alias needs to be used in URLBarSetURI, but also in
+      // The onion memorable alias needs to be used in gURLBar.setURI, but also in
       // other parts of the code (like the bookmarks UI), so we save it.
-      const onionRewritesDisabled = Services.prefs.getBoolPref(
-        "browser.urlbar.onionRewrites.disabled",
-        false
-      );
-      if (!onionRewritesDisabled) {
+      if (gBrowser.selectedBrowser.onionUrlbarRewritesAllowed) {
         gBrowser.selectedBrowser.currentOnionAliasURI = OnionAliasStore.getShortURI(
           aLocationURI
         );
+      } else {
+        gBrowser.selectedBrowser.currentOnionAliasURI = null;
       }
 
       // We want to update the popup visibility if we received this notification
@@ -6961,6 +6963,21 @@ function handleLinkClick(event, href, linkNode) {
     } catch (e) {}
   }
 
+  // Check if the link needs to be opened with .tor.onion urlbar rewrites
+  // allowed. Only when the owner doc has onionUrlbarRewritesAllowed = true
+  // and the same origin we should allow this.
+  let persistOnionUrlbarRewritesAllowedInChildTab = false;
+  if (where == "tab" && gBrowser.docShell.onionUrlbarRewritesAllowed) {
+    const sm = Services.scriptSecurityManager;
+    try {
+      let tURI = makeURI(href);
+      let isPrivateWin =
+        doc.nodePrincipal.originAttributes.privateBrowsingId > 0;
+      sm.checkSameOriginURI(doc.documentURIObject, tURI, false, isPrivateWin);
+      persistOnionUrlbarRewritesAllowedInChildTab = true;
+    } catch (e) {}
+  }
+
   let frameOuterWindowID = WebNavigationFrames.getFrameId(doc.defaultView);
 
   urlSecurityCheck(href, doc.nodePrincipal);
@@ -6973,6 +6990,7 @@ function handleLinkClick(event, href, linkNode) {
     triggeringPrincipal: doc.nodePrincipal,
     csp: doc.csp,
     frameOuterWindowID,
+    onionUrlbarRewritesAllowed: persistOnionUrlbarRewritesAllowedInChildTab,
   };
 
   // The new tab/window must use the same userContextId
