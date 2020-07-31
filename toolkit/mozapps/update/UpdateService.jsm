@@ -4396,13 +4396,11 @@ Downloader.prototype = {
         // retrying after a failed cancel is not an error, so we will set the
         // cancel promise to null in the failure case.
         this._cancelPromise = null;
-        this._notifyDownloadStatusObservers();
         throw e;
       }
     } else if (this._request && this._request instanceof Ci.nsIRequest) {
       this._request.cancel(cancelError);
     }
-    this._notifyDownloadStatusObservers();
   },
 
   /**
@@ -4617,8 +4615,19 @@ Downloader.prototype = {
     return selectedPatch;
   },
 
+  /**
+   * Whether or not the user wants to be notified that an update is being
+   * downloaded.
+   */
+  get _notifyDuringDownload() {
+    return Services.prefs.getBoolPref(
+      PREF_APP_UPDATE_NOTIFYDURINGDOWNLOAD,
+      false
+    );
+  },
+
   _notifyDownloadStatusObservers: function Downloader_notifyDownloadStatusObservers() {
-    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_NOTIFYDURINGDOWNLOAD, false)) {
+    if (this._notifyDuringDownload) {
       let status = this.updateService.isDownloading ? "downloading" : "idle";
       Services.obs.notifyObservers(this._update, "update-downloading", status);
     }
@@ -5167,8 +5176,6 @@ Downloader.prototype = {
       }
     }
 
-    // XXX ehsan shouldShowPrompt should always be false here.
-    // But what happens when there is already a UI showing?
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
@@ -5209,16 +5216,7 @@ Downloader.prototype = {
         } else {
           state = STATE_PENDING;
         }
-#if defined(TOR_BROWSER_UPDATE)
-        // In Tor Browser, show update-related messages in the hamburger menu
-        // even if the update was started in the foreground, e.g., from the
-        // about box.
         shouldShowPrompt = !getCanStageUpdates();
-#else
-        if (this.background) {
-          shouldShowPrompt = !getCanStageUpdates();
-        }
-#endif
         AUSTLMY.pingDownloadCode(this.isCompleteUpdate, AUSTLMY.DWNLD_SUCCESS);
 
         // Tell the updater.exe we're ready to apply.
@@ -5386,6 +5384,10 @@ Downloader.prototype = {
     }
 
     this._request = null;
+
+    // This notification must happen after _request is set to null so that
+    // the correct this.updateService.isDownloading value is available in
+    // _notifyDownloadStatusObservers().
     this._notifyDownloadStatusObservers();
 
     if (state == STATE_DOWNLOAD_FAILED) {
@@ -5497,16 +5499,7 @@ Downloader.prototype = {
           LOG(
             "Downloader:onStopRequest - failed to stage update. Exception: " + e
           );
-#if defined(TOR_BROWSER_UPDATE)
-          // In Tor Browser, show update-related messages in the hamburger menu
-          // even if the update was started in the foreground, e.g., from the
-          // about box.
           shouldShowPrompt = true;
-#else
-          if (this.background) {
-            shouldShowPrompt = true;
-          }
-#endif
         }
       }
     }
