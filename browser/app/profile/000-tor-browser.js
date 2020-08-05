@@ -33,10 +33,6 @@ pref("app.releaseNotesURL", "about:blank");
 pref("app.update.staging.enabled", false);
 #endif
 
-// No need to contact the Kinto-based blocklist system in addition to the old
-// one which is still used, see bug 22071.
-pref("services.blocklist.update_enabled", false);
-
 // Disable "Slow startup" warnings and associated disk history
 // (bug #13346)
 pref("browser.slowStartup.notificationDisabled", true);
@@ -73,7 +69,7 @@ pref("browser.ssb.enabled", false);
 // Misc privacy: Remote
 pref("browser.send_pings", false);
 pref("geo.enabled", false);
-pref("geo.wifi.uri", "");
+pref("geo.provider.network.url", "");
 pref("browser.search.suggest.enabled", false);
 pref("browser.safebrowsing.malware.enabled", false);
 pref("browser.safebrowsing.phishing.enabled", false);
@@ -94,9 +90,6 @@ pref("datareporting.policy.dataSubmissionEnabled", false);
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
 pref("toolkit.telemetry.updatePing.enabled", false); // Make sure updater telemetry is disabled; see #25909.
-// No experiments, use Tor Browser. See 21797.
-pref("experiments.enabled", false);
-pref("browser.syncPromoViewsLeftMap", "{\"addons\":0, \"passwords\":0, \"bookmarks\":0}"); // Don't promote sync
 pref("identity.fxaccounts.enabled", false); // Disable sync by default
 pref("services.sync.engine.prefs", false); // Never sync prefs, addons, or tabs with other browsers
 pref("services.sync.engine.addons", false);
@@ -133,7 +126,6 @@ pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
 // Disable randomised Firefox HTTP cache decay user test groups (Bug: 13575)
 pref("security.webauth.webauthn", false); // Bug 26614: Disable Web Authentication API for now
-pref("browser.cache.frecency_experiment", -1);
 // Disable intermediate preloading (Bug 30682)
 pref("security.remote_settings.intermediates.enabled", false);
 // Bug 2874: Block Components.interfaces from content

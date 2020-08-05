@@ -24,18 +24,8 @@ pref("privacy.clearOnShutdown.passwords",true);
 pref("privacy.clearOnShutdown.sessions",true);
 pref("privacy.clearOnShutdown.siteSettings",true);
 
-// Disable Control media casting & mirroring features
-pref("browser.casting.enabled", false);
-
 // controls if we want camera support
-pref("device.camera.enabled", false);
 pref("media.realtime_decoder.enabled", false);
-
-// Do not fetch updated per-site user-agent strings from Mozilla
-// See ua-update.json.in for the packaged UA override list
-// See https://bugzilla.mozilla.org/show_bug.cgi?id=897221
-pref("general.useragent.updates.enabled", false);
-pref("general.useragent.updates.url", "");
 
 // Enable touch events on Android (highlighting text, etc)
 pref("dom.w3c_touch_events.enabled", 2);
