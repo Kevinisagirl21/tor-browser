@@ -90,6 +90,11 @@ pref("datareporting.policy.dataSubmissionEnabled", false);
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
 pref("toolkit.telemetry.updatePing.enabled", false); // Make sure updater telemetry is disabled; see #25909.
+#ifdef XP_WIN
+// Defense-in-depth: ensure that the Windows default browser agent will
+// not ping Mozilla if it is somehow present (we omit it at build time).
+pref("default-browser-agent.enabled", false);
+#endif
 pref("identity.fxaccounts.enabled", false); // Disable sync by default
 pref("services.sync.engine.prefs", false); // Never sync prefs, addons, or tabs with other browsers
 pref("services.sync.engine.addons", false);
