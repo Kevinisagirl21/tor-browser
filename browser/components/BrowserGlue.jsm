@@ -812,7 +812,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
-  PublicSuffixList: "resource://gre/modules/netwerk-dns/PublicSuffixList.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   RemoteSecuritySettings:
     "resource://gre/modules/psm/RemoteSecuritySettings.jsm",
@@ -2738,10 +2737,6 @@ BrowserGlue.prototype = {
       () => {
         RemoteSettings.init();
         this._addBreachesSyncHandler();
-      },
-
-      () => {
-        PublicSuffixList.init();
       },
 
       () => {
