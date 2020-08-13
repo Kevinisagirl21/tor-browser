@@ -100,13 +100,50 @@ pref("browser.search.region", "US"); // The next two prefs disable GeoIP search 
 pref("browser.search.geoip.url", "");
 pref("browser.fixup.alternate.enabled", false); // Bug #16783: Prevent .onion fixups
 // Make sure there is no Tracking Protection active in Tor Browser, see: #17898.
+pref("privacy.trackingprotection.enabled", false);
 pref("privacy.trackingprotection.pbmode.enabled", false);
+pref("privacy.trackingprotection.annotate_channels", false);
+pref("privacy.trackingprotection.cryptomining.enabled", false);
+pref("privacy.trackingprotection.fingerprinting.enabled", false);
+pref("privacy.trackingprotection.socialtracking.enabled", false);
+pref("privacy.socialtracking.block_cookies.enabled", false);
+pref("privacy.annotate_channels.strict_list.enabled", false);
+
 // Disable the Pocket extension (Bug #18886 and #31602)
 pref("extensions.pocket.enabled", false);
 pref("network.http.referer.hideOnionSource", true);
 
-// Disable ServiceWorkers by default
+// Disable use of WiFi location information
+pref("browser.region.network.scan", false);
+pref("browser.region.network.url", "");
+
+// Don't load Mozilla domains in a separate tab process
+pref("browser.tabs.remote.separatedMozillaDomains", "");
+
+// Avoid DNS lookups on search terms
+pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 0);
+
+// Disable about:newtab and "first run" experiments
+pref("messaging-system.rsexperimentloader.enabled", false);
+pref("trailhead.firstrun.branches", "");
+
+// Clear the list of trusted recursive resolver services
+pref("network.trr.resolvers", "");
+
+// Disable crlite
+pref("security.pki.crlite_mode", 0);
+
+// Disable website password breach alerts
+pref("signon.management.page.breach-alerts.enabled", false);
+pref("extensions.fxmonitor.enabled", false);
+
+// Remove mobile app tracking URLs
+pref("signon.management.page.mobileAndroidURL", "");
+pref("signon.management.page.mobileAppleURL", "");
+
+// Disable ServiceWorkers and push notifications by default
 pref("dom.serviceWorkers.enabled", false);
+pref("dom.push.enabled", false);
 
 // Fingerprinting
 pref("webgl.disable-extensions", true);
@@ -297,6 +334,15 @@ pref("browser.download.panel.shown", true);
 
 // Treat .onions as secure
 pref("dom.securecontext.whitelist_onions", true);
+
+// Disable special URL bar behaviors
+pref("browser.urlbar.suggest.topsites", false);
+pref("browser.urlbar.update1.interventions", false);
+pref("browser.urlbar.update1.searchTips", false);
+
+// Skip checking omni.ja and other files for corruption since the result
+// is only reported via telemetry (which is disabled).
+pref("corroborator.enabled", false);
 
 // Onboarding.
 pref("browser.onboarding.tourset-version", 5);
