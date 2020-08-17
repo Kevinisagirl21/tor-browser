@@ -340,12 +340,6 @@ pref("browser.download.panel.shown", true);
 // Treat .onions as secure
 pref("dom.securecontext.whitelist_onions", true);
 
-// Onboarding.
-pref("browser.onboarding.tourset-version", 5);
-pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
-pref("browser.onboarding.updatetour", "learn-more");
-pref("browser.onboarding.skip-tour-button.hide", true);
-
 // Disable special URL bar behaviors
 pref("browser.urlbar.suggest.topsites", false);
 pref("browser.urlbar.update1.interventions", false);
@@ -354,6 +348,12 @@ pref("browser.urlbar.update1.searchTips", false);
 // Skip checking omni.ja and other files for corruption since the result
 // is only reported via telemetry (which is disabled).
 pref("corroborator.enabled", false);
+
+// Onboarding.
+pref("browser.onboarding.tourset-version", 5);
+pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
+pref("browser.onboarding.updatetour", "learn-more");
+pref("browser.onboarding.skip-tour-button.hide", true);
 
 // prefs to disable jump-list entries in the taskbar on Windows (see bug #12885)
 #ifdef XP_WIN
