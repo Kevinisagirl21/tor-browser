@@ -8,12 +8,10 @@ const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 class RequestBridgeDialog {
   constructor() {
     this._dialog = null;
-    this._submitCommand = null;
     this._submitButton = null;
     this._dialogDescription = null;
     this._captchaImage = null;
     this._captchaEntryTextbox = null;
-    this._captchaRefreshCommand = null;
     this._captchaRefreshButton = null;
     this._incorrectCaptchaHbox = null;
     this._incorrectCaptchaLabel = null;
@@ -26,12 +24,8 @@ class RequestBridgeDialog {
       submitButton:
         "accept" /* not really a selector but a key for dialog's getButton */,
       dialogDescription: "description#torPreferences-requestBridge-description",
-      submitCommand: "command#torPreferences-requestBridge-submitCommand",
       captchaImage: "image#torPreferences-requestBridge-captchaImage",
-      captchaEntryTextbox:
-        "input#torPreferences-requestBridge-captchaTextbox",
-      refreshCaptchaCommand:
-        "command#torPreferences-requestBridge-refreshCaptchaCommand",
+      captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
       refreshCaptchaButton:
         "button#torPreferences-requestBridge-refreshCaptchaButton",
       incorrectCaptchaHbox:
@@ -45,7 +39,8 @@ class RequestBridgeDialog {
     const selectors = RequestBridgeDialog.selectors;
 
     this._dialog = dialog;
-    this._dialog.setAttribute(
+    const dialogWin = dialog.parentElement;
+    dialogWin.setAttribute(
       "title",
       TorStrings.settings.requestBridgeDialogTitle
     );
@@ -61,16 +56,17 @@ class RequestBridgeDialog {
       } else if (bridges) {
         this._bridges = bridges;
         this._submitButton.disabled = false;
-        this._dialog.acceptDialog();
+        this._dialog.cancelDialog();
       }
     });
 
-    this._submitCommand = this._dialog.querySelector(selectors.submitCommand);
-
     this._submitButton = this._dialog.getButton(selectors.submitButton);
     this._submitButton.setAttribute("label", TorStrings.settings.submitCaptcha);
-    this._submitButton.setAttribute("command", this._submitCommand.id);
     this._submitButton.disabled = true;
+    this._dialog.addEventListener("dialogaccept", e => {
+      e.preventDefault();
+      this.onSubmitCaptcha();
+    });
 
     this._dialogDescription = this._dialog.querySelector(
       selectors.dialogDescription
@@ -93,29 +89,13 @@ class RequestBridgeDialog {
       TorStrings.settings.captchaTextboxPlaceholder
     );
     this._captchaEntryTextbox.disabled = true;
-    this._captchaEntryTextbox.onkeypress = evt => {
-      const ENTER_KEY = 13;
-      if (evt.keyCode == ENTER_KEY) {
-        // logically same as pressing the 'submit' button of the parent dialog
-        this.onSubmitCaptcha();
-        return false;
-      }
-      return true;
-    };
     // disable submit if entry textbox is empty
     this._captchaEntryTextbox.oninput = () => {
       this._submitButton.disabled = this._captchaEntryTextbox.value == "";
     };
 
-    this._captchaRefreshCommand = this._dialog.querySelector(
-      selectors.refreshCaptchaCommand
-    );
     this._captchaRefreshButton = this._dialog.querySelector(
       selectors.refreshCaptchaButton
-    );
-    this._captchaRefreshButton.setAttribute(
-      "command",
-      this._captchaRefreshCommand.id
     );
     this._captchaRefreshButton.disabled = true;
 
@@ -183,7 +163,9 @@ class RequestBridgeDialog {
         this._bridges = aBridges;
 
         this._submitButton.disabled = false;
-        this._dialog.acceptDialog();
+        // This was successful, but use cancelDialog() to close, since
+        // we intercept the `dialogaccept` event.
+        this._dialog.cancelDialog();
       })
       .catch(aError => {
         this._bridges = [];
