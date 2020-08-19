@@ -23,7 +23,8 @@ class TorLogDialog {
 
   _populateXUL(aDialog) {
     this._dialog = aDialog;
-    this._dialog.setAttribute("title", TorStrings.settings.torLogDialogTitle);
+    const dialogWin = this._dialog.parentElement;
+    dialogWin.setAttribute("title", TorStrings.settings.torLogDialogTitle);
 
     this._logTextarea = this._dialog.querySelector(
       TorLogDialog.selectors.logTextarea
