@@ -3,11 +3,11 @@
 <?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
 <?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
 
-<dialog id="torPreferences-torLog-dialog" type="child" class="prefwindow"
-    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-    xmlns:html="http://www.w3.org/1999/xhtml"
-    buttons="accept,extra1"
-    role="dialog">
+<window type="child"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml">
+<dialog id="torPreferences-torLog-dialog"
+    buttons="accept,extra1">
   <html:textarea
     id="torPreferences-torDialog-textarea"
     multiline="true"
@@ -20,3 +20,4 @@
     torLogDialog.init(window, dialog);
   ]]></script>
 </dialog>
+</window>
