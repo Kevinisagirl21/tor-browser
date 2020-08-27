@@ -513,7 +513,7 @@ static_assert(sizeof(nsXPTMethodInfo) == 8, "wrong size");
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
 #  define PARAM_BUFFER_COUNT 18
 #else
-// Thex max is currently updateForLocationChange in nsIBrowser.idl
+// The max is currently updateForLocationChange in nsIBrowser.idl
 #  define PARAM_BUFFER_COUNT 15
 #endif
 
