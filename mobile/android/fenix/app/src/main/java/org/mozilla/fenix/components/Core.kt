@@ -165,7 +165,6 @@ class Core(
             defaultSettings,
             geckoRuntime,
         ).also {
-            WebCompatFeature.install(it)
 
             /**
              * There are some issues around localization to be resolved, as well as questions around
@@ -173,7 +172,8 @@ class Core(
              * disabled in Fenix Release builds for now.
              * This is consistent with both Fennec and Firefox Desktop.
              */
-            if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
+            if (false && (Config.channel.isNightlyOrDebug || Config.channel.isBeta)) {
+                WebCompatFeature.install(it)
                 WebCompatReporterFeature.install(it, "fenix")
             }
         }
