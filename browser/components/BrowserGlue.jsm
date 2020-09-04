@@ -2256,11 +2256,7 @@ BrowserGlue.prototype = {
       );
       AddonManager.getAddonsByIDs(disabledAddons).then(addons => {
         for (let addon of addons) {
-          // We don't need a false notification that our extensions are
-          // disabled. Even if they lack Mozilla's blessing they are enabled
-          // nevertheless.
-          if ((addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) &&
-              (addon.id !== "https-everywhere-eff@eff.org")) {
+          if (addon.signedState <= AddonManager.SIGNEDSTATE_MISSING) {
             this._notifyUnsignedAddonsDisabled();
             break;
           }
