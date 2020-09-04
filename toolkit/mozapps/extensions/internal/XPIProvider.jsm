@@ -1500,6 +1500,19 @@ var XPIStates = {
           continue;
         }
 
+        // Uninstall HTTPS Everywhere if it is installed in the user profile.
+        if (
+          id === "https-everywhere-eff@eff.org" &&
+          loc.name === KEY_APP_PROFILE
+        ) {
+          logger.debug(
+            "Uninstalling the HTTPS Everywhere extension from user profile."
+          );
+          loc.installer.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
+
         let xpiState = loc.get(id);
         if (!xpiState) {
           // If the location is not supported for sideloading, skip new
