@@ -56,6 +56,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIPushService"
 );
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  resProto: [
+    "@mozilla.org/network/protocol;1?name=resource",
+    "nsISubstitutingProtocolHandler",
+  ],
+});
+
 const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 
 /**
@@ -675,6 +682,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource://gre/modules/ContextualIdentityService.jsm",
   Corroborate: "resource://gre/modules/Corroborate.jsm",
   Discovery: "resource:///modules/Discovery.jsm",
+  ExtensionData: "resource://gre/modules/Extension.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
   FirefoxMonitor: "resource:///modules/FirefoxMonitor.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
@@ -1329,6 +1337,35 @@ BrowserGlue.prototype = {
       "1.0",
       "resource:///modules/themes/dark/"
     );
+
+    // Install https-everywhere builtin addon if needed.
+    (async () => {
+      const HTTPS_EVERYWHERE_ID = "https-everywhere-eff@eff.org";
+      const HTTPS_EVERYWHERE_BUILTIN_URL =
+        "resource://torbutton/content/extensions/https-everywhere/";
+      // This does something similar as GeckoViewWebExtension.jsm: it tries
+      // to load the manifest to retrieve the version of the builtin and
+      // compares it to the currently installed one to see whether we need
+      // to install or not. Here we delegate that to
+      // AddonManager.maybeInstallBuiltinAddon.
+      try {
+        const resolvedURI = Services.io.newURI(
+          resProto.resolveURI(Services.io.newURI(HTTPS_EVERYWHERE_BUILTIN_URL))
+        );
+        const extensionData = new ExtensionData(resolvedURI);
+        const manifest = await extensionData.loadManifest();
+
+        await AddonManager.maybeInstallBuiltinAddon(
+          HTTPS_EVERYWHERE_ID,
+          manifest.version,
+          HTTPS_EVERYWHERE_BUILTIN_URL
+        );
+      } catch (e) {
+        const log = Log.repository.getLogger("HttpsEverywhereBuiltinLoader");
+        log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+        log.error("Could not install https-everywhere extension", e);
+      }
+    })();
 
     if (AppConstants.MOZ_NORMANDY) {
       Normandy.init();
