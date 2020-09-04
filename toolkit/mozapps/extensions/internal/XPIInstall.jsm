@@ -3834,7 +3834,6 @@ var XPIInstall = {
 
     if (
       XPIDatabase.mustSign(addon.type) &&
-      addon.id !== "https-everywhere-eff@eff.org" &&
       addon.signedState <= AddonManager.SIGNEDSTATE_MISSING
     ) {
       throw new Error(
