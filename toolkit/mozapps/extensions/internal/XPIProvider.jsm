@@ -1491,6 +1491,14 @@ var XPIStates = {
           continue;
         }
 
+        // Uninstall non-builtin https-everywhere-eff extension.
+        if (id === "https-everywhere-eff@eff.org" && !loc.isBuiltin) {
+          logger.debug("Uninstalling the HTTPS Everywhere extension.");
+          loc.installer.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
+
         let xpiState = loc.get(id);
         if (!xpiState) {
           // If the location is not supported for sideloading, skip new
