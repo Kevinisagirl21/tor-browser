@@ -212,6 +212,7 @@ const LOGGER_ID_BASE = "addons.webextension.";
 const UUID_MAP_PREF = "extensions.webextensions.uuids";
 const LEAVE_STORAGE_PREF = "extensions.webextensions.keepStorageOnUninstall";
 const LEAVE_UUID_PREF = "extensions.webextensions.keepUuidOnUninstall";
+const PERSISTENT_EXTENSIONS = new Set(["https-everywhere-eff@eff.org"]);
 
 const COMMENT_REGEXP = new RegExp(
   String.raw`
@@ -358,7 +359,8 @@ var ExtensionAddonObserver = {
       );
     }
 
-    if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)) {
+    if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false) &&
+      !PERSISTENT_EXTENSIONS.has(addon.id)) {
       // Clear browser.storage.local backends.
       AsyncShutdown.profileChangeTeardown.addBlocker(
         `Clear Extension Storage ${addon.id} (File Backend)`,
@@ -406,7 +408,8 @@ var ExtensionAddonObserver = {
 
     ExtensionPermissions.removeAll(addon.id);
 
-    if (!Services.prefs.getBoolPref(LEAVE_UUID_PREF, false)) {
+    if (!Services.prefs.getBoolPref(LEAVE_UUID_PREF, false) &&
+      !PERSISTENT_EXTENSIONS.has(addon.id)) {
       // Clear the entry in the UUID map
       UUIDMap.remove(addon.id);
     }
@@ -2584,7 +2587,8 @@ class Extension extends ExtensionData {
           );
         } else if (
           this.startupReason === "ADDON_INSTALL" &&
-          !Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)
+          !Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false) &&
+          !PERSISTENT_EXTENSIONS.has(this.id)
         ) {
           // If the extension has been just installed, set it as migrated,
           // because there will not be any data to migrate.
