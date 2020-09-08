@@ -1491,9 +1491,14 @@ var XPIStates = {
           continue;
         }
 
-        // Uninstall non-builtin https-everywhere-eff extension.
-        if (id === "https-everywhere-eff@eff.org" && !loc.isBuiltin) {
-          logger.debug("Uninstalling the HTTPS Everywhere extension.");
+        // Uninstall HTTPS Everywhere if it is installed in the user profile.
+        if (
+          id === "https-everywhere-eff@eff.org" &&
+          loc.name === KEY_APP_PROFILE
+        ) {
+          logger.debug(
+            "Uninstalling the HTTPS Everywhere extension from user profile."
+          );
           loc.installer.uninstallAddon(id);
           changed = true;
           continue;
