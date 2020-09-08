@@ -1343,9 +1343,10 @@ BrowserGlue.prototype = {
       const HTTPS_EVERYWHERE_ID = "https-everywhere-eff@eff.org";
       const HTTPS_EVERYWHERE_BUILTIN_URL =
         "resource://torbutton/content/extensions/https-everywhere/";
-      // This does something similar as GeckoViewWebExtension.jsm: it tries to load the manifest
-      // to retrieve the version of the builtin and compares it to the currently installed one to
-      // see whether we need to install or not. Here we delegate that to
+      // This does something similar as GeckoViewWebExtension.jsm: it tries
+      // to load the manifest to retrieve the version of the builtin and
+      // compares it to the currently installed one to see whether we need
+      // to install or not. Here we delegate that to
       // AddonManager.maybeInstallBuiltinAddon.
       try {
         const resolvedURI = Services.io.newURI(
