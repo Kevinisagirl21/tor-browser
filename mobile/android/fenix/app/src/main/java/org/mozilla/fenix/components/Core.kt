@@ -157,6 +157,7 @@ class Core(
             cookieBannerHandlingGlobalRules = context.settings().shouldEnableCookieBannerGlobalRules,
             cookieBannerHandlingGlobalRulesSubFrames = context.settings().shouldEnableCookieBannerGlobalRulesSubFrame,
             emailTrackerBlockingPrivateBrowsing = true,
+            spoofEnglish = context.settings().spoofEnglish,
         )
 
         GeckoEngine(
