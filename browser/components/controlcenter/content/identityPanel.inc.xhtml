@@ -62,9 +62,12 @@
 
       <!-- Circuit display section -->
       <hbox id="circuit-display-container" class="identity-popup-section">
-        <vbox id="circuit-display-content" flex="1">
-          <label id="circuit-display-headline"
-                 class="identity-popup-headline">&torbutton.circuit_display.title;</label>
+        <vbox id="circuit-display-content" flex="1" role="group"
+              aria-labelledby="circuit-display-headline">
+          <hbox id="circuit-display-header" align="center">
+            <label id="circuit-display-headline"
+                   role="heading" aria-level="2">&torbutton.circuit_display.title;</label>
+          </hbox>
           <html:ul id="circuit-display-nodes" dir="auto"/>
         </vbox>
         <vbox id="circuit-reload-content" flex="1">
