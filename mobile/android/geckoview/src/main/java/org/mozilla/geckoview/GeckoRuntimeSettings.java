@@ -458,6 +458,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().setAllowInsecureConnections(level);
             return this;
         }
+
+        /**
+         * Set security level.
+         *
+         * @param level A value determining the security level. Default is 0.
+         * @return This Builder instance.
+         */
+        public @NonNull Builder torSecurityLevel(final int level) {
+            getSettings().mTorSecurityLevel.set(level);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -510,6 +521,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "dom.security.https_only_mode", false);
     /* package */ final Pref<Boolean> mHttpsOnlyPrivateMode = new Pref<Boolean>(
         "dom.security.https_only_mode_pbm", false);
+    /* package */ final Pref<Integer> mTorSecurityLevel = new Pref<>(
+        "extensions.torbutton.security_slider", 4);
 
     /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1205,6 +1218,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             default:
                 throw new IllegalArgumentException("Invalid setting for setAllowInsecureConnections");
         }
+        return this;
+    }
+
+    /**
+     * Gets the current security level.
+     *
+     * @return current security protection level
+     */
+    public int getTorSecurityLevel() {
+        return mTorSecurityLevel.get();
+    }
+
+    /**
+     * Sets the Tor Security Level.
+     *
+     * @param level security protection level
+     * @return This GeckoRuntimeSettings instance.
+     */
+    public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
+        mTorSecurityLevel.commit(level);
         return this;
     }
 
