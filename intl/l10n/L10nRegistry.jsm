@@ -139,6 +139,12 @@ class L10nRegistryService {
   async* generateBundles(requestedLangs, resourceIds) {
     const resourceIdsDedup = Array.from(new Set(resourceIds));
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
+    // Always prioritize torbutton sources (keep in sync with generateBundlesSync)
+    const idxTB = sourcesOrder.indexOf("torbutton");
+    if (idxTB > 0) {
+      sourcesOrder.splice(idxTB, 1);
+      sourcesOrder.unshift("torbutton");
+    }
     const pseudoStrategy = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
       for await (const dataSets of generateResourceSetsForLocale(locale, sourcesOrder, resourceIdsDedup)) {
@@ -172,6 +178,12 @@ class L10nRegistryService {
   * generateBundlesSync(requestedLangs, resourceIds) {
     const resourceIdsDedup = Array.from(new Set(resourceIds));
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
+    // Always prioritize torbutton sources (keep in sync with generateBundles)
+    const idxTB = sourcesOrder.indexOf("torbutton");
+    if (idxTB > 0) {
+      sourcesOrder.splice(idxTB, 1);
+      sourcesOrder.unshift("torbutton");
+    }
     const pseudoStrategy = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
       for (const dataSets of generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIdsDedup)) {

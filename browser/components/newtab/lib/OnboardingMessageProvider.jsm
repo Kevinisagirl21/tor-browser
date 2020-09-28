@@ -19,7 +19,7 @@ const { FX_MONITOR_OAUTH_CLIENT_ID } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const L10N = new Localization([
-  "branding/tor-browser-brand.ftl",
+  "branding/brand.ftl",
   "browser/branding/brandings.ftl",
   "browser/branding/sync-brand.ftl",
   "browser/newtab/onboarding.ftl",
