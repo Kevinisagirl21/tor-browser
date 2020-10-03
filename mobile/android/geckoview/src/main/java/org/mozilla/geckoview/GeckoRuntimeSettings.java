@@ -519,7 +519,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     /* package */ final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
         "signon.autofillForms", true);
     /* package */ final Pref<Integer> mTorSecurityLevel = new Pref<>(
-        "extensions.torbutton.security_slider", 0);
+        "extensions.torbutton.security_slider", 4);
 
     /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
