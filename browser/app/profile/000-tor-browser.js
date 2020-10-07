@@ -287,6 +287,8 @@ pref("extensions.htmlaboutaddons.recommendations.enabled", false);
 pref("extensions.legacy.exceptions", "{972ce4c6-7e08-4474-a285-3208198ce6fd},torbutton@torproject.org");
 // Bug 26114: Allow NoScript to access addons.mozilla.org etc.
 pref("extensions.webextensions.restrictedDomains", "");
+// Bug 31396: Disable indexedDB WebExtension storage backend.
+pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
 // Bug 28896: Make sure our bundled WebExtensions are running in Private Browsing Mode
 pref("extensions.allowPrivateBrowsingByDefault", true);
 
