@@ -307,6 +307,9 @@ pref("security.enterprise_roots.enabled", false);
 // Don't ping Mozilla for MitM detection, see bug 32321
 pref("security.certerrors.mitm.priming.enabled", false);
 
+// Don't automatically enable enterprise roots, see bug 40166
+pref("security.certerrors.mitm.auto_enable_enterprise_roots", false);
+
 // Disable the language pack signing check for now on macOS, see #31942
 #ifdef XP_MACOSX
 pref("extensions.langpacks.signatures.required", false);
