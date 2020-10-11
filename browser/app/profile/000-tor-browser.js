@@ -354,7 +354,7 @@ pref("corroborator.enabled", false);
 // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1667360 and
 // tor-browser#40140.
 #ifdef XP_WIN
-pref"media.rdd-opus.enabled", false);
+pref("media.rdd-opus.enabled", false);
 #endif
 
 // Onboarding.
