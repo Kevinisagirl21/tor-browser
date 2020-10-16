@@ -453,6 +453,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().setAllowInsecureConnections(level);
       return this;
     }
+
+    /**
+     * Sets whether we should spoof locale to English for webpages.
+     *
+     * @param flag True if we should spoof locale to English for webpages, false otherwise.
+     * @return This Builder instance.
+     */
+    public @NonNull Builder spoofEnglish(final boolean flag) {
+      getSettings().mSpoofEnglish.set(flag ? 2 : 1);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
