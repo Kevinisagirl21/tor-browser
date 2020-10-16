@@ -73,6 +73,10 @@ using namespace sandbox::bpf_dsl;
 // Not part of UAPI, but userspace sees it in F_GETFL; see bug 1650751.
 #define FMODE_NONOTIFY 0x4000000
 
+#ifndef AT_EMPTY_PATH
+#  define AT_EMPTY_PATH 0x100 /* Allow empty relative pathname */
+#endif
+
 #ifndef F_LINUX_SPECIFIC_BASE
 #  define F_LINUX_SPECIFIC_BASE 1024
 #else
