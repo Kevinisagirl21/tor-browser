@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Preferences: "resource://gre/modules/Preferences.jsm",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  RFPHelper: "resource://gre/modules/RFPHelper.jsm",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("Startup");
@@ -250,6 +251,10 @@ class GeckoViewStartup {
       case "GeckoView:SetLocale":
         if (aData.requestedLocales) {
           Services.locale.requestedLocales = aData.requestedLocales;
+        }
+        RFPHelper._handleSpoofEnglishChanged();
+        if (Services.prefs.getIntPref("privacy.spoof_english", 0) === 2) {
+          break;
         }
         const pls = Cc["@mozilla.org/pref-localizedstring;1"].createInstance(
           Ci.nsIPrefLocalizedString
