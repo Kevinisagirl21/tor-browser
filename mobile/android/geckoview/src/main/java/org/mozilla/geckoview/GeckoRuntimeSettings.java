@@ -468,6 +468,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mTorSecurityLevel.set(level);
             return this;
         }
+
+        /**
+         * Sets whether we should spoof locale to English for webpages.
+         *
+         * @param flag True if we should spoof locale to English for webpages, false otherwise.
+         * @return This Builder instance.
+         */
+        public @NonNull Builder spoofEnglish(final boolean flag) {
+            getSettings().mSpoofEnglish.set(flag ? 2 : 1);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -520,6 +531,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "signon.autofillForms", true);
     /* package */ final Pref<Integer> mTorSecurityLevel = new Pref<>(
         "extensions.torbutton.security_slider", 4);
+    /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>(
+        "privacy.spoof_english", 0);
 
     /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1193,6 +1206,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      */
     public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
         mTorSecurityLevel.commit(level);
+        return this;
+    }
+
+    /**
+     * Get whether we should spoof locale to English for webpages.
+     *
+     * @return Whether we should spoof locale to English for webpages.
+     */
+    public boolean getSpoofEnglish() {
+        return mSpoofEnglish.get() == 2;
+    }
+
+    /**
+     * Set whether we should spoof locale to English for webpages.
+     *
+     * @param flag A flag determining whether we should locale to English for webpages.
+     * @return This GeckoRuntimeSettings instance.
+     */
+    public @NonNull GeckoRuntimeSettings setSpoofEnglish(final boolean flag) {
+        mSpoofEnglish.commit(flag ? 2 : 1);
         return this;
     }
 
