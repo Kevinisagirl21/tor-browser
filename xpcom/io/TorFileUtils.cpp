@@ -71,7 +71,7 @@ nsresult TorBrowser_GetUserDataDir(nsIFile* aExeFile, nsIFile** aFile) {
     // points to ~/Library/Application Support, we first create an empty
     // nsIFile object (no path) and then use InitWithFSRef() to set the
     // path.
-    rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(tbDataDir));
+    rv = NS_NewNativeLocalFile(""_ns, true, getter_AddRefs(tbDataDir));
     NS_ENSURE_SUCCESS(rv, rv);
     nsCOMPtr<nsILocalFileMac> dirFileMac = do_QueryInterface(tbDataDir);
     if (!dirFileMac) return NS_ERROR_UNEXPECTED;
