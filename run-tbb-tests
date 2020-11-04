@@ -18,8 +18,8 @@ then
     echo "Using tests list from file tbb-tests-list.txt"
     tests=($(cat tbb-tests-list.txt))
 else
-    ffxbld_commit=$(git log -500 --format='%an %H' | grep '^ffxbld ' \
-                                        | head -1 | cut -d ' ' -f 2)
+    ffxbld_commit=$(git log -500 --format='oneline' | grep "TB3: Tor Browser's official .mozconfigs." \
+                                        | head -1 | cut -d ' ' -f 1)
 
     tests=($(git diff --name-status "$ffxbld_commit" HEAD | \
         grep -e '^[AM].*/test_[^/]\+\.\(html\|xul\)$' \
@@ -51,7 +51,11 @@ fi
 
 rm -f tbb-tests.log
 echo $'\n''Starting tests'
-./mach mochitest --log-tbpl tbb-tests.log --setpref security.nocertdb=false \
+./mach mochitest --log-tbpl tbb-tests.log \
+    --setpref network.file.path_blacklist='' \
+    --setpref extensions.torbutton.use_nontor_proxy=true \
+    --setpref browser.privatebrowsing.autostart=false \
+    --setpref security.nocertdb=false \
                  "${tests[@]}"
 
 echo "*************************"
