@@ -49,6 +49,11 @@ public class WebRequest extends WebMessage {
      */
     public final @Nullable String referrer;
 
+    /**
+     * The value of the origin of this request.
+     */
+    public final @Nullable String origin;
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({CACHE_MODE_DEFAULT, CACHE_MODE_NO_STORE,
             CACHE_MODE_RELOAD, CACHE_MODE_NO_CACHE,
@@ -110,6 +115,7 @@ public class WebRequest extends WebMessage {
         method = builder.mMethod;
         cacheMode = builder.mCacheMode;
         referrer = builder.mReferrer;
+        origin = builder.mOrigin;
 
         if (builder.mBody != null) {
             body = builder.mBody.asReadOnlyBuffer();
@@ -126,6 +132,7 @@ public class WebRequest extends WebMessage {
         /* package */ String mMethod = "GET";
         /* package */ int mCacheMode = CACHE_MODE_DEFAULT;
         /* package */ String mReferrer;
+        /* package */ String mOrigin;
 
         /**
          * Construct a Builder instance with the specified URI.
@@ -202,6 +209,17 @@ public class WebRequest extends WebMessage {
          */
         public @NonNull Builder referrer(final @Nullable String referrer) {
             mReferrer = referrer;
+            return this;
+        }
+
+        /**
+         * Set the origin URI.
+         *
+         * @param origin A URI String
+         * @return This Builder instance.
+         */
+        public @NonNull Builder origin(final @Nullable String origin) {
+            mOrigin = origin;
             return this;
         }
 
