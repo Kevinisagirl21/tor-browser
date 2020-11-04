@@ -135,6 +135,9 @@ pref("trailhead.firstrun.branches", "");
 // Clear the list of trusted recursive resolver services
 pref("network.trr.resolvers", "");
 
+// Disable the /etc/hosts parser
+pref("network.trr.exclude-etc-hosts", false);
+
 // Disable crlite
 pref("security.pki.crlite_mode", 0);
 
