@@ -13,19 +13,19 @@ let Ci = Components.interfaces;
 
 // ## utility functions
 
-// __uri(spec)__.
-// Creates an nsIURI instance from a spec
+// __principal(spec)__.
+// Creates a principal instance from a spec
 // (string address such as "http://torproject.org").
-let uri = spec => Services.io.newURI(spec, null, null);
+let principal = spec => Services.scriptSecurityManager.createContentPrincipalFromOrigin(spec);
 
 // __setPermission(spec, key, value)__.
 // Sets the site permission of type key to value, for the site located at address spec.
-let setPermission = (spec, key, value) => SitePermissions.set(uri(spec), key, value);
+let setPermission = (spec, key, value) => SitePermissions.setForPrincipal(principal(spec), key, value);
 
 // __getPermission(spec, key)__.
 // Reads the site permission value for permission type key, for the site
 // located at address spec.
-let getPermission = (spec, key) => SitePermissions.get(uri(spec), key);
+let getPermission = (spec, key) => SitePermissions.getForPrincipal(principal(spec), key);
 
 // __profileDirPath__.
 // The Firefox Profile directory. Expected location of various persistent files.
@@ -54,12 +54,12 @@ let originalValue = getPermission(SITE, KEY);
 window.setTimeout(
   function () {
     // Set the permission to a new value.
-    setPermission(SITE, KEY, (originalValue === 0) ? 1 : 0);
+    setPermission(SITE, KEY, SitePermissions.BLOCK);
     // Now read back the permission value again.
     let newReadValue = getPermission(SITE, KEY);
     // Compare to confirm that the permission
     // value was successfully changed.
-    isnot(newReadValue, originalValue, "Set a value in permissions db (perhaps in memory).");;
+    Assert.notDeepEqual(originalValue, newReadValue, "Set a value in permissions db (perhaps in memory).");
     // If file existed or now exists, get the current time stamp.
     if (permissionsFile.exists()) {
       newModifiedTime = permissionsFile.lastModifiedTime;
