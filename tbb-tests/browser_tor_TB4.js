@@ -1,9 +1,7 @@
 // # Test for TB4: Tor Browser's Firefox preference overrides
-// Simple regression tests to check the value of each pref and
-// decides if it is set as expected.
-
-// TODO: Write unit tests to check that each pref setting here
-// causes the browser to have the desired behavior (a big task).
+// This is a minimal test to check whether the 000-tor-browser.js
+// pref overrides are being used at all or not. More comprehensive
+// pref tests are maintained in the tor-browser-bundle-testsuite project.
 
 function test() {
 
