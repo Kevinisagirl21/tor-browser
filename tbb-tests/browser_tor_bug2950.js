@@ -15,7 +15,7 @@ let Ci = Components.interfaces;
 
 // __principal(spec)__.
 // Creates a principal instance from a spec
-// (string address such as "http://torproject.org").
+// (string address such as "https://www.torproject.org").
 let principal = spec => Services.scriptSecurityManager.createContentPrincipalFromOrigin(spec);
 
 // __setPermission(spec, key, value)__.
@@ -37,7 +37,7 @@ let fileInProfile = fileName => FileUtils.File(profileDirPath + "/" + fileName);
 
 // ## Now let's run the test.
 
-let SITE = "http://torproject.org",
+let SITE = "https://www.torproject.org",
     KEY = "popup";
 
 let permissionsFile = fileInProfile("permissions.sqlite"),
