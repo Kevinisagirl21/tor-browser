@@ -55,7 +55,6 @@ echo $'\n''Starting tests'
     --setpref network.file.path_blacklist='' \
     --setpref extensions.torbutton.use_nontor_proxy=true \
     --setpref browser.privatebrowsing.autostart=false \
-    --setpref security.nocertdb=false \
                  "${tests[@]}"
 
 echo "*************************"
