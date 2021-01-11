@@ -51,6 +51,9 @@ fi
 
 rm -f tbb-tests.log
 echo $'\n''Starting tests'
+# We need `security.nocertdb = false` because of #18087. That pref is
+# forced to have the same value as `browser.privatebrowsing.autostart` in
+# torbutton, so we just set `browser.privatebrowsing.autostart=false` here.
 ./mach mochitest --log-tbpl tbb-tests.log \
     --setpref network.file.path_blacklist='' \
     --setpref extensions.torbutton.use_nontor_proxy=true \
