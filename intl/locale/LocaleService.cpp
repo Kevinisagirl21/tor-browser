@@ -489,31 +489,6 @@ LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
             OSPreferences::GetInstance()->GetRegionalPrefsLocales(aRetVal))) {
       return NS_OK;
     }
-
-    // If we fail to retrieve them, return the app locales.
-    GetAppLocalesAsBCP47(aRetVal);
-    return NS_OK;
-  }
-
-  // Otherwise, fetch OS Regional Preferences locales and compare the first one
-  // to the app locale. If the language subtag matches, we can safely use
-  // the OS Regional Preferences locale.
-  //
-  // This facilitates scenarios such as Firefox in "en-US" and User sets
-  // regional prefs to "en-GB".
-  nsAutoCString appLocale;
-  AutoTArray<nsCString, 10> regionalPrefsLocales;
-  LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
-
-  if (NS_FAILED(OSPreferences::GetInstance()->GetRegionalPrefsLocales(
-          regionalPrefsLocales))) {
-    GetAppLocalesAsBCP47(aRetVal);
-    return NS_OK;
-  }
-
-  if (LocaleService::LanguagesMatch(appLocale, regionalPrefsLocales[0])) {
-    aRetVal = regionalPrefsLocales.Clone();
-    return NS_OK;
   }
 
   // Otherwise use the app locales.
