@@ -516,7 +516,6 @@
                           appmenu-data-l10n-id="appmenu-help-keyboard-shortcuts"/>
                 <menuitem id="troubleShooting"
                           oncommand="openTroubleshootingPage()"
-<<<<<<< HEAD
                           onclick="checkForMiddleClick(this, event);"
                           data-l10n-id="menu-help-troubleshooting-info"/>
                 <!-- <menuitem id="feedbackPage"
