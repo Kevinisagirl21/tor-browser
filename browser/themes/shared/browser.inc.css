@@ -620,3 +620,8 @@ menupopup::part(drop-indicator) {
 #sharing-warning-proceed-to-tab:hover {
   background-color: rgb(0,62,170);
 }
+
+#crypto-safety-warning-notification-what-can {
+  display: block;
+  margin: 5px;
+}
