@@ -260,8 +260,9 @@ pref("security.ssl.enable_false_start", true);
 pref("network.http.connection-retry-timeout", 0);
 pref("network.http.max-persistent-connections-per-proxy", 256);
 pref("network.manage-offline-status", false);
-// No need to leak things to Mozilla, see bug 21790
+// No need to leak things to Mozilla, see bug 21790 and tor-browser#40322
 pref("network.captive-portal-service.enabled", false);
+pref("network.connectivity-service.enabled", false);
 // As a "defense in depth" measure, configure an empty push server URL (the
 // DOM Push features are disabled by default via other prefs).
 pref("dom.push.serverURL", "");
