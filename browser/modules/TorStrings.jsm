@@ -101,6 +101,40 @@ class TorPropertyStringBundle {
 
 const Loader = {
   /*
+    CryptoSafetyPrompt Strings
+  */
+  cryptoSafetyPrompt() {
+    const tsb = new TorPropertyStringBundle(
+      "chrome://torbutton/locale/torbutton.properties",
+      "cryptoSafetyPrompt."
+    );
+    const getString = tsb.getString.bind(tsb);
+
+    const retval = {
+      cryptoWarning: getString(
+        "cryptoWarning",
+        "A cryptocurrency address (%S) has been copied from an insecure website. It could have been modified."
+      ),
+      whatCanHeading: getString("whatCanHeading", "What can you do about it?"),
+      whatCanBody: getString(
+        "whatCanBody",
+        "You can try reconnecting with a new circuit to establish a secure connection, or accept the risk and dismiss this warning."
+      ),
+      learnMore: getString("learnMore", "Learn more"),
+      learnMoreURL: `https://support.torproject.org/${getLocale()}/`,
+      primaryAction: getString(
+        "primaryAction",
+        "Reload Tab with a New Circuit"
+      ),
+      primaryActionAccessKey: getString("primaryActionAccessKey", "R"),
+      secondaryAction: getString("secondaryAction", "Dismiss Warning"),
+      secondaryActionAccessKey: getString("secondaryActionAccessKey", "D"),
+    };
+
+    return retval;
+  } /* CryptoSafetyPrompt Strings */,
+
+  /*
     Tor about:preferences#connection Strings
   */
   settings() {
@@ -899,6 +933,13 @@ const Loader = {
 };
 
 const TorStrings = {
+  get cryptoSafetyPrompt() {
+    if (!this._cryptoSafetyPrompt) {
+      this._cryptoSafetyPrompt = Loader.cryptoSafetyPrompt();
+    }
+    return this._cryptoSafetyPrompt;
+  },
+
   get settings() {
     if (!this._settings) {
       this._settings = Loader.settings();

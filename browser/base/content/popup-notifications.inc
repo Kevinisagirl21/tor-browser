@@ -166,3 +166,17 @@
         </vbox>
       </popupnotificationfooter>
     </popupnotification>
+
+    <popupnotification id="crypto-safety-warning-notification" hidden="true">
+      <popupnotificationcontent orient="vertical">
+        <description id="crypto-safety-warning-notification-desc"/>
+        <html:div id="crypto-safety-warning-notification-what-can">
+        <html:strong id="crypto-safety-warning-notification-what-can-heading" />
+        <html:br/>
+        <html:span id="crypto-safety-warning-notification-what-can-body" />
+        </html:div>
+        <label id="crypto-safety-warning-notification-learnmore"
+               class="popup-notification-learnmore-link"
+               is="text-link"/>
+      </popupnotificationcontent>
+    </popupnotification>
