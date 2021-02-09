@@ -829,3 +829,8 @@ popupnotificationcontent {
 #tab-notification-deck {
   display: block;
 }
+
+#crypto-safety-warning-notification-what-can {
+  display: block;
+  margin: 5px;
+}
