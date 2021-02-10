@@ -102,6 +102,54 @@ class TorPropertyStringBundle {
 */
 var TorStrings = {
   /*
+    CryptoSafetyPrompt Strings
+  */
+  cryptoSafetyPrompt: (function() {
+    let tsb = new TorPropertyStringBundle(
+      "chrome://torbutton/locale/torbutton.properties",
+      "cryptoSafetyPrompt."
+    );
+    let getString = function(key, fallback) {
+      return tsb.getString(key, fallback);
+    };
+
+    let retval = {
+      cryptoWarning: getString(
+        "cryptoSafetyPrompt.cryptoWarning",
+        "A cryptocurrency address (%S) has been copied from an insecure website. It could have been modified."
+      ),
+      whatCanHeading: getString(
+        "cryptoSafetyPrompt.whatCanHeading",
+        "What can you do about it?"
+      ),
+      whatCanBody: getString(
+        "cryptoSafetyPrompt.whatCanBody",
+        "You can try reconnecting with a new circuit to establish a secure connection, or accept the risk and dismiss this warning."
+      ),
+      learnMore: getString("cryptoSafetyPrompt.learnMore", "Learn more"),
+      learnMoreURL: `https://support.torproject.org/${getLocale()}/`,
+      primaryAction: getString(
+        "cryptoSafetyPrompt.primaryAction",
+        "Reload Tab with a New Circuit"
+      ),
+      primaryActionAccessKey: getString(
+        "cryptoSafetyPrompt.primaryActionAccessKey",
+        "R"
+      ),
+      secondaryAction: getString(
+        "cryptoSafetyPrompt.secondaryAction",
+        "Dismiss Warning"
+      ),
+      secondaryActionAccessKey: getString(
+        "cryptoSafetyPrompt.secondaryActionAccessKey",
+        "D"
+      ),
+    };
+
+    return retval;
+  })() /* CryptoSafetyPrompt Strings */,
+
+  /*
     Tor Browser Security Level Strings
   */
   securityLevel: (function() {
