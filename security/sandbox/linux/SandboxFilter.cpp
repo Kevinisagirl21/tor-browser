@@ -74,7 +74,7 @@ using namespace sandbox::bpf_dsl;
 #define FMODE_NONOTIFY 0x4000000
 
 #ifndef AT_EMPTY_PATH
-#  define AT_EMPTY_PATH 0x100 /* Allow empty relative pathname */
+#  define AT_EMPTY_PATH 0x1000 /* Allow empty relative pathname */
 #endif
 
 #ifndef F_LINUX_SPECIFIC_BASE
