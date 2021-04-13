@@ -255,6 +255,9 @@ pref("browser.policies.testing.disallowEnterprise", true);
 pref("svg.in-content.enabled", true);
 pref("mathml.disabled", false);
 
+// Bug 40408
+pref("svg.context-properties.content.allowed-domains", "");
+
 // Network and performance
 pref("security.ssl.enable_false_start", true);
 pref("network.http.connection-retry-timeout", 0);
