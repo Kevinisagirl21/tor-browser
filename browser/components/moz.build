@@ -58,6 +58,7 @@ DIRS += [
     "uitour",
     "urlbar",
     "torcircuit",
+    "torconnect",
     "torpreferences",
 ]
 
