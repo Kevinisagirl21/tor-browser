@@ -17,6 +17,14 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const { TorProtocolService } = ChromeUtils.import(
+  "resource:///modules/TorProtocolService.jsm"
+);
+
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
+
 ChromeUtils.defineModuleGetter(
   this,
   "ActorManagerParent",
@@ -501,6 +509,20 @@ let JSWINDOWACTORS = {
     },
 
     allFrames: true,
+  },
+
+  TorConnect: {
+    parent: {
+      moduleURI: "resource:///modules/TorConnectParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/TorConnectChild.jsm",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+
+    matches: ["about:torconnect"],
   },
 
   Translation: {
@@ -2492,7 +2514,25 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          OnionAliasStore.init();
+          if (TorProtocolService.isBootstrapDone() || !TorProtocolService.ownsTorDaemon) {
+            // we will take this path when the user is using the legacy tor launcher or
+            // when Tor Browser didn't launch its own tor.
+            OnionAliasStore.init();
+          } else {
+            // this path is taken when using about:torconnect, we wait to init
+            // after we are bootstrapped and connected to tor
+            const topic = "torconnect:bootstrap-complete";
+            let bootstrapObserver = {
+              observe(aSubject, aTopic, aData) {
+                if (aTopic === topic) {
+                  OnionAliasStore.init();
+                  // we only need to init once, so remove ourselves as an obvserver
+                  Services.obs.removeObserver(this, topic);
+                }
+              }
+            };
+            Services.obs.addObserver(bootstrapObserver, topic);
+          }
         },
       },
 

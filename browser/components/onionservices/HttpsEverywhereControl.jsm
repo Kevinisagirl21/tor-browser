@@ -41,6 +41,7 @@ const SECUREDROP_TOR_ONION_CHANNEL = {
 class HttpsEverywhereControl {
   constructor() {
     this._extensionMessaging = null;
+    this._init();
   }
 
   async _sendMessage(type, object) {
@@ -61,7 +62,6 @@ class HttpsEverywhereControl {
    * Installs the .tor.onion update channel in https-everywhere
    */
   async installTorOnionUpdateChannel(retries = 5) {
-    this._init();
 
     // TODO: https-everywhere store is initialized asynchronously, so sending a message
     // immediately results in a `store.get is undefined` error.
@@ -143,5 +143,20 @@ class HttpsEverywhereControl {
     if (!this._extensionMessaging) {
       this._extensionMessaging = new ExtensionMessaging();
     }
+
+    // update all of the existing https-everywhere channels
+    setTimeout(async () => {
+      let pinnedChannels = await this._sendMessage("get_pinned_update_channels");
+      for(let channel of pinnedChannels.update_channels) {
+        this._sendMessage("update_update_channel", channel);
+      }
+
+      let storedChannels = await this._sendMessage("get_stored_update_channels");
+      for(let channel of storedChannels.update_channels) {
+        this._sendMessage("update_update_channel", channel);
+      }
+    }, 0);
+
+
   }
 }
