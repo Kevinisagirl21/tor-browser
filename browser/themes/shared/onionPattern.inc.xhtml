@@ -1,0 +1,210 @@
+<!--
+ - The abstract onion pattern begins here. There are two
+ - "onion-pattern-row" elements, each containing 14 circles. The width
+ - of "onion-pattern-row" is fixed at a value that is wide enough so the
+ - circles are not distorted by the flex-based layout. The parent
+ - "onion-pattern-container" element has overflow-x: hidden and is designed
+ - to expand to the width of the page, until it reaches a maximum width
+ - that can accommodate all 14 circles. Since the rows are wider than
+ - most browser windows, typically the two rows of onions will fill the
+ - bottom of the page. On really wide pages, the onions are centered at
+ - the bottom of the page.
+-->
+
+<div class="onion-pattern-container">
+  <!-- for some reason, these two elements are focusable, seems related to
+   - flex css somehow; disable their tabindex to fix
+  -->
+  <div class="onion-pattern-crop" tabindex="-1">
+    <div class="onion-pattern-column" tabindex="-1">
+      <div class="onion-pattern-row">
+        <div class="circle solid"></div>
+
+        <div class="circle dashed"></div>
+
+        <div class="circle">
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+        </div>
+
+        <div class="circle">
+          <div class="bottom-half solid"></div>
+          <div class="bottom-half dotted"></div>
+        </div>
+
+        <div class="circle border"></div>
+
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle solid"></div>
+
+        <div class="circle">
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+        </div>
+
+        <div class="circle bold"></div>
+
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+        </div>
+
+        <div class="circle bold"></div>
+
+        <div class="circle">
+          <div class="bottom-half solid"></div>
+          <div class="bottom-half solid"></div>
+        </div>
+
+       <div class="circle">
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+        </div>
+
+        <div class="circle dotted"></div>
+
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle solid"></div>
+
+        <div class="circle">
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+        </div>
+
+        <div class="circle bold"></div>
+
+        <div class="circle dashed"></div>
+      </div>
+
+      <div class="onion-pattern-row onion-pattern-offset-row">
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+        </div>
+
+        <div class="circle bold"></div>
+
+        <div class="circle solid"></div>
+
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle">
+          <div class="top-half solid"></div>
+          <div class="top-half solid"></div>
+        </div>
+
+        <div class="circle border"></div>
+
+        <div class="circle dotted"></div>
+
+        <div class="circle">
+          <div class="top-half border"></div>
+          <div class="top-half dashed"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+        </div>
+
+        <div class="circle">
+          <div class="top-half dotted"></div>
+          <div class="top-half solid"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+          <div class="inner dashed"></div>
+        </div>
+
+        <div class="circle dotted"></div>
+
+        <div class="circle bold"></div>
+
+        <div class="circle solid"></div>
+
+        <div class="circle">
+          <div class="top-half solid"></div>
+          <div class="top-half dotted"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+          <div class="inner dotted"></div>
+        </div>
+
+        <div class="circle">
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+          <div class="inner border"></div>
+        </div>
+
+        <div class="circle dotted"></div>
+
+        <div class="circle">
+          <div class="top-half solid"></div>
+          <div class="top-half solid"></div>
+        </div>
+
+        <div class="circle dotted"></div>
+      </div>
+    </div>
+  </div>
+</div>

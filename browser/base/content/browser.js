@@ -77,6 +77,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabModalPrompt: "chrome://global/content/tabprompts.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
+  TorProtocolService: "resource:///modules/TorProtocolService.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UITour: "resource:///modules/UITour.jsm",
@@ -633,6 +634,7 @@ var gPageIcons = {
 
 var gInitialPages = [
   "about:tor",
+  "about:torconnect",
   "about:blank",
   "about:newtab",
   "about:home",
@@ -1959,6 +1961,8 @@ var gBrowserInit = {
     }
 
     this._loadHandled = true;
+
+    TorBootstrapUrlbar.init();
   },
 
   _cancelDelayedStartup() {
@@ -2490,6 +2494,10 @@ var gBrowserInit = {
       let uri = window.arguments[0];
       let defaultArgs = BrowserHandler.defaultArgs;
 
+      if (TorProtocolService.shouldShowTorConnect()) {
+        return "about:torconnect";
+      }
+
       // If the given URI is different from the homepage, we want to load it.
       if (uri != defaultArgs) {
         AboutNewTab.noteNonDefaultStartup();
@@ -2581,6 +2589,8 @@ var gBrowserInit = {
     SecurityLevelButton.uninit();
 
     OnionAuthPrompt.uninit();
+
+    TorBootstrapUrlbar.uninit();
 
     gAccessibilityServiceIndicator.uninit();
 

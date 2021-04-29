@@ -112,6 +112,7 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/tor-circuit-display.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/torbutton.js", this);
+  Services.scriptloader.loadSubScript("chrome://browser/content/torconnect/torBootstrapUrlbar.js", this);
 
   window.onload = gBrowserInit.onLoad.bind(gBrowserInit);
   window.onunload = gBrowserInit.onUnload.bind(gBrowserInit);
@@ -1055,6 +1056,7 @@
                      data-l10n-id="urlbar-go-button"/>
               <hbox id="page-action-buttons" context="pageActionContextMenu">
                 <toolbartabstop/>
+#include ../../components/torconnect/content/torconnect-urlbar.inc.xhtml
                 <hbox id="contextual-feature-recommendation" role="button" hidden="true">
                   <hbox id="cfr-label-container">
                     <label id="cfr-label"/>

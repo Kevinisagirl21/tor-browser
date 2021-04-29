@@ -18,6 +18,8 @@ const kAllowedPrefs = new Set([
   "testing.allowed-prefs.some-char-pref",
   "testing.allowed-prefs.some-int-pref",
 
+  "extensions.torlauncher.quickstart",
+
   "narrate.rate",
   "narrate.voice",
 

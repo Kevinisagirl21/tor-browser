@@ -17,6 +17,10 @@ const { SessionStore } = ChromeUtils.import(
 );
 const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 
+const { TorProtocolService } = ChromeUtils.import(
+  "resource:///modules/TorProtocolService.jsm"
+);
+
 const PREF_SSL_IMPACT_ROOTS = [
   "security.tls.version.",
   "security.ssl3.",
@@ -318,6 +322,10 @@ class NetErrorParent extends JSWindowActorParent {
             break;
           }
         }
+        break;
+      case "ShouldShowTorConnect":
+        return TorProtocolService.shouldShowTorConnect();
     }
+    return undefined;
   }
 }
