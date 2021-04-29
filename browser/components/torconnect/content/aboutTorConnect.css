@@ -1,0 +1,247 @@
+
+/* Copyright (c) 2021, The Tor Project, Inc. */
+
+@import url("chrome://browser/skin/error-pages.css");
+@import url("chrome://branding/content/tor-styles.css");
+
+:root {
+  --onion-opacity: 1;
+  --onion-color: var(--card-outline-color);
+  --onion-radius: 75px;
+}
+
+/* override firefox's default blue focus coloring */
+:focus {
+  outline:  none!important;
+  box-shadow: 0 0 0 3px var(--purple-30) !important;
+  border:  1px var(--purple-80) solid !important;
+}
+
+@media (prefers-color-scheme: dark)
+{
+  :focus {
+    box-shadow: 0 0 0 3px var(--purple-50)!important;
+  }
+}
+
+#breadcrumbs {
+  display: flex;
+  margin: 0 0 24px 0;
+  color: var(--grey-40);
+}
+
+#breadcrumbs.hidden {
+  visibility: hidden;
+}
+
+.breadcrumb-item, .breadcrumb-separator {
+  display: flex;
+  margin: 0;
+  margin-inline-start: 20px;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  color: var(--in-content-text-color);
+}
+
+.breadcrumb-item:hover {
+  color: var(--blue-60);
+}
+
+.breadcrumb-separator {
+  width: 15px;
+  list-style-image: url("chrome://browser/content/torconnect/arrow-right.svg");
+}
+
+.breadcrumb-separator:dir(rtl) {
+  scale: -1 1;
+}
+
+.breadcrumb-icon {
+  display: inline list-item;
+  list-style-position: inside;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+.breadcrumb-label {
+  margin-top: -1px;
+}
+
+#breadcrumbs .active {
+  color: var(--blue-60);
+}
+
+#breadcrumbs .disabled, #breadcrumbs .disabled:hover {
+  color: var(--green-90-a40);
+  cursor: default;
+}
+
+#breadcrumbs .error {
+  color: var(--red-60);
+}
+
+#connection-assist {
+  margin-left: 0;
+}
+
+#connection-assist-icon {
+  list-style-image: url("chrome://browser/content/torconnect/onion-slash-fillable.svg");
+}
+
+#location-settings-icon {
+  list-style-image: url("chrome://browser/content/torconnect/globe.svg");
+}
+
+#try-bridge {
+  cursor: default;
+}
+
+#try-bridge-icon {
+  list-style-image: url("chrome://browser/content/torconnect/bridge.svg");
+}
+
+button.primary {
+  background-color: var(--purple-60)!important;
+  color: white!important;
+  fill: white!important;
+}
+
+button.primary:hover {
+  background-color: var(--purple-70)!important;
+  color: white!important;
+  fill: white!important;
+}
+
+button.primary:active {
+  background-color: var(--purple-80)!important;
+  color: white!important;
+  fill: white!important;
+}
+
+div#locationDropdownLabel {
+  margin-block: auto;
+  margin-inline: 4px;
+}
+
+/* these two follow similar css in error-pages.css for buttons */
+@media only screen and (min-width: 480px) {
+  form#locationDropdown {
+    margin-inline: 4px;
+    /* subtracting out the margin is needeed because by
+       default forms have different margins than buttons */
+    max-width: calc(100% - 8px);
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  form#locationDropdown,
+  div#locationDropdownLabel {
+    margin: 0.66em 0 0;
+  }
+
+  form#locationDropdown {
+    width: 100%;
+  }
+}
+
+form#locationDropdown select {
+  max-width: 100%;
+  padding-block: 0;
+  margin-inline: 0;
+  font-weight: 700;
+}
+
+/* checkbox css */
+input[type="checkbox"]:not(:disabled) {
+  background-color: var(--grey-20)!important;
+}
+
+input[type="checkbox"]:not(:disabled):checked {
+  background-color: var(--purple-60)!important;
+  color: white;
+  fill: white;
+}
+
+input[type="checkbox"]:not(:disabled):hover {
+  /* override firefox's default blue border on hover */
+  border-color: var(--purple-70);
+  background-color: var(--grey-30)!important;
+}
+
+input[type="checkbox"]:not(:disabled):hover:checked {
+  background-color: var(--purple-70)!important;
+}
+
+input[type="checkbox"]:not(:disabled):active {
+  background-color: var(--grey-40)!important;
+}
+
+input[type="checkbox"]:not(:disabled):active:checked {
+  background-color: var(--purple-80)!important;
+}
+
+#progressBackground {
+  position:fixed;
+  padding:0;
+  margin:0;
+  top:0;
+  left:0;
+  width: 0%;
+  height: 7px;
+  background-image: linear-gradient(90deg, rgb(20, 218, 221) 0%, rgb(128, 109, 236) 100%);
+  border-radius: 0;
+}
+
+#connectPageContainer {
+  margin-top: 10vh;
+  width: 50%;
+}
+
+#quickstartCheckbox, #quickstartCheckboxLabel {
+  vertical-align: middle;
+}
+
+/* mirrors p element spacing */
+#viewLogContainer {
+  margin:  1em 0;
+  height:  1.2em;
+  min-height:  1.2em;
+}
+
+#viewLogLink {
+  position:  relative;
+  display:  inline-block;
+  color:  var(--in-content-link-color);
+}
+
+/* hidden apparently only works if no display is set; who knew? */
+#viewLogLink[hidden="true"] {
+  display:  none;
+}
+
+#viewLogLink:hover {
+  cursor:pointer;
+}
+
+body {
+  padding: 0px !important;
+  justify-content: space-between;
+  background-color: var(--in-content-page-background);
+}
+
+.title {
+  background-image: url("chrome://browser/content/torconnect/onion.svg");
+  -moz-context-properties: fill, fill-opacity;
+  fill-opacity: var(--onion-opacity);
+  fill: var(--onion-color);
+}
+
+.title.error {
+  background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
+}
+
+.title.location {
+  background-image: url("chrome://browser/content/torconnect/connection-location.svg");
+}
