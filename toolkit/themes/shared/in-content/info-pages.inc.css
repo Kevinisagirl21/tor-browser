@@ -41,10 +41,11 @@ body.wide-container {
   background-image: url("chrome://global/skin/icons/info.svg");
   background-position: left 0;
   background-repeat: no-repeat;
-  background-size: 1.6em;
-  margin-inline-start: -2.3em;
-  padding-inline-start: 2.3em;
-  font-size: 2.2em;
+  background-size: 3.0em;
+  margin-inline-start: -4.5em;
+  padding-inline-start: 4.5em;
+  margin-bottom: -2.0em;
+  font-size: 1.5em;
   -moz-context-properties: fill;
   fill: currentColor;
 }
@@ -56,7 +57,10 @@ body.wide-container {
 
 .title-text {
   font-size: inherit;
-  padding-bottom: 0.4em;
+  padding-bottom: 2.0em !important;
+  line-height: 1.0em;
+  font-weight: bold;
+  vertical-align: top;
 }
 
 @media (max-width: 970px) {
@@ -68,6 +72,7 @@ body.wide-container {
 
   .title-text {
     padding-top: 0;
+    vertical-align: middle !important;
   }
 }
 

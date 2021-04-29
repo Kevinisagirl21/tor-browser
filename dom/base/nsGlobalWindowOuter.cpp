@@ -6082,6 +6082,8 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     NS_ENSURE_SUCCESS_VOID(rv);
 
     if (!StringBeginsWith(url, NS_LITERAL_STRING("about:neterror")) &&
+        // we want about:torconnect pages to be able to close themselves after bootstrap
+        !StringBeginsWith(url, NS_LITERAL_STRING("about:torconnect")) &&
         !HadOriginalOpener() && !aTrustedCaller) {
       bool allowClose =
           mAllowScriptsToClose ||

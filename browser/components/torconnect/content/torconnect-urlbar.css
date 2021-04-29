@@ -1,0 +1,65 @@
+/*
+    ensure our torconnect button is always visible (same rule as for the bookmark button)
+*/
+hbox.urlbar-page-action#torconnect-box {
+    display: -moz-inline-box!important;
+    margin: 0 6px;
+    height: 28px;
+}
+/* disable the button-like default css */
+hbox.urlbar-page-action#torconnect-box:hover,
+hbox.urlbar-page-action#torconnect-box:active {
+    background-color: inherit!important;
+}
+
+label#torconnect-label {
+    line-height: 28px;
+    margin: 0;
+    opacity: 0.6;
+}
+
+/* set appropriate sizes for the non-standard ui densities */
+:root[uidensity=compact] {
+    hbox.urlbar-page-action#torconnect-box {
+        margin: 0 4px;
+        height: 24px;
+    }
+    label#torconnect-label {
+        line-height: 24px;
+    }
+}
+:root[uidensity=touch] {
+    hbox.urlbar-page-action#torconnect-box {
+        margin: 0 7px;
+        height: 30px;
+    }
+    label#torconnect-label {
+        line-height: 30px;
+    }
+}
+
+/* hide when hidden attribute is set */
+hbox.urlbar-page-action#torconnect-box[hidden="true"],
+/* hide when user is typing in URL bar */
+#urlbar[usertyping] > #urlbar-input-container > #page-action-buttons > #torconnect-box {
+    display: none!important;
+}
+
+/* hide urlbar's placeholder text when not connectd to tor */
+hbox#urlbar-input-container[torconnect="offline"] input#urlbar-input::placeholder,
+hbox#urlbar-input-container[torconnect="connecting"] input#urlbar-input::placeholder {
+    opacity: 0;
+}
+
+/* hide search suggestions when not connected to tor */
+hbox#urlbar-input-container[torconnect="offline"] + vbox.urlbarView,
+hbox#urlbar-input-container[torconnect="connecting"] + vbox.urlbarView {
+    display: none!important;
+}
+
+/* hide search icon when we are not connected to tor */
+hbox#urlbar-input-container[torconnect="offline"] > #identity-box[pageproxystate="invalid"] > #identity-icon,
+hbox#urlbar-input-container[torconnect="connecting"] > #identity-box[pageproxystate="invalid"] > #identity-icon
+{
+    display: none!important;
+}
