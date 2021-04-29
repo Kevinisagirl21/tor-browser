@@ -24,6 +24,11 @@ MainProcessSingleton.prototype = {
           null
         );
 
+        ChromeUtils.import(
+          "resource:///modules/TorConnect.jsm",
+          null
+        );
+
         // Load this script early so that console.* is initialized
         // before other frame scripts.
         Services.mm.loadFrameScript(
