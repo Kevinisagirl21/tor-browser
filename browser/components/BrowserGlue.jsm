@@ -740,6 +740,20 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  TorConnect: {
+    parent: {
+      moduleURI: "resource:///modules/TorConnectParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/TorConnectChild.jsm",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+
+    matches: ["about:torconnect", "about:torconnect?*"],
+  },
+
   Translation: {
     parent: {
       moduleURI: "resource:///modules/translation/TranslationParent.jsm",
