@@ -240,7 +240,7 @@ function setErrorPageStrings(err) {
   document.l10n.setAttributes(titleElement, title);
 }
 
-function initPage() {
+async function initPage() {
   // We show an offline support page in case of a system-wide error,
   // when a user cannot connect to the internet and access the SUMO website.
   // For example, clock error, which causes certerrors across the web or
@@ -259,6 +259,16 @@ function initPage() {
   }
 
   var err = getErrorCode();
+
+  // proxyConnectFailure because no-tor running daemon would return this error
+  if (
+     (err === "proxyConnectFailure") &&
+     (await RPMSendQuery("ShouldShowTorConnect"))
+  ) {
+     // pass orginal destination as redirect param
+     const encodedRedirect = encodeURIComponent(document.location.href);
+     document.location.replace(`about:torconnect?redirect=${encodedRedirect}`);
+  }
   // List of error pages with an illustration.
   let illustratedErrors = [
     "malformedURI",

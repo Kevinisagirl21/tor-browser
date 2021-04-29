@@ -1,7 +1,13 @@
 "use strict";
 
+/* global Services */
+
 const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
+);
+
+const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
 );
 
 const {
@@ -51,6 +57,10 @@ const { parsePort, parseBridgeStrings, parsePortList } = ChromeUtils.import(
   "chrome://browser/content/torpreferences/parseFunctions.jsm"
 );
 
+const TorLauncherPrefs = {
+  quickstart: "extensions.torlauncher.quickstart",
+}
+
 /*
   Tor Pane
 
@@ -62,10 +72,20 @@ const gTorPane = (function() {
     category: {
       title: "label#torPreferences-labelCategory",
     },
+    messageBox: {
+      box: "div#torPreferences-connectMessageBox",
+      message: "td#torPreferences-connectMessageBox-message",
+      button: "button#torPreferences-connectMessageBox-button",
+    },
     torPreferences: {
       header: "h1#torPreferences-header",
       description: "span#torPreferences-description",
       learnMore: "label#torPreferences-learnMore",
+    },
+    quickstart: {
+      header: "h2#torPreferences-quickstart-header",
+      description: "span#torPreferences-quickstart-description",
+      enableQuickstartCheckbox: "checkbox#torPreferences-quickstart-toggle",
     },
     bridges: {
       header: "h2#torPreferences-bridges-header",
@@ -112,6 +132,10 @@ const gTorPane = (function() {
 
   let retval = {
     // cached frequently accessed DOM elements
+    _messageBox: null,
+    _messageBoxMessage: null,
+    _messageBoxButton: null,
+    _enableQuickstartCheckbox: null,
     _useBridgeCheckbox: null,
     _bridgeSelectionRadiogroup: null,
     _builtinBridgeOption: null,
@@ -161,6 +185,51 @@ const gTorPane = (function() {
 
       let prefpane = document.getElementById("mainPrefPane");
 
+      // 'Connect to Tor' Message Bar
+
+      this._messageBox = prefpane.querySelector(selectors.messageBox.box);
+      this._messageBoxMessage = prefpane.querySelector(selectors.messageBox.message);
+      this._messageBoxButton = prefpane.querySelector(selectors.messageBox.button);
+      // wire up connect button
+      this._messageBoxButton.addEventListener("click", () => {
+        TorConnect.beginBootstrap();
+        TorConnect.openTorConnect();
+      });
+
+      this._populateMessagebox = () => {
+        if (TorConnect.shouldShowTorConnect &&
+            TorConnect.state === TorConnectState.Configuring) {
+          // set messagebox style and text
+          if (TorProtocolService.torBootstrapErrorOccurred()) {
+            this._messageBox.parentNode.style.display = null;
+            this._messageBox.className = "error";
+            this._messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
+            this._messageBoxButton.innerText = TorStrings.torConnect.tryAgain;
+          } else {
+            this._messageBox.parentNode.style.display = null;
+            this._messageBox.className = "warning";
+            this._messageBoxMessage.innerText = TorStrings.torConnect.connectMessage;
+            this._messageBoxButton.innerText = TorStrings.torConnect.torConnectButton;
+          }
+        } else {
+          // we need to explicitly hide the groupbox, as switching between
+          // the tor pane and other panes will 'unhide' (via the 'hidden'
+          // attribute) the groupbox, offsetting all of the content down
+          // by the groupbox's margin (even if content is 0 height)
+          this._messageBox.parentNode.style.display = "none";
+          this._messageBox.className = "hidden";
+          this._messageBoxMessage.innerText = "";
+          this._messageBoxButton.innerText = "";
+        }
+      }
+      this._populateMessagebox();
+      Services.obs.addObserver(this, TorConnectTopics.StateChange);
+
+      // update the messagebox whenever we come back to the page
+      window.addEventListener("focus", val => {
+        this._populateMessagebox();
+      });
+
       // Heading
       prefpane.querySelector(selectors.torPreferences.header).innerText =
         TorStrings.settings.torPreferencesHeading;
@@ -176,6 +245,26 @@ const gTorPane = (function() {
           TorStrings.settings.learnMoreTorBrowserURL
         );
       }
+
+      // Quickstart
+      prefpane.querySelector(selectors.quickstart.header).innerText =
+        TorStrings.settings.quickstartHeading;
+      prefpane.querySelector(selectors.quickstart.description).textContent =
+        TorStrings.settings.quickstartDescription;
+
+      this._enableQuickstartCheckbox = prefpane.querySelector(
+        selectors.quickstart.enableQuickstartCheckbox
+      );
+      this._enableQuickstartCheckbox.setAttribute(
+        "label",
+        TorStrings.settings.quickstartCheckbox
+      );
+      this._enableQuickstartCheckbox.addEventListener("command", e => {
+        const checked = this._enableQuickstartCheckbox.checked;
+        Services.prefs.setBoolPref(TorLauncherPrefs.quickstart, checked);
+      });
+      this._enableQuickstartCheckbox.checked = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
+      Services.prefs.addObserver(TorLauncherPrefs.quickstart, this);
 
       // Bridge setup
       prefpane.querySelector(selectors.bridges.header).innerText =
@@ -526,6 +615,18 @@ const gTorPane = (function() {
 
     init() {
       this._populateXUL();
+
+      let onUnload = () => {
+        window.removeEventListener("unload", onUnload);
+        gTorPane.uninit();
+      };
+      window.addEventListener("unload", onUnload);
+    },
+
+    uninit() {
+      // unregister our observer topics
+      Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
+      Services.obs.removeObserver(this, TorConnectTopics.StateChange);
     },
 
     // whether the page should be present in about:preferences
@@ -536,6 +637,28 @@ const gTorPane = (function() {
     //
     // Callbacks
     //
+
+    observe(subject, topic, data) {
+      switch (topic) {
+       // triggered when a TorSettings param has changed
+        case TorSettingsTopics.SettingChanged: {
+          let obj = subject?.wrappedJSObject;
+          switch(data) {
+            case TorSettingsData.QuickStartEnabled: {
+              this._enableQuickstartCheckbox.checked = obj.value;
+              break;
+            }
+          }
+          break;
+        }
+        // triggered when tor connect state changes and we may
+        // need to update the messagebox
+        case TorConnectTopics.StateChange: {
+          this._populateMessagebox();
+          break;
+        }
+      }
+    },
 
     // callback when using bridges toggled
     onToggleBridge(enabled) {
