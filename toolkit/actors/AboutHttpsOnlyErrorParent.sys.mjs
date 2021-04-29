@@ -5,6 +5,8 @@
 const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 
+const { TorConnect } = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+
 export class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
   get browser() {
     return this.browsingContext.top.embedderElement;
@@ -15,7 +17,10 @@ export class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
       case "goBack":
         this.goBackFromErrorPage(this.browser);
         break;
+      case "ShouldShowTorConnect":
+        return TorConnect.shouldShowTorConnect;
     }
+    return undefined;
   }
 
   goBackFromErrorPage(aBrowser) {
