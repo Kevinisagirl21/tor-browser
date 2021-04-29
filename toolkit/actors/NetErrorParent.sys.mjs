@@ -18,6 +18,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
 });
 
 ChromeUtils.defineModuleGetter(
@@ -348,6 +349,9 @@ export class NetErrorParent extends JSWindowActorParent {
         let win = browser.ownerGlobal;
         win.openPreferences("privacy-doh");
         break;
+      case "ShouldShowTorConnect":
+        return lazy.TorConnect.shouldShowTorConnect;
     }
+    return undefined;
   }
 }
