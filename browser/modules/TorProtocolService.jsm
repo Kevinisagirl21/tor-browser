@@ -1,20 +1,59 @@
+// Copyright (c) 2021, The Tor Project, Inc.
+
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorProtocolService"];
+var EXPORTED_SYMBOLS = ["TorProtocolService", "TorProcessStatus"];
 
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://torlauncher/modules/tl-util.jsm"
+const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
 );
 
+// see tl-process.js
+const TorProcessStatus = Object.freeze({
+  Unknown: 0,
+  Starting: 1,
+  Running: 2,
+  Exited: 3,
+});
+
+/* Browser observer topis */
+const BrowserTopics = Object.freeze({
+    ProfileAfterChange: "profile-after-change",
+});
+
 var TorProtocolService = {
-  _tlps: Cc["@torproject.org/torlauncher-protocol-service;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject,
+  _TorLauncherUtil: function() {
+      let { TorLauncherUtil } = ChromeUtils.import(
+        "resource://torlauncher/modules/tl-util.jsm"
+      );
+      return TorLauncherUtil;
+    }(),
+  _TorLauncherProtocolService: null,
+  _TorProcessService: null,
 
   // maintain a map of tor settings set by Tor Browser so that we don't
   // repeatedly set the same key/values over and over
   // this map contains string keys to primitive or array values
   _settingsCache: new Map(),
+
+  init() {
+    Services.obs.addObserver(this, BrowserTopics.ProfileAfterChange);
+  },
+
+  observe(subject, topic, data) {
+    if (topic === BrowserTopics.ProfileAfterChange) {
+      // we have to delay init'ing this or else the crypto service inits too early without a profile
+      // which breaks the password manager
+      this._TorLauncherProtocolService = Cc["@torproject.org/torlauncher-protocol-service;1"].getService(
+        Ci.nsISupports
+      ).wrappedJSObject;
+      this._TorProcessService = Cc["@torproject.org/torlauncher-process-service;1"].getService(
+        Ci.nsISupports
+      ).wrappedJSObject,
+
+      Services.obs.removeObserver(this, topic);
+    }
+  },
 
   _typeof(aValue) {
     switch (typeof aValue) {
@@ -199,9 +238,9 @@ var TorProtocolService = {
     await this.sendCommand("SAVECONF");
   },
 
-  getLog() {
-    let countObj = { value: 0 };
-    let torLog = this._tlps.TorGetLog(countObj);
+  getLog(countObj) {
+    countObj = countObj || { value: 0 };
+    let torLog = this._TorLauncherProtocolService.TorGetLog(countObj);
     return torLog;
   },
 
@@ -321,3 +360,4 @@ var TorProtocolService = {
     return TorProcessStatus.Unknown;
   },
 };
+TorProtocolService.init();

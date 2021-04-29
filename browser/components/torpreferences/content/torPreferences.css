@@ -1,6 +1,129 @@
+@import url("chrome://branding/content/tor-styles.css");
+
 #category-tor > .category-icon {
   list-style-image: url("chrome://browser/content/torpreferences/torPreferencesIcon.svg");
 }
+
+/* Connect Message Box */
+
+#torPreferences-connectMessageBox {
+  display: block;
+  position: relative;
+
+  width: auto;
+  min-height: 32px;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+#torPreferences-connectMessageBox.hidden {
+  display: none;
+}
+
+#torPreferences-connectMessageBox.error {
+  background-color: var(--red-60);
+  color: white;
+}
+
+#torPreferences-connectMessageBox.warning {
+  background-color: var(--purple-50);
+  color: white;
+}
+
+#torPreferences-connectMessageBox table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#torPreferences-connectMessageBox td {
+  vertical-align: top;
+  padding: 0px;
+}
+
+#torPreferences-connectMessageBox td:first-child {
+  width: 24px;
+}
+
+#torPreferences-connectMessageBox-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  padding: 4px;
+
+  mask-repeat: no-repeat !important;
+  mask-size: 16px !important;
+  mask-position: 4px 4px !important;
+}
+
+#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-icon
+{
+  mask: url("chrome://browser/skin/onion-slash.svg");
+  background-color: white;
+}
+
+#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-icon
+{
+  mask: url("chrome://browser/skin/onion.svg");
+  background-color: white;
+}
+
+#torPreferences-connectMessageBox-message {
+  display: block;
+  line-height: 16px;
+  font-size: 1.0em;
+  margin-right: 8px;
+  padding-left: 4px!important;
+  padding-top: 4px!important;
+}
+
+#torPreferences-connectMessageBox-button {
+  display: block;
+  width: auto;
+  height: 24px;
+  line-height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  min-width: 0px;
+  margin: 0px;
+
+  border-radius: 4px;
+  border: 0;
+  padding: 0px 1.25em;
+  margin-left: auto;
+  margin-right: 0px;
+
+  font-size: 0.9em;
+  font-weight: 600;
+  white-space: nowrap;
+
+  color: white;
+}
+
+#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button {
+  background-color: var(--red-70);
+}
+
+#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:hover {
+  background-color: var(--red-80);
+}
+
+#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:active {
+  background-color: var(--red-90);
+}
+
+#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button {
+  background-color: var(--purple-70);
+}
+
+#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button:hover {
+  background-color: var(--purple-80);
+}
+
+#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button:active {
+  background-color: var(--purple-90);
+}
+
+/* Advanced Settings */
 
 #torPreferences-advanced-grid {
   display: grid;

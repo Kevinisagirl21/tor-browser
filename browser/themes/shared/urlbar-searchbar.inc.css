@@ -747,3 +747,5 @@ moz-input-box > menupopup .context-menu-add-engine > .menu-iconic-left::after {
 }
 
 %include ../../components/onionservices/content/onionlocation-urlbar.css
+%include ../../components/torconnect/content/torconnect-urlbar.css
+
