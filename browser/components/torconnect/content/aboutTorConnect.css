@@ -1,0 +1,96 @@
+
+/* Copyright (c) 2021, The Tor Project, Inc. */
+
+
+@import url("chrome://browser/skin/error-pages.css");
+
+:root {
+  --onion-opacity: 1;
+  --onion-color: var(--card-outline-color);
+  --onion-radius: 50px;
+}
+
+#connectButton {
+  background-color: #7D4698;
+}
+
+#connectButton:hover {
+  background-color: #59316B;
+}
+
+#progressBackground {
+  position:fixed;
+  padding:0;
+  margin:0;
+  top:0;
+  left:0;
+  width: 0%;
+  height: 7px;
+  background-image: linear-gradient(90deg, rgb(20, 218, 221) 0%, rgb(128, 109, 236) 100%);
+  border-radius: 0;
+}
+
+#connectPageContainer {
+  margin-top: 10vh;
+  width: 50%;
+}
+
+#copyLogButton {
+  position: relative;
+}
+
+#copyLogTooltip {
+  visibility: hidden;
+  display: inline-block;
+  width: 100%;
+
+  position: absolute;
+  z-index: 1;
+  left: 0px;
+  bottom: calc(100% + 6px);
+}
+
+#copyLogTooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: #30E60B transparent transparent transparent;
+}
+
+
+#copyLogTooltipText {
+  display: inline-block;
+  background-color: #30E60B;
+  color: #003706;
+  border-radius: 2px;
+  text-align: center;
+  line-height: 13px;
+  font: 11px Regular;
+  font-weight: 400;
+
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px;
+}
+
+body {
+  padding: 0px !important;
+  justify-content: space-between;
+  background-color: var(--in-content-page-background);
+}
+
+.title {
+  background-image: url("chrome://browser/content/torconnect/onion.svg");
+  -moz-context-properties: fill, fill-opacity;
+  fill-opacity: 1;
+  fill: var(--onion-color);
+}
+
+.title.error {
+  background-image: url("chrome://browser/content/torconnect/onion-slash.svg");
+}
+

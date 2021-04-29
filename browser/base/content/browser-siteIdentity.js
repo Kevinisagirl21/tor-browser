@@ -57,7 +57,7 @@ var gIdentityHandler = {
    * RegExp used to decide if an about url should be shown as being part of
    * the browser UI.
    */
-  _secureInternalUIWhitelist: (AppConstants.TOR_BROWSER_UPDATE ? /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor|tbupdate)(?:[?#]|$)/i : /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor)(?:[?#]|$)/i),
+  _secureInternalUIWhitelist: (AppConstants.TOR_BROWSER_UPDATE ? /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor|torconnect|tbupdate)(?:[?#]|$)/i : /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor|torconnect)(?:[?#]|$)/i),
 
   /**
    * Whether the established HTTPS connection is considered "broken".

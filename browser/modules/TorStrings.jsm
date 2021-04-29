@@ -364,6 +364,78 @@ var TorStrings = {
     return retval;
   })() /* Tor Network Settings Strings */,
 
+  torConnect: (() => {
+    const tsbNetwork = new TorDTDStringBundle(
+      ["chrome://torlauncher/locale/network-settings.dtd"],
+      ""
+    );
+    const tsbLauncher = new TorPropertyStringBundle(
+      "chrome://torlauncher/locale/torlauncher.properties",
+      "torlauncher."
+    );
+    const tsbCommon = new TorPropertyStringBundle(
+      "chrome://global/locale/commonDialogs.properties",
+      ""
+    );
+
+    const getStringNet = tsbNetwork.getString.bind(tsbNetwork);
+    const getStringLauncher = tsbLauncher.getString.bind(tsbLauncher);
+    const getStringCommon = tsbCommon.getString.bind(tsbCommon);
+
+    return {
+      torConnect: getStringNet(
+        "torsettings.wizard.title.default",
+        "Connect to Tor"
+      ),
+
+      torConnecting: getStringNet(
+        "torsettings.wizard.title.connecting",
+        "Establishing a Connection"
+      ),
+
+      torConnectingConcise: getStringNet(
+        "torConnect.connectingConcise",
+        "Connecting…"
+      ),
+
+      torBootstrapFailed: getStringLauncher(
+        "tor_bootstrap_failed",
+        "Tor failed to establish a Tor network connection."
+      ),
+
+      torConfigure: getStringNet(
+        "torsettings.wizard.title.configure",
+        "Tor Network Settings"
+      ),
+
+      copyLog: getStringNet(
+        "torConnect.copyLog",
+        "Copy Tor Logs"
+      ),
+
+      torConnectButton: getStringNet("torSettings.connect", "Connect"),
+
+      cancel: getStringCommon("Cancel", "Cancel"),
+
+      torConnected: getStringLauncher(
+        "torlauncher.bootstrapStatus.done",
+        "Connected to the Tor network"
+      ),
+
+      torConnectedConcise: getStringLauncher(
+        "torConnect.connectedConcise",
+        "Connected"
+      ),
+
+      tryAgain: getStringNet("torConnect.tryAgain", "Try connecting again"),
+      offline: getStringNet("torConnect.offline", "Offline"),
+
+      // tor connect strings for message box in about:preferences#tor
+      connectMessage: getStringNet("torConnect.connectMessage", "Changes to Tor Settings will not take effect until you connect to the Tor Network"),
+      tryAgainMessage: getStringNet("torConnect.tryAgainMessage", "Tor Browser has failed to establish a connection to the Tor Network"),
+    };
+  })(),
+
   /*
     Tor Onion Services Strings, e.g., for the authentication prompt.
   */

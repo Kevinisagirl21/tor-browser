@@ -96,6 +96,7 @@ let RemotePageAccessManager = {
       RPMPrefIsLocked: ["security.tls.version.min"],
       RPMAddToHistogram: ["*"],
       RPMGetTorStrings: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:newinstall": {
       RPMGetUpdateChannel: ["*"],
@@ -178,6 +179,25 @@ let RemotePageAccessManager = {
       RPMSendAsyncMessage: ["Load", "closeTab", "restoreTab", "restoreAll"],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
+    },
+    "about:torconnect": {
+      RPMAddMessageListener: ["*"],
+      RPMSendAsyncMessage: [
+        "GoToBrowserHome",
+        "OpenTorAdvancedPreferences",
+        "TorRetrieveBootstrapStatus",
+        "TorStopBootstrap",
+      ],
+      RPMSendQuery: [
+        "GetDirection",
+        "GetLocalizedBootstrapStatus",
+        "GetTorStrings",
+        "TorBootstrapErrorOccurred",
+        "TorConnect",
+        "TorCopyLog",
+        "TorIsNetworkDisabled",
+        "TorLogHasWarnOrErr",
+      ],
     },
   },
 

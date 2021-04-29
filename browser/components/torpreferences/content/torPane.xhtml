@@ -3,6 +3,29 @@
 <script type="application/javascript"
         src="chrome://browser/content/torpreferences/torPane.js"/>
 <html:template id="template-paneTor">
+
+<!-- Tor Connect Message Box -->
+<groupbox data-category="paneTor" hidden="true">
+  <html:div id="torPreferences-connectMessageBox"
+            class="subcategory"
+            data-category="paneTor"
+            hidden="true">
+    <html:table >
+      <html:tr>
+        <html:td>
+          <html:div id="torPreferences-connectMessageBox-icon"/>
+        </html:td>
+        <html:td id="torPreferences-connectMessageBox-message">
+        </html:td>
+        <html:td>
+          <html:button id="torPreferences-connectMessageBox-button">
+          </html:button>
+        </html:td>
+      </html:tr>
+    </html:table>
+  </html:div>
+</groupbox>
+
 <hbox id="torPreferencesCategory"
       class="subcategory"
       data-category="paneTor"
