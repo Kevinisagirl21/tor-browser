@@ -67,6 +67,7 @@ let RemotePageAccessManager = {
       RPMAddMessageListener: ["WWWReachable"],
       RPMTryPingSecureWWWLink: ["*"],
       RPMOpenSecureWWWLink: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:certificate": {
       RPMSendQuery: ["getCertificates"],
@@ -102,6 +103,7 @@ let RemotePageAccessManager = {
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:plugins": {
       RPMSendQuery: ["RequestPlugins"],
@@ -212,6 +214,21 @@ let RemotePageAccessManager = {
       RPMSendAsyncMessage: ["Load", "closeTab", "restoreTab", "restoreAll"],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
+    },
+    "about:torconnect": {
+      RPMAddMessageListener: [
+        "torconnect:state-change",
+      ],
+      RPMSendAsyncMessage: [
+        "torconnect:open-tor-preferences",
+        "torconnect:begin-bootstrap",
+        "torconnect:cancel-bootstrap",
+        "torconnect:set-quickstart",
+      ],
+      RPMSendQuery: [
+        "torconnect:get-init-args",
+        "torconnect:copy-tor-logs",
+      ],
     },
   },
 

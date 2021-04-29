@@ -1,0 +1,7 @@
+browser.jar:
+    content/browser/torconnect/torBootstrapUrlbar.js               (content/torBootstrapUrlbar.js)
+    content/browser/torconnect/aboutTorConnect.css                 (content/aboutTorConnect.css)
+*   content/browser/torconnect/aboutTorConnect.xhtml               (content/aboutTorConnect.xhtml)
+    content/browser/torconnect/aboutTorConnect.js                  (content/aboutTorConnect.js)
+    content/browser/torconnect/onion.svg                           (content/onion.svg)
+    content/browser/torconnect/onion-slash.svg                     (content/onion-slash.svg)
