@@ -79,6 +79,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabModalPrompt: "chrome://global/content/tabprompts.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
+  TorConnect: "resource:///modules/TorConnect.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
@@ -646,6 +647,7 @@ var gPageIcons = {
 
 var gInitialPages = [
   "about:tor",
+  "about:torconnect",
   "about:blank",
   "about:home",
   ...(AppConstants.NIGHTLY_BUILD ? ["about:firefoxview"] : []),
@@ -1874,6 +1876,8 @@ var gBrowserInit = {
     }
 
     this._loadHandled = true;
+
+    TorBootstrapUrlbar.init();
   },
 
   _cancelDelayedStartup() {
@@ -2421,32 +2425,48 @@ var gBrowserInit = {
 
       let defaultArgs = BrowserHandler.defaultArgs;
 
-      // If the given URI is different from the homepage, we want to load it.
-      if (uri != defaultArgs) {
-        AboutNewTab.noteNonDefaultStartup();
+      // figure out which URI to actually load (or a Promise to get the uri)
+      uri = (aUri => {
+        // If the given URI is different from the homepage, we want to load it.
+        if (aUri != defaultArgs) {
+          AboutNewTab.noteNonDefaultStartup();
 
-        if (uri instanceof Ci.nsIArray) {
-          // Transform the nsIArray of nsISupportsString's into a JS Array of
-          // JS strings.
-          return Array.from(
-            uri.enumerate(Ci.nsISupportsString),
-            supportStr => supportStr.data
-          );
-        } else if (uri instanceof Ci.nsISupportsString) {
-          return uri.data;
+          if (aUri instanceof Ci.nsIArray) {
+            // Transform the nsIArray of nsISupportsString's into a JS Array of
+            // JS strings.
+            return Array.from(
+              aUri.enumerate(Ci.nsISupportsString),
+              supportStr => supportStr.data
+            );
+          } else if (aUri instanceof Ci.nsISupportsString) {
+            return aUri.data;
+          }
+          return aUri;
         }
-        return uri;
-      }
 
-      // The URI appears to be the the homepage. We want to load it only if
-      // session restore isn't about to override the homepage.
-      let willOverride = SessionStartup.willOverrideHomepage;
-      if (typeof willOverride == "boolean") {
-        return willOverride ? null : uri;
+        // The URI appears to be the the homepage. We want to load it only if
+        // session restore isn't about to override the homepage.
+        let willOverride = SessionStartup.willOverrideHomepage;
+        if (typeof willOverride == "boolean") {
+          return willOverride ? null : uri;
+        }
+        return willOverride.then(willOverrideHomepage =>
+          willOverrideHomepage ? null : uri
+        );
+      })(uri);
+
+      // if using TorConnect, convert these uris to redirects
+      if (TorConnect.shouldShowTorConnect) {
+        return Promise.resolve(uri).then(aUri => {
+          if (aUri == null) {
+            aUri = [];
+          }
+
+          aUri = TorConnect.getURIsToLoad(aUri);
+          return aUri;
+        });
       }
-      return willOverride.then(willOverrideHomepage =>
-        willOverrideHomepage ? null : uri
-      );
+      return uri;
     })());
   },
 
@@ -2512,6 +2532,8 @@ var gBrowserInit = {
     SecurityLevelButton.uninit();
 
     NewIdentityButton.uninit();
+
+    TorBootstrapUrlbar.uninit();
 
     gAccessibilityServiceIndicator.uninit();
 
