@@ -29,6 +29,11 @@ MainProcessSingleton.prototype = {
           null
         );
 
+        ChromeUtils.import(
+          "resource:///modules/TorConnect.jsm",
+          null
+        );
+
         Services.ppmm.loadProcessScript(
           "chrome://global/content/process-content.js",
           true
