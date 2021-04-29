@@ -66,6 +66,7 @@ let RemotePageAccessManager = {
       RPMAddMessageListener: ["WWWReachable"],
       RPMTryPingSecureWWWLink: ["*"],
       RPMOpenSecureWWWLink: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:certificate": {
       RPMSendQuery: ["getCertificates"],
@@ -94,6 +95,7 @@ let RemotePageAccessManager = {
       RPMAddToHistogram: ["*"],
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:plugins": {
       RPMSendQuery: ["RequestPlugins"],
@@ -213,6 +215,30 @@ let RemotePageAccessManager = {
       RPMSendAsyncMessage: ["Load", "closeTab", "restoreTab", "restoreAll"],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
+    },
+    "about:tbupdate": {
+      RPMSendQuery: ["FetchUpdateData"],
+    },
+    "about:torconnect": {
+      RPMAddMessageListener: [
+        "torconnect:state-change",
+        "torconnect:user-action",
+      ],
+      RPMSendAsyncMessage: [
+        "torconnect:open-tor-preferences",
+        "torconnect:begin-bootstrap",
+        "torconnect:begin-autobootstrap",
+        "torconnect:cancel-bootstrap",
+        "torconnect:set-quickstart",
+        "torconnect:view-tor-logs",
+        "torconnect:restart",
+        "torconnect:set-ui-state",
+        "torconnect:broadcast-user-action",
+      ],
+      RPMSendQuery: [
+        "torconnect:get-init-args",
+        "torconnect:get-country-codes",
+      ],
     },
   },
 

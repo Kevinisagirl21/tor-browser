@@ -22,6 +22,7 @@ MainProcessSingleton.prototype = {
 
         // FIXME: Is this import really necessary?
         ChromeUtils.import("resource:///modules/TorSettings.jsm");
+        ChromeUtils.import("resource:///modules/TorConnect.jsm");
 
         Services.ppmm.loadProcessScript(
           "chrome://global/content/process-content.js",
