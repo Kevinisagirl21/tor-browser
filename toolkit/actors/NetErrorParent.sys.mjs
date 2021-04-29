@@ -26,6 +26,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/HomePage.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorConnect",
+  "resource:///modules/TorConnect.jsm"
+);
+
 class CaptivePortalObserver {
   constructor(actor) {
     this.actor = actor;
@@ -348,6 +354,9 @@ export class NetErrorParent extends JSWindowActorParent {
         let win = browser.ownerGlobal;
         win.openPreferences("privacy-doh");
         break;
+      case "ShouldShowTorConnect":
+        return lazy.TorConnect.shouldShowTorConnect;
     }
+    return undefined;
   }
 }
