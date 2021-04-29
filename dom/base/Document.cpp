@@ -17791,7 +17791,55 @@ ColorScheme Document::DefaultColorScheme() const {
 }
 
 ColorScheme Document::PreferredColorScheme(IgnoreRFP aIgnoreRFP) const {
-  if (ShouldResistFingerprinting() && aIgnoreRFP == IgnoreRFP::No) {
+  // tor-browser#27476
+  // Should this document ignore resist finger-printing settings with regards to
+  // setting the color scheme?
+  // Currently only enabled for about:torconnect but we could expand to other
+  // non-SystemPrincipal pages if we wish.
+  const auto documentUsesPreferredColorScheme =
+      [](auto const* constDocument) -> bool {
+    if (auto* document = const_cast<Document*>(constDocument);
+        document != nullptr) {
+      auto uri = document->GetDocBaseURI();
+
+      // Try and extract out our prepath and filepath portions of the uri to
+      // C-strings.
+      nsAutoCString prePathStr, filePathStr;
+      if (NS_FAILED(uri->GetPrePath(prePathStr)) ||
+          NS_FAILED(uri->GetFilePath(filePathStr))) {
+        return false;
+      }
+
+      // Stick them in string view for easy comparisons
+      std::string_view prePath(prePathStr.get(), prePathStr.Length()),
+          filePath(filePathStr.get(), filePathStr.Length());
+
+      // These about URIs will have the user's preferred color scheme exposed to
+      // them we can place other URIs here in the future if we wish.
+      // See nsIURI.idl for URI part definitions
+      constexpr struct {
+        std::string_view prePath;
+        std::string_view filePath;
+      } allowedURIs[] = {
+          {"about:", "torconnect"},
+      };
+
+      // Check each uri in the allow list against this document's URI.
+      // Verify the prepath and the file path match
+      for (auto const& uri : allowedURIs) {
+        if (prePath == uri.prePath && filePath == uri.filePath) {
+          // Positive match means we can apply dark-mode to the page
+          return true;
+        }
+      }
+    }
+
+    // Do not allow if no match or other error
+    return false;
+  };
+
+  if (ShouldResistFingerprinting() && aIgnoreRFP == IgnoreRFP::No &&
+      !documentUsesPreferredColorScheme(this)) {
     return ColorScheme::Light;
   }
 
