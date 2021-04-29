@@ -186,6 +186,10 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 
+const { TorProtocolService } = ChromeUtils.import(
+    "resource:///modules/TorProtocolService.jsm"
+);
+
 XPCOMUtils.defineLazyServiceGetters(this, {
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
 });
