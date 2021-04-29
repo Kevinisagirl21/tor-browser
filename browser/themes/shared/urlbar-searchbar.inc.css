@@ -826,3 +826,5 @@
 }
 
 %include ../../components/onionservices/content/onionlocation-urlbar.css
+%include ../../components/torconnect/content/torconnect-urlbar.css
+

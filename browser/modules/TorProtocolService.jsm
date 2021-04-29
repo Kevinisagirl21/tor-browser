@@ -1,3 +1,5 @@
+// Copyright (c) 2021, The Tor Project, Inc.
+
 "use strict";
 
 var EXPORTED_SYMBOLS = ["TorProtocolService"];
@@ -8,6 +10,10 @@ const { TorLauncherUtil } = ChromeUtils.import(
 
 var TorProtocolService = {
   _tlps: Cc["@torproject.org/torlauncher-protocol-service;1"].getService(
+    Ci.nsISupports
+  ).wrappedJSObject,
+
+  _tlproc: Cc["@torproject.org/torlauncher-process-service;1"].getService(
     Ci.nsISupports
   ).wrappedJSObject,
 
@@ -196,11 +202,11 @@ var TorProtocolService = {
 
   // writes current tor settings to disk
   flushSettings() {
-    this._tlps.TorSendCommand("SAVECONF");
+    this.sendCommand("SAVECONF");
   },
 
-  getLog() {
-    let countObj = { value: 0 };
+  getLog(countObj) {
+    countObj = countObj || { value: 0 };
     let torLog = this._tlps.TorGetLog(countObj);
     return torLog;
   },
@@ -208,5 +214,117 @@ var TorProtocolService = {
   // true if we launched and control tor, false if using system tor
   get ownsTorDaemon() {
     return TorLauncherUtil.shouldStartAndOwnTor;
+  },
+
+  // Assumes `ownsTorDaemon` is true
+  isNetworkDisabled() {
+    const reply = TorProtocolService._tlps.TorGetConfBool(
+      "DisableNetwork",
+      true
+    );
+    if (TorProtocolService._tlps.TorCommandSucceeded(reply)) {
+      return reply.retVal;
+    }
+    return true;
+  },
+
+  enableNetwork() {
+    let settings = {};
+    settings.DisableNetwork = false;
+    let errorObject = {};
+    if (!this._tlps.TorSetConfWithReply(settings, errorObject)) {
+      throw new Error(errorObject.details);
+    }
+  },
+
+  sendCommand(cmd) {
+    return this._tlps.TorSendCommand(cmd);
+  },
+
+  retrieveBootstrapStatus() {
+    return this._tlps.TorRetrieveBootstrapStatus();
+  },
+
+  _GetSaveSettingsErrorMessage(aDetails) {
+    try {
+      return TorLauncherUtil.getSaveSettingsErrorMessage(aDetails);
+    } catch (e) {
+      console.log("GetSaveSettingsErrorMessage error", e);
+      return "Unexpected Error";
+    }
+  },
+
+  setConfWithReply(settings) {
+    let result = false;
+    const error = {};
+    try {
+      result = this._tlps.TorSetConfWithReply(settings, error);
+    } catch (e) {
+      console.log("TorSetConfWithReply error", e);
+      error.details = this._GetSaveSettingsErrorMessage(e.message);
+    }
+    return { result, error };
+  },
+
+  isBootstrapDone() {
+    return this._tlproc.mIsBootstrapDone;
+  },
+
+  clearBootstrapError() {
+    return this._tlproc.TorClearBootstrapError();
+  },
+
+  shouldShowTorConnect() {
+    return (
+      this.ownsTorDaemon &&
+      !TorLauncherUtil.useLegacyLauncher &&
+      (this.isNetworkDisabled() || !this.isBootstrapDone())
+    );
+  },
+
+  torBootstrapErrorOccurred() {
+    return this._tlproc.TorBootstrapErrorOccurred;
+  },
+
+  // Resolves to null if ok, or an error otherwise
+  connect() {
+    const kTorConfKeyDisableNetwork = "DisableNetwork";
+    const settings = {};
+    settings[kTorConfKeyDisableNetwork] = false;
+    const { result, error } = this.setConfWithReply(settings);
+    if (!result) {
+      return error;
+    }
+    try {
+      this.sendCommand("SAVECONF");
+      this.clearBootstrapError();
+      this.retrieveBootstrapStatus();
+    } catch (e) {
+      return error;
+    }
+    return null;
+  },
+
+  torLogHasWarnOrErr() {
+    return this._tlps.TorLogHasWarnOrErr;
+  },
+
+  torStopBootstrap() {
+    // Tell tor to disable use of the network; this should stop the bootstrap
+    // process.
+    const kErrorPrefix = "Setting DisableNetwork=1 failed: ";
+    try {
+      let settings = {};
+      settings.DisableNetwork = true;
+      const { result, error } = this.setConfWithReply(settings);
+      if (!result) {
+        console.log(
+          `Error stopping bootstrap ${kErrorPrefix} ${error.details}`
+        );
+      }
+    } catch (e) {
+      console.log(`Error stopping bootstrap ${kErrorPrefix} ${e}`);
+    }
+    this.retrieveBootstrapStatus();
   },
 };
