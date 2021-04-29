@@ -34,6 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
+  TorConnect: "resource:///modules/TorConnect.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -62,6 +63,36 @@ const SEARCH_BUTTON_ID = "urlbar-search-button";
 
 // The scalar category of TopSites click for Contextual Services
 const SCALAR_CATEGORY_TOPSITES = "contextual.services.topsites.click";
+
+// in certain scenarios we want user input uris to open in a new tab if they do so from the
+// about:torconnect tab
+function maybeUpdateOpenLocationForTorConnect(
+  openUILinkWhere,
+  currentURI,
+  destinationURI
+) {
+  try {
+    // only open in new tab if:
+    if (
+      // user is navigating away from about:torconnect
+      currentURI === "about:torconnect" &&
+      // we are trying to open in same tab
+      openUILinkWhere === "current" &&
+      // only if user still has not bootstrapped
+      lazy.TorConnect.shouldShowTorConnect &&
+      // and user is not just navigating to about:torconnect
+      destinationURI !== "about:torconnect"
+    ) {
+      return "tab";
+    }
+  } catch (e) {
+    // swallow exception and fall through returning original so we don't accidentally break
+    // anything if an exception is thrown
+    console.log(e?.message ? e.message : e);
+  }
+
+  return openUILinkWhere;
+}
 
 let getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
@@ -2805,6 +2836,11 @@ export class UrlbarInput {
       this.inputField.setSelectionRange(0, 0);
     }
 
+    openUILinkWhere = maybeUpdateOpenLocationForTorConnect(
+      openUILinkWhere,
+      this.window.gBrowser.currentURI.asciiSpec,
+      url
+    );
     if (openUILinkWhere != "current") {
       this.handleRevert();
     }
