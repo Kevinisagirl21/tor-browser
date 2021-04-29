@@ -155,6 +155,8 @@ EXTRA_JS_MODULES += [
     'TabUnloader.jsm',
     'ThemeVariableMap.jsm',
     'TopSiteAttribution.jsm',
+    'TorConnect.jsm',
+    'TorProcessService.jsm',
     'TorProtocolService.jsm',
     'TorStrings.jsm',
     'TransientPrefs.jsm',

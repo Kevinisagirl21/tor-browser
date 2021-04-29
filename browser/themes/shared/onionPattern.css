@@ -1,0 +1,124 @@
+/* Onion pattern */
+
+:root {
+  --sqrt3: 1.73205080757;
+}
+
+.onion-pattern-container {
+  opacity: var(--onion-opacity, 1);
+  flex: auto;           /* grow to consume remaining space on the page */
+  display: flex;
+  margin: 0 auto;
+  width: 100%;
+  height: calc((2 + var(--sqrt3)) * var(--onion-radius, 50px));    /* room for 2 rows of circles */
+  max-height: calc((2 + var(--sqrt3)) * var(--onion-radius, 50px));
+  direction: ltr;
+}
+
+.onion-pattern-crop {
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+  pointer-events: none; /* for some reason, elements with overflow-x: hidden set become focusable */
+
+  margin: 0 auto;
+}
+
+/* Centers horizontally within the root container*/
+.onion-pattern-column {
+  width: calc(40 * var(--onion-radius, 50px)); /* room for 20 circles in a row */
+  height: calc((2 + var(--sqrt3)) * var(--onion-radius, 50px)); /* room for 2 rows of circles */
+  flex-shrink: 0;
+  overflow-x: hidden;   /* clip extra circles on the sides */
+  pointer-events: none; /* for some reason, elements with overflow-x: hidden set become focusable */
+}
+
+.onion-pattern-row {
+  width: calc(40 * var(--onion-radius, 50px)); /* room for 20 circles in a row */
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+.onion-pattern-offset-row {
+  left: calc(-1 * var(--onion-radius, 50px));
+  margin-top: calc((var(--sqrt3) - 2.0) * var(--onion-radius, 50px));
+}
+
+/* With borders, circles are 100x100 pixels*/
+.circle {
+  position: relative;
+  min-width: calc(2 * var(--onion-radius, 50px));
+  min-height: calc(2 * var(--onion-radius, 50px));
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.inner {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+
+.inner:nth-child(1){
+  width: 100%;
+  height: 100%;
+}
+
+.inner:nth-child(2){
+  transform: translate(20%, 20%);
+  width: calc(100% * 5/7);
+  height: calc(100% * 5/7);
+}
+
+.inner:nth-child(3){
+  transform: translate(calc(100% * 2/3), calc(100% * 2/3));
+  width: calc(100% * 3/7);
+  height: calc(100% * 3/7);
+}
+
+.inner:nth-child(4){
+  transform: translate(300%, 300%);
+  width: calc(100% * 1/7);
+  height: calc(100% * 1/7);
+}
+
+.solid {
+  background-color: var(--onion-color, #000);
+}
+
+.border {
+  border: 4px solid var(--onion-color, #000);
+}
+
+.dashed {
+  border: 4px dashed var(--onion-color, #000);
+}
+
+.dotted {
+  border: 4px dotted var(--onion-color, #000);
+}
+
+.bold {
+  border: 8px solid var(--onion-color, #000);
+}
+
+.top-half {
+  width: calc(2 * var(--onion-radius, 50px));
+  height: var(--onion-radius, 50px);
+  border-radius: var(--onion-radius, 50px) var(--onion-radius, 50px) 0 0;
+  box-sizing: border-box;
+}
+
+.bottom-half {
+  width: calc(2 * var(--onion-radius, 50px));
+  height: var(--onion-radius, 50px);
+  border-radius: 0 0 var(--onion-radius, 50px) var(--onion-radius, 50px);
+  box-sizing: border-box;
+}
+
+.scaler {
+  position: absolute;
+  left:0;
+  bottom:0;
+}
