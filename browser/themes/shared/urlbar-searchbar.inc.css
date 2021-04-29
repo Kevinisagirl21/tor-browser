@@ -745,3 +745,6 @@ moz-input-box > menupopup .context-menu-add-engine > .menu-iconic-left::after {
 .searchbar-textbox::placeholder {
   opacity: 0.69;
 }
+
+%include ../../components/torconnect/content/torconnect-urlbar.css
+

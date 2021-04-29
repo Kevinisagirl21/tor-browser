@@ -15,6 +15,8 @@ const { SessionStore } = ChromeUtils.import(
   "resource:///modules/sessionstore/SessionStore.jsm"
 );
 
+const { TorConnect } = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+
 class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
   get browser() {
     return this.browsingContext.top.embedderElement;
@@ -28,7 +30,10 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
       case "openInsecure":
         this.openWebsiteInsecure(this.browser, aMessage.data.inFrame);
         break;
+      case "ShouldShowTorConnect":
+        return TorConnect.shouldShowTorConnect;
     }
+    return undefined;
   }
 
   goBackFromErrorPage(aWindow) {
