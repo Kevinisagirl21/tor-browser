@@ -20,6 +20,7 @@ const kAllowedPrefs = new Set([
 
   "browser.contentblocking.report.hide_vpn_banner",
   "browser.contentblocking.report.show_mobile_app",
+  "extensions.torlauncher.quickstart",
 
   "narrate.rate",
   "narrate.voice",

@@ -103,6 +103,7 @@ let RemotePageAccessManager = {
       RPMGetInnerMostURI: ["*"],
       RPMGetHttpResponseHeader: ["*"],
       RPMGetTorStrings: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:plugins": {
       RPMSendQuery: ["RequestPlugins"],
@@ -217,6 +218,21 @@ let RemotePageAccessManager = {
     "about:tbupdate": {
       RPMSendQuery: [
         "FetchUpdateData",
+      ],
+    },
+    "about:torconnect": {
+      RPMAddMessageListener: [
+        "torconnect:state-change",
+      ],
+      RPMSendAsyncMessage: [
+        "torconnect:open-tor-preferences",
+        "torconnect:begin-bootstrap",
+        "torconnect:cancel-bootstrap",
+        "torconnect:set-quickstart",
+      ],
+      RPMSendQuery: [
+        "torconnect:get-init-args",
+        "torconnect:copy-tor-logs",
       ],
     },
   },
