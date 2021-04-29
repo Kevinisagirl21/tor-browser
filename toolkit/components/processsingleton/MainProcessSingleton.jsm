@@ -20,10 +20,8 @@ MainProcessSingleton.prototype = {
         // Imported for side-effects.
         ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
 
-        ChromeUtils.import(
-          "resource:///modules/TorSettings.jsm",
-          null
-        );
+        ChromeUtils.import("resource:///modules/TorSettings.jsm");
+        ChromeUtils.import("resource:///modules/TorConnect.jsm");
 
         Services.ppmm.loadProcessScript(
           "chrome://global/content/process-content.js",

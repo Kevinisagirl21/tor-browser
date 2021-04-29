@@ -146,6 +146,8 @@ EXTRA_JS_MODULES += [
     "SitePermissions.jsm",
     "TabsList.jsm",
     "TabUnloader.jsm",
+    "TorConnect.jsm",
+    "TorProcessService.jsm",
     "TorProtocolService.jsm",
     "TorSettings.jsm",
     "TorStrings.jsm",
