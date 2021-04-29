@@ -1,0 +1,84 @@
+<!-- Copyright (c) 2021, The Tor Project, Inc. -->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src chrome:; object-src 'none'"
+    />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/skin/onionPattern.css"
+      type="text/css"
+      media="all"
+    />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/torconnect/aboutTorConnect.css"
+      type="text/css"
+      media="all"
+    />
+  </head>
+  <body>
+    <div id="progressBar">
+      <div id="progressBackground" />
+      <div id="progressSolid" />
+    </div>
+    <div id="connectPageContainer" class="container">
+      <div id="breadcrumbs" class="hidden">
+        <span id="connect-to-tor" class="breadcrumb-item">
+          <span id="connect-to-tor-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label" />
+        </span>
+        <span
+          id="connection-assist-separator"
+          class="breadcrumb-separator breadcrumb-icon"
+        />
+        <span id="connection-assist" class="breadcrumb-item">
+          <span id="connection-assist-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label" />
+        </span>
+        <span
+          id="try-bridge-separator"
+          class="breadcrumb-separator breadcrumb-icon"
+        />
+        <span id="try-bridge" class="breadcrumb-item">
+          <span id="try-bridge-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label" />
+        </span>
+      </div>
+      <div id="text-container">
+        <div class="title">
+          <h1 class="title-text" />
+        </div>
+        <div id="connectLongContent">
+          <p id="connectLongContentText" />
+        </div>
+        <div id="connectShortDesc">
+          <p id="connectShortDescText" />
+        </div>
+
+        <button id="viewLogButton"></button>
+
+        <div id="quickstartContainer">
+          <input id="quickstartCheckbox" type="checkbox" />
+          <label id="quickstartCheckboxLabel" for="quickstartCheckbox" />
+        </div>
+
+        <div id="connectButtonContainer" class="button-container">
+          <button id="restartButton" hidden="true"></button>
+          <button id="configureButton" hidden="true"></button>
+          <button id="cancelButton" hidden="true"></button>
+          <button id="connectButton" class="primary" hidden="true"></button>
+          <label id="locationDropdownLabel" for="countries" />
+          <form id="locationDropdown" hidden="true">
+            <select id="countries"></select>
+          </form>
+          <button id="tryBridgeButton" class="primary" hidden="true"></button>
+        </div>
+      </div>
+    </div>
+#include ../../../themes/shared/onionPattern.inc.xhtml
+  </body>
+  <script src="chrome://browser/content/torconnect/aboutTorConnect.js" />
+</html>

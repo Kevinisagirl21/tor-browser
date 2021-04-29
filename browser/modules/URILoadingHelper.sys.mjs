@@ -12,6 +12,7 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  TorConnect: "resource:///modules/TorConnect.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "ReferrerInfo", () =>
@@ -417,6 +418,28 @@ export const URILoadingHelper = {
       return;
     }
 
+    // make sure users are not faced with the scary red 'tor isn't working' screen
+    // if they navigate to about:tor before bootstrapped
+    //
+    // fixes tor-browser#40752
+    // new tabs also redirect to about:tor if browser.newtabpage.enabled is true
+    // otherwise they go to about:blank
+    if (lazy.TorConnect.shouldShowTorConnect) {
+      const homeURLs = [
+        "about:home",
+        "about:privatebrowsing",
+        "about:tor",
+        "about:welcome",
+      ];
+      if (
+        homeURLs.includes(url) ||
+        (url === "about:newtab" &&
+          Services.prefs.getBoolPref("browser.newtabpage.enabled", false))
+      ) {
+        url = lazy.TorConnect.getRedirectURL(url);
+      }
+    }
+
     let {
       allowThirdPartyFixup,
       postData,
@@ -671,6 +694,7 @@ export const URILoadingHelper = {
     aReferrerInfo
   ) {
     event = BrowserUtils.getRootEvent(event);
+
     let params;
 
     if (aIgnoreButton && typeof aIgnoreButton == "object") {
