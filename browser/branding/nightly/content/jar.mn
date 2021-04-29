@@ -20,3 +20,4 @@ browser.jar:
   content/branding/icon512.png                   (../default512.png)
   content/branding/identity-icons-brand.svg
   content/branding/aboutDialog.css
+* content/branding/tor-styles.css
