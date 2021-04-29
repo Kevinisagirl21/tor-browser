@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionSettingsStore: "resource://gre/modules/ExtensionSettingsStore.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
+  TorConnect: "resource:///modules/TorConnect.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
@@ -336,6 +337,13 @@ function openUILinkIn(
   aPostData,
   aReferrerInfo
 ) {
+
+  // make sure users are not faced with the scary red 'tor isn't working' screen
+  // if they navigate to about:tor before bootstrapped
+  if (url === "about:tor" && TorConnect.shouldShowTorConnect) {
+    url = `about:torconnect?redirect=${encodeURIComponent("about:tor")}`;
+  }
+
   var params;
 
   if (arguments.length == 3 && typeof arguments[2] == "object") {

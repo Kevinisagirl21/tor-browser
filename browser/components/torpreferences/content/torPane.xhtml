@@ -3,6 +3,29 @@
 <script type="application/javascript"
         src="chrome://browser/content/torpreferences/torPane.js"/>
 <html:template id="template-paneTor">
+
+<!-- Tor Connect Message Box -->
+<groupbox data-category="paneTor" hidden="true">
+  <html:div id="torPreferences-connectMessageBox"
+            class="subcategory"
+            data-category="paneTor"
+            hidden="true">
+    <html:table >
+      <html:tr>
+        <html:td>
+          <html:div id="torPreferences-connectMessageBox-icon"/>
+        </html:td>
+        <html:td id="torPreferences-connectMessageBox-message">
+        </html:td>
+        <html:td>
+          <html:button id="torPreferences-connectMessageBox-button">
+          </html:button>
+        </html:td>
+      </html:tr>
+    </html:table>
+  </html:div>
+</groupbox>
+
 <hbox id="torPreferencesCategory"
       class="subcategory"
       data-category="paneTor"
@@ -16,6 +39,17 @@
     <html:span id="torPreferences-description" class="tail-with-learn-more"/>
     <label id="torPreferences-learnMore" class="learnMore text-link" is="text-link"/>
   </description>
+</groupbox>
+
+<!-- Quickstart -->
+<groupbox id="torPreferences-quickstart-group"
+          data-category="paneTor"
+          hidden="true">
+  <html:h2 id="torPreferences-quickstart-header"/>
+  <description flex="1">
+    <html:span id="torPreferences-quickstart-description"/>
+  </description>
+  <checkbox id="torPreferences-quickstart-toggle"/>
 </groupbox>
 
 <!-- Bridges -->
