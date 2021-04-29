@@ -10,6 +10,38 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { TorConnect } = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+
+// in certain scenarios we want user input uris to open in a new tab if they do so from the
+// about:torconnect tab
+function maybeUpdateOpenLocationForTorConnect(
+  openUILinkWhere,
+  currentURI,
+  destinationURI
+) {
+  try {
+    // only open in new tab if:
+    if (
+      // user is navigating away from about:torconnect
+      currentURI === "about:torconnect" &&
+      // we are trying to open in same tab
+      openUILinkWhere === "current" &&
+      // only if user still has not bootstrapped
+      TorConnect.shouldShowTorConnect &&
+      // and user is not just navigating to about:torconnect
+      destinationURI !== "about:torconnect"
+    ) {
+      return "tab";
+    }
+  } catch (e) {
+    // swallow exception and fall through returning original so we don't accidentally break
+    // anything if an exception is thrown
+    console.log(e?.message ? e.message : e);
+  }
+
+  return openUILinkWhere;
+}
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.jsm",
@@ -2547,6 +2579,11 @@ class UrlbarInput {
       this.selectionStart = this.selectionEnd = 0;
     }
 
+    openUILinkWhere = maybeUpdateOpenLocationForTorConnect(
+      openUILinkWhere,
+      this.window.gBrowser.currentURI.asciiSpec,
+      url
+    );
     if (openUILinkWhere != "current") {
       this.handleRevert();
     }
