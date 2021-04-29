@@ -78,6 +78,10 @@ function getGlobalScriptIncludes(scriptPath) {
     if (match) {
       let sourceFile = match[1]
         .replace(
+          "chrome://global/content/torconnect/",
+          "toolkit/components/torconnect/content/"
+        )
+        .replace(
           "chrome://browser/content/search/",
           "browser/components/search/content/"
         )
