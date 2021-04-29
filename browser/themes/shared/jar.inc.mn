@@ -9,6 +9,8 @@
 
   skin/classic/browser/aboutNetError.css                       (../shared/aboutNetError.css)
   skin/classic/browser/offlineSupportPages.css                 (../shared/offlineSupportPages.css)
+  skin/classic/browser/onionPattern.css                        (../shared/onionPattern.css)
+  skin/classic/browser/onionPattern.svg                        (../shared/onionPattern.svg)
   skin/classic/browser/blockedSite.css                         (../shared/blockedSite.css)
   skin/classic/browser/error-pages.css                         (../shared/error-pages.css)
   skin/classic/browser/aboutRestartRequired.css                (../shared/aboutRestartRequired.css)
