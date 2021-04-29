@@ -880,6 +880,20 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  TorConnect: {
+    parent: {
+      esModuleURI: "resource:///actors/TorConnectParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///actors/TorConnectChild.sys.mjs",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+
+    matches: ["about:torconnect", "about:torconnect?*"],
+  },
+
   // The older translations feature backed by external services.
   // This is being replaced by a newer ML-backed translation service. See Bug 971044.
   Translation: {
