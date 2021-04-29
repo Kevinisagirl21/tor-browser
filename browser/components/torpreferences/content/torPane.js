@@ -1,5 +1,7 @@
 "use strict";
 
+/* global Services */
+
 const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
@@ -62,6 +64,11 @@ const gTorPane = (function() {
     category: {
       title: "label#torPreferences-labelCategory",
     },
+    messageBox: {
+      box: "div#torPreferences-connectMessageBox",
+      message: "td#torPreferences-connectMessageBox-message",
+      button: "button#torPreferences-connectMessageBox-button",
+    },
     torPreferences: {
       header: "h1#torPreferences-header",
       description: "span#torPreferences-description",
@@ -112,6 +119,9 @@ const gTorPane = (function() {
 
   let retval = {
     // cached frequently accessed DOM elements
+    _messageBox: null,
+    _messageBoxMessage: null,
+    _messageBoxButton: null,
     _useBridgeCheckbox: null,
     _bridgeSelectionRadiogroup: null,
     _builtinBridgeOption: null,
@@ -160,6 +170,42 @@ const gTorPane = (function() {
         .setAttribute("value", TorStrings.settings.categoryTitle);
 
       let prefpane = document.getElementById("mainPrefPane");
+
+      // 'Connect to Tor' Message Bar
+
+      this._messageBox = prefpane.querySelector(selectors.messageBox.box);
+      this._messageBoxMessage = prefpane.querySelector(selectors.messageBox.message);
+      this._messageBoxButton = prefpane.querySelector(selectors.messageBox.button);
+      // wire up connect button
+      this._messageBoxButton.addEventListener("click", () => {
+        TorProtocolService.connect();
+        let win = Services.wm.getMostRecentWindow("navigator:browser");
+        win.switchToTabHavingURI("about:torconnect");
+      });
+
+      let populateMessagebox = () => {
+        if (TorProtocolService.shouldShowTorConnect()) {
+          // set messagebox style and text
+          if (TorProtocolService.torBootstrapErrorOccurred()) {
+            this._messageBox.className = "error";
+            this._messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
+            this._messageBoxButton.innerText = TorStrings.torConnect.tryAgain;
+          } else {
+            this._messageBox.className = "warning";
+            this._messageBoxMessage.innerText = TorStrings.torConnect.connectMessage;
+            this._messageBoxButton.innerText = TorStrings.torConnect.torConnectButton;
+          }
+        } else {
+          this._messageBox.className = "hidden";
+          this._messageBoxMessage.innerText = "";
+          this._messageBoxButton.innerText = "";
+        }
+      }
+      populateMessagebox();
+      // update the messagebox whenever we come back to the page
+      window.addEventListener("focus", val => {
+        populateMessagebox();
+      });
 
       // Heading
       prefpane.querySelector(selectors.torPreferences.header).innerText =
