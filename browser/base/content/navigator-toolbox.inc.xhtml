@@ -108,6 +108,12 @@
         <label data-l10n-id="private-browsing-indicator-label"></label>
       </hbox>
 
+      <html:div id="tor-connect-titlebar-status" role="status">
+        <html:img alt=""
+                  src="chrome://global/content/torconnect/tor-not-connected-to-connected-animated.svg" />
+        <html:span id="tor-connect-titlebar-status-label"></html:span>
+      </html:div>
+
 #include titlebar-items.inc.xhtml
 
     </toolbar>
@@ -414,6 +420,13 @@
                 <image id="star-button"
                        class="urlbar-icon"/>
               </hbox>
+            </hbox>
+
+            <hbox id="tor-connect-urlbar-button"
+                  role="button"
+                  class="tor-urlbar-button"
+                  hidden="true">
+              <label id="tor-connect-urlbar-button-label"/>
             </hbox>
           </hbox>
         </hbox>
