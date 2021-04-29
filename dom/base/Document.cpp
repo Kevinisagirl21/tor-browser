@@ -17791,8 +17791,55 @@ ColorScheme Document::DefaultColorScheme() const {
 }
 
 ColorScheme Document::PreferredColorScheme(IgnoreRFP aIgnoreRFP) const {
+
+  // tor-browser#27476
+  // should this document ignore resist finger-printing settings with regards to
+  // setting the color scheme
+  // currently only enabled for about:torconnect but we could expand to other non-
+  // SystemPrincipal pages if we wish
+  const auto documentUsesPreferredColorScheme = [](auto const* constDocument) -> bool {
+    if (auto* document = const_cast<Document*>(constDocument); document != nullptr) {
+      auto uri = document->GetDocBaseURI();
+
+      // try and extract out our prepath and filepath portions of the uri to C-strings
+      nsAutoCString prePathStr, filePathStr;
+      if(NS_FAILED(uri->GetPrePath(prePathStr)) ||
+         NS_FAILED(uri->GetFilePath(filePathStr))) {
+        return false;
+      }
+
+      // stick them in string view for easy comparisons
+      std::string_view prePath(prePathStr.get(), prePathStr.Length()),
+                       filePath(filePathStr.get(), filePathStr.Length());
+
+      // these about URIs will have the user's preferred color scheme exposed to them
+      // we can place other URIs here in the future if we wish
+      // see nsIURI.idl for URI part definitions
+      constexpr struct {
+        std::string_view prePath;
+        std::string_view filePath;
+      } allowedURIs[] = {
+        { "about:", "torconnect" },
+      };
+
+      // check each uri in the allow list against this document's uri
+      // verify the prepath and the file path match
+      for(auto const& uri : allowedURIs) {
+        if (prePath == uri.prePath &&
+            filePath == uri.filePath) {
+          // positive match means we can apply dark-mode to the page
+          return true;
+        }
+      }
+    }
+
+    // do not allow if no match or other error
+    return false;
+  };
+
   if (aIgnoreRFP == IgnoreRFP::No &&
-      nsContentUtils::ShouldResistFingerprinting(this)) {
+      nsContentUtils::ShouldResistFingerprinting(this) &&
+      !documentUsesPreferredColorScheme(this)) {
     return ColorScheme::Light;
   }
 
