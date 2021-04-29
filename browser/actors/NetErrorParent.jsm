@@ -21,6 +21,10 @@ const { TelemetryController } = ChromeUtils.import(
   "resource://gre/modules/TelemetryController.jsm"
 );
 
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
+
 const PREF_SSL_IMPACT_ROOTS = [
   "security.tls.version.",
   "security.ssl3.",
@@ -350,6 +354,10 @@ class NetErrorParent extends JSWindowActorParent {
             break;
           }
         }
+        break;
+      case "ShouldShowTorConnect":
+        return TorConnect.shouldShowTorConnect;
     }
+    return undefined;
   }
 }
