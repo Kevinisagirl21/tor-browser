@@ -275,6 +275,8 @@ pref("network.connectivity-service.enabled", false);
 // As a "defense in depth" measure, configure an empty push server URL (the
 // DOM Push features are disabled by default via other prefs).
 pref("dom.push.serverURL", "");
+// Bug 40423: Disable http/3
+pref("network.http.http3.enabled", false);
 
 // Extension support
 pref("extensions.autoDisableScopes", 0);
