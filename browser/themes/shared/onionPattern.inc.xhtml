@@ -9,9 +9,11 @@
  - most browser windows, typically the two rows of onions will fill the
  - bottom of the page. On really wide pages, the onions are centered at
  - the bottom of the page.
+ - The root onion-pattern-container div is hidden by default, and can be
+ - enabled by including onionPattern.css
 -->
 
-<div class="onion-pattern-container">
+<div class="onion-pattern-container" style="display: none">
   <!-- for some reason, these two elements are focusable, seems related to
    - flex css somehow; disable their tabindex to fix
   -->

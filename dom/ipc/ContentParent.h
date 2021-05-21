@@ -1280,6 +1280,8 @@ class ContentParent final
       const MaybeDiscarded<BrowsingContext>& aContext, int32_t aOffset,
       HistoryGoResolver&& aResolveRequestedIndex);
 
+  mozilla::ipc::IPCResult RecvShouldShowV2DeprecationPage(bool* showPage);
+
   // Notify the ContentChild to enable the input event prioritization when
   // initializing.
   void MaybeEnableRemoteInputEventQueue();
