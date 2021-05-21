@@ -6515,6 +6515,17 @@ NS_IMETHODIMP ContentParent::GetActor(const nsACString& aName,
   return NS_OK;
 }
 
+mozilla::ipc::IPCResult ContentParent::RecvShouldShowV2DeprecationPage(bool* showPage) {
+  static bool v2DeprecationPageShown = false;
+  if (v2DeprecationPageShown) {
+    *showPage = false;
+  } else {
+    *showPage = true;
+    v2DeprecationPageShown = true;
+  }
+  return IPC_OK();
+}
+
 }  // namespace dom
 }  // namespace mozilla
 

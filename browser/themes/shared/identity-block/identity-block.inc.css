@@ -181,7 +181,8 @@ toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI > #identity-i
 
 #identity-box[pageproxystate="valid"].onionMixedDisplayContent > #identity-icon,
 #identity-box[pageproxystate="valid"].onionMixedDisplayContentLoadedActiveBlocked > #identity-icon,
-#identity-box[pageproxystate="valid"].onionCertUserOverridden > #identity-icon {
+#identity-box[pageproxystate="valid"].onionCertUserOverridden > #identity-icon,
+#identity-box[pageproxystate="valid"].onionServiceDeprecated > #identity-icon {
   list-style-image: url(chrome://browser/skin/onion-warning.svg);
   visibility: visible;
 }

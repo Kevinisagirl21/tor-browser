@@ -1200,6 +1200,8 @@ with modules["TOR"]:
     errors["NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS"] = FAILURE(7)
     # Tor onion service introduction timed out.
     errors["NS_ERROR_TOR_ONION_SVC_INTRO_TIMEDOUT"] = FAILURE(8)
+    # Tor v2 onion services are deprecated
+    errors["NS_ERROR_TOR_ONION_SVC_V2_DEPRECATED"] = FAILURE(9)
 
 # =======================================================================
 # 51: NS_ERROR_MODULE_GENERAL

@@ -502,6 +502,14 @@ var TorStrings = {
         header: getString("introTimedOut.header", "Onionsite Circuit Creation Timed Out"),
         longDescription: getString("introTimedOut.longDescription", kLongDescFallback),
       },
+      v2Deprecated: { // Deprecation page for v2 Onions
+        pageTitle: getString("v2Deprecated.pageTitle", "V2 Onion Site Deprecation Warning"),
+        header: getString("v2Deprecated.header", "Version 2 Onion Sites will be deprecated soon"),
+        longDescription: getString("v2Deprecated.longDescription", "Tor is ending its support for version 2 onion services beginning in July 2021, and this onion site will no longer be reachable at this address. If you are the site administrator, upgrade to a version 3 onion service soon."),
+        learnMoreURL: `https://support.torproject.org/${getLocale()}/onionservices/#v2-deprecation`,
+        tryAgain: getString("v2Deprecated.tryAgain", "Got it"),
+        tooltip: getString("v2Deprecated.tooltip", "This onion site will not be reachable soon"),
+      },
       authPrompt: {
         description:
           getString("authPrompt.description2", "%S is requesting that you authenticate."),

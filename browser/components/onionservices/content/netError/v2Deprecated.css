@@ -1,0 +1,25 @@
+%include ../../../../themes/shared/onionPattern.css
+
+:root {
+  --onion-opacity: 1;
+  --onion-color: var(--card-outline-color);
+  --onion-radius: 50px;
+}
+
+body {
+    border: 1.5em solid #FED916;
+    justify-content: space-between;
+}
+
+div.title {
+    background-image: url("chrome://browser/skin/onion-warning.svg");
+}
+
+div#errorPageContainer {
+    padding-top: 20vh;
+    width: 66%;
+}
+
+div#learnMoreContainer {
+    display: block;
+}
