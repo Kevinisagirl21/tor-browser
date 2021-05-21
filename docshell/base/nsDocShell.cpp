@@ -7,6 +7,7 @@
 #include "nsDocShell.h"
 
 #include <algorithm>
+#include <regex>
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -3644,6 +3645,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         break;
       case NS_ERROR_TOR_ONION_SVC_INTRO_TIMEDOUT:
         error = "onionServices.introTimedOut";
+        break;
+      case NS_ERROR_TOR_ONION_SVC_V2_DEPRECATED:
+        error = "onionServices.v2Deprecated";
         break;
       default:
         break;
@@ -9595,6 +9599,63 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     // tears us down.
     return NS_OK;
   }
+
+  // tor-browser#40416
+  // we only ever want to show the warning page once per session
+  const auto shouldShouldShowV2DeprecationPage = []() -> bool {
+    bool retval = false;
+    if (XRE_IsContentProcess()) {
+      auto* cc = ContentChild::GetSingleton();
+      cc->SendShouldShowV2DeprecationPage(&retval);
+    }
+    return retval;
+  };
+
+  const auto uriIsV2Onion = [](nsIURI* uri) -> bool {
+    if (uri) {
+      nsAutoCString hostString;
+      uri->GetHost(hostString);
+
+      const std::string_view host(hostString.BeginReading(), hostString.Length());
+
+      // matches v2 onions with any number of subdomains
+      const static std::regex v2OnionPattern{
+        "^(.*\\.)*[a-z2-7]{16}\\.onion",
+        std::regex::icase | std::regex::optimize
+      };
+
+      // see if the uri refers to v2 onion host
+      return std::regex_match(
+          host.begin(),
+          host.end(),
+          v2OnionPattern);
+    }
+    return false;
+  };
+
+  // only dip in here if this process thinks onion warning page has not been shown
+  static bool v2DeprecationPageShown = false;
+  if (!v2DeprecationPageShown) {
+    // now only advance if the URI we are dealing with
+    // is a v2 onion address
+    auto uri = aLoadState->URI();
+    if (uriIsV2Onion(uri)) {
+      // Ok, so we are dealing with a v2 onion, now make
+      // sure the v2 deprecation page has not been shown in
+      // in another content process
+      //
+      // This is a synchrynous call, so we are blocking until
+      // we hear back from from the parent process. Each child
+      // process will need to perform this wait at most once,
+      // since we are locally caching in v2DeprecationPageShown.
+      v2DeprecationPageShown = true;
+      if (shouldShouldShowV2DeprecationPage()) {
+        DisplayLoadError(NS_ERROR_TOR_ONION_SVC_V2_DEPRECATED, uri, nullptr, nullptr);
+        return NS_ERROR_LOAD_SHOWED_ERRORPAGE;
+      }
+    }
+  }
+
 
   nsCOMPtr<nsIURILoader> uriLoader = components::URILoader::Service();
   if (NS_WARN_IF(!uriLoader)) {

@@ -1678,6 +1678,9 @@ child:
     // WindowContext is managed using the PWindowGlobal actor's lifecycle.
     async CreateWindowContext(WindowContextInitializer aInit);
     async DiscardWindowContext(uint64_t aContextId) returns (bool unused);
+
+parent:
+    sync ShouldShowV2DeprecationPage() returns (bool showPage);
 };
 
 }

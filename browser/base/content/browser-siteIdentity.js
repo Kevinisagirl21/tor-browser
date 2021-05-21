@@ -135,6 +135,15 @@ var gIdentityHandler = {
     return this._uriHasHost ? this._uri.host.toLowerCase().endsWith(".onion") : false;
   },
 
+  get _uriIsDeprecatedOnionHost() {
+    const hostIsV2Onion = function(host) {
+      // matches on v2 onion domains with any number of subdomains
+      const pattern = /^(.*\.)*[a-z2-7]{16}\.onion/i;
+      return pattern.test(host);
+    };
+
+    return this._uriHasHost ? hostIsV2Onion(this._uri.host) : false;
+  },
   // smart getters
   get _identityPopup() {
     delete this._identityPopup;
@@ -685,6 +694,9 @@ var gIdentityHandler = {
         "identity.extension.label",
         [extensionName]
       );
+    } else if (this._uriIsDeprecatedOnionHost) {
+      this._identityBox.className = "onionServiceDeprecated";
+      tooltip = TorStrings.onionServices.v2Deprecated.tooltip;
     } else if (this._uriHasHost && this._isSecureConnection && this._secInfo) {
       // This is a secure connection.
       // _isSecureConnection implicitly includes onion services, which may not have an SSL certificate
