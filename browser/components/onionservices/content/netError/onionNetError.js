@@ -38,6 +38,12 @@ var OnionServicesAboutNetError = {
     const errPrefix = "onionServices.";
     const errName = err.substring(errPrefix.length);
 
+    // tor-browser#40416 - remove this page and updated onionNetErrors with new error once v2 no longer works at all
+    if (errName === "v2Deprecated") {
+      V2DeprecatedAboutNetError.initPage(aDoc);
+      return;
+    }
+
     this._strings = RPMGetTorStrings();
 
     const stringsObj = this._strings[errName];
