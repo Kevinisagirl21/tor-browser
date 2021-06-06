@@ -54,6 +54,7 @@ class nsCORSListenerProxy final : public nsIStreamListener,
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
   static void Shutdown();
+  static void Clear();
 
   [[nodiscard]] nsresult Init(nsIChannel* aChannel,
                               DataURIHandling aAllowDataURI);
