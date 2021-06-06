@@ -346,6 +346,13 @@ void nsCORSListenerProxy::Shutdown() {
   sPreflightCache = nullptr;
 }
 
+/* static */
+void nsCORSListenerProxy::Clear() {
+  if (sPreflightCache) {
+    sPreflightCache->Clear();
+  }
+}
+
 nsCORSListenerProxy::nsCORSListenerProxy(nsIStreamListener* aOuter,
                                          nsIPrincipal* aRequestingPrincipal,
                                          bool aWithCredentials)

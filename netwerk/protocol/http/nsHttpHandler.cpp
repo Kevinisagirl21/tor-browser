@@ -10,6 +10,7 @@
 #include "prsystem.h"
 
 #include "AltServiceChild.h"
+#include "nsCORSListenerProxy.h"
 #include "nsError.h"
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
@@ -2290,6 +2291,7 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
         mAltSvcCache->ClearAltServiceMappings();
       }
     }
+    nsCORSListenerProxy::Clear();
   } else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
     nsAutoCString converted = NS_ConvertUTF16toUTF8(data);
     if (!strcmp(converted.get(), NS_NETWORK_LINK_DATA_CHANGED)) {
