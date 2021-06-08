@@ -8,6 +8,12 @@ const kTorProcessDidNotStartTopic = "TorProcessDidNotStart";
 const kTorBootstrapStatusTopic = "TorBootstrapStatus";
 const kTorBootstrapErrorTopic = "TorBootstrapError";
 const kTorLogHasWarnOrErrTopic = "TorLogHasWarnOrErr";
+const kTorQuickstartPrefChanged = "TorQuickstartPrefChanged";
+
+const TorLauncherPrefs = {
+  quickstart: "extensions.torlauncher.quickstart",
+  prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
+}
 
 class AboutTorConnect {
   log(...args) {
@@ -33,6 +39,12 @@ class AboutTorConnect {
   }
   get elemProgressMeter() {
     return this.getElem("progressBackground");
+  }
+  get elemQuickstartCheckbox() {
+    return this.getElem("quickstartCheckbox");
+  }
+  get elemQuickstartLabel() {
+    return this.getElem("quickstartCheckboxLabel");
   }
   get elemConnectButton() {
     return this.getElem("connectButton");
@@ -82,7 +94,7 @@ class AboutTorConnect {
   setInitialUI() {
     this.setTitle(this.torStrings.torConnect.torConnect);
     this.elemProgressDesc.textContent =
-      this.torStrings.settings.torPreferencesDescription;
+      this.torStrings.settings.quickstartDescription;
     this.showElem(this.elemConnectButton);
     this.showElem(this.elemAdvancedButton);
     this.hideElem(this.elemCopyLogButton);
@@ -223,11 +235,18 @@ class AboutTorConnect {
     document.title = title;
   }
 
-  initButtons() {
+  async initElements() {
     this.elemAdvancedButton.textContent = this.torStrings.torConnect.torConfigure;
     this.elemAdvancedButton.addEventListener("click", () => {
       RPMSendAsyncMessage("OpenTorAdvancedPreferences");
     });
+
+    this.elemQuickstartLabel.textContent = this.torStrings.settings.quickstartCheckbox;
+    this.elemQuickstartCheckbox.addEventListener("change", () => {
+      const quickstart = this.elemQuickstartCheckbox.checked;
+      RPMSetBoolPref(TorLauncherPrefs.quickstart, quickstart);
+    });
+    this.elemQuickstartCheckbox.checked = await RPMGetBoolPref(TorLauncherPrefs.quickstart);
 
     this.elemConnectButton.textContent =
       this.torStrings.torConnect.torConnectButton;
@@ -277,6 +296,21 @@ class AboutTorConnect {
     RPMAddMessageListener(kTorBootstrapStatusTopic, ({ data }) => {
       this.updateBootstrapProgress(data);
     });
+    RPMAddMessageListener(kTorQuickstartPrefChanged, ({ data }) => {
+      // update checkbox with latest quickstart pref value
+      this.elemQuickstartCheckbox.checked = data;
+    })
+  }
+
+  initKeyboardShortcuts() {
+    document.onkeydown = (evt) => {
+      // unfortunately it looks like we still haven't standardized keycodes to
+      // integers, so we must resort to a string compare here :(
+      // see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code for relevant documentation
+      if (evt.code === "Escape") {
+        this.stopTorBootstrap();
+      }
+    };
   }
 
   async init() {
@@ -285,13 +319,23 @@ class AboutTorConnect {
       "dir",
       await RPMSendQuery("GetDirection")
     );
-    this.initButtons();
+    this.initElements();
     this.initObservers();
+    this.initKeyboardShortcuts();
     this.state = AboutTorConnect.STATE_INITIAL;
 
     // Request the most recent bootstrap status info so that a
     // TorBootstrapStatus notification is generated as soon as possible.
     RPMSendAsyncMessage("TorRetrieveBootstrapStatus");
+
+    // quickstart is the user set pref for starting tor automatically
+    // prompt_at_startup will be set to false after successful bootstrap, and true on error
+    // by tor-launcher, so we want to keep the connect screen up when prompt_at_startup is true
+    ///  even if quickstart is enabled so user can potentially resolve errors on next launch
+    if (await RPMGetBoolPref(TorLauncherPrefs.quickstart) &&
+       !await RPMGetBoolPref(TorLauncherPrefs.prompt_at_startup)) {
+      this.connect();
+    }
   }
 }
 

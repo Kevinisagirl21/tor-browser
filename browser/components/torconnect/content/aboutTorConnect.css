@@ -35,6 +35,10 @@
   width: 50%;
 }
 
+#quickstartCheckbox, #quickstartCheckboxLabel {
+  vertical-align: middle;
+}
+
 #copyLogButton {
   position: relative;
 }

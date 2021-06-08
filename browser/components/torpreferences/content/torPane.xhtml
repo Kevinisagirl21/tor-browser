@@ -33,12 +33,16 @@
   <html:h1 id="torPreferences-header"/>
 </hbox>
 
-<groupbox data-category="paneTor"
+<!-- Quickstart -->
+<groupbox id="torPreferences-quickstart-group"
+          data-category="paneTor"
           hidden="true">
+  <html:h2 id="torPreferences-quickstart-header"/>
   <description flex="1">
-    <html:span id="torPreferences-description" class="tail-with-learn-more"/>
-    <label id="torPreferences-learnMore" class="learnMore text-link" is="text-link"/>
+    <html:span id="torPreferences-quickstart-description"/>
+    <label id="torPreferences-quickstart-learnMore" class="learnMore text-link" is="text-link"/>
   </description>
+  <checkbox id="torPreferences-quickstart-toggle"/>
 </groupbox>
 
 <!-- Bridges -->

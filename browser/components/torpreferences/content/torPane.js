@@ -53,6 +53,10 @@ const { parsePort, parseBridgeStrings, parsePortList } = ChromeUtils.import(
   "chrome://browser/content/torpreferences/parseFunctions.jsm"
 );
 
+const TorLauncherPrefs = {
+  quickstart: "extensions.torlauncher.quickstart",
+}
+
 /*
   Tor Pane
 
@@ -71,8 +75,12 @@ const gTorPane = (function() {
     },
     torPreferences: {
       header: "h1#torPreferences-header",
-      description: "span#torPreferences-description",
-      learnMore: "label#torPreferences-learnMore",
+    },
+    quickstart: {
+      header: "h2#torPreferences-quickstart-header",
+      description: "span#torPreferences-quickstart-description",
+      learnMore: "label#torPreferences-quickstart-learnMore",
+      enableQuickstartCheckbox: "checkbox#torPreferences-quickstart-toggle",
     },
     bridges: {
       header: "h2#torPreferences-bridges-header",
@@ -122,6 +130,7 @@ const gTorPane = (function() {
     _messageBox: null,
     _messageBoxMessage: null,
     _messageBoxButton: null,
+    _enableQuickstartCheckbox: null,
     _useBridgeCheckbox: null,
     _bridgeSelectionRadiogroup: null,
     _builtinBridgeOption: null,
@@ -210,11 +219,15 @@ const gTorPane = (function() {
       // Heading
       prefpane.querySelector(selectors.torPreferences.header).innerText =
         TorStrings.settings.torPreferencesHeading;
-      prefpane.querySelector(selectors.torPreferences.description).textContent =
-        TorStrings.settings.torPreferencesDescription;
+
+      // Quickstart
+      prefpane.querySelector(selectors.quickstart.header).innerText =
+        TorStrings.settings.quickstartHeading;
+      prefpane.querySelector(selectors.quickstart.description).textContent =
+        TorStrings.settings.quickstartDescription;
       {
         let learnMore = prefpane.querySelector(
-          selectors.torPreferences.learnMore
+          selectors.quickstart.learnMore
         );
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
         learnMore.setAttribute(
@@ -222,6 +235,19 @@ const gTorPane = (function() {
           TorStrings.settings.learnMoreTorBrowserURL
         );
       }
+      this._enableQuickstartCheckbox = prefpane.querySelector(
+        selectors.quickstart.enableQuickstartCheckbox
+      );
+      this._enableQuickstartCheckbox.setAttribute(
+        "label",
+        TorStrings.settings.quickstartCheckbox
+      );
+      this._enableQuickstartCheckbox.addEventListener("command", e => {
+        const checked = this._enableQuickstartCheckbox.checked;
+        Services.prefs.setBoolPref(TorLauncherPrefs.quickstart, checked);
+      });
+      this._enableQuickstartCheckbox.checked = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
+      Services.prefs.addObserver(TorLauncherPrefs.quickstart, this);
 
       // Bridge setup
       prefpane.querySelector(selectors.bridges.header).innerText =
@@ -582,6 +608,15 @@ const gTorPane = (function() {
     //
     // Callbacks
     //
+
+    // callback for when the quickstart pref changes
+    observe(subject, topic, data) {
+      if (topic != "nsPref:changed") return;
+      if (data === TorLauncherPrefs.quickstart) {
+        this._enableQuickstartCheckbox.checked =
+          Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
+      }
+    },
 
     // callback when using bridges toggled
     onToggleBridge(enabled) {
