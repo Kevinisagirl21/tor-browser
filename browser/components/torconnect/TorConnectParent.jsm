@@ -29,6 +29,10 @@ const gActiveTopics = [
   kTorLogHasWarnOrErrTopic,
 ];
 
+const gTorLauncherPrefs = {
+  quickstart: "extensions.torlauncher.quickstart",
+}
+
 class TorConnectParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
@@ -47,6 +51,16 @@ class TorConnectParent extends JSWindowActorParent {
     for (const topic of gActiveTopics) {
       Services.obs.addObserver(this.gObserver, topic);
     }
+
+    this.quickstartObserver = {
+      observe(aSubject, aTopic, aData) {
+        if (aTopic === "nsPref:changed" &&
+            aData == gTorLauncherPrefs.quickstart) {
+          self.sendAsyncMessage("TorQuickstartPrefChanged", Services.prefs.getBoolPref(gTorLauncherPrefs.quickstart));
+        }
+      },
+    }
+    Services.prefs.addObserver(gTorLauncherPrefs.quickstart, this.quickstartObserver);
   }
 
   willDestroy() {

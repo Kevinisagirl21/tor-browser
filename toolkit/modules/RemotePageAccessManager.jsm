@@ -198,6 +198,13 @@ let RemotePageAccessManager = {
         "TorIsNetworkDisabled",
         "TorLogHasWarnOrErr",
       ],
+      RPMGetBoolPref: [
+        "extensions.torlauncher.quickstart",
+        "extensions.torlauncher.prompt_at_startup",
+      ],
+      RPMSetBoolPref: [
+        "extensions.torlauncher.quickstart",
+      ],
     },
   },
 
