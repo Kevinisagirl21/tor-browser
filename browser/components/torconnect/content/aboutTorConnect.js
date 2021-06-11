@@ -15,6 +15,10 @@ const TorLauncherPrefs = {
   prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
 }
 
+const BrowserPrefs = {
+  homepage: "browser.startup.homepage",
+}
+
 class AboutTorConnect {
   log(...args) {
     console.log(...args);
@@ -40,6 +44,15 @@ class AboutTorConnect {
   get elemProgressMeter() {
     return this.getElem("progressBackground");
   }
+  get elemCopyLogLink() {
+    return this.getElem("copyLogLink");
+  }
+  get elemCopyLogTooltip() {
+    return this.getElem("copyLogTooltip");
+  }
+  get elemCopyLogTooltipText() {
+    return this.getElem("copyLogTooltipText");
+  }
   get elemQuickstartCheckbox() {
     return this.getElem("quickstartCheckbox");
   }
@@ -48,15 +61,6 @@ class AboutTorConnect {
   }
   get elemConnectButton() {
     return this.getElem("connectButton");
-  }
-  get elemCopyLogButton() {
-    return this.getElem("copyLogButton");
-  }
-  get elemCopyLogTooltip() {
-    return this.getElem("copyLogTooltip");
-  }
-  get elemCopyLogTooltipText() {
-    return this.getElem("copyLogTooltipText");
   }
   get elemAdvancedButton() {
     return this.getElem("advancedButton");
@@ -97,7 +101,7 @@ class AboutTorConnect {
       this.torStrings.settings.quickstartDescription;
     this.showElem(this.elemConnectButton);
     this.showElem(this.elemAdvancedButton);
-    this.hideElem(this.elemCopyLogButton);
+    this.hideElem(this.elemCopyLogLink);
     this.hideElem(this.elemCancelButton);
     this.hideElem(this.elemProgressContent);
     this.hideElem(this.elemProgressMeter);
@@ -108,7 +112,7 @@ class AboutTorConnect {
     this.setTitle(this.torStrings.torConnect.torConnecting);
     this.hideElem(this.elemConnectButton);
     this.hideElem(this.elemAdvancedButton);
-    this.hideElem(this.elemCopyLogButton);
+    this.hideElem(this.elemCopyLogLink);
     this.showElem(this.elemCancelButton);
     this.showElem(this.elemProgressContent);
     this.showElem(this.elemProgressMeter);
@@ -124,13 +128,14 @@ class AboutTorConnect {
     this.showElem(this.elemProgressContent);
     this.hideElem(this.elemProgressMeter);
     this.elemTitle.classList.add("error");
-
-    this.elem
   }
 
   goToBrowserHome() {
     this.hideElem(this.elemCancelButton);
-    RPMSendAsyncMessage("GoToBrowserHome");
+
+    // redirect this about:torconnect to browser homepage
+    const homepage = RPMGetStringPref(BrowserPrefs.homepage);
+    window.location.replace(homepage);
   }
 
   set state(state) {
@@ -163,10 +168,7 @@ class AboutTorConnect {
       }
     }
 
-    let haveErrorOrWarning =
-      (await RPMSendQuery("TorBootstrapErrorOccurred")) ||
-      (await RPMSendQuery("TorLogHasWarnOrErr"));
-    this.showCopyLogButton(haveErrorOrWarning);
+    this.showCopyLog();
     this.showElem(this.elemConnectButton);
   }
 
@@ -179,6 +181,11 @@ class AboutTorConnect {
   }
 
   async connect() {
+    // reset the text to original quickstart description
+    // in case we are trying again after an error (clears out error text)
+    this.elemProgressDesc.textContent =
+      this.torStrings.settings.quickstartDescription;
+
     this.state = AboutTorConnect.STATE_BOOTSTRAPPING;
     const error = await RPMSendQuery("TorConnect");
     if (error) {
@@ -189,12 +196,8 @@ class AboutTorConnect {
     }
   }
 
-  restoreCopyLogVisibility() {
-    this.elemCopyLogButton.setAttribute("hidden", true);
-  }
-
-  showCopyLogButton() {
-    this.elemCopyLogButton.removeAttribute("hidden");
+  showCopyLog() {
+    this.elemCopyLogLink.removeAttribute("hidden");
   }
 
   async updateBootstrapProgress(status) {
@@ -241,6 +244,28 @@ class AboutTorConnect {
       RPMSendAsyncMessage("OpenTorAdvancedPreferences");
     });
 
+    // sets the text content while keping the child elements intact
+    this.elemCopyLogLink.childNodes[0].nodeValue =
+      this.torStrings.torConnect.copyLog;
+    this.elemCopyLogLink.addEventListener("click", async (event) => {
+      const copiedMessage = await RPMSendQuery("TorCopyLog");
+      aboutTorConnect.elemCopyLogTooltipText.textContent = copiedMessage;
+      aboutTorConnect.elemCopyLogTooltip.style.visibility = "visible";
+
+      // clear previous timeout if one already exists
+      if (aboutTorConnect.copyLogTimeoutId) {
+        clearTimeout(aboutTorConnect.copyLogTimeoutId);
+      }
+
+      // hide tooltip after X ms
+      const TOOLTIP_TIMEOUT = 2000;
+      aboutTorConnect.copyLogTimeoutId = setTimeout(function() {
+        aboutTorConnect.elemCopyLogTooltip.style.visibility = "hidden";
+        aboutTorConnect.copyLogTimeoutId = 0;
+      }, TOOLTIP_TIMEOUT);
+    });
+
+
     this.elemQuickstartLabel.textContent = this.torStrings.settings.quickstartCheckbox;
     this.elemQuickstartCheckbox.addEventListener("change", () => {
       const quickstart = this.elemQuickstartCheckbox.checked;
@@ -258,37 +283,16 @@ class AboutTorConnect {
     this.elemCancelButton.addEventListener("click", () => {
       this.stopTorBootstrap();
     });
-
-    // sets the text content while keping the child elements intact
-    this.elemCopyLogButton.childNodes[0].nodeValue =
-      this.torStrings.torConnect.copyLog;
-    this.elemCopyLogButton.addEventListener("click", async () => {
-      const copiedMessage = await RPMSendQuery("TorCopyLog");
-      aboutTorConnect.elemCopyLogTooltipText.textContent = copiedMessage;
-      aboutTorConnect.elemCopyLogTooltip.style.visibility = "visible";
-
-      // clear previous timeout if one already exists
-      if (aboutTorConnect.copyLogTimeoutId) {
-        clearTimeout(aboutTorConnect.copyLogTimeoutId);
-      }
-
-      // hide tooltip after X ms
-      const TOOLTIP_TIMEOUT = 2000;
-      aboutTorConnect.copyLogTimeoutId = setTimeout(function() {
-        aboutTorConnect.elemCopyLogTooltip.style.visibility = "hidden";
-        aboutTorConnect.copyLogTimeoutId = 0;
-      }, TOOLTIP_TIMEOUT);
-    });
   }
 
   initObservers() {
     RPMAddMessageListener(kTorBootstrapErrorTopic, ({ data }) => {
-      this.showCopyLogButton(true);
+      this.showCopyLog();
       this.stopTorBootstrap();
       this.showErrorMessage(data);
     });
     RPMAddMessageListener(kTorLogHasWarnOrErrTopic, () => {
-      this.showCopyLogButton(true);
+      this.showCopyLog();
     });
     RPMAddMessageListener(kTorProcessDidNotStartTopic, ({ data }) => {
       this.showErrorMessage(data);

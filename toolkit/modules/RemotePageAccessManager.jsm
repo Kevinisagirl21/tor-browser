@@ -205,6 +205,9 @@ let RemotePageAccessManager = {
       RPMSetBoolPref: [
         "extensions.torlauncher.quickstart",
       ],
+      RPMGetStringPref: [
+        "browser.startup.homepage",
+      ],
     },
   },
 

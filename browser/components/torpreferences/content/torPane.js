@@ -189,7 +189,8 @@ const gTorPane = (function() {
       this._messageBoxButton.addEventListener("click", () => {
         TorProtocolService.connect();
         let win = Services.wm.getMostRecentWindow("navigator:browser");
-        win.switchToTabHavingURI("about:torconnect");
+        // switch to existing about:torconnect tab or create a new one
+        win.switchToTabHavingURI("about:torconnect", true);
       });
 
       let populateMessagebox = () => {
