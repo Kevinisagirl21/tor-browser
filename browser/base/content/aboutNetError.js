@@ -196,8 +196,13 @@ async function setErrorPageStrings(err) {
 
 async function initPage() {
   var err = getErrorCode();
+
+  // proxyConnectFailure because no-tor running daemon would return this error
+  // netOffline because we do not want to show the offline page (where users can disable offline-mode)
+  //   when we are 'offline' (offline mode is disabled after successful bootstrapping in
+  //   TorConnectParent)
   if (
-    err === "proxyConnectFailure" &&
+    (err === "proxyConnectFailure" || err === "netOffline") &&
     (await RPMSendQuery("ShouldShowTorConnect"))
   ) {
     document.location.replace("about:torconnect");
