@@ -348,7 +348,9 @@ void nsCORSListenerProxy::Shutdown() {
 
 /* static */
 void nsCORSListenerProxy::Clear() {
-  sPreflightCache->Clear();
+  if (sPreflightCache) {
+    sPreflightCache->Clear();
+  }
 }
 
 nsCORSListenerProxy::nsCORSListenerProxy(nsIStreamListener* aOuter,
