@@ -10,6 +10,30 @@
   --onion-radius: 50px;
 }
 
+/* override firefox's default blue focus coloring */
+:focus {
+  outline:  none!important;
+  box-shadow: 0 0 0 3px #CD8CED !important;
+  border:  1px #59316B solid !important;
+}
+
+@media (prefers-color-scheme: dark)
+{
+  :focus {
+    box-shadow: 0 0 0 3px #8C689E !important;
+  }
+}
+
+/* override firefox's default blue border on hover */
+input[type="checkbox"]:not(:disabled):hover {
+  border-color: #59316B;
+}
+
+/* fix checkbox visibility when dark mode enabled */
+input[type="checkbox"]:checked {
+  fill: var(--in-content-page-color);
+}
+
 #connectButton {
   background-color: #7D4698;
 }
