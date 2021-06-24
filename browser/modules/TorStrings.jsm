@@ -258,7 +258,7 @@ var TorStrings = {
       ),
       learnMore: getString("torPreferences.learnMore", "Learn More"),
       quickstartHeading: getString("torPreferences.quickstart", "Quickstart"),
-      quickstartDescription: getString("torPreferences.quickstartDescription", "Tor Browser routes your traffic over the Tor Network, run by thousands of volunteers around the world. Quickstart allows Tor Browser to connect automatically."),
+      quickstartDescription: getString("torPreferences.quickstartDescription", "Quickstart allows Tor Browser to connect automatically."),
       quickstartCheckbox : getString("torPreferences.quickstartCheckbox", "Always connect automatically"),
       bridgesHeading: getString("torPreferences.bridges", "Bridges"),
       bridgesDescription: getString(

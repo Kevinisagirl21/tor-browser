@@ -98,7 +98,7 @@ class AboutTorConnect {
   setInitialUI() {
     this.setTitle(this.torStrings.torConnect.torConnect);
     this.elemProgressDesc.textContent =
-      this.torStrings.settings.quickstartDescription;
+      this.torStrings.settings.torPreferencesDescription;
     this.showElem(this.elemConnectButton);
     this.showElem(this.elemAdvancedButton);
     this.hideElem(this.elemCopyLogLink);

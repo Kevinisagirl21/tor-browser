@@ -75,11 +75,12 @@ const gTorPane = (function() {
     },
     torPreferences: {
       header: "h1#torPreferences-header",
+      description: "span#torPreferences-description",
+      learnMore: "label#torPreferences-learnMore",
     },
     quickstart: {
       header: "h2#torPreferences-quickstart-header",
       description: "span#torPreferences-quickstart-description",
-      learnMore: "label#torPreferences-quickstart-learnMore",
       enableQuickstartCheckbox: "checkbox#torPreferences-quickstart-toggle",
     },
     bridges: {
@@ -220,15 +221,11 @@ const gTorPane = (function() {
       // Heading
       prefpane.querySelector(selectors.torPreferences.header).innerText =
         TorStrings.settings.torPreferencesHeading;
-
-      // Quickstart
-      prefpane.querySelector(selectors.quickstart.header).innerText =
-        TorStrings.settings.quickstartHeading;
-      prefpane.querySelector(selectors.quickstart.description).textContent =
-        TorStrings.settings.quickstartDescription;
+      prefpane.querySelector(selectors.torPreferences.description).textContent =
+        TorStrings.settings.torPreferencesDescription;
       {
         let learnMore = prefpane.querySelector(
-          selectors.quickstart.learnMore
+          selectors.torPreferences.learnMore
         );
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
         learnMore.setAttribute(
@@ -236,6 +233,13 @@ const gTorPane = (function() {
           TorStrings.settings.learnMoreTorBrowserURL
         );
       }
+
+      // Quickstart
+      prefpane.querySelector(selectors.quickstart.header).innerText =
+        TorStrings.settings.quickstartHeading;
+      prefpane.querySelector(selectors.quickstart.description).textContent =
+        TorStrings.settings.quickstartDescription;
+
       this._enableQuickstartCheckbox = prefpane.querySelector(
         selectors.quickstart.enableQuickstartCheckbox
       );
