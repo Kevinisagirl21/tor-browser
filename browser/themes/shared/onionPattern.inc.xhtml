@@ -12,8 +12,11 @@
 -->
 
 <div class="onion-pattern-container">
-  <div class="onion-pattern-crop">
-    <div class="onion-pattern-column">
+  <!-- for some reason, these two elements are focusable, seems related to
+   - flex css somehow; disable their tabindex to fix
+  -->
+  <div class="onion-pattern-crop" tabindex="-1">
+    <div class="onion-pattern-column" tabindex="-1">
       <div class="onion-pattern-row">
         <div class="circle solid"></div>
 

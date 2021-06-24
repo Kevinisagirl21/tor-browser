@@ -278,6 +278,7 @@ class AboutTorConnect {
     this.elemConnectButton.addEventListener("click", () => {
       this.connect();
     });
+    this.elemConnectButton.focus();
 
     this.elemCancelButton.textContent = this.torStrings.torConnect.cancel;
     this.elemCancelButton.addEventListener("click", () => {
