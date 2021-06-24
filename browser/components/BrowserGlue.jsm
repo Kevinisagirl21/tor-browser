@@ -2506,7 +2506,24 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          OnionAliasStore.init();
+          if (Services.io.offline === false) {
+            // we will take this path when the user is using the legacy tor launcher
+            OnionAliasStore.init();
+          } else {
+            // this path is taken when using about:torconnect, we start in offline mode
+            // and only switch to online after bootstrapping completes
+            const topic = "network:offline-status-changed";
+            let offlineStatusChangedObserver = {
+              observe(aSubject, aTopic, aData) {
+                if (aTopic === topic && aData === "online") {
+                  OnionAliasStore.init();
+                  // we only need to init once, so remove ourselves as an obvserver
+                  Services.obs.removeObserver(this, topic);
+                }
+              }
+            };
+            Services.obs.addObserver(offlineStatusChangedObserver, topic);
+          }
         },
       },
 
