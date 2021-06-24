@@ -100,6 +100,7 @@ class AboutTorConnect {
     this.elemProgressDesc.textContent =
       this.torStrings.settings.quickstartDescription;
     this.showElem(this.elemConnectButton);
+    this.elemConnectButton.focus();
     this.showElem(this.elemAdvancedButton);
     this.hideElem(this.elemCopyLogLink);
     this.hideElem(this.elemCancelButton);
@@ -114,6 +115,7 @@ class AboutTorConnect {
     this.hideElem(this.elemAdvancedButton);
     this.hideElem(this.elemCopyLogLink);
     this.showElem(this.elemCancelButton);
+    this.elemCancelButton.focus();
     this.showElem(this.elemProgressContent);
     this.showElem(this.elemProgressMeter);
     this.elemTitle.classList.remove("error");
@@ -125,6 +127,7 @@ class AboutTorConnect {
     this.showElem(this.elemConnectButton);
     this.hideElem(this.elemCancelButton);
     this.showElem(this.elemAdvancedButton);
+    this.elemAdvancedButton.focus();
     this.showElem(this.elemProgressContent);
     this.hideElem(this.elemProgressMeter);
     this.elemTitle.classList.add("error");
@@ -278,7 +281,6 @@ class AboutTorConnect {
     this.elemConnectButton.addEventListener("click", () => {
       this.connect();
     });
-    this.elemConnectButton.focus();
 
     this.elemCancelButton.textContent = this.torStrings.torConnect.cancel;
     this.elemCancelButton.addEventListener("click", () => {
