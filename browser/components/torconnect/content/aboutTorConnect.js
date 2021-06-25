@@ -184,10 +184,10 @@ class AboutTorConnect {
   }
 
   async connect() {
-    // reset the text to original quickstart description
+    // reset the text to original description
     // in case we are trying again after an error (clears out error text)
     this.elemProgressDesc.textContent =
-      this.torStrings.settings.quickstartDescription;
+      this.torStrings.settings.torPreferencesDescription;
 
     this.state = AboutTorConnect.STATE_BOOTSTRAPPING;
     const error = await RPMSendQuery("TorConnect");
