@@ -45,17 +45,6 @@ class TorConnectParent extends JSWindowActorParent {
           obj.handled = true;
         }
         self.sendAsyncMessage(aTopic, obj);
-
-        // we need to tell the IOService that we are not online
-        // setting offline to false will make the io service send out
-        // 'network:offline-status-changed' message to observers
-        // the app updater (among other things) listens for this message
-        // and will attempt to check for updates when receiving this message
-        // to recover from a previously failed attempt
-        if (aTopic === kTorBootstrapStatusTopic &&
-            obj.PROGRESS === 100) {
-          Services.io.offline = false;
-        }
       },
     };
 
