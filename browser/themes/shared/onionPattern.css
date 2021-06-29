@@ -19,6 +19,8 @@
   display: flex;
   justify-content: center;
   overflow-x: hidden;
+  pointer-events: none; /* for some reason, elements with overflow-x: hidden set become focusable */
+
   margin: 0 auto;
 }
 
@@ -28,6 +30,7 @@
   height: calc((2 + var(--sqrt3)) * var(--onion-radius, 50px)); /* room for 2 rows of circles */
   flex-shrink: 0;
   overflow-x: hidden;   /* clip extra circles on the sides */
+  pointer-events: none; /* for some reason, elements with overflow-x: hidden set become focusable */
 }
 
 .onion-pattern-row {
