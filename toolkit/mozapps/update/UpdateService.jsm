@@ -2698,8 +2698,10 @@ UpdateService.prototype = {
       }
       return;
     } else if (update.errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-               !TorProtocolService.isBootstrapDone()) {
-      // Register boostrap observer to try again
+               !TorProtocolService.isBootstrapDone() &&
+               TorProtocolService.ownsTorDaemon) {
+      // Register boostrap observer to try again, but only when we own the
+      // tor process.
       this._registerBootstrapObserver();
       return;
     }
