@@ -12,6 +12,11 @@ const { AppConstants } = ChromeUtils.import(
 const { AUSTLMY } = ChromeUtils.import(
   "resource://gre/modules/UpdateTelemetry.jsm"
 );
+
+const { TorProtocolService } = ChromeUtils.import(
+  "resource:///modules/TorProtocolService.jsm"
+);
+
 const {
   Bits,
   BitsRequest,
@@ -201,6 +206,7 @@ const INVALID_UPDATER_STATUS_CODE = 99;
 // Custom update error codes
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
 const NETWORK_ERROR_OFFLINE = 111;
+const PROXY_SERVER_CONNECTION_REFUSED = 2152398920;
 
 // Error codes should be < 1000. Errors above 1000 represent http status codes
 const HTTP_ERROR_OFFSET = 1000;
@@ -2220,6 +2226,9 @@ UpdateService.prototype = {
       case "network:offline-status-changed":
         this._offlineStatusChanged(data);
         break;
+      case "torconnect:bootstrap-complete":
+        this._bootstrapComplete();
+        break;
       case "nsPref:changed":
         if (data == PREF_APP_UPDATE_LOG || data == PREF_APP_UPDATE_LOG_FILE) {
           gLogEnabled; // Assigning this before it is lazy-loaded is an error.
@@ -2640,6 +2649,35 @@ UpdateService.prototype = {
     this._attemptResume();
   },
 
+  _registerBootstrapObserver: function AUS__registerBootstrapObserver() {
+    if (this._registeredBootstrapObserver) {
+      LOG(
+        "UpdateService:_registerBootstrapObserver - observer already registered"
+      );
+      return;
+    }
+
+    LOG(
+      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap to " +
+        "be complete, then forcing another check"
+    );
+
+    Services.obs.addObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = true;
+  },
+
+  _bootstrapComplete: function AUS__bootstrapComplete() {
+    Services.obs.removeObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = false;
+
+    LOG(
+      "UpdateService:_bootstrapComplete - bootstrapping complete, forcing " +
+        "another background check"
+    );
+
+    this._attemptResume();
+  },
+
   onCheckComplete: function AUS_onCheckComplete(request, updates) {
     this._selectAndInstallUpdate(updates);
   },
@@ -2658,6 +2696,11 @@ UpdateService.prototype = {
       if (this._pingSuffix) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
+      return;
+    } else if (update.errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
+               !TorProtocolService.isBootstrapDone()) {
+      // Register boostrap observer to try again
+      this._registerBootstrapObserver();
       return;
     }
 

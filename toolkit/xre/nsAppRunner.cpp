@@ -2984,7 +2984,7 @@ bool fire_glxtest_process();
 class XREMain {
  public:
   XREMain()
-      : mStartOffline(true),
+      : mStartOffline(false),
         mShuttingDown(false)
 #ifdef MOZ_HAS_REMOTE
         ,
@@ -3587,11 +3587,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   CheckArg("no-remote");
   CheckArg("new-instance");
 #endif
-
-  // revert to start online behaviour when using the legacy tor launcher
-  if (EnvHasValue("TOR_USE_LEGACY_LAUNCHER")) {
-    mStartOffline = false;
-  }
 
   ar = CheckArg("offline");
   if (ar || EnvHasValue("XRE_START_OFFLINE")) {

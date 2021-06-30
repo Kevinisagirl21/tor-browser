@@ -17,6 +17,14 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const { TorProtocolService } = ChromeUtils.import(
+  "resource:///modules/TorProtocolService.jsm"
+);
+
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
+
 ChromeUtils.defineModuleGetter(
   this,
   "ActorManagerParent",
@@ -2506,23 +2514,23 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          if (Services.io.offline === false) {
+          if (TorProtocolService.isBootstrapDone()) {
             // we will take this path when the user is using the legacy tor launcher
             OnionAliasStore.init();
           } else {
-            // this path is taken when using about:torconnect, we start in offline mode
-            // and only switch to online after bootstrapping completes
-            const topic = "network:offline-status-changed";
-            let offlineStatusChangedObserver = {
+            // this path is taken when using about:torconnect, we wait to init
+            // after we are bootstrapped and connected to tor
+            const topic = "torconnect:bootstrap-complete";
+            let bootstrapObserver = {
               observe(aSubject, aTopic, aData) {
-                if (aTopic === topic && aData === "online") {
+                if (aTopic === topic) {
                   OnionAliasStore.init();
                   // we only need to init once, so remove ourselves as an obvserver
                   Services.obs.removeObserver(this, topic);
                 }
               }
             };
-            Services.obs.addObserver(offlineStatusChangedObserver, topic);
+            Services.obs.addObserver(bootstrapObserver, topic);
           }
         },
       },
