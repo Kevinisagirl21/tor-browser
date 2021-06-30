@@ -207,7 +207,10 @@
         </div>
       </div>
     </div>
+<!-- The onion pattern is disabled by default unless the onionPattern.css is also included; we include onionPattern.css programmatically in the v2Deprecation error page, so the onion pattern will not be visible in all error pages -->
+#include ../../themes/shared/onionPattern.inc.xhtml
   </body>
+  <script src="chrome://browser/content/onionservices/netError/v2Deprecated.js"/>
   <script src="chrome://browser/content/onionservices/netError/onionNetError.js"/>
   <script src="chrome://browser/content/aboutNetError.js"/>
 </html>
