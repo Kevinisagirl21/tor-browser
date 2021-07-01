@@ -2514,8 +2514,9 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          if (TorProtocolService.isBootstrapDone()) {
-            // we will take this path when the user is using the legacy tor launcher
+          if (TorProtocolService.isBootstrapDone() || !TorProtocolService.ownsTorDaemon) {
+            // we will take this path when the user is using the legacy tor launcher or
+            // when Tor Browser didn't launch its own tor.
             OnionAliasStore.init();
           } else {
             // this path is taken when using about:torconnect, we wait to init
