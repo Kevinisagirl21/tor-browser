@@ -271,7 +271,7 @@ interface nsIWebNavigation : nsISupports
   /**
    * Allow rewriting the urlbar to a short .onion alias.
    */
-  const unsigned long LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES = 0x8000000;
+  const unsigned long LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES = 0x9000000;
 
   /**
    * Loads a given URI.  This will give priority to loading the requested URI
