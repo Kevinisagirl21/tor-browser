@@ -183,7 +183,6 @@ let RemotePageAccessManager = {
     "about:torconnect": {
       RPMAddMessageListener: ["*"],
       RPMSendAsyncMessage: [
-        "GoToBrowserHome",
         "OpenTorAdvancedPreferences",
         "TorRetrieveBootstrapStatus",
         "TorStopBootstrap",
@@ -204,9 +203,6 @@ let RemotePageAccessManager = {
       ],
       RPMSetBoolPref: [
         "extensions.torlauncher.quickstart",
-      ],
-      RPMGetStringPref: [
-        "browser.startup.homepage",
       ],
     },
   },

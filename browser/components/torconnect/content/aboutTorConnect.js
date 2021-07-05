@@ -15,10 +15,6 @@ const TorLauncherPrefs = {
   prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
 }
 
-const BrowserPrefs = {
-  homepage: "browser.startup.homepage",
-}
-
 class AboutTorConnect {
   log(...args) {
     console.log(...args);
@@ -133,14 +129,6 @@ class AboutTorConnect {
     this.elemTitle.classList.add("error");
   }
 
-  goToBrowserHome() {
-    this.hideElem(this.elemCancelButton);
-
-    // redirect this about:torconnect to browser homepage
-    const homepage = RPMGetStringPref(BrowserPrefs.homepage);
-    window.location.replace(homepage);
-  }
-
   set state(state) {
     const oldState = this.state;
     if (oldState === state) {
@@ -158,7 +146,7 @@ class AboutTorConnect {
         this.setBootstrapErrorUI();
         break;
       case AboutTorConnect.STATE_BOOTSTRAPPED:
-        this.goToBrowserHome();
+        window.close();
         break;
     }
   }
@@ -219,8 +207,6 @@ class AboutTorConnect {
       // if bootstrap state is greater than 0.
       this.state = AboutTorConnect.STATE_INITIAL;
       return;
-    } else if (percentComplete >= 100) {
-      this.state = AboutTorConnect.STATE_BOOTSTRAPPED;
     } else if (percentComplete > 0) {
       this.state = AboutTorConnect.STATE_BOOTSTRAPPING;
     }
@@ -306,7 +292,10 @@ class AboutTorConnect {
     RPMAddMessageListener(kTorQuickstartPrefChanged, ({ data }) => {
       // update checkbox with latest quickstart pref value
       this.elemQuickstartCheckbox.checked = data;
-    })
+    });
+    RPMAddMessageListener("torconnect:bootstrap-complete", () => {
+      this.state = AboutTorConnect.STATE_BOOTSTRAPPED;
+    });
   }
 
   initKeyboardShortcuts() {

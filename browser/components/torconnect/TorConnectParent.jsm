@@ -27,6 +27,7 @@ const gActiveTopics = [
   kTorBootstrapStatusTopic,
   kTorBootstrapErrorTopic,
   kTorLogHasWarnOrErrTopic,
+  "torconnect:bootstrap-complete",
 ];
 
 const gTorLauncherPrefs = {
@@ -69,9 +70,6 @@ class TorConnectParent extends JSWindowActorParent {
     }
   }
 
-  get browser() {
-    return this.browsingContext.top.embedderElement;
-  }
 
   _OpenTorAdvancedPreferences() {
     const win = this.browsingContext.top.embedderElement.ownerGlobal;
@@ -93,11 +91,6 @@ class TorConnectParent extends JSWindowActorParent {
     );
   }
 
-  _GoToBrowserHome() {
-    const window = this.browser.ownerGlobal;
-    window.BrowserHome();
-  }
-
   receiveMessage(message) {
     switch (message.name) {
       case "TorBootstrapErrorOccurred":
@@ -106,8 +99,6 @@ class TorConnectParent extends JSWindowActorParent {
         return TorProtocolService.retrieveBootstrapStatus();
       case "OpenTorAdvancedPreferences":
         return this._OpenTorAdvancedPreferences();
-      case "GoToBrowserHome":
-        return this._GoToBrowserHome();
       case "GetLocalizedBootstrapStatus":
         const { status, keyword } = message.data;
         return TorLauncherUtil.getLocalizedBootstrapStatus(status, keyword);
