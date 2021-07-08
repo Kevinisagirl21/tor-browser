@@ -17,6 +17,12 @@ const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
 
+function _shouldRegisterBootstrapObserver(errorCode) {
+  return errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
+         !TorProtocolService.isBootstrapDone() &&
+         TorProtocolService.ownsTorDaemon;
+};
+
 const {
   Bits,
   BitsRequest,
@@ -2697,9 +2703,7 @@ UpdateService.prototype = {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
       return;
-    } else if (update.errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-               !TorProtocolService.isBootstrapDone() &&
-               TorProtocolService.ownsTorDaemon) {
+    } else if (_shouldRegisterBootstrapObserver(update.errorCode)) {
       // Register boostrap observer to try again, but only when we own the
       // tor process.
       this._registerBootstrapObserver();
@@ -5234,6 +5238,7 @@ Downloader.prototype = {
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
+    var shouldRegisterBootstrapObserver = false;
     var shouldRetrySoon = false;
     var deleteActiveUpdate = false;
     var retryTimeout = Services.prefs.getIntPref(
@@ -5311,7 +5316,18 @@ Downloader.prototype = {
       );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
-
+    } else if(_shouldRegisterBootstrapObserver(status)) {
+      // Register a bootstrap observer to try again.
+      // The bootstrap observer will continue the incremental download by
+      // calling downloadUpdate on the active update which continues
+      // downloading the file from where it was.
+      LOG("Downloader:onStopRequest - not bootstrapped, register bootstrap observer: true");
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_RETRY_OFFLINE
+      );
+      shouldRegisterBootstrapObserver = true;
+      deleteActiveUpdate = false;
       // Each of NS_ERROR_NET_TIMEOUT, ERROR_CONNECTION_REFUSED,
       // NS_ERROR_NET_RESET and NS_ERROR_DOCUMENT_NOT_CACHED can be returned
       // when disconnecting the internet while a download of a MAR is in
@@ -5429,7 +5445,7 @@ Downloader.prototype = {
 
     // Only notify listeners about the stopped state if we
     // aren't handling an internal retry.
-    if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
+    if (!shouldRetrySoon && !shouldRegisterOnlineObserver && !shouldRegisterBootstrapObserver) {
       // Make shallow copy in case listeners remove themselves when called.
       var listeners = this._listeners.concat();
       var listenerCount = listeners.length;
@@ -5577,6 +5593,9 @@ Downloader.prototype = {
     if (shouldRegisterOnlineObserver) {
       LOG("Downloader:onStopRequest - Registering online observer");
       this.updateService._registerOnlineObserver();
+    } else if (shouldRegisterBootstrapObserver) {
+      LOG("Downloader:onStopRequest - Registering bootstrap observer");
+      this.updateService._registerBootstrapObserver();
     } else if (shouldRetrySoon) {
       LOG("Downloader:onStopRequest - Retrying soon");
       this.updateService._consecutiveSocketErrors++;
