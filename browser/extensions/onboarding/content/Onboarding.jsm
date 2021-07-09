@@ -908,7 +908,7 @@ class Onboarding {
       ({ id, classList } = target.firstChild);
     }
 
-    const kOnionURL = "https://3g2upl4pq6kufc4m.onion/";  // DuckDuckGo
+    const kOnionURL = "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/";  // DuckDuckGo
     const kLearnMore = "https://www.torproject.org/releases/tor-browser-10-5/";
     let handledTourActionClick = false;
     switch (id) {
