@@ -17,11 +17,28 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-const { TorProtocolService } = ChromeUtils.import(
+// TorProtocolService and TorConnect modules need to be lazily-loaded
+// here because they will trigger generation of the random password used
+// to talk to the tor daemon in tor-launcher. Generating the random
+// password will initialize the cryptographic service ( nsNSSComponent )
+//
+// If this service is init'd before the profile has been setup, it will
+// use the fallback init path which behaves as if security.nocertdb=true
+//
+// We make these module getters so init happens when they are needed
+// (when init'ing the OnionAliasStore). With theze getters, the password
+// generation is triggered in torbutton after the 'profile-after-change'
+// topic (so after the profile is initialized)
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "TorProtocolService",
   "resource:///modules/TorProtocolService.jsm"
 );
 
-const { TorConnect } = ChromeUtils.import(
+ChromeUtils.defineModuleGetter(
+  this,
+  "TorConnect",
   "resource:///modules/TorConnect.jsm"
 );
 
