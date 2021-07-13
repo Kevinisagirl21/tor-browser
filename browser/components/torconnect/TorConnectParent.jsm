@@ -11,6 +11,10 @@ const { TorLauncherUtil } = ChromeUtils.import(
   "resource://torlauncher/modules/tl-util.jsm"
 );
 
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
+
 const kTorProcessReadyTopic = "TorProcessIsReady";
 const kTorProcessExitedTopic = "TorProcessExited";
 const kTorProcessDidNotStartTopic = "TorProcessDidNotStart";
