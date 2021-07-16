@@ -17,31 +17,6 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-// TorProtocolService and TorConnect modules need to be lazily-loaded
-// here because they will trigger generation of the random password used
-// to talk to the tor daemon in tor-launcher. Generating the random
-// password will initialize the cryptographic service ( nsNSSComponent )
-//
-// If this service is init'd before the profile has been setup, it will
-// use the fallback init path which behaves as if security.nocertdb=true
-//
-// We make these module getters so init happens when they are needed
-// (when init'ing the OnionAliasStore). With theze getters, the password
-// generation is triggered in torbutton after the 'profile-after-change'
-// topic (so after the profile is initialized)
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "TorProtocolService",
-  "resource:///modules/TorProtocolService.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "TorConnect",
-  "resource:///modules/TorConnect.jsm"
-);
-
 ChromeUtils.defineModuleGetter(
   this,
   "ActorManagerParent",
@@ -2531,14 +2506,17 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          if (TorProtocolService.isBootstrapDone() || !TorProtocolService.ownsTorDaemon) {
+          const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+            "resource:///modules/TorConnect.jsm"
+          );
+          if (!TorConnect.shouldShowTorConnect) {
             // we will take this path when the user is using the legacy tor launcher or
             // when Tor Browser didn't launch its own tor.
             OnionAliasStore.init();
           } else {
             // this path is taken when using about:torconnect, we wait to init
             // after we are bootstrapped and connected to tor
-            const topic = "torconnect:bootstrap-complete";
+            const topic = TorConnectTopics.BootstrapComplete;
             let bootstrapObserver = {
               observe(aSubject, aTopic, aData) {
                 if (aTopic === topic) {

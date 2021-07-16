@@ -77,7 +77,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabModalPrompt: "chrome://global/content/tabprompts.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
-  TorProtocolService: "resource:///modules/TorProtocolService.jsm",
+  TorConnect: "resource:///modules/TorConnect.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UITour: "resource:///modules/UITour.jsm",
@@ -2494,7 +2494,8 @@ var gBrowserInit = {
       let uri = window.arguments[0];
       let defaultArgs = BrowserHandler.defaultArgs;
 
-      if (TorProtocolService.shouldShowTorConnect()) {
+      if (TorConnect.shouldShowTorConnect) {
+        TorConnect.setURIsToLoad(uri);
         return "about:torconnect";
       }
 

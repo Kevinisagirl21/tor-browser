@@ -2,299 +2,258 @@
 
 /* eslint-env mozilla/frame-script */
 
-const kTorProcessReadyTopic = "TorProcessIsReady";
-const kTorProcessExitedTopic = "TorProcessExited";
-const kTorProcessDidNotStartTopic = "TorProcessDidNotStart";
-const kTorBootstrapStatusTopic = "TorBootstrapStatus";
-const kTorBootstrapErrorTopic = "TorBootstrapError";
-const kTorLogHasWarnOrErrTopic = "TorLogHasWarnOrErr";
-const kTorQuickstartPrefChanged = "TorQuickstartPrefChanged";
-
-const TorLauncherPrefs = {
-  quickstart: "extensions.torlauncher.quickstart",
-  prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
-}
+// populated in AboutTorConnect.init()
+let TorStrings = {};
+let TorConnectState = {};
 
 class AboutTorConnect {
-  log(...args) {
-    console.log(...args);
+  selectors = Object.freeze({
+    textContainer: {
+      title: "div.title",
+      titleText: "h1.title-text",
+    },
+    progress: {
+      description: "p#connectShortDescText",
+      meter: "div#progressBackground",
+    },
+    copyLog: {
+      link: "span#copyLogLink",
+      tooltip: "div#copyLogTooltip",
+      tooltipText: "span#copyLogTooltipText",
+    },
+    quickstart: {
+      checkbox: "input#quickstartCheckbox",
+      label: "label#quickstartCheckboxLabel",
+    },
+    buttons: {
+      connect: "button#connectButton",
+      cancel: "button#cancelButton",
+      advanced: "button#advancedButton",
+    },
+  })
+
+  elements = Object.freeze({
+    title: document.querySelector(this.selectors.textContainer.title),
+    titleText: document.querySelector(this.selectors.textContainer.titleText),
+    progressDescription: document.querySelector(this.selectors.progress.description),
+    progressMeter: document.querySelector(this.selectors.progress.meter),
+    copyLogLink: document.querySelector(this.selectors.copyLog.link),
+    copyLogTooltip: document.querySelector(this.selectors.copyLog.tooltip),
+    copyLogTooltipText: document.querySelector(this.selectors.copyLog.tooltipText),
+    quickstartCheckbox: document.querySelector(this.selectors.quickstart.checkbox),
+    quickstartLabel: document.querySelector(this.selectors.quickstart.label),
+    connectButton: document.querySelector(this.selectors.buttons.connect),
+    cancelButton: document.querySelector(this.selectors.buttons.cancel),
+    advancedButton: document.querySelector(this.selectors.buttons.advanced),
+  })
+
+  beginBootstrap() {
+    this.hide(this.elements.connectButton);
+    this.show(this.elements.cancelButton);
+    this.elements.cancelButton.focus();
+    RPMSendAsyncMessage("torconnect:begin-bootstrap");
   }
 
-  logError(...args) {
-    console.error(...args);
+  cancelBootstrap() {
+    RPMSendAsyncMessage("torconnect:cancel-bootstrap");
   }
 
-  logDebug(...args) {
-    console.debug(...args);
+  /*
+  Element helper methods
+  */
+
+  show(element) {
+    element.removeAttribute("hidden");
   }
 
-  getElem(id) {
-    return document.getElementById(id);
-  }
-  get elemProgressContent() {
-    return this.getElem("progressContent");
-  }
-  get elemProgressDesc() {
-    return this.getElem("connectShortDescText");
-  }
-  get elemProgressMeter() {
-    return this.getElem("progressBackground");
-  }
-  get elemCopyLogLink() {
-    return this.getElem("copyLogLink");
-  }
-  get elemCopyLogTooltip() {
-    return this.getElem("copyLogTooltip");
-  }
-  get elemCopyLogTooltipText() {
-    return this.getElem("copyLogTooltipText");
-  }
-  get elemQuickstartCheckbox() {
-    return this.getElem("quickstartCheckbox");
-  }
-  get elemQuickstartLabel() {
-    return this.getElem("quickstartCheckboxLabel");
-  }
-  get elemConnectButton() {
-    return this.getElem("connectButton");
-  }
-  get elemAdvancedButton() {
-    return this.getElem("advancedButton");
-  }
-  get elemCancelButton() {
-    return this.getElem("cancelButton");
-  }
-  get elemTextContainer() {
-    return this.getElem("text-container");
-  }
-  get elemTitle() {
-    return this.elemTextContainer.getElementsByClassName("title")[0];
+  hide(element) {
+    element.setAttribute("hidden", "true");
   }
 
-  static get STATE_INITIAL() {
-    return "STATE_INITIAL";
-  }
-
-  static get STATE_BOOTSTRAPPING() {
-    return "STATE_BOOTSTRAPPING";
-  }
-
-  static get STATE_BOOTSTRAPPED() {
-    return "STATE_BOOTSTRAPPED";
-  }
-
-  static get STATE_BOOTSTRAP_ERROR() {
-    return "STATE_BOOTSTRAP_ERROR";
-  }
-
-  get state() {
-    return this._state;
-  }
-
-  setInitialUI() {
-    this.setTitle(this.torStrings.torConnect.torConnect);
-    this.elemProgressDesc.textContent =
-      this.torStrings.settings.torPreferencesDescription;
-    this.showElem(this.elemConnectButton);
-    this.elemConnectButton.focus();
-    this.showElem(this.elemAdvancedButton);
-    this.hideElem(this.elemCopyLogLink);
-    this.hideElem(this.elemCancelButton);
-    this.hideElem(this.elemProgressContent);
-    this.hideElem(this.elemProgressMeter);
-    this.elemTitle.classList.remove("error");
-  }
-
-  setBootstrappingUI() {
-    this.setTitle(this.torStrings.torConnect.torConnecting);
-    this.hideElem(this.elemConnectButton);
-    this.hideElem(this.elemAdvancedButton);
-    this.hideElem(this.elemCopyLogLink);
-    this.showElem(this.elemCancelButton);
-    this.elemCancelButton.focus();
-    this.showElem(this.elemProgressContent);
-    this.showElem(this.elemProgressMeter);
-    this.elemTitle.classList.remove("error");
-  }
-
-  setBootstrapErrorUI() {
-    this.setTitle(this.torStrings.torConnect.torBootstrapFailed);
-    this.elemConnectButton.textContent = this.torStrings.torConnect.tryAgain;
-    this.showElem(this.elemConnectButton);
-    this.hideElem(this.elemCancelButton);
-    this.showElem(this.elemAdvancedButton);
-    this.elemAdvancedButton.focus();
-    this.showElem(this.elemProgressContent);
-    this.hideElem(this.elemProgressMeter);
-    this.elemTitle.classList.add("error");
-  }
-
-  set state(state) {
-    const oldState = this.state;
-    if (oldState === state) {
-      return;
-    }
-    this._state = state;
-    switch (this.state) {
-      case AboutTorConnect.STATE_INITIAL:
-        this.setInitialUI();
-        break;
-      case AboutTorConnect.STATE_BOOTSTRAPPING:
-        this.setBootstrappingUI();
-        break;
-      case AboutTorConnect.STATE_BOOTSTRAP_ERROR:
-        this.setBootstrapErrorUI();
-        break;
-      case AboutTorConnect.STATE_BOOTSTRAPPED:
-        window.close();
-        break;
-    }
-  }
-
-  async showErrorMessage(aErrorObj) {
-    if (aErrorObj && aErrorObj.message) {
-      this.setTitle(aErrorObj.message);
-      if (aErrorObj.details) {
-        this.elemProgressDesc.textContent = aErrorObj.details;
-      }
-    }
-
-    this.showCopyLog();
-    this.showElem(this.elemConnectButton);
-  }
-
-  showElem(elem) {
-    elem.removeAttribute("hidden");
-  }
-
-  hideElem(elem) {
-    elem.setAttribute("hidden", "true");
-  }
-
-  async connect() {
-    // reset the text to original description
-    // in case we are trying again after an error (clears out error text)
-    this.elemProgressDesc.textContent =
-      this.torStrings.settings.torPreferencesDescription;
-
-    this.state = AboutTorConnect.STATE_BOOTSTRAPPING;
-    const error = await RPMSendQuery("TorConnect");
-    if (error) {
-      if (error.details) {
-        this.showErrorMessage({ message: error.details }, true);
-        this.showSaveSettingsError(error.details);
-      }
-    }
-  }
-
-  showCopyLog() {
-    this.elemCopyLogLink.removeAttribute("hidden");
-  }
-
-  async updateBootstrapProgress(status) {
-    let labelText = await RPMSendQuery("GetLocalizedBootstrapStatus", {
-      status,
-      keyword: "TAG",
-    });
-    let percentComplete = status.PROGRESS ? status.PROGRESS : 0;
-    this.elemProgressMeter.style.width = `${percentComplete}%`;
-
-    if (await RPMSendQuery("TorBootstrapErrorOccurred")) {
-      this.state = AboutTorConnect.STATE_BOOTSTRAP_ERROR;
-      return;
-    } else if (await RPMSendQuery("TorIsNetworkDisabled")) {
-      // If tor network is not connected, let's go to the initial state, even
-      // if bootstrap state is greater than 0.
-      this.state = AboutTorConnect.STATE_INITIAL;
-      return;
-    } else if (percentComplete > 0) {
-      this.state = AboutTorConnect.STATE_BOOTSTRAPPING;
-    }
-
-    // Due to async, status might have changed. Do not override desc if so.
-    if (this.state === AboutTorConnect.STATE_BOOTSTRAPPING) {
-      this.hideElem(this.elemConnectButton);
-    }
-  }
-
-  stopTorBootstrap() {
-    RPMSendAsyncMessage("TorStopBootstrap");
-  }
-
-  setTitle(title) {
-    const titleElement = document.querySelector(".title-text");
-    titleElement.textContent = title;
+  setTitle(title, error) {
+    this.elements.titleText.textContent = title;
     document.title = title;
+
+    if (error) {
+      this.elements.title.classList.add("error");
+    } else {
+      this.elements.title.classList.remove("error");
+    }
   }
 
-  async initElements() {
-    this.elemAdvancedButton.textContent = this.torStrings.torConnect.torConfigure;
-    this.elemAdvancedButton.addEventListener("click", () => {
-      RPMSendAsyncMessage("OpenTorAdvancedPreferences");
-    });
+  setProgress(description, visible, percent) {
+    this.elements.progressDescription.textContent = description;
+    if (visible) {
+      this.show(this.elements.progressMeter);
+      this.elements.progressMeter.style.width = `${percent}%`;
+    } else {
+      this.hide(this.elements.progressMeter);
+    }
+  }
 
-    // sets the text content while keping the child elements intact
-    this.elemCopyLogLink.childNodes[0].nodeValue =
-      this.torStrings.torConnect.copyLog;
-    this.elemCopyLogLink.addEventListener("click", async (event) => {
-      const copiedMessage = await RPMSendQuery("TorCopyLog");
-      aboutTorConnect.elemCopyLogTooltipText.textContent = copiedMessage;
-      aboutTorConnect.elemCopyLogTooltip.style.visibility = "visible";
+  /*
+  These methods update the UI based on the current TorConnect state
+  */
+
+  updateUI(state) {
+    console.log(state);
+
+    // calls update_$state()
+    this[`update_${state.State}`](state);
+
+    if (state.ShowCopyLog) {
+      this.showCopyLog();
+    }
+    this.elements.quickstartCheckbox.checked = state.QuickStartEnabled;
+  }
+
+  /* Per-state updates */
+
+  update_Initial(state) {
+    const hasError = false;
+    const showProgressbar = false;
+
+    this.setTitle(TorStrings.torConnect.torConnect, hasError);
+    this.setProgress(TorStrings.settings.torPreferencesDescription, showProgressbar);
+    this.hide(this.elements.copyLogLink);
+    this.hide(this.elements.connectButton);
+    this.hide(this.elements.advancedButton);
+    this.hide(this.elements.cancelButton);
+  }
+
+  update_Configuring(state) {
+    const hasError = state.ErrorMessage != null;
+    const showProgressbar = false;
+
+    if (hasError) {
+      this.setTitle(state.ErrorMessage, hasError);
+      this.setProgress(state.ErrorDetails, showProgressbar);
+      this.show(this.elements.copyLogLink);
+      this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
+    } else {
+      this.setTitle(TorStrings.torConnect.torConnect, hasError);
+      this.setProgress(TorStrings.settings.torPreferencesDescription, showProgressbar);
+      this.hide(this.elements.copyLogLink);
+      this.elements.connectButton.textContent = TorStrings.torConnect.torConnectButton;
+    }
+    this.show(this.elements.connectButton);
+    this.elements.connectButton.focus();
+    this.show(this.elements.advancedButton);
+    this.hide(this.elements.cancelButton);
+  }
+
+  update_AutoConfiguring(state) {
+    // TODO: noop until this state is used
+  }
+
+  update_Bootstrapping(state) {
+    const hasError = false;
+    const showProgressbar = true;
+
+    this.setTitle(state.BootstrapStatus ? state.BootstrapStatus : TorStrings.torConnect.torConnecting, hasError);
+    this.setProgress(TorStrings.settings.torPreferencesDescription, showProgressbar, state.BootstrapProgress);
+    if (state.ShowCopyLog) {
+      this.show(this.elements.copyLogLink);
+    } else {
+      this.hide(this.elements.copyLogLink);
+    }
+    this.hide(this.elements.connectButton);
+    this.hide(this.elements.advancedButton);
+    this.show(this.elements.cancelButton);
+    this.elements.cancelButton.focus();
+  }
+
+  update_Error(state) {
+    const hasError = true;
+    const showProgressbar = false;
+
+    this.setTitle(state.ErrorMessage, hasError);
+    this.setProgress(state.ErrorDetails, showProgressbar);
+    this.show(this.elements.copyLogLink);
+    this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
+    this.show(this.elements.connectButton);
+    this.show(this.elements.advancedButton);
+    this.hide(this.elements.cancelButton);
+  }
+
+  update_FatalError(state) {
+    // TODO: noop until this state is used
+  }
+
+  update_Bootstrapped(state) {
+    const hasError = false;
+    const showProgressbar = true;
+
+    this.setTitle(TorStrings.torConnect.torConnected, hasError);
+    this.setProgress(TorStrings.settings.torPreferencesDescription, showProgressbar, 100);
+    this.hide(this.elements.connectButton);
+    this.hide(this.elements.advancedButton);
+    this.hide(this.elements.cancelButton);
+
+    // only close the window if directed
+    if (state.Close) {
+      window.close();
+    }
+  }
+
+  update_Disabled(state) {
+    // TODO: we should probably have some UX here if a user goes to about:torconnect when
+    // it isn't in use (eg using tor-launcher or system tor)
+  }
+
+  async initElements(direction, quickstart) {
+
+    document.documentElement.setAttribute("dir", direction);
+
+    // sets the text content while keeping the child elements intact
+    this.elements.copyLogLink.childNodes[0].nodeValue =
+      TorStrings.torConnect.copyLog;
+    this.elements.copyLogLink.addEventListener("click", async (event) => {
+      const copiedMessage = await RPMSendQuery("torconnect:copy-tor-logs");
+      this.elements.copyLogTooltipText.textContent = copiedMessage;
+      this.elements.copyLogTooltipText.style.visibility = "visible";
 
       // clear previous timeout if one already exists
-      if (aboutTorConnect.copyLogTimeoutId) {
-        clearTimeout(aboutTorConnect.copyLogTimeoutId);
+      if (this.copyLogTimeoutId) {
+        clearTimeout(this.copyLogTimeoutId);
       }
 
       // hide tooltip after X ms
       const TOOLTIP_TIMEOUT = 2000;
-      aboutTorConnect.copyLogTimeoutId = setTimeout(function() {
-        aboutTorConnect.elemCopyLogTooltip.style.visibility = "hidden";
-        aboutTorConnect.copyLogTimeoutId = 0;
+      this.copyLogTimeoutId = setTimeout(function() {
+        this.elements.copyLogTooltipText.style.visibility = "hidden";
+        this.copyLogTimeoutId = 0;
       }, TOOLTIP_TIMEOUT);
     });
 
-
-    this.elemQuickstartLabel.textContent = this.torStrings.settings.quickstartCheckbox;
-    this.elemQuickstartCheckbox.addEventListener("change", () => {
-      const quickstart = this.elemQuickstartCheckbox.checked;
-      RPMSetBoolPref(TorLauncherPrefs.quickstart, quickstart);
+    this.elements.quickstartCheckbox.checked = quickstart
+    this.elements.quickstartCheckbox.addEventListener("change", () => {
+      const quickstart = this.elements.quickstartCheckbox.checked;
+      RPMSendAsyncMessage("torconnect:set-quickstart", quickstart);
     });
-    this.elemQuickstartCheckbox.checked = await RPMGetBoolPref(TorLauncherPrefs.quickstart);
+    this.elements.quickstartLabel.textContent = TorStrings.settings.quickstartCheckbox;
 
-    this.elemConnectButton.textContent =
-      this.torStrings.torConnect.torConnectButton;
-    this.elemConnectButton.addEventListener("click", () => {
-      this.connect();
+    this.elements.connectButton.textContent =
+      TorStrings.torConnect.torConnectButton;
+    this.elements.connectButton.addEventListener("click", () => {
+      this.beginBootstrap();
     });
 
-    this.elemCancelButton.textContent = this.torStrings.torConnect.cancel;
-    this.elemCancelButton.addEventListener("click", () => {
-      this.stopTorBootstrap();
+    this.elements.advancedButton.textContent = TorStrings.torConnect.torConfigure;
+    this.elements.advancedButton.addEventListener("click", () => {
+      RPMSendAsyncMessage("torconnect:open-tor-preferences");
+    });
+
+    this.elements.cancelButton.textContent = TorStrings.torConnect.cancel;
+    this.elements.cancelButton.addEventListener("click", () => {
+      this.cancelBootstrap();
     });
   }
 
   initObservers() {
-    RPMAddMessageListener(kTorBootstrapErrorTopic, ({ data }) => {
-      this.showCopyLog();
-      this.stopTorBootstrap();
-      this.showErrorMessage(data);
-    });
-    RPMAddMessageListener(kTorLogHasWarnOrErrTopic, () => {
-      this.showCopyLog();
-    });
-    RPMAddMessageListener(kTorProcessDidNotStartTopic, ({ data }) => {
-      this.showErrorMessage(data);
-    });
-    RPMAddMessageListener(kTorBootstrapStatusTopic, ({ data }) => {
-      this.updateBootstrapProgress(data);
-    });
-    RPMAddMessageListener(kTorQuickstartPrefChanged, ({ data }) => {
-      // update checkbox with latest quickstart pref value
-      this.elemQuickstartCheckbox.checked = data;
-    });
-    RPMAddMessageListener("torconnect:bootstrap-complete", () => {
-      this.state = AboutTorConnect.STATE_BOOTSTRAPPED;
+    // TorConnectParent feeds us state blobs to we use to update our UI
+    RPMAddMessageListener("torconnect:state-change", ({ data }) => {
+      this.updateUI(data);
     });
   }
 
@@ -304,34 +263,25 @@ class AboutTorConnect {
       // integers, so we must resort to a string compare here :(
       // see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code for relevant documentation
       if (evt.code === "Escape") {
-        this.stopTorBootstrap();
+        this.cancelBootstrap();
       }
     };
   }
 
   async init() {
-    this.torStrings = await RPMSendQuery("GetTorStrings");
-    document.documentElement.setAttribute(
-      "dir",
-      await RPMSendQuery("GetDirection")
-    );
-    this.initElements();
+
+    let args = await RPMSendQuery("torconnect:get-init-args");
+
+    // various constants
+    TorStrings = Object.freeze(args.TorStrings);
+    TorConnectState = Object.freeze(args.TorConnectState);
+
+    this.initElements(args.Direction);
     this.initObservers();
     this.initKeyboardShortcuts();
-    this.state = AboutTorConnect.STATE_INITIAL;
 
-    // Request the most recent bootstrap status info so that a
-    // TorBootstrapStatus notification is generated as soon as possible.
-    RPMSendAsyncMessage("TorRetrieveBootstrapStatus");
-
-    // quickstart is the user set pref for starting tor automatically
-    // prompt_at_startup will be set to false after successful bootstrap, and true on error
-    // by tor-launcher, so we want to keep the connect screen up when prompt_at_startup is true
-    ///  even if quickstart is enabled so user can potentially resolve errors on next launch
-    if (await RPMGetBoolPref(TorLauncherPrefs.quickstart) &&
-       !await RPMGetBoolPref(TorLauncherPrefs.prompt_at_startup)) {
-      this.connect();
-    }
+    // populate UI based on current state
+    this.updateUI(args.State);
   }
 }
 

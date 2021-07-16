@@ -181,28 +181,18 @@ let RemotePageAccessManager = {
       RPMRemoveMessageListener: ["*"],
     },
     "about:torconnect": {
-      RPMAddMessageListener: ["*"],
+      RPMAddMessageListener: [
+        "torconnect:state-change",
+      ],
       RPMSendAsyncMessage: [
-        "OpenTorAdvancedPreferences",
-        "TorRetrieveBootstrapStatus",
-        "TorStopBootstrap",
+        "torconnect:open-tor-preferences",
+        "torconnect:begin-bootstrap",
+        "torconnect:cancel-bootstrap",
+        "torconnect:set-quickstart",
       ],
       RPMSendQuery: [
-        "GetDirection",
-        "GetLocalizedBootstrapStatus",
-        "GetTorStrings",
-        "TorBootstrapErrorOccurred",
-        "TorConnect",
-        "TorCopyLog",
-        "TorIsNetworkDisabled",
-        "TorLogHasWarnOrErr",
-      ],
-      RPMGetBoolPref: [
-        "extensions.torlauncher.quickstart",
-        "extensions.torlauncher.prompt_at_startup",
-      ],
-      RPMSetBoolPref: [
-        "extensions.torlauncher.quickstart",
+        "torconnect:get-init-args",
+        "torconnect:copy-tor-logs",
       ],
     },
   },

@@ -6,6 +6,10 @@ const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
 
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
+
 const {
   TorBridgeSource,
   TorBridgeSettings,
@@ -188,14 +192,14 @@ const gTorPane = (function() {
       this._messageBoxButton = prefpane.querySelector(selectors.messageBox.button);
       // wire up connect button
       this._messageBoxButton.addEventListener("click", () => {
-        TorProtocolService.connect();
+        TorConnect.beginBootstrap();
         let win = Services.wm.getMostRecentWindow("navigator:browser");
         // switch to existing about:torconnect tab or create a new one
         win.switchToTabHavingURI("about:torconnect", true);
       });
 
       let populateMessagebox = () => {
-        if (TorProtocolService.shouldShowTorConnect()) {
+        if (TorConnect.shouldShowTorConnect) {
           // set messagebox style and text
           if (TorProtocolService.torBootstrapErrorOccurred()) {
             this._messageBox.className = "error";
