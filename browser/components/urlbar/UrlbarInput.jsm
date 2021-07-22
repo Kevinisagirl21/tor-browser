@@ -10,8 +10,8 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+const { TorConnect } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
 );
 
 // in certain scenarios we want user input uris to open in a new tab if they do so from the
@@ -24,7 +24,7 @@ function maybeUpdateOpenLocationForTorConnect(openUILinkWhere, currentURI, desti
         // we are trying to open in same tab
         openUILinkWhere === "current" &&
         // only if user still has not bootstrapped
-        TorProtocolService.shouldShowTorConnect() &&
+        TorConnect.shouldShowTorConnect &&
         // and user is not just navigating to about:torconnect
         destinationURI !== "about:torconnect") {
       return "tab";

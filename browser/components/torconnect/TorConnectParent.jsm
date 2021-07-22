@@ -3,123 +3,139 @@
 var EXPORTED_SYMBOLS = ["TorConnectParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
-);
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://torlauncher/modules/tl-util.jsm"
-);
-
-const { TorConnect } = ChromeUtils.import(
+const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
 );
 
-const kTorProcessReadyTopic = "TorProcessIsReady";
-const kTorProcessExitedTopic = "TorProcessExited";
-const kTorProcessDidNotStartTopic = "TorProcessDidNotStart";
-const kTorShowProgressPanelTopic = "TorShowProgressPanel";
-const kTorBootstrapStatusTopic = "TorBootstrapStatus";
-const kTorBootstrapErrorTopic = "TorBootstrapError";
-const kTorLogHasWarnOrErrTopic = "TorLogHasWarnOrErr";
-
-const gActiveTopics = [
-  kTorProcessReadyTopic,
-  kTorProcessExitedTopic,
-  kTorProcessDidNotStartTopic,
-  kTorShowProgressPanelTopic,
-  kTorBootstrapStatusTopic,
-  kTorBootstrapErrorTopic,
-  kTorLogHasWarnOrErrTopic,
-  "torconnect:bootstrap-complete",
-];
-
-const gTorLauncherPrefs = {
+const TorLauncherPrefs = Object.freeze({
   quickstart: "extensions.torlauncher.quickstart",
-}
+});
+
+/*
+This object is basically a marshalling interface between the TorConnect module
+and a particular about:torconnect page
+*/
 
 class TorConnectParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
 
     const self = this;
-    this.gObserver = {
+
+    this.state = {
+      State: TorConnect.state,
+      ErrorMessage: TorConnect.errorMessage,
+      ErrorDetails: TorConnect.errorDetails,
+      BootstrapProgress: TorConnect.bootstrapProgress,
+      BootstrapStatus: TorConnect.bootstrapStatus,
+      ShowCopyLog: TorConnect.logHasWarningOrError,
+      QuickStartEnabled: Services.prefs.getBoolPref(TorLauncherPrefs.quickstart, false),
+    };
+
+    // JSWindowActiveParent derived objects cannot observe directly, so create a member
+    // object to do our observing for us
+    //
+    // This object converts the various lifecycle events from the TorConnect module, and
+    // maintains a state object which we pass down to our about:torconnect page, which uses
+    // the state object to update its UI
+    this.torConnectObserver = {
       observe(aSubject, aTopic, aData) {
-        const obj = aSubject?.wrappedJSObject;
-        if (obj) {
-          obj.handled = true;
+        let obj = aSubject?.wrappedJSObject;
+
+        // update our state struct based on received torconnect topics and forward on
+        // to aboutTorConnect.js
+        switch(aTopic) {
+          case TorConnectTopics.StateChange: {
+            self.state.State = obj.state;
+            // clear any previous error information if we are bootstrapping
+            if (self.state.State === TorConnectState.Bootstrapping) {
+              self.state.ErrorMessage = null;
+              self.state.ErrorDetails = null;
+            }
+            break;
+          }
+          case TorConnectTopics.BootstrapProgress: {
+            self.state.BootstrapProgress = obj.progress;
+            self.state.BootstrapStatus = obj.status;
+            self.state.ShowCopyLog = obj.hasWarnings;
+            break;
+          }
+          case TorConnectTopics.BootstrapComplete: {
+            // tells about:torconnect pages to close themselves
+            // this flag will only be set if an about:torconnect page
+            // reaches the Bootstrapped state, so if a user
+            // navigates to about:torconnect manually after bootstrap, the page
+            // will not auto-close on them
+            self.state.Close = true;
+            break;
+          }
+          case TorConnectTopics.BootstrapError: {
+            self.state.ErrorMessage = obj.message;
+            self.state.ErrorDetails = obj.details;
+            self.state.ShowCopyLog = true;
+            break;
+          }
+          case TorConnectTopics.FatalError: {
+            // TODO: handle
+            break;
+          }
+          case "nsPref:changed": {
+            if (aData === TorLauncherPrefs.quickstart) {
+              self.state.QuickStartEnabled = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
+            }
+            break;
+          }
+          default: {
+            console.log(`TorConnect: unhandled observe topic '${aTopic}'`);
+          }
         }
-        self.sendAsyncMessage(aTopic, obj);
+
+        self.sendAsyncMessage("torconnect:state-change", self.state);
       },
     };
 
-    for (const topic of gActiveTopics) {
-      Services.obs.addObserver(this.gObserver, topic);
+    // observe all of the torconnect:.* topics
+    for (const key in TorConnectTopics) {
+      const topic = TorConnectTopics[key];
+      Services.obs.addObserver(this.torConnectObserver, topic);
     }
-
-    this.quickstartObserver = {
-      observe(aSubject, aTopic, aData) {
-        if (aTopic === "nsPref:changed" &&
-            aData == gTorLauncherPrefs.quickstart) {
-          self.sendAsyncMessage("TorQuickstartPrefChanged", Services.prefs.getBoolPref(gTorLauncherPrefs.quickstart));
-        }
-      },
-    }
-    Services.prefs.addObserver(gTorLauncherPrefs.quickstart, this.quickstartObserver);
+    Services.prefs.addObserver(TorLauncherPrefs.quickstart, this.torConnectObserver);
   }
 
   willDestroy() {
-    for (const topic of gActiveTopics) {
-      Services.obs.removeObserver(this.gObserver, topic);
+    // stop observing all of our torconnect:.* topics
+    for (const key in TorConnectTopics) {
+      const topic = TorConnectTopics[key];
+      Services.obs.removeObserver(this.torConnectObserver, topic);
     }
-  }
-
-
-  _OpenTorAdvancedPreferences() {
-    const win = this.browsingContext.top.embedderElement.ownerGlobal;
-    win.openTrustedLinkIn("about:preferences#tor", "tab");
-  }
-
-  _TorCopyLog() {
-    // Copy tor log messages to the system clipboard.
-    const chSvc = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
-      Ci.nsIClipboardHelper
-    );
-    const countObj = { value: 0 };
-    chSvc.copyString(TorProtocolService.getLog(countObj));
-    const count = countObj.value;
-    return TorLauncherUtil.getFormattedLocalizedString(
-      "copiedNLogMessagesShort",
-      [count],
-      1
-    );
+    Services.prefs.removeObserver(TorLauncherPrefs.quickstart, this.torConnectObserver);
   }
 
   receiveMessage(message) {
     switch (message.name) {
-      case "TorBootstrapErrorOccurred":
-        return TorProtocolService.torBootstrapErrorOccurred();
-      case "TorRetrieveBootstrapStatus":
-        return TorProtocolService.retrieveBootstrapStatus();
-      case "OpenTorAdvancedPreferences":
-        return this._OpenTorAdvancedPreferences();
-      case "GetLocalizedBootstrapStatus":
-        const { status, keyword } = message.data;
-        return TorLauncherUtil.getLocalizedBootstrapStatus(status, keyword);
-      case "TorCopyLog":
-        return this._TorCopyLog();
-      case "TorIsNetworkDisabled":
-        return TorProtocolService.isNetworkDisabled();
-      case "TorStopBootstrap":
-        return TorProtocolService.torStopBootstrap();
-      case "TorConnect":
-        return TorProtocolService.connect();
-      case "GetDirection":
-        return Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
-      case "GetTorStrings":
-        return TorStrings;
-      case "TorLogHasWarnOrErr":
-        return TorProtocolService.torLogHasWarnOrErr();
+      case "torconnect:set-quickstart":
+        Services.prefs.setBoolPref(TorLauncherPrefs.quickstart, message.data);
+        break;
+      case "torconnect:open-tor-preferences":
+        TorConnect.openTorPreferences();
+        break;
+      case "torconnect:copy-tor-logs":
+        return TorConnect.copyTorLogs();
+      case "torconnect:cancel-bootstrap":
+        TorConnect.cancelBootstrap();
+        break;
+      case "torconnect:begin-bootstrap":
+        TorConnect.beginBootstrap();
+        break;
+      case "torconnect:get-init-args":
+        // called on AboutTorConnect.init(), pass down all state data it needs to init
+        return {
+            TorStrings: TorStrings,
+            TorConnectState: TorConnectState,
+            Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
+            State: this.state,
+        };
     }
     return undefined;
   }
