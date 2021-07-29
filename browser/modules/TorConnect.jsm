@@ -159,26 +159,24 @@ const TorConnect = (() => {
         _errorMessage: null,
         _errorDetails: null,
         _logHasWarningOrError: false,
-        // init to about:tor as fallback in case setURIsToLoad is somehow never called
-        _urisToLoad: ["about:tor"],
 
         /* These functions are called after transitioning to a new state */
         _transitionCallbacks: Object.freeze(new Map([
             /* Initial is never transitioned to */
             [TorConnectState.Initial, null],
             /* Configuring */
-            [TorConnectState.Configuring, (self) => {
+            [TorConnectState.Configuring, (self, prevState) => {
                 // TODO move this to the transition function
-                if (this._state === TorConnectState.Bootstrapping) {
+                if (prevState === TorConnectState.Bootstrapping) {
                     TorProtocolService.torStopBootstrap();
                 }
             }],
             /* AutoConfiguring */
-            [TorConnectState.AutoConfiguring, (self) => {
+            [TorConnectState.AutoConfiguring, (self, prevState) => {
 
             }],
             /* Bootstrapping */
-            [TorConnectState.Bootstrapping, (self) => {
+            [TorConnectState.Bootstrapping, (self, prevState) => {
                 let error = TorProtocolService.connect();
                 if (error) {
                     self.onError(error.message, error.details);
@@ -187,20 +185,12 @@ const TorConnect = (() => {
                 }
             }],
             /* Bootstrapped */
-            [TorConnectState.Bootstrapped, (self) => {
-                // open home page(s) in new tabs
-                const win = BrowserWindowTracker.getTopWindow()
-
-                let location="tab";
-                for (const uri of self._urisToLoad) {
-                    win.openTrustedLinkIn(uri, location);
-                    // open subsequent tabs behind first tab
-                    location = "tabshifted";
-                }
+            [TorConnectState.Bootstrapped, (self,prevState) => {
+                // notify observers of bootstrap completion
                 Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
             }],
             /* Error */
-            [TorConnectState.Error, (self, errorMessage, errorDetails, fatal) => {
+            [TorConnectState.Error, (self, prevState, errorMessage, errorDetails, fatal) => {
                 self._errorMessage = errorMessage;
                 self._errorDetails = errorDetails;
 
@@ -212,30 +202,31 @@ const TorConnect = (() => {
                 }
             }],
             /* FatalError */
-            [TorConnectState.FatalError, (self) => {
+            [TorConnectState.FatalError, (self, prevState) => {
                 Services.obs.notifyObservers(null, TorConnectTopics.FatalError);
             }],
             /* Disabled */
-            [TorConnectState.Disabled, (self) => {
+            [TorConnectState.Disabled, (self, prevState) => {
 
             }],
         ])),
 
         _changeState: function(newState, ...args) {
-            const oldState = this._state;
+            const prevState = this._state;
 
             // ensure this is a valid state transition
-            if (!TorConnectStateTransitions.get(oldState)?.includes(newState)) {
-                throw Error(`TorConnect: Attempted invalid state transition from ${oldState} to ${newState}`);
+            if (!TorConnectStateTransitions.get(prevState)?.includes(newState)) {
+                throw Error(`TorConnect: Attempted invalid state transition from ${prevState} to ${newState}`);
             }
 
-            console.log(`TorConnect: transitioning state from ${oldState} to ${newState}`);
+            console.log(`TorConnect: transitioning state from ${prevState} to ${newState}`);
+
+            // set our new state first so that state transitions can themselves trigger
+            // a state transition
+            this._state = newState;
 
             // call our transition function and forward any args
-            this._transitionCallbacks.get(newState)(this, ...args);
-
-            // finally, set our new state
-            this._state = newState;
+            this._transitionCallbacks.get(newState)(this, prevState, ...args);
 
             Services.obs.notifyObservers({state: newState}, TorConnectTopics.StateChange);
         },
@@ -456,10 +447,12 @@ const TorConnect = (() => {
         },
 
         // called from browser.js on browser startup, passed in either the user's homepage(s)
-        // or uris passed via command-line
-        setURIsToLoad: function(uriVariant) {
+        // or uris passed via command-line; we want to replace them with about:torconnect uris
+        // which redirect after bootstrapping
+        getURIsToLoad: function(uriVariant) {
             // convert the object we get from browser.js
-            let uris = ((v) => {
+            let uriStrings = ((v) => {
+                // an interop array
                 if (v instanceof Ci.nsIArray) {
                     // Transform the nsIArray of nsISupportsString's into a JS Array of
                     // JS strings.
@@ -467,17 +460,38 @@ const TorConnect = (() => {
                       v.enumerate(Ci.nsISupportsString),
                       supportStr => supportStr.data
                     );
+                // an interop string
                 } else if (v instanceof Ci.nsISupportsString) {
                     return [v.data];
+                // a js string
                 } else if (typeof v === "string") {
                     return v.split("|");
+                // a js array of js strings
+                } else if (Array.isArray(v) &&
+                           v.reduce((allStrings, entry) => {return allStrings && (typeof entry === "string");}, true)) {
+                    return v;
                 }
                 // about:tor as safe fallback
+                console.log(`TorConnect: setURIsToLoad() received unknown variant '${JSON.stringify(v)}'`);
                 return ["about:tor"];
             })(uriVariant);
 
-            console.log(`TorConnect: will load after bootstrap => ${uris.join(", ")}`);
-            this._urisToLoad = uris;
+            // will attempt to convert user-supplied string to a uri, fallback to about:tor if cannot convert
+            // to valid uri object
+            let uriStringToUri = (uriString) => {
+                let uri = Services.uriFixup.createFixupURI(uriString, 0);
+                return uri ? uri : Services.io.newURI("about:tor");
+            };
+            let uris = uriStrings.map(uriStringToUri);
+
+            // assume we have a valid uri and generate an about:torconnect redirect uri
+            let uriToRedirectUri = (uri) => {
+                return`about:torconnect?redirect=${encodeURIComponent(uri.spec)}`;
+            };
+            let redirectUris = uris.map(uriToRedirectUri);
+
+            console.log(`TorConnect: will load after bootstrap => [${uris.map((uri) => {return uri.spec;}).join(", ")}]`);
+            return redirectUris;
         },
     };
     retval.init();

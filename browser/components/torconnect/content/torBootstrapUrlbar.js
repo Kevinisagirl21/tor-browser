@@ -28,7 +28,8 @@ var TorBootstrapUrlbar = {
       case TorConnectState.Error:
       case TorConnectState.FatalError: {
         this.elements.torConnectBox.removeAttribute("hidden");
-        this.elements.torConnectLabel.textContent = TorStrings.torConnect.offline;
+        this.elements.torConnectLabel.textContent =
+          TorStrings.torConnect.torNotConnectedConcise;
         this.elements.inputContainer.setAttribute("torconnect", "offline");
         break;
       }
@@ -74,6 +75,9 @@ var TorBootstrapUrlbar = {
         torConnectLabel: browser.ownerGlobal.document.querySelector(this.selectors.torConnect.label),
         inputContainer: gURLBar._inputContainer,
       })
+      this.elements.torConnectBox.addEventListener("click", () => {
+        window.openTrustedLinkIn("about:torconnect", "tab");
+      });
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
       this.observing = true;
       this.updateTorConnectBox(TorConnect.state);

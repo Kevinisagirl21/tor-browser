@@ -1,8 +1,8 @@
 
 /* Copyright (c) 2021, The Tor Project, Inc. */
 
-
 @import url("chrome://browser/skin/error-pages.css");
+@import url("chrome://branding/content/tor-styles.css");
 
 :root {
   --onion-opacity: 1;
@@ -13,20 +13,20 @@
 /* override firefox's default blue focus coloring */
 :focus {
   outline:  none!important;
-  box-shadow: 0 0 0 3px #CD8CED !important;
-  border:  1px #59316B solid !important;
+  box-shadow: 0 0 0 3px var(--purple-30) !important;
+  border:  1px var(--purple-80) solid !important;
 }
 
 @media (prefers-color-scheme: dark)
 {
   :focus {
-    box-shadow: 0 0 0 3px #8C689E !important;
+    box-shadow: 0 0 0 3px var(--purple-50)!important;
   }
 }
 
 /* override firefox's default blue border on hover */
 input[type="checkbox"]:not(:disabled):hover {
-  border-color: #59316B;
+  border-color: var(--purple-70);
 }
 
 /* fix checkbox visibility when dark mode enabled */
@@ -35,11 +35,15 @@ input[type="checkbox"]:checked {
 }
 
 #connectButton {
-  background-color: #7D4698;
+  background-color: var(--purple-60);
 }
 
 #connectButton:hover {
-  background-color: #59316B;
+  background-color: var(--purple-70);
+}
+
+#connectButton:active {
+  background-color: var(--purple-80);
 }
 
 #progressBackground {
@@ -111,8 +115,8 @@ input[type="checkbox"]:checked {
 
 /* tooltip content (any content could go here) */
 #copyLogTooltipText {
-  background-color: #30E60B;
-  color: #003706;
+  background-color: var(--green-50);
+  color: var(--green-90);
   border-radius: 2px;
   padding: 4px;
   line-height: 13px;
@@ -129,7 +133,7 @@ input[type="checkbox"]:checked {
   margin-left: -4px;
   border-width: 4px;
   border-style: solid;
-  border-color: #30E60B transparent transparent transparent;
+  border-color: var(--green-50) transparent transparent transparent;
 }
 
 body {

@@ -396,6 +396,11 @@ var TorStrings = {
         "Establishing a Connection"
       ),
 
+      torNotConnectedConcise: getStringNet(
+        "torConnect.notConnectedConcise",
+        "Not Connected"
+      ),
+
       torConnectingConcise: getStringNet(
         "torConnect.connectingConcise",
         "Connecting…"

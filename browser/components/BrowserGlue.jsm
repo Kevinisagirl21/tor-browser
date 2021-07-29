@@ -514,7 +514,7 @@ let JSWINDOWACTORS = {
       },
     },
 
-    matches: ["about:torconnect"],
+    matches: ["about:torconnect","about:torconnect?*"],
   },
 
   Translation: {

@@ -61,19 +61,9 @@
   -moz-outline-radius: var(--toolbarbutton-border-radius);
 }
 
-%ifdef MOZ_OFFICIAL_BRANDING
 #identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label {
-  color: #420C5D;
-}
-
-toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label {
-  color: #CC80FF;
-}
-%endif
-
-#identity-box[pageproxystate="valid"].chromeUI > #identity-icon-label,
-.urlbar-label {
-  opacity: .6;
+  color: var(--tor-branding-color);
+  opacity: 1;
 }
 
 #identity-icon-label {
@@ -132,6 +122,8 @@ toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI > #identity-i
 
 #identity-box[pageproxystate="valid"].chromeUI > #identity-icon {
   list-style-image: url(chrome://branding/content/identity-icons-brand.svg);
+  fill: var(--tor-branding-color);
+  fill-opacity: 1;
 }
 
 #urlbar:not(.searchButton) > #urlbar-input-container > #identity-box[pageproxystate="invalid"] > #identity-icon {
