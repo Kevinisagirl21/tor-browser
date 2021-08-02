@@ -1892,23 +1892,11 @@ var SessionStoreInternal = {
         }, "browser-delayed-startup-finished");
       });
 
-      let bootstrapPromise = new Promise(resolve => {
-        if (TorProtocolService.isBootstrapDone() || !TorProtocolService.ownsTorDaemon) {
-          resolve();
-        } else {
-          Services.obs.addObserver(function obs(subject, topic) {
-            Services.obs.removeObserver(obs, topic);
-            resolve();
-          }, "torconnect:bootstrap-complete");
-        }
-      });
-
       // We are ready for initialization as soon as the session file has been
       // read from disk and the initial window's delayed startup has finished.
       this._promiseReadyForInitialization = Promise.all([
         promise,
         SessionStartup.onceInitialized,
-        bootstrapPromise,
       ]);
     }
 

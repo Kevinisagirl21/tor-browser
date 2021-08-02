@@ -25,6 +25,8 @@ class TorConnectParent extends JSWindowActorParent {
 
     this.state = {
       State: TorConnect.state,
+      StateChanged: false,
+      Exit: false,
       ErrorMessage: TorConnect.errorMessage,
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
@@ -45,9 +47,11 @@ class TorConnectParent extends JSWindowActorParent {
 
         // update our state struct based on received torconnect topics and forward on
         // to aboutTorConnect.js
+        self.state.StateChanged = false;
         switch(aTopic) {
           case TorConnectTopics.StateChange: {
             self.state.State = obj.state;
+            self.state.StateChanged = true;
             // clear any previous error information if we are bootstrapping
             if (self.state.State === TorConnectState.Bootstrapping) {
               self.state.ErrorMessage = null;
@@ -62,12 +66,12 @@ class TorConnectParent extends JSWindowActorParent {
             break;
           }
           case TorConnectTopics.BootstrapComplete: {
-            // tells about:torconnect pages to close themselves
+            // tells about:torconnect pages to close or redirect themselves
             // this flag will only be set if an about:torconnect page
             // reaches the Bootstrapped state, so if a user
             // navigates to about:torconnect manually after bootstrap, the page
             // will not auto-close on them
-            self.state.Close = true;
+            self.state.Exit = true;
             break;
           }
           case TorConnectTopics.BootstrapError: {
@@ -130,6 +134,10 @@ class TorConnectParent extends JSWindowActorParent {
         break;
       case "torconnect:get-init-args":
         // called on AboutTorConnect.init(), pass down all state data it needs to init
+
+        // pretend this is a state transition on init
+        // so we always get fresh UI
+        this.state.StateChanged = true;
         return {
             TorStrings: TorStrings,
             TorConnectState: TorConnectState,

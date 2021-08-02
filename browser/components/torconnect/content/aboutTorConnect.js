@@ -47,6 +47,10 @@ class AboutTorConnect {
     advancedButton: document.querySelector(this.selectors.buttons.advanced),
   })
 
+  // a redirect url can be passed as a query parameter for the page to
+  // forward us to once bootstrap completes (otherwise the window will just close)
+  redirect = null
+
   beginBootstrap() {
     this.hide(this.elements.connectButton);
     this.show(this.elements.cancelButton);
@@ -100,10 +104,6 @@ class AboutTorConnect {
 
     // calls update_$state()
     this[`update_${state.State}`](state);
-
-    if (state.ShowCopyLog) {
-      this.showCopyLog();
-    }
     this.elements.quickstartCheckbox.checked = state.QuickStartEnabled;
   }
 
@@ -137,7 +137,9 @@ class AboutTorConnect {
       this.elements.connectButton.textContent = TorStrings.torConnect.torConnectButton;
     }
     this.show(this.elements.connectButton);
-    this.elements.connectButton.focus();
+    if (state.StateChanged) {
+      this.elements.connectButton.focus();
+    }
     this.show(this.elements.advancedButton);
     this.hide(this.elements.cancelButton);
   }
@@ -160,7 +162,9 @@ class AboutTorConnect {
     this.hide(this.elements.connectButton);
     this.hide(this.elements.advancedButton);
     this.show(this.elements.cancelButton);
-    this.elements.cancelButton.focus();
+    if (state.StateChanged) {
+      this.elements.cancelButton.focus();
+    }
   }
 
   update_Error(state) {
@@ -190,9 +194,15 @@ class AboutTorConnect {
     this.hide(this.elements.advancedButton);
     this.hide(this.elements.cancelButton);
 
-    // only close the window if directed
-    if (state.Close) {
-      window.close();
+    // only exit about:torconnect if TorConnectParent directs us to
+    if (state.Exit) {
+      if (this.redirect) {
+        // first try to forward to final destination
+        document.location = this.redirect;
+      } else {
+        // or else close the window
+        window.close();
+      }
     }
   }
 
@@ -201,7 +211,7 @@ class AboutTorConnect {
     // it isn't in use (eg using tor-launcher or system tor)
   }
 
-  async initElements(direction, quickstart) {
+  async initElements(direction) {
 
     document.documentElement.setAttribute("dir", direction);
 
@@ -220,13 +230,12 @@ class AboutTorConnect {
 
       // hide tooltip after X ms
       const TOOLTIP_TIMEOUT = 2000;
-      this.copyLogTimeoutId = setTimeout(function() {
+      this.copyLogTimeoutId = setTimeout(() => {
         this.elements.copyLogTooltipText.style.visibility = "hidden";
         this.copyLogTimeoutId = 0;
       }, TOOLTIP_TIMEOUT);
     });
 
-    this.elements.quickstartCheckbox.checked = quickstart
     this.elements.quickstartCheckbox.addEventListener("change", () => {
       const quickstart = this.elements.quickstartCheckbox.checked;
       RPMSendAsyncMessage("torconnect:set-quickstart", quickstart);
@@ -269,6 +278,12 @@ class AboutTorConnect {
   }
 
   async init() {
+    // see if a user has a final destination after bootstrapping
+    let params = new URLSearchParams(new URL(document.location.href).search);
+    if (params.has("redirect")) {
+      const encodedRedirect = params.get("redirect");
+      this.redirect = decodeURIComponent(encodedRedirect);
+    }
 
     let args = await RPMSendQuery("torconnect:get-init-args");
 

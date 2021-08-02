@@ -202,7 +202,9 @@ async function initPage() {
     (err === "proxyConnectFailure") &&
     (await RPMSendQuery("ShouldShowTorConnect"))
   ) {
-    document.location.replace("about:torconnect");
+    // pass orginal destination as redirect param
+    const encodedRedirect = encodeURIComponent(document.location.href);
+    document.location.replace(`about:torconnect?redirect=${encodedRedirect}`);
   }
   // List of error pages with an illustration.
   let illustratedErrors = [
