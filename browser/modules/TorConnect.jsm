@@ -472,7 +472,7 @@ const TorConnect = (() => {
                     return v;
                 }
                 // about:tor as safe fallback
-                console.log(`TorConnect: setURIsToLoad() received unknown variant '${JSON.stringify(v)}'`);
+                console.log(`TorConnect: getURIsToLoad() received unknown variant '${JSON.stringify(v)}'`);
                 return ["about:tor"];
             })(uriVariant);
 
