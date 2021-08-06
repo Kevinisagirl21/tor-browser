@@ -3,8 +3,10 @@ const lazy = {};
 // We will use the modules only when the profile is loaded, so prefer lazy
 // loading
 ChromeUtils.defineESModuleGetters(lazy, {
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
 /* Browser observer topis */
@@ -28,13 +30,17 @@ export class TorStartupService {
     }
   }
 
-  async #init() {
+  #init() {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
+
+    lazy.TorSettings.init();
 
     // Theoretically, build() is expected to await the initialization of the
     // provider, and anything needing the Tor Provider should be able to just
     // await on TorProviderBuilder.build().
     lazy.TorProviderBuilder.init();
+
+    lazy.TorConnect.init();
 
     gInited = true;
   }
@@ -44,5 +50,6 @@ export class TorStartupService {
 
     lazy.TorProviderBuilder.uninit();
     lazy.TorLauncherUtil.cleanupTempDirectories();
+    lazy.TorSettings.uninit();
   }
 }
