@@ -2,41 +2,16 @@
 
 /* global Services */
 
+const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource, TorBuiltinBridgeTypes, TorProxyType } = ChromeUtils.import(
+  "resource:///modules/TorSettings.jsm"
+);
+
 const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
 
 const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
-);
-
-const {
-  TorBridgeSource,
-  TorBridgeSettings,
-  makeTorBridgeSettingsNone,
-  makeTorBridgeSettingsBuiltin,
-  makeTorBridgeSettingsBridgeDB,
-  makeTorBridgeSettingsUserProvided,
-} = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/torBridgeSettings.jsm"
-);
-
-const {
-  TorProxyType,
-  TorProxySettings,
-  makeTorProxySettingsNone,
-  makeTorProxySettingsSocks4,
-  makeTorProxySettingsSocks5,
-  makeTorProxySettingsHTTPS,
-} = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/torProxySettings.jsm"
-);
-const {
-  TorFirewallSettings,
-  makeTorFirewallSettingsNone,
-  makeTorFirewallSettingsCustom,
-} = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/torFirewallSettings.jsm"
 );
 
 const { TorLogDialog } = ChromeUtils.import(
@@ -52,14 +27,6 @@ ChromeUtils.defineModuleGetter(
   "TorStrings",
   "resource:///modules/TorStrings.jsm"
 );
-
-const { parsePort, parseBridgeStrings, parsePortList } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/parseFunctions.jsm"
-);
-
-const TorLauncherPrefs = {
-  quickstart: "extensions.torlauncher.quickstart",
-}
 
 /*
   Tor Pane
@@ -261,10 +228,11 @@ const gTorPane = (function() {
       );
       this._enableQuickstartCheckbox.addEventListener("command", e => {
         const checked = this._enableQuickstartCheckbox.checked;
-        Services.prefs.setBoolPref(TorLauncherPrefs.quickstart, checked);
+        TorSettings.quickstart.enabled = checked;
+        TorSettings.saveToPrefs().applySettings();
       });
-      this._enableQuickstartCheckbox.checked = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
-      Services.prefs.addObserver(TorLauncherPrefs.quickstart, this);
+      this._enableQuickstartCheckbox.checked = TorSettings.quickstart.enabled;
+      Services.obs.addObserver(this, TorSettingsTopics.SettingChanged);
 
       // Bridge setup
       prefpane.querySelector(selectors.bridges.header).innerText =
@@ -291,7 +259,7 @@ const gTorPane = (function() {
       this._bridgeSelectionRadiogroup = prefpane.querySelector(
         selectors.bridges.bridgeSelectionRadiogroup
       );
-      this._bridgeSelectionRadiogroup.value = TorBridgeSource.BUILTIN;
+      this._bridgeSelectionRadiogroup.value = TorBridgeSource.BuiltIn;
       this._bridgeSelectionRadiogroup.addEventListener("command", e => {
         const value = this._bridgeSelectionRadiogroup.value;
         gTorPane.onSelectBridgeOption(value).onUpdateBridgeSettings();
@@ -305,7 +273,7 @@ const gTorPane = (function() {
         "label",
         TorStrings.settings.selectBridge
       );
-      this._builtinBridgeOption.setAttribute("value", TorBridgeSource.BUILTIN);
+      this._builtinBridgeOption.setAttribute("value", TorBridgeSource.BuiltIn);
       this._builtinBridgeMenulist = prefpane.querySelector(
         selectors.bridges.builtinBridgeList
       );
@@ -321,7 +289,7 @@ const gTorPane = (function() {
         "label",
         TorStrings.settings.requestBridgeFromTorProject
       );
-      this._requestBridgeOption.setAttribute("value", TorBridgeSource.BRIDGEDB);
+      this._requestBridgeOption.setAttribute("value", TorBridgeSource.BridgeDB);
       this._requestBridgeButton = prefpane.querySelector(
         selectors.bridges.requestBridgeButton
       );
@@ -346,7 +314,7 @@ const gTorPane = (function() {
       );
       this._provideBridgeOption.setAttribute(
         "value",
-        TorBridgeSource.USERPROVIDED
+        TorBridgeSource.UserProvided
       );
       prefpane.querySelector(
         selectors.bridges.provideBridgeDescription
@@ -395,11 +363,11 @@ const gTorPane = (function() {
 
       let mockProxies = [
         {
-          value: TorProxyType.SOCKS4,
+          value: TorProxyType.Socks4,
           label: TorStrings.settings.proxyTypeSOCKS4,
         },
         {
-          value: TorProxyType.SOCKS5,
+          value: TorProxyType.Socks5,
           label: TorStrings.settings.proxyTypeSOCKS5,
         },
         { value: TorProxyType.HTTPS, label: TorStrings.settings.proxyTypeHTTP },
@@ -550,12 +518,8 @@ const gTorPane = (function() {
         true
       );
 
-      // load bridge settings
-      let torBridgeSettings = new TorBridgeSettings();
-      torBridgeSettings.readSettings();
-
-      // populate the bridge list
-      for (let currentBridge of TorBridgeSettings.defaultBridgeTypes) {
+      // init bridge UI
+      for (let currentBridge of TorBuiltinBridgeTypes) {
         let menuEntry = document.createXULElement("menuitem");
         menuEntry.setAttribute("value", currentBridge);
         menuEntry.setAttribute("label", currentBridge);
@@ -564,53 +528,41 @@ const gTorPane = (function() {
           .appendChild(menuEntry);
       }
 
-      this.onSelectBridgeOption(torBridgeSettings.bridgeSource);
-      this.onToggleBridge(
-        torBridgeSettings.bridgeSource != TorBridgeSource.NONE
-      );
-      switch (torBridgeSettings.bridgeSource) {
-        case TorBridgeSource.NONE:
-          break;
-        case TorBridgeSource.BUILTIN:
-          this._builtinBridgeMenulist.value =
-            torBridgeSettings.selectedDefaultBridgeType;
-          break;
-        case TorBridgeSource.BRIDGEDB:
-          this._requestBridgeTextarea.value = torBridgeSettings.bridgeStrings;
-          break;
-        case TorBridgeSource.USERPROVIDED:
-          this._provideBridgeTextarea.value = torBridgeSettings.bridgeStrings;
-          break;
+      if (TorSettings.bridges.enabled) {
+        this.onSelectBridgeOption(TorSettings.bridges.source);
+        this.onToggleBridge(
+          TorSettings.bridges.source != TorBridgeSource.Invalid
+        );
+        switch (TorSettings.bridges.source) {
+          case TorBridgeSource.Invalid:
+            break;
+          case TorBridgeSource.BuiltIn:
+            this._builtinBridgeMenulist.value = TorSettings.bridges.builtin_type;
+            break;
+          case TorBridgeSource.BridgeDB:
+            this._requestBridgeTextarea.value = TorSettings.bridges.bridge_strings.join("\n");
+            break;
+          case TorBridgeSource.UserProvided:
+            this._provideBridgeTextarea.value = TorSettings.bridges.bridge_strings.join("\n");
+            break;
+        }
       }
 
-      this._bridgeSettings = torBridgeSettings;
-
-      // load proxy settings
-      let torProxySettings = new TorProxySettings();
-      torProxySettings.readSettings();
-
-      if (torProxySettings.type != TorProxyType.NONE) {
+      // init proxy UI
+      if (TorSettings.proxy.enabled) {
         this.onToggleProxy(true);
-        this.onSelectProxyType(torProxySettings.type);
-        this._proxyAddressTextbox.value = torProxySettings.address;
-        this._proxyPortTextbox.value = torProxySettings.port;
-        this._proxyUsernameTextbox.value = torProxySettings.username;
-        this._proxyPasswordTextbox.value = torProxySettings.password;
+        this.onSelectProxyType(TorSettings.proxy.type);
+        this._proxyAddressTextbox.value = TorSettings.proxy.address;
+        this._proxyPortTextbox.value = TorSettings.proxy.port;
+        this._proxyUsernameTextbox.value = TorSettings.proxy.username;
+        this._proxyPasswordTextbox.value = TorSettings.proxy.password;
       }
 
-      this._proxySettings = torProxySettings;
-
-      // load firewall settings
-      let torFirewallSettings = new TorFirewallSettings();
-      torFirewallSettings.readSettings();
-
-      if (torFirewallSettings.hasPorts) {
+      // init firewall
+      if (TorSettings.firewall.enabled) {
         this.onToggleFirewall(true);
-        this._allowedPortsTextbox.value =
-          torFirewallSettings.commaSeparatedListString;
+        this._allowedPortsTextbox.value = TorSettings.firewall.allowed_ports.join(", ");
       }
-
-      this._firewallSettings = torFirewallSettings;
     },
 
     init() {
@@ -683,13 +635,17 @@ const gTorPane = (function() {
       if (enabled) {
         this.onSelectBridgeOption(this._bridgeSelectionRadiogroup.value);
       } else {
-        this.onSelectBridgeOption(TorBridgeSource.NONE);
+        this.onSelectBridgeOption(TorBridgeSource.Invalid);
       }
       return this;
     },
 
     // callback when a bridge option is selected
     onSelectBridgeOption(source) {
+      if (typeof source === "string") {
+        source = parseInt(source);
+      }
+
       // disable all of the bridge elements under radio buttons
       this._setElementsDisabled(
         [
@@ -701,23 +657,23 @@ const gTorPane = (function() {
         true
       );
 
-      if (source != TorBridgeSource.NONE) {
+      if (source != TorBridgeSource.Invalid) {
         this._bridgeSelectionRadiogroup.value = source;
       }
 
       switch (source) {
-        case TorBridgeSource.BUILTIN: {
+        case TorBridgeSource.BuiltIn: {
           this._setElementsDisabled([this._builtinBridgeMenulist], false);
           break;
         }
-        case TorBridgeSource.BRIDGEDB: {
+        case TorBridgeSource.BridgeDB: {
           this._setElementsDisabled(
             [this._requestBridgeButton, this._requestBridgeTextarea],
             false
           );
           break;
         }
-        case TorBridgeSource.USERPROVIDED: {
+        case TorBridgeSource.UserProvided: {
           this._setElementsDisabled([this._provideBridgeTextarea], false);
           break;
         }
@@ -730,14 +686,17 @@ const gTorPane = (function() {
       let requestBridgeDialog = new RequestBridgeDialog();
       requestBridgeDialog.openDialog(
         gSubDialog,
-        this._proxySettings.proxyURI,
+        TorSettings.proxy.uri,
         aBridges => {
           if (aBridges.length > 0) {
-            let bridgeSettings = makeTorBridgeSettingsBridgeDB(aBridges);
-            bridgeSettings.writeSettings();
-            this._bridgeSettings = bridgeSettings;
-
-            this._requestBridgeTextarea.value = bridgeSettings.bridgeStrings;
+            let bridgeStrings = aBridges.join("\n");
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.BridgeDB;
+            TorSettings.bridges.bridge_strings = bridgeStrings;
+            TorSettings.saveToPrefs();
+            TorSettings.applySettings().then((result) => {
+              this._requestBridgeTextarea.value = bridgeStrings;
+            });
           }
         }
       );
@@ -746,53 +705,56 @@ const gTorPane = (function() {
 
     // pushes bridge settings from UI to tor
     onUpdateBridgeSettings() {
-      let bridgeSettings = null;
-
       let source = this._useBridgeCheckbox.checked
-        ? this._bridgeSelectionRadiogroup.value
-        : TorBridgeSource.NONE;
+        ? parseInt(this._bridgeSelectionRadiogroup.value)
+        : TorBridgeSource.Invalid;
+
       switch (source) {
-        case TorBridgeSource.NONE: {
-          bridgeSettings = makeTorBridgeSettingsNone();
-          break;
+        case TorBridgeSource.Invalid: {
+          TorSettings.bridges.enabled = false;
         }
-        case TorBridgeSource.BUILTIN: {
+        break;
+        case TorBridgeSource.BuiltIn: {
           // if there is a built-in bridge already selected, use that
           let bridgeType = this._builtinBridgeMenulist.value;
+          console.log(`bridge type: ${bridgeType}`);
           if (bridgeType) {
-            bridgeSettings = makeTorBridgeSettingsBuiltin(bridgeType);
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.BuiltIn;
+            TorSettings.bridges.builtin_type = bridgeType;
           } else {
-            bridgeSettings = makeTorBridgeSettingsNone();
+            TorSettings.bridges.enabled = false;
           }
           break;
         }
-        case TorBridgeSource.BRIDGEDB: {
+        case TorBridgeSource.BridgeDB: {
           // if there are bridgedb bridges saved in the text area, use them
           let bridgeStrings = this._requestBridgeTextarea.value;
           if (bridgeStrings) {
-            let bridgeStringList = parseBridgeStrings(bridgeStrings);
-            bridgeSettings = makeTorBridgeSettingsBridgeDB(bridgeStringList);
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.BridgeDB;
+            TorSettings.bridges.bridge_strings = bridgeStrings;
           } else {
-            bridgeSettings = makeTorBridgeSettingsNone();
+            TorSettings.bridges.enabled = false;
           }
           break;
         }
-        case TorBridgeSource.USERPROVIDED: {
+        case TorBridgeSource.UserProvided: {
           // if bridges already exist in the text area, use them
           let bridgeStrings = this._provideBridgeTextarea.value;
           if (bridgeStrings) {
-            let bridgeStringList = parseBridgeStrings(bridgeStrings);
-            bridgeSettings = makeTorBridgeSettingsUserProvided(
-              bridgeStringList
-            );
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.UserProvided;
+            TorSettings.bridges.bridge_strings = bridgeStrings;
           } else {
-            bridgeSettings = makeTorBridgeSettingsNone();
+            TorSettings.bridges.enabled = false;
           }
           break;
         }
       }
-      bridgeSettings.writeSettings();
-      this._bridgeSettings = bridgeSettings;
+      TorSettings.saveToPrefs();
+      TorSettings.applySettings();
+
       return this;
     },
 
@@ -822,12 +784,13 @@ const gTorPane = (function() {
 
     // callback when proxy type is changed
     onSelectProxyType(value) {
-      if (value == "") {
-        value = TorProxyType.NONE;
+      if (typeof value === "string") {
+        value = parseInt(value);
       }
+
       this._proxyTypeMenulist.value = value;
       switch (value) {
-        case TorProxyType.NONE: {
+        case TorProxyType.Invalid: {
           this._setElementsDisabled(
             [
               this._proxyAddressLabel,
@@ -848,7 +811,7 @@ const gTorPane = (function() {
           this._proxyPasswordTextbox.value = "";
           break;
         }
-        case TorProxyType.SOCKS4: {
+        case TorProxyType.Socks4: {
           this._setElementsDisabled(
             [
               this._proxyAddressLabel,
@@ -872,7 +835,7 @@ const gTorPane = (function() {
           this._proxyPasswordTextbox.value = "";
           break;
         }
-        case TorProxyType.SOCKS5:
+        case TorProxyType.Socks5:
         case TorProxyType.HTTPS: {
           this._setElementsDisabled(
             [
@@ -895,46 +858,45 @@ const gTorPane = (function() {
 
     // pushes proxy settings from UI to tor
     onUpdateProxySettings() {
-      const proxyType = this._useProxyCheckbox.checked
-        ? this._proxyTypeMenulist.value
-        : TorProxyType.NONE;
-      const addressString = this._proxyAddressTextbox.value;
-      const portString = this._proxyPortTextbox.value;
-      const usernameString = this._proxyUsernameTextbox.value;
-      const passwordString = this._proxyPasswordTextbox.value;
+      const type = this._useProxyCheckbox.checked
+        ? parseInt(this._proxyTypeMenulist.value)
+        : TorProxyType.Invalid;
+      const address = this._proxyAddressTextbox.value;
+      const port = this._proxyPortTextbox.value;
+      const username = this._proxyUsernameTextbox.value;
+      const password = this._proxyPasswordTextbox.value;
 
-      let proxySettings = null;
+      switch (type) {
+        case TorProxyType.Invalid:
+          TorSettings.proxy.enabled = false;
+          break;
+        case TorProxyType.Socks4:
+          TorSettings.proxy.enabled = true;
+          TorSettings.proxy.type = type;
+          TorSettings.proxy.address = address;
+          TorSettings.proxy.port = port;
 
-      switch (proxyType) {
-        case TorProxyType.NONE:
-          proxySettings = makeTorProxySettingsNone();
           break;
-        case TorProxyType.SOCKS4:
-          proxySettings = makeTorProxySettingsSocks4(
-            addressString,
-            parsePort(portString)
-          );
-          break;
-        case TorProxyType.SOCKS5:
-          proxySettings = makeTorProxySettingsSocks5(
-            addressString,
-            parsePort(portString),
-            usernameString,
-            passwordString
-          );
+        case TorProxyType.Socks5:
+          TorSettings.proxy.enabled = true;
+          TorSettings.proxy.type = type;
+          TorSettings.proxy.address = address;
+          TorSettings.proxy.port = port;
+          TorSettings.proxy.username = username;
+          TorSettings.proxy.password = password;
           break;
         case TorProxyType.HTTPS:
-          proxySettings = makeTorProxySettingsHTTPS(
-            addressString,
-            parsePort(portString),
-            usernameString,
-            passwordString
-          );
+          TorSettings.proxy.enabled = true;
+          TorSettings.proxy.type = type;
+          TorSettings.proxy.address = address;
+          TorSettings.proxy.port = port;
+          TorSettings.proxy.username = username;
+          TorSettings.proxy.password = password;
           break;
       }
+      TorSettings.saveToPrefs();
+      TorSettings.applySettings();
 
-      proxySettings.writeSettings();
-      this._proxySettings = proxySettings;
       return this;
     },
 
@@ -953,21 +915,20 @@ const gTorPane = (function() {
 
     // pushes firewall settings from UI to tor
     onUpdateFirewallSettings() {
+
       let portListString = this._useFirewallCheckbox.checked
         ? this._allowedPortsTextbox.value
         : "";
-      let firewallSettings = null;
 
       if (portListString) {
-        firewallSettings = makeTorFirewallSettingsCustom(
-          parsePortList(portListString)
-        );
+        TorSettings.firewall.enabled = true;
+        TorSettings.firewall.allowed_ports = portListString;
       } else {
-        firewallSettings = makeTorFirewallSettingsNone();
+        TorSettings.firewall.enabled = false;
       }
+      TorSettings.saveToPrefs();
+      TorSettings.applySettings();
 
-      firewallSettings.writeSettings();
-      this._firewallSettings = firewallSettings;
       return this;
     },
 

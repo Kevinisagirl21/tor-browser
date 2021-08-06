@@ -7,10 +7,9 @@ const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
 );
-
-const TorLauncherPrefs = Object.freeze({
-  quickstart: "extensions.torlauncher.quickstart",
-});
+const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
+  "resource:///modules/TorSettings.jsm"
+);
 
 /*
 This object is basically a marshalling interface between the TorConnect module
@@ -31,7 +30,7 @@ class TorConnectParent extends JSWindowActorParent {
       BootstrapProgress: TorConnect.bootstrapProgress,
       BootstrapStatus: TorConnect.bootstrapStatus,
       ShowCopyLog: TorConnect.logHasWarningOrError,
-      QuickStartEnabled: Services.prefs.getBoolPref(TorLauncherPrefs.quickstart, false),
+      QuickStartEnabled: TorSettings.quickstart.enabled,
     };
 
     // JSWindowActiveParent derived objects cannot observe directly, so create a member
@@ -78,9 +77,12 @@ class TorConnectParent extends JSWindowActorParent {
             // TODO: handle
             break;
           }
-          case "nsPref:changed": {
-            if (aData === TorLauncherPrefs.quickstart) {
-              self.state.QuickStartEnabled = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart);
+          case TorSettingsTopics.SettingChanged:{
+            if (aData === TorSettingsData.QuickStartEnabled) {
+              self.state.QuickStartEnabled = obj.value;
+            } else {
+              // this isn't a setting torconnect cares about
+              return;
             }
             break;
           }
@@ -98,7 +100,7 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.addObserver(this.torConnectObserver, topic);
     }
-    Services.prefs.addObserver(TorLauncherPrefs.quickstart, this.torConnectObserver);
+    Services.obs.addObserver(this.torConnectObserver, TorSettingsTopics.SettingChanged);
   }
 
   willDestroy() {
@@ -107,13 +109,14 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.removeObserver(this.torConnectObserver, topic);
     }
-    Services.prefs.removeObserver(TorLauncherPrefs.quickstart, this.torConnectObserver);
+    Services.obs.removeObserver(this.torConnectObserver, TorSettingsTopics.SettingChanged);
   }
 
   receiveMessage(message) {
     switch (message.name) {
       case "torconnect:set-quickstart":
-        Services.prefs.setBoolPref(TorLauncherPrefs.quickstart, message.data);
+        TorSettings.quickstart.enabled = message.data;
+        TorSettings.saveToPrefs().applySettings();
         break;
       case "torconnect:open-tor-preferences":
         TorConnect.openTorPreferences();

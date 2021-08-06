@@ -25,6 +25,11 @@ MainProcessSingleton.prototype = {
         );
 
         ChromeUtils.import(
+          "resource:///modules/TorSettings.jsm",
+          null
+        );
+
+        ChromeUtils.import(
           "resource:///modules/TorConnect.jsm",
           null
         );
