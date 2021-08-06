@@ -7,6 +7,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorConnect",
+  "resource:///modules/TorConnect.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorSettings",
+  "resource:///modules/TorSettings.jsm"
+);
+
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
   ProfileAfterChange: "profile-after-change",
@@ -32,6 +43,9 @@ export class TorStartupService {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
 
     await lazy.TorProviderBuilder.init();
+
+    lazy.TorSettings.init();
+    lazy.TorConnect.init();
 
     gInited = true;
   }
