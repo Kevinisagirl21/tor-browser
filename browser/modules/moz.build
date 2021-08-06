@@ -158,6 +158,7 @@ EXTRA_JS_MODULES += [
     'TorConnect.jsm',
     'TorProcessService.jsm',
     'TorProtocolService.jsm',
+    'TorSettings.jsm',
     'TorStrings.jsm',
     'TransientPrefs.jsm',
     'webrtcUI.jsm',
