@@ -24,6 +24,17 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/TorProtocolService.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorConnect",
+  "resource:///modules/TorConnect.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorSettings",
+  "resource:///modules/TorSettings.jsm"
+);
+
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
   ProfileAfterChange: "profile-after-change",
@@ -54,6 +65,9 @@ class TorStartupService {
     // factory, too.
     await lazy.TorProtocolService.init();
     lazy.TorMonitorService.init();
+
+    lazy.TorSettings.init();
+    lazy.TorConnect.init();
 
     gInited = true;
   }
