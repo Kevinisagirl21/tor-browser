@@ -18,6 +18,10 @@ const { TorLauncherUtil } = ChromeUtils.import(
     "resource://torlauncher/modules/tl-util.jsm"
 );
 
+const { TorSettings, TorSettingsTopics } = ChromeUtils.import(
+    "resource:///modules/TorSettings.jsm"
+);
+
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
     ProfileAfterChange: "profile-after-change",
@@ -25,7 +29,6 @@ const BrowserTopics = Object.freeze({
 
 /* tor-launcher observer topics */
 const TorTopics = Object.freeze({
-    ProcessIsReady: "TorProcessIsReady",
     BootstrapStatus: "TorBootstrapStatus",
     BootstrapError: "TorBootstrapError",
     ProcessExited: "TorProcessExited",
@@ -34,7 +37,6 @@ const TorTopics = Object.freeze({
 
 /* Relevant prefs used by tor-launcher */
 const TorLauncherPrefs = Object.freeze({
-  quickstart: "extensions.torlauncher.quickstart",
   prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
 });
 
@@ -250,38 +252,29 @@ const TorConnect = (() => {
                     // Disabled
                     this.legacyOrSystemTor();
                 } else {
-                    // register the Tor topics we always care about
-                    for (const topicKey in TorTopics) {
-                        const topic = TorTopics[topicKey];
+                    let observeTopic = (topic) => {
                         Services.obs.addObserver(this, topic);
                         console.log(`TorConnect: observing topic '${topic}'`);
-                    }
+                    };
 
-                    if (TorProtocolService.torProcessStatus == TorProcessStatus.Running) {
-                        if (this.shouldQuickStart) {
-                            // Quickstart
-                            this.beginBootstrap();
-                        } else {
-                            // Configuring
-                            this.beginConfigure();
-                        }
+                   // register the Tor topics we always care about
+                    for (const topicKey in TorTopics) {
+                        const topic = TorTopics[topicKey];
+                        observeTopic(topic);
                     }
+                    observeTopic(TorSettingsTopics.Ready);
                 }
-
                 Services.obs.removeObserver(this, topic);
                 break;
             }
-            /* Transition out of Initial if Tor daemon wasn't running yet in BrowserTopics.ProfileAfterChange */
-            case TorTopics.ProcessIsReady: {
-                if (this.state === TorConnectState.Initial)
-                {
-                    if (this.shouldQuickStart) {
-                        // Quickstart
-                        this.beginBootstrap();
-                    } else {
-                        // Configuring
-                        this.beginConfigure();
-                    }
+            /* We need to wait until TorSettings have been loaded and applied before we can Quickstart */
+            case TorSettingsTopics.Ready: {
+                if (this.shouldQuickStart) {
+                    // Quickstart
+                    this.beginBootstrap();
+                } else {
+                    // Configuring
+                    this.beginConfigure();
                 }
                 break;
             }
@@ -342,7 +335,7 @@ const TorConnect = (() => {
 
         get shouldQuickStart() {
                    // quickstart must be enabled
-            return Services.prefs.getBoolPref(TorLauncherPrefs.quickstart, false) &&
+            return TorSettings.quickstart.enabled &&
                    // and the previous bootstrap attempt must have succeeded
                    !Services.prefs.getBoolPref(TorLauncherPrefs.prompt_at_startup, true);
         },
