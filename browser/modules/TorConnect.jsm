@@ -241,7 +241,7 @@ const TorConnect = (() => {
             Services.obs.addObserver(this, BrowserTopics.ProfileAfterChange);
         },
 
-        observe: function(subject, topic, data) {
+        observe: async function(subject, topic, data) {
             console.log(`TorConnect: observed ${topic}`);
 
             switch(topic) {
@@ -306,7 +306,8 @@ const TorConnect = (() => {
             /* Handle bootstrap error*/
             case TorTopics.BootstrapError: {
                 const obj = subject?.wrappedJSObject;
-                TorProtocolService.torStopBootstrap().then(() => this.onError(obj.message, obj.details));
+                await TorProtocolService.torStopBootstrap();
+                this.onError(obj.message, obj.details);
                 break;
             }
             case TorTopics.LogHasWarnOrErr: {
