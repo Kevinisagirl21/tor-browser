@@ -18,9 +18,9 @@
   "chrome_settings_overrides": {
     "search_provider": {
       "name": "Startpage",
-      "search_url": "https://startpage.com/rto/search",
-      "search_form": "https://startpage.com/rto/search/",
-      "search_url_post_params": "q={searchTerms}"
+      "search_url": "https://startpage.com/sp/search",
+      "search_form": "https://startpage.com/sp/search/",
+      "search_url_post_params": "q={searchTerms}&segment=startpage.tor"
     }
   }
 }
