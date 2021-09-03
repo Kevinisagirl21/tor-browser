@@ -321,7 +321,7 @@ const TorSettings = (() => {
             console.log(`TorSettings: observed ${topic}`);
 
             // once the process is ready, we need to apply our settings
-            let handleProcessReady = () => {
+            let handleProcessReady = async () => {
                 Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
                 if (this._settings == null) {
                     // load settings from tor if our load in init() failed and save them to prefs
@@ -337,12 +337,12 @@ const TorSettings = (() => {
             switch (topic) {
                 case BrowserTopics.ProfileAfterChange: {
                     if (TorProtocolService.torProcessStatus == TorProcessStatus.Running) {
-                        handleProcessReady();
+                        await handleProcessReady();
                     }
                 }
                 break;
                 case TorTopics.ProcessIsReady: {
-                    handleProcessReady();
+                    await handleProcessReady();
                 }
                 break;
             }
