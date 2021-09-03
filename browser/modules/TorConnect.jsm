@@ -472,7 +472,9 @@ const TorConnect = (() => {
             // will attempt to convert user-supplied string to a uri, fallback to about:tor if cannot convert
             // to valid uri object
             let uriStringToUri = (uriString) => {
-                let uri = Services.uriFixup.createFixupURI(uriString, 0);
+                const fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
+                let uri = Services.uriFixup.getFixupURIInfo(uriString, fixupFlags)
+                  .preferredURI;
                 return uri ? uri : Services.io.newURI("about:tor");
             };
             let uris = uriStrings.map(uriStringToUri);
