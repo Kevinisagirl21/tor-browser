@@ -317,7 +317,7 @@ const TorSettings = (() => {
         },
 
         /* wait for relevant life-cycle events to load and/or apply saved settings */
-        observe: function(subject, topic, data) {
+        observe: async function(subject, topic, data) {
             console.log(`TorSettings: observed ${topic}`);
 
             // once the process is ready, we need to apply our settings
@@ -325,11 +325,13 @@ const TorSettings = (() => {
                 Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
                 if (this._settings == null) {
                     // load settings from tor if our load in init() failed and save them to prefs
-                    this.loadLegacy().then((result) => { this.saveToPrefs(); Services.obs.notifyObservers(null, TorSettingsTopics.Ready);});
+                    await this.loadLegacy();
+                    this.saveToPrefs();
                 } else {
                     // push down settings to tor
-                    this.applySettings().then((result) => Services.obs.notifyObservers(null, TorSettingsTopics.Ready));
+                    await this.applySettings();
                 }
+                Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
             };
 
             switch (topic) {
