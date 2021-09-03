@@ -167,19 +167,19 @@ const TorConnect = (() => {
             /* Initial is never transitioned to */
             [TorConnectState.Initial, null],
             /* Configuring */
-            [TorConnectState.Configuring, (self, prevState) => {
+            [TorConnectState.Configuring, async (self, prevState) => {
                 // TODO move this to the transition function
                 if (prevState === TorConnectState.Bootstrapping) {
-                    TorProtocolService.torStopBootstrap();
+                    await TorProtocolService.torStopBootstrap();
                 }
             }],
             /* AutoConfiguring */
-            [TorConnectState.AutoConfiguring, (self, prevState) => {
+            [TorConnectState.AutoConfiguring, async (self, prevState) => {
 
             }],
             /* Bootstrapping */
-            [TorConnectState.Bootstrapping, (self, prevState) => {
-                let error = TorProtocolService.connect();
+            [TorConnectState.Bootstrapping, async (self, prevState) => {
+                let error = await TorProtocolService.connect();
                 if (error) {
                     self.onError(error.message, error.details);
                 } else {
@@ -187,12 +187,12 @@ const TorConnect = (() => {
                 }
             }],
             /* Bootstrapped */
-            [TorConnectState.Bootstrapped, (self,prevState) => {
+            [TorConnectState.Bootstrapped, async (self,prevState) => {
                 // notify observers of bootstrap completion
                 Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
             }],
             /* Error */
-            [TorConnectState.Error, (self, prevState, errorMessage, errorDetails, fatal) => {
+            [TorConnectState.Error, async (self, prevState, errorMessage, errorDetails, fatal) => {
                 self._errorMessage = errorMessage;
                 self._errorDetails = errorDetails;
 
@@ -204,7 +204,7 @@ const TorConnect = (() => {
                 }
             }],
             /* FatalError */
-            [TorConnectState.FatalError, (self, prevState) => {
+            [TorConnectState.FatalError, async (self, prevState) => {
                 Services.obs.notifyObservers(null, TorConnectTopics.FatalError);
             }],
             /* Disabled */
@@ -213,7 +213,7 @@ const TorConnect = (() => {
             }],
         ])),
 
-        _changeState: function(newState, ...args) {
+        _changeState: async function(newState, ...args) {
             const prevState = this._state;
 
             // ensure this is a valid state transition
@@ -228,7 +228,7 @@ const TorConnect = (() => {
             this._state = newState;
 
             // call our transition function and forward any args
-            this._transitionCallbacks.get(newState)(this, prevState, ...args);
+            await this._transitionCallbacks.get(newState)(this, prevState, ...args);
 
             Services.obs.notifyObservers({state: newState}, TorConnectTopics.StateChange);
         },
