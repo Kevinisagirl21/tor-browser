@@ -694,9 +694,9 @@ const gTorPane = (function() {
             TorSettings.bridges.source = TorBridgeSource.BridgeDB;
             TorSettings.bridges.bridge_strings = bridgeStrings;
             TorSettings.saveToPrefs();
-            TorSettings.applySettings();
-
-            this._requestBridgeTextarea.value = bridgeStrings;
+            TorSettings.applySettings().then((result) => {
+              this._requestBridgeTextarea.value = bridgeStrings;
+            });
           }
         }
       );

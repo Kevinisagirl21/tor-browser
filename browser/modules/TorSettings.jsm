@@ -325,13 +325,11 @@ const TorSettings = (() => {
                 Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
                 if (this._settings == null) {
                     // load settings from tor if our load in init() failed and save them to prefs
-                    this.loadLegacy();
-                    this.saveToPrefs();
+                    this.loadLegacy().then((result) => { this.saveToPrefs(); Services.obs.notifyObservers(null, TorSettingsTopics.Ready);});
                 } else {
                     // push down settings to tor
-                    this.applySettings();
+                    this.applySettings().then((result) => Services.obs.notifyObservers(null, TorSettingsTopics.Ready));
                 }
-                Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
             };
 
             switch (topic) {
@@ -350,7 +348,7 @@ const TorSettings = (() => {
 
         // load our settings from old locations (misc prefs and from tor daemon)
         // TODO: remove this after some time has elapsed to ensure users have migrated to pref settings
-        loadLegacy: function() {
+        loadLegacy: async function() {
             console.log("TorSettings: loadLegacy()");
 
             let settings = this.defaultSettings();
@@ -390,8 +388,8 @@ const TorSettings = (() => {
                 }
             } else  {
                 // get our currently configured bridges from tor
-                let torrcBridgeStrings = (() => {
-                    let bridgeList = TorProtocolService.readStringArraySetting(TorConfigKeys.bridgeList);
+                let torrcBridgeStrings = await (async () => {
+                    let bridgeList = await TorProtocolService.readStringArraySetting(TorConfigKeys.bridgeList);
                     let retval = [];
                     for (const line of bridgeList) {
                       let trimmedLine = line.trim();
@@ -455,7 +453,7 @@ const TorSettings = (() => {
             /* Proxy */
 
             let proxyString = null;
-            if (proxyString = TorProtocolService.readStringSetting(TorConfigKeys.socks4Proxy)) {
+            if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.socks4Proxy)) {
                 let [address, port] = parseAddrPort(proxyString);
 
                 settings.proxy.enabled = true;
@@ -464,10 +462,10 @@ const TorSettings = (() => {
                 settings.proxy.port = port;
                 settings.proxy.username = null;
                 settings.proxy.password = null;
-            } else if (proxyString = TorProtocolService.readStringSetting(TorConfigKeys.socks5Proxy)) {
+            } else if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.socks5Proxy)) {
                 let [address, port] = parseAddrPort(proxyString);
-                let username = TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyUsername);
-                let password = TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyPassword);
+                let username = await TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyUsername);
+                let password = await TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyPassword);
 
                 settings.proxy.enabled = true;
                 settings.proxy.type = TorProxyType.Socks5;
@@ -475,9 +473,9 @@ const TorSettings = (() => {
                 settings.proxy.port = port;
                 settings.proxy.username = username;
                 settings.proxy.password = password;
-            } else if (proxyString = TorProtocolService.readStringSetting(TorConfigKeys.httpsProxy)) {
+            } else if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.httpsProxy)) {
                 let [address, port] = parseAddrPort(proxyString);
-                let authenticator = TorProtocolService.readStringSetting(TorConfigKeys.httpsProxyAuthenticator);
+                let authenticator = await TorProtocolService.readStringSetting(TorConfigKeys.httpsProxyAuthenticator);
                 let [username, password] = parseUsernamePassword(authenticator);
 
                 settings.proxy.enabled = true;
@@ -496,7 +494,7 @@ const TorSettings = (() => {
             }
 
             /* Firewall */
-            let firewallString = TorProtocolService.readStringSetting(TorConfigKeys.reachableAddresses);
+            let firewallString = await TorProtocolService.readStringSetting(TorConfigKeys.reachableAddresses);
             if (firewallString) {
                 let allowedPorts = parseAddrPortList(firewallString);
                 settings.firewall.enabled = allowedPorts.length > 0;
@@ -647,7 +645,7 @@ const TorSettings = (() => {
         },
 
         // push our settings down to the tor daemon
-        applySettings: function() {
+        applySettings: async function() {
             console.log("TorSettings: applySettings()");
             let settings = this._settings;
             let settingsMap = new Map();
@@ -699,7 +697,7 @@ const TorSettings = (() => {
             }
 
             /* Push to Tor */
-            TorProtocolService.writeSettings(settingsMap);
+            await TorProtocolService.writeSettings(settingsMap);
 
             return this;
         },
