@@ -1053,11 +1053,13 @@ SearchService.prototype = {
       { webExtension: { id: "ddg@search.mozilla.org" }, orderHint: 100 },
       { webExtension: { id: "youtube@search.mozilla.org" }, orderHint: 90 },
       { webExtension: { id: "google@search.mozilla.org" }, orderHint: 80 },
-      { webExtension: { id: "ddg-onion@search.mozilla.org" }, orderHint: 70 },
-      { webExtension: { id: "startpage@search.mozilla.org" }, orderHint: 60 },
-      { webExtension: { id: "twitter@search.mozilla.org" }, orderHint: 50 },
-      { webExtension: { id: "wikipedia@search.mozilla.org" }, orderHint: 40 },
-      { webExtension: { id: "yahoo@search.mozilla.org" }, orderHint: 30 },
+      { webExtension: { id: "blockchair@search.mozilla.org" }, orderHint: 70 },
+      { webExtension: { id: "ddg-onion@search.mozilla.org" }, orderHint: 60 },
+      { webExtension: { id: "blockchair-onion@search.mozilla.org" }, orderHint: 50 },
+      { webExtension: { id: "startpage@search.mozilla.org" }, orderHint: 40 },
+      { webExtension: { id: "twitter@search.mozilla.org" }, orderHint: 30 },
+      { webExtension: { id: "wikipedia@search.mozilla.org" }, orderHint: 20 },
+      { webExtension: { id: "yahoo@search.mozilla.org" }, orderHint: 10 },
     ];
 
     for (let e of engines) {
