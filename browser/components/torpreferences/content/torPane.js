@@ -699,7 +699,6 @@ const gTorPane = (function() {
         case TorBridgeSource.BuiltIn: {
           // if there is a built-in bridge already selected, use that
           let bridgeType = this._builtinBridgeMenulist.value;
-          console.log(`bridge type: ${bridgeType}`);
           if (bridgeType) {
             TorSettings.bridges.enabled = true;
             TorSettings.bridges.source = TorBridgeSource.BuiltIn;
