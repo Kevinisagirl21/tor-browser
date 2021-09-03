@@ -108,7 +108,7 @@ var TorProtocolService = {
 
   // takes a Map containing tor settings
   // throws on error
-  writeSettings(aSettingsObj) {
+  async writeSettings(aSettingsObj) {
     // only write settings that have changed
     let newSettings = new Map();
     for (const [setting, value] of aSettingsObj) {
@@ -157,7 +157,7 @@ var TorProtocolService = {
       }
 
       let errorObject = {};
-      if (!this._TorLauncherProtocolService.TorSetConfWithReply(settingsObject, errorObject)) {
+      if (! await this._TorLauncherProtocolService.TorSetConfWithReply(settingsObject, errorObject)) {
         throw new Error(errorObject.details);
       }
 
@@ -168,17 +168,17 @@ var TorProtocolService = {
     }
   },
 
-  _readSetting(aSetting) {
+  async _readSetting(aSetting) {
     this._assertValidSettingKey(aSetting);
-    let reply = this._TorLauncherProtocolService.TorGetConf(aSetting);
+    let reply = await this._TorLauncherProtocolService.TorGetConf(aSetting);
     if (this._TorLauncherProtocolService.TorCommandSucceeded(reply)) {
       return reply.lineArray;
     }
     throw new Error(reply.lineArray.join("\n"));
   },
 
-  _readBoolSetting(aSetting) {
-    let lineArray = this._readSetting(aSetting);
+  async _readBoolSetting(aSetting) {
+    let lineArray = await this._readSetting(aSetting);
     if (lineArray.length != 1) {
       throw new Error(
         `Expected an array with length 1 but received array of length ${
@@ -198,8 +198,8 @@ var TorProtocolService = {
     }
   },
 
-  _readStringSetting(aSetting) {
-    let lineArray = this._readSetting(aSetting);
+  async _readStringSetting(aSetting) {
+    let lineArray = await this._readSetting(aSetting);
     if (lineArray.length != 1) {
       throw new Error(
         `Expected an array with length 1 but received array of length ${
@@ -210,32 +210,32 @@ var TorProtocolService = {
     return lineArray[0];
   },
 
-  _readStringArraySetting(aSetting) {
-    let lineArray = this._readSetting(aSetting);
+  async _readStringArraySetting(aSetting) {
+    let lineArray = await this._readSetting(aSetting);
     return lineArray;
   },
 
-  readBoolSetting(aSetting) {
-    let value = this._readBoolSetting(aSetting);
+  async readBoolSetting(aSetting) {
+    let value = await this._readBoolSetting(aSetting);
     this._settingsCache.set(aSetting, value);
     return value;
   },
 
-  readStringSetting(aSetting) {
-    let value = this._readStringSetting(aSetting);
+  async readStringSetting(aSetting) {
+    let value = await this._readStringSetting(aSetting);
     this._settingsCache.set(aSetting, value);
     return value;
   },
 
-  readStringArraySetting(aSetting) {
-    let value = this._readStringArraySetting(aSetting);
+  async readStringArraySetting(aSetting) {
+    let value = await this._readStringArraySetting(aSetting);
     this._settingsCache.set(aSetting, value);
     return value;
   },
 
   // writes current tor settings to disk
-  flushSettings() {
-    this.sendCommand("SAVECONF");
+  async flushSettings() {
+    await this.sendCommand("SAVECONF");
   },
 
   getLog(countObj) {
@@ -261,17 +261,17 @@ var TorProtocolService = {
     return true;
   },
 
-  enableNetwork() {
+  async enableNetwork() {
     let settings = {};
     settings.DisableNetwork = false;
     let errorObject = {};
-    if (!this._TorLauncherProtocolService.TorSetConfWithReply(settings, errorObject)) {
+    if (! await this._TorLauncherProtocolService.TorSetConfWithReply(settings, errorObject)) {
       throw new Error(errorObject.details);
     }
   },
 
-  sendCommand(cmd) {
-    return this._TorLauncherProtocolService.TorSendCommand(cmd);
+  async sendCommand(cmd) {
+    return await this._TorLauncherProtocolService.TorSendCommand(cmd);
   },
 
   retrieveBootstrapStatus() {
@@ -287,11 +287,11 @@ var TorProtocolService = {
     }
   },
 
-  setConfWithReply(settings) {
+  async setConfWithReply(settings) {
     let result = false;
     const error = {};
     try {
-      result = this._TorLauncherProtocolService.TorSetConfWithReply(settings, error);
+      result = await this._TorLauncherProtocolService.TorSetConfWithReply(settings, error);
     } catch (e) {
       console.log("TorSetConfWithReply error", e);
       error.details = this._GetSaveSettingsErrorMessage(e.message);
@@ -312,16 +312,16 @@ var TorProtocolService = {
   },
 
   // Resolves to null if ok, or an error otherwise
-  connect() {
+  async connect() {
     const kTorConfKeyDisableNetwork = "DisableNetwork";
     const settings = {};
     settings[kTorConfKeyDisableNetwork] = false;
-    const { result, error } = this.setConfWithReply(settings);
+    const { result, error } = await this.setConfWithReply(settings);
     if (!result) {
       return error;
     }
     try {
-      this.sendCommand("SAVECONF");
+      await this.sendCommand("SAVECONF");
       this.clearBootstrapError();
       this.retrieveBootstrapStatus();
     } catch (e) {
@@ -334,14 +334,14 @@ var TorProtocolService = {
     return this._TorLauncherProtocolService.TorLogHasWarnOrErr;
   },
 
-  torStopBootstrap() {
+  async torStopBootstrap() {
     // Tell tor to disable use of the network; this should stop the bootstrap
     // process.
     const kErrorPrefix = "Setting DisableNetwork=1 failed: ";
     try {
       let settings = {};
       settings.DisableNetwork = true;
-      const { result, error } = this.setConfWithReply(settings);
+      const { result, error } = await this.setConfWithReply(settings);
       if (!result) {
         console.log(
           `Error stopping bootstrap ${kErrorPrefix} ${error.details}`

@@ -26,7 +26,7 @@ var BridgeDB = {
     return this._bridges;
   },
 
-  submitCaptchaGuess(aCaptchaSolution) {
+  async submitCaptchaGuess(aCaptchaSolution) {
     if (this._moatRequestor && this._currentCaptchaInfo) {
       return this._moatRequestor
         .finishFetch(
@@ -49,11 +49,11 @@ var BridgeDB = {
     });
   },
 
-  requestNewCaptchaImage(aProxyURI) {
+  async requestNewCaptchaImage(aProxyURI) {
     // close and clear out existing state on captcha request
     this.close();
 
-    let transportPlugins = TorProtocolService.readStringArraySetting(
+    let transportPlugins = await TorProtocolService.readStringArraySetting(
       TorStrings.configKeys.clientTransportPlugin
     );
 
