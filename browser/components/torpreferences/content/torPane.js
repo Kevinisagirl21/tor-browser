@@ -159,10 +159,11 @@ const gTorPane = (function() {
       this._messageBoxButton = prefpane.querySelector(selectors.messageBox.button);
       // wire up connect button
       this._messageBoxButton.addEventListener("click", () => {
-        TorConnect.beginBootstrap();
-        let win = Services.wm.getMostRecentWindow("navigator:browser");
-        // switch to existing about:torconnect tab or create a new one
-        win.switchToTabHavingURI("about:torconnect", true);
+        TorConnect.beginBootstrap().then((result) => {
+          let win = Services.wm.getMostRecentWindow("navigator:browser");
+          // switch to existing about:torconnect tab or create a new one
+          win.switchToTabHavingURI("about:torconnect", true);
+        });
       });
 
       let populateMessagebox = () => {
