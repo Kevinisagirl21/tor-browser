@@ -194,16 +194,10 @@ class AboutTorConnect {
     this.hide(this.elements.advancedButton);
     this.hide(this.elements.cancelButton);
 
-    // only exit about:torconnect if TorConnectParent directs us to
-    if (state.Exit) {
-      if (this.redirect) {
-        // first try to forward to final destination
-        document.location = this.redirect;
-      } else {
-        // or else close the window
-        window.close();
-      }
-    }
+    // redirects page to the requested redirect url, removes about:torconnect
+    // from the page stack, so users cannot accidentally go 'back' to the
+    // now unresponsive page
+    window.location.replace(this.redirect);
   }
 
   update_Disabled(state) {
@@ -283,6 +277,10 @@ class AboutTorConnect {
     if (params.has("redirect")) {
       const encodedRedirect = params.get("redirect");
       this.redirect = decodeURIComponent(encodedRedirect);
+    } else {
+      // if the user gets here manually or via the button in the urlbar
+      // then we will redirect to about:tor
+      this.redirect = "about:tor";
     }
 
     let args = await RPMSendQuery("torconnect:get-init-args");

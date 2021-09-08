@@ -25,7 +25,6 @@ class TorConnectParent extends JSWindowActorParent {
     this.state = {
       State: TorConnect.state,
       StateChanged: false,
-      Exit: false,
       ErrorMessage: TorConnect.errorMessage,
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
@@ -65,12 +64,7 @@ class TorConnectParent extends JSWindowActorParent {
             break;
           }
           case TorConnectTopics.BootstrapComplete: {
-            // tells about:torconnect pages to close or redirect themselves
-            // this flag will only be set if an about:torconnect page
-            // reaches the Bootstrapped state, so if a user
-            // navigates to about:torconnect manually after bootstrap, the page
-            // will not auto-close on them
-            self.state.Exit = true;
+            // noop
             break;
           }
           case TorConnectTopics.BootstrapError: {
