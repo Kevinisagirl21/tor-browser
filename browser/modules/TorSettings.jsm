@@ -710,7 +710,10 @@ const TorSettings = (() => {
         // Quickstart
         get quickstart() {
             return {
-                get enabled() { return self._settings.quickstart.enabled; },
+                // Avoid a race-condition on first-start where this property
+                // may be accessed before `self._settings` is initialized.
+                // This work-around can be removed when #40598 is resolved.
+                get enabled() { return (self._settings ? self._settings.quickstart.enabled : false); },
                 set enabled(val) {
                     if (val != self._settings.quickstart.enabled)
                     {
