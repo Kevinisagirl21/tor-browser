@@ -10,7 +10,7 @@ const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
 
-const { TorConnect } = ChromeUtils.import(
+const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
 );
 
@@ -159,35 +159,42 @@ const gTorPane = (function() {
       this._messageBoxButton = prefpane.querySelector(selectors.messageBox.button);
       // wire up connect button
       this._messageBoxButton.addEventListener("click", () => {
-        TorConnect.beginBootstrap().then((result) => {
-          let win = Services.wm.getMostRecentWindow("navigator:browser");
-          // switch to existing about:torconnect tab or create a new one
-          win.switchToTabHavingURI("about:torconnect", true);
-        });
+        TorConnect.beginBootstrap();
+        TorConnect.openTorConnect();
       });
 
-      let populateMessagebox = () => {
-        if (TorConnect.shouldShowTorConnect) {
+      this._populateMessagebox = () => {
+        if (TorConnect.shouldShowTorConnect &&
+            TorConnect.state === TorConnectState.Configuring) {
           // set messagebox style and text
           if (TorProtocolService.torBootstrapErrorOccurred()) {
+            this._messageBox.parentNode.style.display = null;
             this._messageBox.className = "error";
             this._messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
             this._messageBoxButton.innerText = TorStrings.torConnect.tryAgain;
           } else {
+            this._messageBox.parentNode.style.display = null;
             this._messageBox.className = "warning";
             this._messageBoxMessage.innerText = TorStrings.torConnect.connectMessage;
             this._messageBoxButton.innerText = TorStrings.torConnect.torConnectButton;
           }
         } else {
+          // we need to explicitly hide the groupbox, as switching between
+          // the tor pane and other panes will 'unhide' (via the 'hidden'
+          // attribute) the groupbox, offsetting all of the content down
+          // by the groupbox's margin (even if content is 0 height)
+          this._messageBox.parentNode.style.display = "none";
           this._messageBox.className = "hidden";
           this._messageBoxMessage.innerText = "";
           this._messageBoxButton.innerText = "";
         }
       }
-      populateMessagebox();
+      this._populateMessagebox();
+      Services.obs.addObserver(this, TorConnectTopics.StateChange);
+
       // update the messagebox whenever we come back to the page
       window.addEventListener("focus", val => {
-        populateMessagebox();
+        this._populateMessagebox();
       });
 
       // Heading
@@ -571,6 +578,7 @@ const gTorPane = (function() {
     uninit() {
       // unregister our observer topics
       Services.obs.removeObserver(TorSettingsTopics.SettingChanged, this);
+      Services.obs.removeObserver(TorConnectTopics.StateChange, this);
     },
 
     // whether the page should be present in about:preferences
@@ -582,15 +590,24 @@ const gTorPane = (function() {
     // Callbacks
     //
 
-    // callback for when the quickstart pref changes
     observe(subject, topic, data) {
-      if (topic === TorSettingsTopics.SettingChanged) {
-        let obj = subject?.wrappedJSObject;
-        switch(data) {
-          case TorSettingsData.QuickStartEnabled: {
-            this._enableQuickstartCheckbox.checked = obj.value;
-            break;
+      switch (topic) {
+       // triggered when a TorSettings param has changed
+        case TorSettingsTopics.SettingChanged: {
+          let obj = subject?.wrappedJSObject;
+          switch(data) {
+            case TorSettingsData.QuickStartEnabled: {
+              this._enableQuickstartCheckbox.checked = obj.value;
+              break;
+            }
           }
+          break;
+        }
+        // triggered when tor connect state changes and we may
+        // need to update the messagebox
+        case TorConnectTopics.StateChange: {
+          this._populateMessagebox();
+          break;
         }
       }
     },

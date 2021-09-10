@@ -329,8 +329,8 @@ const TorConnect = (() => {
             return (TorProtocolService.ownsTorDaemon &&
                    // and we're not using the legacy launcher
                    !TorLauncherUtil.useLegacyLauncher &&
-                   // legacy checks, TODO: maybe this should be in terms of our own state?
-                   (TorProtocolService.isNetworkDisabled() || !TorProtocolService.isBootstrapDone()));
+                   // if we have succesfully bootstraped, then no need to show TorConnect
+                   this.state != TorConnectState.Bootstrapped);
         },
 
         get shouldQuickStart() {
@@ -420,8 +420,13 @@ const TorConnect = (() => {
         Further external commands and helper methods
         */
         openTorPreferences: function() {
-            const win = BrowserWindowTracker.getTopWindow()
-            win.openTrustedLinkIn("about:preferences#tor", "tab");
+            const win = BrowserWindowTracker.getTopWindow();
+            win.switchToTabHavingURI("about:preferences#tor", true);
+        },
+
+        openTorConnect: function() {
+            const win = BrowserWindowTracker.getTopWindow();
+            win.switchToTabHavingURI("about:torconnect", true, {ignoreQueryString: true});
         },
 
         copyTorLogs: function() {

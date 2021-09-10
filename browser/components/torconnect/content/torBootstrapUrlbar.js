@@ -76,7 +76,7 @@ var TorBootstrapUrlbar = {
         inputContainer: gURLBar._inputContainer,
       })
       this.elements.torConnectBox.addEventListener("click", () => {
-        window.openTrustedLinkIn("about:torconnect", "tab");
+        TorConnect.openTorConnect();
       });
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
       this.observing = true;
