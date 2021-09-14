@@ -29,21 +29,25 @@ input[type="checkbox"]:not(:disabled):hover {
   border-color: var(--purple-70);
 }
 
-/* fix checkbox visibility when dark mode enabled */
-input[type="checkbox"]:checked {
-  fill: var(--in-content-page-color);
+#connectButton,
+input[type="checkbox"]:not(:disabled) {
+  background-color: var(--purple-60)!important;
+  color: white;
+  fill: white;
 }
 
-#connectButton {
-  background-color: var(--purple-60);
+#connectButton:hover,
+input[type="checkbox"]:not(:disabled):hover {
+  background-color: var(--purple-70)!important;
+  color: white;
+  fill: white;
 }
 
-#connectButton:hover {
-  background-color: var(--purple-70);
-}
-
-#connectButton:active {
-  background-color: var(--purple-80);
+#connectButton:active,
+input[type="checkbox"]:not(:disabled):active {
+  background-color: var(--purple-80)!important;
+  color: white;
+  fill: white;
 }
 
 #progressBackground {
