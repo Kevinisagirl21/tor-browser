@@ -73,19 +73,19 @@ const SecurityLevelButton = {
   _configUIFromPrefs : function(securityLevelButton) {
     if (securityLevelButton != null) {
       let securitySlider = SecurityLevelPrefs.securitySlider;
-      let classList = securityLevelButton.classList;
-      classList.remove("standard", "safer", "safest");
+      securityLevelButton.removeAttribute("level");
+      const securityCustom = SecurityLevelPrefs.securityCustom;
       switch(securitySlider) {
         case 4:
-          classList.add("standard");
+          securityLevelButton.setAttribute("level", `standard${securityCustom ? "_custom" : ""}`);
           securityLevelButton.setAttribute("tooltiptext", TorStrings.securityLevel.standard.tooltip);
           break;
         case 2:
-          classList.add("safer");
+          securityLevelButton.setAttribute("level", `safer${securityCustom ? "_custom" : ""}`);
           securityLevelButton.setAttribute("tooltiptext", TorStrings.securityLevel.safer.tooltip);
           break;
         case 1:
-          classList.add("safest");
+          securityLevelButton.setAttribute("level", `safest${securityCustom ? "_custom" : ""}`);
           securityLevelButton.setAttribute("tooltiptext", TorStrings.securityLevel.safest.tooltip);
           break;
       }
@@ -136,7 +136,7 @@ const SecurityLevelButton = {
   observe : function(subject, topic, data) {
     switch(topic) {
       case "nsPref:changed":
-        if (data == "security_slider") {
+        if (data === "security_slider" || data === "security_custom") {
           this._configUIFromPrefs(this.button);
         }
         break;
@@ -166,9 +166,13 @@ const SecurityLevelButton = {
   // Library, and the Hamburger menus. Using oncommand alone would result in only getting fired
   // after onclick, which is mousedown followed by mouseup.
   onCommand : function(aEvent) {
-    // snippet stolen from /browser/components/downloads/indicator.js DownloadsIndicatorView.onCommand(evt)
+    // snippet borrowed from /browser/components/downloads/content/indicator.js DownloadsIndicatorView.onCommand(evt)
     if (
-      (aEvent.type == "mousedown" && aEvent.button != 0) ||
+      // On Mac, ctrl-click will send a context menu event from the widget, so
+      // we don't want to bring up the panel when ctrl key is pressed.
+      (aEvent.type == "mousedown" &&
+        (aEvent.button != 0 ||
+          (AppConstants.platform == "macosx" && aEvent.ctrlKey))) ||
       (aEvent.type == "keypress" && aEvent.key != " " && aEvent.key != "Enter")
     ) {
       return;
@@ -178,6 +182,7 @@ const SecurityLevelButton = {
     // while the security level panel is open
     this.button.setAttribute("open", "true");
     SecurityLevelPanel.show();
+    aEvent.stopPropagation();
   },
 }; /* Security Level Button */
 
@@ -193,25 +198,42 @@ const SecurityLevelPanel = {
   _anchor : null,
   _populated : false,
 
+  _selectors: Object.freeze({
+    panel: "panel#securityLevel-panel",
+    icon: "vbox#securityLevel-vbox>vbox",
+    header: "h1#securityLevel-header",
+    level: "label#securityLevel-level",
+    custom: "label#securityLevel-custom",
+    summary: "description#securityLevel-summary",
+    learnMore: "label#securityLevel-learnMore",
+    restoreDefaults: "button#securityLevel-restoreDefaults",
+    advancedSecuritySettings: "button#securityLevel-advancedSecuritySettings",
+  }),
+
   _populateXUL : function() {
-    // get the panel elements we need to populate
-    let panelview = document.getElementById("securityLevel-panelview");
-    let labelHeader = panelview.querySelector("#securityLevel-header");
-    let labelCustomWarning = panelview.querySelector("#securityLevel-customWarning")
-    let labelLearnMore = panelview.querySelector("#securityLevel-learnMore");
-    let buttonRestoreDefaults = panelview.querySelector("#securityLevel-restoreDefaults");
-    let buttonAdvancedSecuritySettings = panelview.querySelector("#securityLevel-advancedSecuritySettings");
+    let selectors = this._selectors;
 
-    labelHeader.setAttribute("value", TorStrings.securityLevel.securityLevel);
-    labelCustomWarning.setAttribute("value", TorStrings.securityLevel.customWarning);
-    labelLearnMore.setAttribute("value", TorStrings.securityLevel.learnMore);
-    labelLearnMore.setAttribute("href", TorStrings.securityLevel.learnMoreURL);
-    buttonRestoreDefaults.setAttribute("label", TorStrings.securityLevel.restoreDefaults);
-    buttonAdvancedSecuritySettings.setAttribute("label", TorStrings.securityLevel.advancedSecuritySettings);
+    this._elements = {
+      panel: document.querySelector(selectors.panel),
+      icon: document.querySelector(selectors.icon),
+      header: document.querySelector(selectors.header),
+      levelLabel: document.querySelector(selectors.level),
+      customLabel: document.querySelector(selectors.custom),
+      summaryDescription: document.querySelector(selectors.summary),
+      learnMoreLabel: document.querySelector(selectors.learnMore),
+      restoreDefaultsButton: document.querySelector(selectors.restoreDefaults),
+      changeButton: document.querySelector(selectors.advancedSecuritySettings),
+    };
+    let elements = this._elements;
 
-    // rest of the XUL is set based on security prefs
+    elements.header.textContent = TorStrings.securityLevel.securityLevel;
+    elements.customLabel.setAttribute("value", TorStrings.securityLevel.customWarning);
+    elements.learnMoreLabel.setAttribute("value", TorStrings.securityLevel.learnMore);
+    elements.learnMoreLabel.setAttribute("href", TorStrings.securityLevel.learnMoreURL);
+    elements.restoreDefaultsButton.setAttribute("label", TorStrings.securityLevel.restoreDefaults);
+    elements.changeButton.setAttribute("label", TorStrings.securityLevel.change);
+
     this._configUIFromPrefs();
-
     this._populated = true;
   },
 
@@ -221,12 +243,13 @@ const SecurityLevelPanel = {
     let securityCustom = SecurityLevelPrefs.securityCustom;
 
     // get the panel elements we need to populate
-    let panelview = document.getElementById("securityLevel-panelview");
-    let labelLevel = panelview.querySelector("#securityLevel-level");
-    let labelCustomWarning = panelview.querySelector("#securityLevel-customWarning")
-    let summary = panelview.querySelector("#securityLevel-summary");
-    let buttonRestoreDefaults = panelview.querySelector("#securityLevel-restoreDefaults");
-    let buttonAdvancedSecuritySettings = panelview.querySelector("#securityLevel-advancedSecuritySettings");
+    let elements = this._elements;
+    let icon = elements.icon;
+    let labelLevel = elements.levelLabel;
+    let labelCustomWarning = elements.customLabel;
+    let summary = elements.summaryDescription;
+    let buttonRestoreDefaults = elements.restoreDefaultsButton;
+    let buttonAdvancedSecuritySettings = elements.changeButton;
 
     // only visible when user is using custom settings
     labelCustomWarning.hidden = !securityCustom;
@@ -236,16 +259,19 @@ const SecurityLevelPanel = {
     switch(securitySlider) {
       // standard
       case 4:
+        icon.setAttribute("level", "standard");
         labelLevel.setAttribute("value", TorStrings.securityLevel.standard.level);
         summary.textContent = TorStrings.securityLevel.standard.summary;
         break;
       // safer
       case 2:
+        icon.setAttribute("level", "safer");
         labelLevel.setAttribute("value", TorStrings.securityLevel.safer.level);
         summary.textContent = TorStrings.securityLevel.safer.summary;
         break;
       // safest
       case 1:
+        icon.setAttribute("level", "safest");
         labelLevel.setAttribute("value", TorStrings.securityLevel.safest.level);
         summary.textContent = TorStrings.securityLevel.safest.summary;
         break;
