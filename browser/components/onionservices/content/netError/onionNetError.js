@@ -6,6 +6,7 @@
 
 var OnionServicesAboutNetError = {
   _selector: {
+    textContainer: "div#text-container",
     header: ".title-text",
     longDesc: "#errorLongDesc",
     learnMoreContainer: "#learnMoreContainer",
@@ -194,12 +195,10 @@ var OnionServicesAboutNetError = {
     labelDiv = this._createDiv(aDoc, undefined, undefined, container);
     labelDiv.textContent = this._strings.errorPage.onionSite;
 
-    const contentContainer = aDoc.querySelector(
-      this._selector.contentContainer
+    const textContainer = aDoc.querySelector(
+      this._selector.textContainer
     );
-    if (contentContainer) {
-      contentContainer.insertBefore(container, contentContainer.firstChild);
-    }
+    textContainer?.insertBefore(container, textContainer.firstChild);
   }, // _insertDiagram()
 
   _createDiv(aDoc, aID, aClass, aParentElem) {
