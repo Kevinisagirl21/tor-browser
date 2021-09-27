@@ -3673,6 +3673,7 @@ int NS_main(int argc, NS_tchar** argv) {
 #  endif
       }
 
+#  ifdef MOZ_MAINTENANCE_SERVICE
       // If we started the elevated updater, and it finished, check the secure
       // update status file to make sure that it succeeded, and if it did we
       // need to launch the PostUpdate process in the unelevated updater which
@@ -3690,6 +3691,7 @@ int NS_main(int argc, NS_tchar** argv) {
           }
         }
       }
+#  endif
 
       CloseHandle(elevatedFileHandle);
 
