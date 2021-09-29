@@ -32,6 +32,7 @@ function maybeUpdateOpenLocationForTorConnect(openUILinkWhere, currentURI, desti
   } catch (e) {
     // swallow exception and fall through returning original so we don't accidentally break
     // anything if an exception is thrown
+    console.log(e? e.message : e);
   }
 
   return openUILinkWhere;
