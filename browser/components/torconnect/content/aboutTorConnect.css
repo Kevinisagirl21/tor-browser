@@ -7,7 +7,7 @@
 :root {
   --onion-opacity: 1;
   --onion-color: var(--card-outline-color);
-  --onion-radius: 50px;
+  --onion-radius: 75px;
 }
 
 /* override firefox's default blue focus coloring */
@@ -149,7 +149,7 @@ body {
 .title {
   background-image: url("chrome://browser/content/torconnect/onion.svg");
   -moz-context-properties: fill, fill-opacity;
-  fill-opacity: 1;
+  fill-opacity: var(--onion-opacity);
   fill: var(--onion-color);
 }
 
