@@ -5990,6 +5990,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
     bool aNotifyKeywordSearchLoading, nsIInputStream** aNewPostData) {
   if (aStatus != NS_ERROR_UNKNOWN_HOST && aStatus != NS_ERROR_NET_RESET &&
       aStatus != NS_ERROR_CONNECTION_REFUSED &&
+      aStatus != NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS &&
       aStatus !=
           mozilla::psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_CERT_DOMAIN)) {
     return nullptr;
@@ -6136,6 +6137,18 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
           fixupInfo->GetPreferredURI(getter_AddRefs(newURI));
         }
       }
+    }
+  } else if (aStatus == NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS) {
+    // Bug 40483: Temporarily redirect DW's v2 address to their new v3 address
+    constexpr auto kV2DW = "dwnewsvdyyiamwnp.onion"_ns;
+    constexpr auto kV3DW = "dwnewsgngmhlplxy6o2twtfgjnrnjxbegbwqx6wnotdhkzt562tszfid.onion"_ns;
+    nsAutoCString host;
+    newURI = nullptr;
+    Unused << url->GetHost(host);
+    if (StringEndsWith(host, kV2DW)) {
+      auto& subdomains = Substring(host, 0, host.Length() - kV2DW.Length());
+      Unused << NS_MutateURI(url).SetHost(subdomains + kV3DW).Finalize(
+        getter_AddRefs(newURI));
     }
   } else if (aStatus == NS_ERROR_CONNECTION_REFUSED &&
              Preferences::GetBool("browser.fixup.fallback-to-https", false)) {
