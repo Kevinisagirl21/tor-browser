@@ -16,7 +16,6 @@ class RequestBridgeDialog {
     this._incorrectCaptchaHbox = null;
     this._incorrectCaptchaLabel = null;
     this._bridges = [];
-    this._proxyURI = null;
   }
 
   static get selectors() {
@@ -77,7 +76,7 @@ class RequestBridgeDialog {
     this._captchaImage = this._dialog.querySelector(selectors.captchaImage);
 
     // request captcha from bridge db
-    BridgeDB.requestNewCaptchaImage(this._proxyURI).then(uri => {
+    BridgeDB.requestNewCaptchaImage().then(uri => {
       this._setcaptchaImage(uri);
     });
 
@@ -160,17 +159,24 @@ class RequestBridgeDialog {
 
     BridgeDB.submitCaptchaGuess(captchaText)
       .then(aBridges => {
-        this._bridges = aBridges;
-
-        this._submitButton.disabled = false;
-        // This was successful, but use cancelDialog() to close, since
-        // we intercept the `dialogaccept` event.
-        this._dialog.cancelDialog();
+        if (aBridges) {
+          this._bridges = aBridges;
+          this._submitButton.disabled = false;
+          // This was successful, but use cancelDialog() to close, since
+          // we intercept the `dialogaccept` event.
+          this._dialog.cancelDialog();
+        } else {
+          this._bridges = [];
+          this._setUIDisabled(false);
+          this._incorrectCaptchaHbox.style.visibility = "visible";
+        }
       })
       .catch(aError => {
+        // TODO: handle other errors properly here when we do the bridge settings re-design
         this._bridges = [];
         this._setUIDisabled(false);
         this._incorrectCaptchaHbox.style.visibility = "visible";
+        console.log(eError);
       });
   }
 
@@ -182,13 +188,12 @@ class RequestBridgeDialog {
     this._captchaEntryTextbox.value = "";
     this._incorrectCaptchaHbox.style.visibility = "hidden";
 
-    BridgeDB.requestNewCaptchaImage(this._proxyURI).then(uri => {
+    BridgeDB.requestNewCaptchaImage().then(uri => {
       this._setcaptchaImage(uri);
     });
   }
 
-  openDialog(gSubDialog, aProxyURI, aCloseCallback) {
-    this._proxyURI = aProxyURI;
+  openDialog(gSubDialog, aCloseCallback) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
       {

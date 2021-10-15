@@ -686,7 +686,6 @@ const gTorPane = (function() {
       let requestBridgeDialog = new RequestBridgeDialog();
       requestBridgeDialog.openDialog(
         gSubDialog,
-        TorSettings.proxy.uri,
         aBridges => {
           if (aBridges.length > 0) {
             let bridgeStrings = aBridges.join("\n");
