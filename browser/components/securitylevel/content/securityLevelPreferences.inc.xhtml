@@ -14,8 +14,9 @@
             <label id="securityLevel-customWarning"/>
             <spacer flex="1"/>
           </vbox>
+          <spacer flex="1"/>
         </hbox>
-        <description flex="1">
+        <description flex="1" class="indent">
           <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
           <label id="securityLevel-restoreDefaults"
                  class="learnMore text-link"/>
@@ -30,14 +31,16 @@
             <spacer flex="1"/>
           </vbox>
         </hbox>
-        <description flex="1">
+        <description flex="1" class="indent">
           <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
           <label id="securityLevel-restoreDefaults"
                  class="learnMore text-link"/>
         </description>
-        <description id="securityLevel-description1" class="indent tip-caption"/>
-        <description id="securityLevel-description2" class="indent tip-caption"/>
-        <description id="securityLevel-description3" class="indent tip-caption"/>
+        <vbox id="securityLevel-descriptionList" class="indent">
+          <description id="securityLevel-description1" class="indent"/>
+          <description id="securityLevel-description2" class="indent"/>
+          <description id="securityLevel-description3" class="indent"/>
+        </vbox>
       </vbox>
       <vbox id="securityLevel-vbox-safest">
         <hbox>
@@ -48,14 +51,16 @@
             <spacer flex="1"/>
           </vbox>
         </hbox>
-        <description flex="1">
+        <description flex="1" class="indent">
           <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
           <label id="securityLevel-restoreDefaults"
                  class="learnMore text-link"/>
         </description>
-        <description id="securityLevel-description1" class="indent tip-caption"/>
-        <description id="securityLevel-description2" class="indent tip-caption"/>
-        <description id="securityLevel-description3" class="indent tip-caption"/>
+        <vbox id="securityLevel-descriptionList" class="indent">
+          <description id="securityLevel-description1" class="indent"/>
+          <description id="securityLevel-description2" class="indent"/>
+          <description id="securityLevel-description3" class="indent"/>
+        </vbox>
       </vbox>
     </radiogroup>
   </vbox>

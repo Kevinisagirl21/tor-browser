@@ -10,6 +10,9 @@ pref("browser.rights.3.shown", true);
 pref("startup.homepage_welcome_url", "");
 pref("startup.homepage_welcome_url.additional", "");
 
+// Disable Firefox Welcome Dialog
+pref("browser.aboutwelcome.enabled", false);
+
 // Set a generic, default URL that will be opened in a tab after an update.
 // Typically, this will not be used; instead, the <update> element within
 // each update manifest should contain attributes similar to:
