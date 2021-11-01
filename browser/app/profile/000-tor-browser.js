@@ -48,7 +48,6 @@ pref("browser.disableResetPrompt", true);
 // Disk activity: Disable Browsing History Storage
 pref("browser.privatebrowsing.autostart", true);
 pref("browser.cache.disk.enable", false);
-pref("browser.cache.offline.enable", false);
 pref("permissions.memory_only", true);
 pref("network.cookie.lifetimePolicy", 2);
 pref("security.nocertdb", true);
@@ -69,8 +68,6 @@ pref("browser.sessionstore.privacy_level", 2);
 // Use the in-memory media cache and increase its maximum size (#29120)
 pref("browser.privatebrowsing.forceMediaMemoryCache", true);
 pref("media.memory_cache_max_size", 16384);
-// Disable site-specific browsing to avoid sharing site icons with the OS.
-pref("browser.ssb.enabled", false);
 
 // Misc privacy: Remote
 pref("browser.send_pings", false);
@@ -164,7 +161,6 @@ pref("dom.serviceWorkers.enabled", false);
 pref("dom.push.enabled", false);
 
 // Fingerprinting
-pref("webgl.disable-extensions", true);
 pref("webgl.disable-fail-if-major-performance-caveat", true);
 pref("webgl.enable-webgl2", false);
 pref("gfx.downloadable_fonts.fallback_delay", -1);
@@ -177,9 +173,7 @@ pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
 pref("dom.webaudio.enabled", false); // Bug 13017: Disable Web Audio API
 pref("dom.w3c_touch_events.enabled", 0); // Bug 10286: Always disable Touch API
-pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
-// Disable randomised Firefox HTTP cache decay user test groups (Bug: 13575)
 pref("security.webauth.webauthn", false); // Bug 26614: Disable Web Authentication API for now
 // Disable SAB, no matter if the sites are cross-origin isolated.
 pref("dom.postMessage.sharedArrayBuffer.withCOOP_COEP", false);
@@ -241,8 +235,6 @@ pref("network.protocol-handler.warn-external.snews", true);
 // Make sure we don't have any GIO supported protocols (defense in depth
 // measure)
 pref("network.gio.supported-protocols", "");
-pref("plugin.disable", true); // Disable to search plugins on first start
-pref("plugin.state.flash", 0); // Disable for defense-in-depth
 pref("media.peerconnection.enabled", false); // Disable WebRTC interfaces
 // Disables media devices but only if `media.peerconnection.enabled` is set to
 // `false` as well. (see bug 16328 for this defense-in-depth measure)
@@ -278,9 +270,6 @@ pref("network.file.disable_unc_paths", true);
 // Enhance our treatment of file:// to avoid proxy bypasses (see Mozilla's bug
 // 1412081)
 pref("network.file.path_blacklist", "/net");
-// Make sure no enterprise policy can interfere with our proxy settings, see
-// #29916.
-pref("browser.policies.testing.disallowEnterprise", true);
 
 // Security slider
 pref("svg.in-content.enabled", true);
@@ -308,24 +297,15 @@ pref("extensions.autoDisableScopes", 0);
 pref("extensions.bootstrappedAddons", "{}");
 pref("extensions.checkCompatibility.4.*", false);
 pref("extensions.databaseSchema", 3);
-pref("extensions.enabledAddons", "https-everywhere%40eff.org:3.1.4,%7B73a6fe31-595d-460b-a920-fcc0f8843232%7D:2.6.6.1,torbutton%40torproject.org:1.5.2,ubufox%40ubuntu.com:2.6,%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D:17.0.5");
-pref("extensions.enabledItems", "langpack-en-US@firefox.mozilla.org:,{73a6fe31-595d-460b-a920-fcc0f8843232}:1.9.9.57,{e0204bd5-9d31-402b-a99d-a6aa8ffebdca}:1.2.4,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.5.8");
 pref("extensions.enabledScopes", 5); // AddonManager.SCOPE_PROFILE=1 | AddonManager.SCOPE_APPLICATION=4
 pref("extensions.pendingOperations", false);
-pref("xpinstall.whitelist.add", "");
-pref("xpinstall.whitelist.add.36", "");
 // We don't know what extensions Mozilla is advertising to our users and we
 // don't want to have some random Google Analytics script running either on the
 // about:addons page, see bug 22073, 22900 and 31601.
 pref("extensions.getAddons.showPane", false);
 pref("extensions.htmlaboutaddons.recommendations.enabled", false);
-// Show our legacy extensions directly on about:addons and get rid of the
-// warning for the default theme.
-pref("extensions.legacy.exceptions", "{972ce4c6-7e08-4474-a285-3208198ce6fd},torbutton@torproject.org");
 // Bug 26114: Allow NoScript to access addons.mozilla.org etc.
 pref("extensions.webextensions.restrictedDomains", "");
-// Bug 28896: Make sure our bundled WebExtensions are running in Private Browsing Mode
-pref("extensions.allowPrivateBrowsingByDefault", true);
 // Don't give Mozilla-recommended third-party extensions special privileges.
 pref("extensions.postDownloadThirdPartyPrompt", false);
 
@@ -354,11 +334,6 @@ pref("security.certerrors.mitm.auto_enable_enterprise_roots", false);
 #ifdef XP_MACOSX
 pref("extensions.langpacks.signatures.required", false);
 #endif
-
-// Avoid report TLS errors to Mozilla. We might want to repurpose this feature
-// one day to help detecting bad relays (which is bug 19119). For now we just
-// hide the checkbox, see bug 22072.
-pref("security.ssl.errorReporting.enabled", false);
 
 // Workaround for https://bugs.torproject.org/13579. Progress on
 // `about:downloads` is only shown if the following preference is set to `true`
