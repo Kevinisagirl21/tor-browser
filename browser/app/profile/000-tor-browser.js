@@ -53,6 +53,9 @@ pref("permissions.memory_only", true);
 pref("network.cookie.lifetimePolicy", 2);
 pref("security.nocertdb", true);
 
+// Enabled LSNG
+pref("dom.storage.next_gen", true);
+
 // Disk activity: TBB Directory Isolation
 pref("browser.download.useDownloadDir", false);
 pref("browser.shell.checkDefaultBrowser", false);
@@ -119,11 +122,12 @@ pref("privacy.annotate_channels.strict_list.enabled", false);
 
 // Disable the Pocket extension (Bug #18886 and #31602)
 pref("extensions.pocket.enabled", false);
-pref("network.http.referer.hideOnionSource", true);
 
 // Disable use of WiFi location information
 pref("browser.region.network.scan", false);
 pref("browser.region.network.url", "");
+// Bug 40083: Make sure Region.jsm fetching is disabled
+pref("browser.region.update.enabled", false);
 
 // Don't load Mozilla domains in a separate tab process
 pref("browser.tabs.remote.separatedMozillaDomains", "");
@@ -177,6 +181,8 @@ pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
 // Disable randomised Firefox HTTP cache decay user test groups (Bug: 13575)
 pref("security.webauth.webauthn", false); // Bug 26614: Disable Web Authentication API for now
+// Disable SAB, no matter if the sites are cross-origin isolated.
+pref("dom.postMessage.sharedArrayBuffer.withCOOP_COEP", false);
 // Disable intermediate preloading (Bug 30682)
 pref("security.remote_settings.intermediates.enabled", false);
 // Bug 2874: Block Components.interfaces from content
@@ -190,8 +196,17 @@ pref("privacy.resistFingerprinting.letterboxing", true);
 pref("dom.netinfo.enabled", false);
 pref("network.http.referer.defaultPolicy", 2); // Bug 32948: Make referer behavior consistent regardless of private browing mode status
 pref("media.videocontrols.picture-in-picture.enabled", false); // Bug 40148: disable until audited in #40147
+pref("network.http.referer.hideOnionSource", true);
+// Bug 40463: Disable Windows SSO
+pref("network.http.windows-sso.enabled", false);
 // Bug 40383: Disable new PerformanceEventTiming
 pref("dom.enable_event_timing", false);
+// Disable API for measuring text width and height.
+pref("dom.textMetrics.actualBoundingBox.enabled", false);
+pref("dom.textMetrics.baselines.enabled", false);
+pref("dom.textMetrics.emHeight.enabled", false);
+pref("dom.textMetrics.fontBoundingBox.enabled", false);
+pref("pdfjs.enableScripting", false);
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
@@ -199,6 +214,8 @@ pref("privacy.partition.network_state", false); // Disable for now until audit
 pref("network.cookie.cookieBehavior", 1);
 pref("network.http.spdy.allow-push", false); // Disabled for now. See https://bugs.torproject.org/27127
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
+// Bug 40177: Make sure tracker cookie purging is disabled
+pref("privacy.purge_trackers.enabled", false);
 
 // Proxy and proxy security
 pref("network.proxy.socks", "127.0.0.1");
@@ -207,6 +224,8 @@ pref("network.proxy.socks_remote_dns", true);
 pref("network.proxy.no_proxies_on", ""); // For fingerprinting and local service vulns (#10419)
 pref("network.proxy.allow_hijacking_localhost", true); // Allow proxies for localhost (#31065)
 pref("network.proxy.type", 1);
+// Bug 40548: Disable proxy-bypass
+pref("network.proxy.failover_direct", false);
 pref("network.security.ports.banned", "9050,9051,9150,9151");
 pref("network.dns.disabled", true); // This should cover the #5741 patch for DNS leaks
 pref("network.dns.disablePrefetch", true);
@@ -307,12 +326,17 @@ pref("extensions.legacy.exceptions", "{972ce4c6-7e08-4474-a285-3208198ce6fd},tor
 pref("extensions.webextensions.restrictedDomains", "");
 // Bug 28896: Make sure our bundled WebExtensions are running in Private Browsing Mode
 pref("extensions.allowPrivateBrowsingByDefault", true);
+// Don't give Mozilla-recommended third-party extensions special privileges.
+pref("extensions.postDownloadThirdPartyPrompt", false);
 
 // Toolbar layout
 pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-list\":[],\"PersonalToolbar\":[\"personal-bookmarks\"],\"nav-bar\":[\"back-button\",\"forward-button\",\"stop-reload-button\",\"urlbar-container\",\"torbutton-button\",\"security-level-button\",\"downloads-button\"],\"TabsToolbar\":[\"tabbrowser-tabs\",\"new-tab-button\",\"alltabs-button\"],\"toolbar-menubar\":[\"menubar-items\"],\"PanelUI-contents\":[\"home-button\",\"edit-controls\",\"zoom-controls\",\"new-window-button\",\"save-page-button\",\"print-button\",\"bookmarks-menu-button\",\"history-panelmenu\",\"find-button\",\"preferences-button\",\"add-ons-button\",\"developer-button\"],\"addon-bar\":[\"addonbar-closebutton\",\"status-bar\"]},\"seen\":[\"developer-button\",\"https-everywhere-eff_eff_org-browser-action\",\"_73a6fe31-595d-460b-a920-fcc0f8843232_-browser-action\"],\"dirtyAreaCache\":[\"PersonalToolbar\",\"nav-bar\",\"TabsToolbar\",\"toolbar-menubar\"],\"currentVersion\":14,\"newElementCount\":1}");
 
 // Enforce certificate pinning, see: https://bugs.torproject.org/16206
 pref("security.cert_pinning.enforcement_level", 2);
+
+// Don't load OS client certs.
+pref("security.osclientcerts.autoload", false);
 
 // Don't allow MitM via Microsoft Family Safety, see bug 21686
 pref("security.family_safety.mode", 0);
@@ -452,6 +476,9 @@ pref("extensions.torbutton.pref_fixup_version", 0);
 // If we are bundling fonts, whitelist those bundled fonts, and restrict system fonts to a selection.
 
 #ifdef MOZ_BUNDLED_FONTS
+
+// Bug 40342: Always use bundled fonts
+pref("gfx.bundled-fonts.activate", 1);
 
 #ifdef XP_MACOSX
 pref("font.system.whitelist", "AppleGothic, Apple Color Emoji, Arial, Courier, Geneva, Georgia, Heiti TC, Helvetica, Helvetica Neue, .Helvetica Neue DeskInterface, Hiragino Kaku Gothic ProN, Lucida Grande, Monaco, Noto Sans Armenian, Noto Sans Bengali, Noto Sans Buginese, Noto Sans Canadian Aboriginal, Noto Sans Cherokee, Noto Sans Devanagari, Noto Sans Ethiopic, Noto Sans Gujarati, Noto Sans Gurmukhi, Noto Sans Kannada, Noto Sans Khmer, Noto Sans Lao, Noto Sans Malayalam, Noto Sans Mongolian, Noto Sans Myanmar, Noto Sans Oriya, Noto Sans Sinhala, Noto Sans Tamil, Noto Sans Telugu, Noto Sans Thaana, Noto Sans Tibetan, Noto Sans Yi, STHeiti, STIX Math, Tahoma, Thonburi, Times, Times New Roman, Verdana");
