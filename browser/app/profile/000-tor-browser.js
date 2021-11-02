@@ -201,6 +201,7 @@ pref("dom.textMetrics.baselines.enabled", false);
 pref("dom.textMetrics.emHeight.enabled", false);
 pref("dom.textMetrics.fontBoundingBox.enabled", false);
 pref("pdfjs.enableScripting", false);
+pref("javascript.options.large_arraybuffers", false);
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
