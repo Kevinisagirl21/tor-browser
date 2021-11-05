@@ -29,11 +29,3 @@
   toolbarbutton#appMenu-new-private-window-button2 {
     display: none;
   }
-
-#appMenuNewIdentity {
-  list-style-image: url("chrome://browser/skin/new_identity.svg");
-}
-
-#appMenuNewCircuit {
-  list-style-image: url("chrome://browser/skin/new_circuit.svg");
-}
