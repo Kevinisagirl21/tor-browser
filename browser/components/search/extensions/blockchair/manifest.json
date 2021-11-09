@@ -20,7 +20,7 @@
       "name": "Blockchair",
       "search_url": "https://blockchair.com/search",
       "search_form": "https://blockchair.com/search/?q={searchTerms}",
-      "search_url_post_params": "q={searchTerms}"
+      "search_url_get_params": "q={searchTerms}"
     }
   }
 }
