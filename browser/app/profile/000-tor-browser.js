@@ -190,6 +190,7 @@ pref("privacy.resistFingerprinting.letterboxing", true);
 pref("dom.netinfo.enabled", false);
 pref("network.http.referer.defaultPolicy", 2); // Bug 32948: Make referer behavior consistent regardless of private browing mode status
 pref("media.videocontrols.picture-in-picture.enabled", false); // Bug 40148: disable until audited in #40147
+pref("media.videocontrols.picture-in-picture.video-toggle.enabled", false); // Bug 40692: disable again until audited in #40147
 pref("network.http.referer.hideOnionSource", true);
 // Bug 40463: Disable Windows SSO
 pref("network.http.windows-sso.enabled", false);
