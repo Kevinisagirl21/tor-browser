@@ -24,8 +24,3 @@
   list-style-image: url(chrome://browser/skin/fullscreen-exit.svg);
 }
 
-/* hide the separate new private window button when all windows are private */
-@supports -moz-bool-pref("browser.privatebrowsing.autostart") {
-  toolbarbutton#appMenu-new-private-window-button2 {
-    display: none;
-  }
