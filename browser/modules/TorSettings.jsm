@@ -303,212 +303,47 @@ const TorSettings = (() => {
             return settings;
         },
 
-        /* try and load our settings, and register observers */
+        /* load or init our settings, and register observers */
         init: function() {
             if (TorProtocolService.ownsTorDaemon) {
                 // if the settings branch exists, load settings from prefs
                 if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
                     this.loadFromPrefs();
-                    Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
+                } else {
+                    // otherwise load defaults
+                    this._settings = this.defaultSettings();
                 }
                 Services.obs.addObserver(this, BrowserTopics.ProfileAfterChange);
                 Services.obs.addObserver(this, TorTopics.ProcessIsReady);
             }
         },
 
-        /* wait for relevant life-cycle events to load and/or apply saved settings */
+        /* wait for relevant life-cycle events to apply saved settings */
         observe: async function(subject, topic, data) {
-            console.log(`TorSettings: observed ${topic}`);
+            console.log(`TorSettings: Observed ${topic}`);
 
-            // once the process is ready, we need to apply our settings
+            // once the tor daemon is ready, we need to apply our settings
             let handleProcessReady = async () => {
-                Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
-                if (this._settings == null) {
-                    // load settings from tor if our load in init() failed and save them to prefs
-                    await this.loadLegacy();
-                    this.saveToPrefs();
-                } else {
-                    // push down settings to tor
-                    await this.applySettings();
-                }
+                // push down settings to tor
+                await this.applySettings();
+                console.log("TorSettings: Ready");
                 Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
             };
 
             switch (topic) {
                 case BrowserTopics.ProfileAfterChange: {
+                    Services.obs.removeObserver(this, BrowserTopics.ProfileAfterChange);
                     if (TorProtocolService.torProcessStatus == TorProcessStatus.Running) {
                         await handleProcessReady();
                     }
                 }
                 break;
                 case TorTopics.ProcessIsReady: {
+                    Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
                     await handleProcessReady();
                 }
                 break;
             }
-        },
-
-        // load our settings from old locations (misc prefs and from tor daemon)
-        // TODO: remove this after some time has elapsed to ensure users have migrated to pref settings
-        loadLegacy: async function() {
-            console.log("TorSettings: loadLegacy()");
-
-            let settings = this.defaultSettings();
-
-            /* Quickstart */
-            settings.quickstart.enabled = Services.prefs.getBoolPref(TorLauncherPrefs.quickstart, false);
-
-            /* Bridges
-
-            So the way tor-launcher determines the origin of the configured bridges is a bit
-            weird and depends on inferring our scenario based on some firefox prefs and the
-            relationship between the saved list of bridges in about:config vs the list saved in torrc
-
-            first off, if "extensions.torlauncher.default_bridge_type" is set to one of our
-            builtin default types (obfs4, meek-azure, snowflake, etc) then we provide the
-            bridges in "extensions.torlauncher.default_bridge.*" (filtered by our default_bridge_type)
-
-            next, we compare the list of bridges saved in torrc to the bridges stored in the
-            "extensions.torlauncher.bridgedb_bridge."" branch. If they match *exactly* then we assume
-            the bridges were retrieved from BridgeDB and use those. If the torrc list is empty then we know
-            we have no bridge settings
-
-            finally, if none of the previous conditions are not met, it is assumed the bridges stored in
-            torrc are user-provided
-            */
-
-            let builtinType = Services.prefs.getCharPref(TorLauncherPrefs.default_bridge_type, null);
-
-            // check if source is built-in
-            if (builtinType) {
-                let builtinBridgeStrings = getBuiltinBridgeStrings(builtinType);
-                if (builtinBridgeStrings.length > 0) {
-                    settings.bridges.enabled = true;
-                    settings.bridges.source = TorBridgeSource.BuiltIn;
-                    settings.bridges.builtin_type = builtinType;
-                    settings.bridges.bridge_strings = builtinBridgeStrings;
-                }
-            } else  {
-                // get our currently configured bridges from tor
-                let torrcBridgeStrings = await (async () => {
-                    let bridgeList = await TorProtocolService.readStringArraySetting(TorConfigKeys.bridgeList);
-                    let retval = [];
-                    for (const line of bridgeList) {
-                      let trimmedLine = line.trim();
-                      if (trimmedLine) {
-                        retval.push(trimmedLine);
-                      }
-                    }
-                    return retval;
-                })();
-
-                // torrc has bridges configured
-                if (torrcBridgeStrings.length > 0) {
-                    // compare tor's bridges to our saved bridgedb bridges
-                    let bridgedbBBridgeStrings = (() => {
-                        let bridgeBranch = Services.prefs.getBranch(TorLauncherPrefs.bridgedb_bridge);
-                        let bridgeBranchPrefs = bridgeBranch.getChildList("");
-                        // the child prefs do not come in any particular order so sort the keys
-                        // so the values can be compared to what we get out off torrc
-                        bridgeBranchPrefs.sort();
-
-                        // just assume all of the prefs under the parent point to valid bridge string
-                        let retval = bridgeBranchPrefs.map(key =>
-                          bridgeBranch.getCharPref(key).trim()
-                        );
-                        return retval;
-                    })();
-
-                    let arraysEqual = (left, right) => {
-                        if (left.length != right.length) {
-                            return false;
-                        }
-                        const length = left.length;
-                        for (let i = 0; i < length; ++i) {
-                            if (left[i] != right[i]) {
-                                return false;
-                            }
-                        }
-                        return true;
-                    };
-
-                    if (arraysEqual(torrcBridgeStrings, bridgedbBBridgeStrings)) {
-                        settings.bridges.enabled = true;
-                        settings.bridges.source = TorBridgeSource.BridgeDB;
-                        settings.bridges.builtin_type = null;
-                        settings.bridges.bridge_strings = torrcBridgeStrings;
-                    } else {
-                        settings.bridges.enabled = true;
-                        settings.bridges.source = TorBridgeSource.UserProvided;
-                        settings.bridges.builtin_type = null;
-                        settings.bridges.bridge_strings = torrcBridgeStrings;
-                    }
-                } else {
-                    // tor has no bridge strings saved, so bridges not in use
-                    settings.bridges.enabled = false;
-                    settings.bridges.source = TorBridgeSource.Invalid;
-                    settings.bridges.builtin_type = null;
-                    settings.bridges.bridge_strings = [];
-                }
-            }
-
-            /* Proxy */
-
-            let proxyString = null;
-            if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.socks4Proxy)) {
-                let [address, port] = parseAddrPort(proxyString);
-
-                settings.proxy.enabled = true;
-                settings.proxy.type = TorProxyType.Socks4;
-                settings.proxy.address = address;
-                settings.proxy.port = port;
-                settings.proxy.username = null;
-                settings.proxy.password = null;
-            } else if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.socks5Proxy)) {
-                let [address, port] = parseAddrPort(proxyString);
-                let username = await TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyUsername);
-                let password = await TorProtocolService.readStringSetting(TorConfigKeys.socks5ProxyPassword);
-
-                settings.proxy.enabled = true;
-                settings.proxy.type = TorProxyType.Socks5;
-                settings.proxy.address = address;
-                settings.proxy.port = port;
-                settings.proxy.username = username;
-                settings.proxy.password = password;
-            } else if (proxyString = await TorProtocolService.readStringSetting(TorConfigKeys.httpsProxy)) {
-                let [address, port] = parseAddrPort(proxyString);
-                let authenticator = await TorProtocolService.readStringSetting(TorConfigKeys.httpsProxyAuthenticator);
-                let [username, password] = parseUsernamePassword(authenticator);
-
-                settings.proxy.enabled = true;
-                settings.proxy.type = TorProxyType.HTTPS;
-                settings.proxy.address = address;
-                settings.proxy.port = port;
-                settings.proxy.username = username;
-                settings.proxy.password = password;
-            } else {
-                settings.proxy.enabled = false;
-                settings.proxy.type = TorProxyType.Invalid;
-                settings.proxy.address = null;
-                settings.proxy.port = 0;
-                settings.proxy.username = null;
-                settings.proxy.password = null;
-            }
-
-            /* Firewall */
-            let firewallString = await TorProtocolService.readStringSetting(TorConfigKeys.reachableAddresses);
-            if (firewallString) {
-                let allowedPorts = parseAddrPortList(firewallString);
-                settings.firewall.enabled = allowedPorts.length > 0;
-                settings.firewall.allowed_ports = allowedPorts;
-            } else {
-                settings.firewall.enabled = false;
-                settings.firewall.allowed_ports = [];
-            }
-
-            this._settings = settings;
-
-            return this;
         },
 
         // load our settings from prefs
@@ -704,16 +539,60 @@ const TorSettings = (() => {
             return this;
         },
 
-        /* Getters and Setters */
+        // set all of our settings at once from a settings object
+        setSettings: function(settings) {
+            console.log("TorSettings: setSettings()");
+            let backup = this.getSettings();
 
+            try {
+                if (settings.bridges.enabled) {
+                    this._settings.bridges.enabled = true;
+                    this._settings.bridges.source = settings.bridges.source;
+                    switch(settings.bridges.source) {
+                        case TorBridgeSource.BridgeDB:
+                        case TorBridgeSource.UserProvided:
+                            this._settings.bridges.bridge_strings = settings.bridges.bridge_strings
+                            break;
+                        case TorBridgeSource.BuiltIn: {
+                            this._settings.bridges.builtin_type = settings.bridges.builtin_type;
+                            let bridgeStrings =  getBuiltinBridgeStrings(settings.bridges.builtin_type);
+                            if (bridgeStrings.length > 0) {
+                                this._settings.bridges.bridge_strings = bridgeStrings;
+                            } else {
+                                throw new Error(`No available builtin bridges of type ${settings.bridges.builtin_type}`);
+                            }
+                            break;
+                        }
+                        default:
+                            throw new Error(`Bridge source '${settings.source}' is not a valid source`);
+                    }
+                } else {
+                    this.bridges.enabled = false;
+                }
+
+                // TODO: proxy and firewall
+            } catch(ex) {
+                this._settings = backup;
+                console.log(`TorSettings: setSettings failed => ${ex.message}`);
+            }
+
+            console.log("TorSettings: setSettings result");
+            console.log(this._settings);
+        },
+
+        // get a copy of all our settings
+        getSettings: function() {
+            console.log("TorSettings: getSettings()");
+            // TODO: replace with structuredClone someday (post esr94): https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
+            return JSON.parse(JSON.stringify(this._settings));
+        },
+
+        /* Getters and Setters */
 
         // Quickstart
         get quickstart() {
             return {
-                // Avoid a race-condition on first-start where this property
-                // may be accessed before `self._settings` is initialized.
-                // This work-around can be removed when #40598 is resolved.
-                get enabled() { return (self._settings ? self._settings.quickstart.enabled : false); },
+                get enabled() { return self._settings.quickstart.enabled; },
                 set enabled(val) {
                     if (val != self._settings.quickstart.enabled)
                     {
