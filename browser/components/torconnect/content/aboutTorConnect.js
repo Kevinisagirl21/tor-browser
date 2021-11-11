@@ -144,7 +144,7 @@ class AboutTorConnect {
     this.hide(this.elements.cancelButton);
   }
 
-  update_AutoConfiguring(state) {
+  update_AutoBootstrapping(state) {
     // TODO: noop until this state is used
   }
 
@@ -178,10 +178,6 @@ class AboutTorConnect {
     this.show(this.elements.connectButton);
     this.show(this.elements.advancedButton);
     this.hide(this.elements.cancelButton);
-  }
-
-  update_FatalError(state) {
-    // TODO: noop until this state is used
   }
 
   update_Bootstrapped(state) {
