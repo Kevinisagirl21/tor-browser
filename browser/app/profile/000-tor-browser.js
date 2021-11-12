@@ -136,6 +136,12 @@ pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 0);
 pref("messaging-system.rsexperimentloader.enabled", false);
 pref("trailhead.firstrun.branches", "");
 
+// [SETTING] General>Browsing>Recommend extensions as you browse (Bug #40700)
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false); // disable CFR [FF67+]
+
+// [SETTING] General>Browsing>Recommend features as you browse (Bug #40700)
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false); // disable CFR [FF67+]
+
 // Clear the list of trusted recursive resolver services
 pref("network.trr.resolvers", "");
 
