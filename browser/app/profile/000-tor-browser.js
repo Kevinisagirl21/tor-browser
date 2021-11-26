@@ -209,6 +209,7 @@ pref("network.protocol-handler.warn-external.mailto", true);
 pref("network.protocol-handler.warn-external.news", true);
 pref("network.protocol-handler.warn-external.nntp", true);
 pref("network.protocol-handler.warn-external.snews", true);
+pref("network.proxy.allow_bypass", false); // #40682
 // Make sure we don't have any GIO supported protocols (defense in depth
 // measure)
 pref("network.gio.supported-protocols", "");
