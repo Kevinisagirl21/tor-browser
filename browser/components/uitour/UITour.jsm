@@ -1521,7 +1521,7 @@ var UITour = {
       if (aOpenCallback) {
         popup.addEventListener("popupshown", aOpenCallback, { once: true });
       }
-      aWindow.document.getElementById("identity-box").click();
+      aWindow.document.getElementById("identity-icon-box").click();
     } else if (aMenuName == "pocket") {
       let button = aWindow.document.getElementById("save-to-pocket-button");
       if (!button) {
