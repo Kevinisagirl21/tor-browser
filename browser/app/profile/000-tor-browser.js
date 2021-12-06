@@ -18,7 +18,7 @@ pref("browser.aboutwelcome.enabled", false);
 // each update manifest should contain attributes similar to:
 //   actions="showURL"
 //   openURL="https://blog.torproject.org/tor-browser-55a2-released"
-pref("startup.homepage_override_url", "https://blog.torproject.org/category/tags/tor-browser");
+pref("startup.homepage_override_url", "https://blog.torproject.org/category/applications");
 
 // Try to nag a bit more about updates: Pop up a restart dialog an hour after the initial dialog
 pref("app.update.promptWaitTime", 3600);
