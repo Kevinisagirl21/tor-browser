@@ -2167,7 +2167,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     if (mAltSvcCache) {
       mAltSvcCache->ClearAltServiceMappings();
     }
-    nsCORSListenerProxy::Clear();
   } else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
     nsAutoCString converted = NS_ConvertUTF16toUTF8(data);
     if (!strcmp(converted.get(), NS_NETWORK_LINK_DATA_CHANGED)) {
