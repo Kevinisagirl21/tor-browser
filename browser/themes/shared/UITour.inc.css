@@ -39,7 +39,6 @@
 
 #UITourTooltipTitleContainer {
   -moz-box-align: start;
-  margin-bottom: 10px;
 }
 
 #UITourTooltipIcon {
@@ -54,17 +53,25 @@
 }
 
 #UITourTooltipTitle {
-  color: #420C5D;
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 1.25em;
+  font-weight: 600;
   margin: 0;
+}
+
+#UITourTooltipToolbarSeparator {
+  appearance: none;
+  min-height: 0;
+  border-top: 1px solid var(--panel-separator-color);
+  border-bottom: none;
+  margin: var(--panel-separator-margin);
+  margin-inline: 0;
+  padding: 0;
 }
 
 #UITourTooltipDescription {
   margin-inline: 0;
-  color: #4A4A4A;
-  font-size: 13px;
-  line-height: 1.8rem;
+  font-size: 1.11em;
+  line-height: normal;
   margin-bottom: 0; /* Override global.css */
 }
 
@@ -84,9 +91,7 @@
 
 #UITourTooltipButtons {
   -moz-box-pack: end;
-  background-color: var(--arrowpanel-dimmed);
-  margin: 10px -16px -16px;
-  padding: 16px;
+  padding-block-start: 16px;
 }
 
 #UITourTooltipButtons > label,
@@ -112,17 +117,14 @@
 
 #UITourTooltipButtons > label,
 #UITourTooltipButtons > button .button-text {
-  font-size: 1.15rem;
+  font-weight: 600;
+  margin-inline: 0;
 }
 
 #UITourTooltipButtons > button:not(.button-link) {
   appearance: none;
-  background-color: rgb(251,251,251);
-  border-radius: 2px;
-  color: rgb(71,71,71);
-  padding: 6px 30px;
-  transition-property: background-color, border-color;
-  transition-duration: 150ms;
+  border-radius: 4px;
+  padding: 8px 16px;
 }
 
 #UITourTooltipButtons > label,
@@ -131,16 +133,18 @@
   background: transparent;
   border: none;
   box-shadow: none;
-  color: #4A4A4A;
   padding-inline: 10px;
 }
 
 #UITourTooltipButtons > button.button-primary {
-  background-color: #420C5D;
-  color: white;
-  padding-inline: 28px;
+  background-color: var(--button-primary-bgcolor);
+  color: var(--button-primary-color);
+}
+
+#UITourTooltipButtons > button.button-primary:active {
+  background-color: var(--button-primary-active-bgcolor);
 }
 
 #UITourTooltipButtons > button.button-primary:not(:active):hover {
-  background-color: #410A4E;
+  background-color: var(--button-primary-hover-bgcolor);
 }
