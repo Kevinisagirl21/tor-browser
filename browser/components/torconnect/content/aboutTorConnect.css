@@ -24,30 +24,51 @@
   }
 }
 
-/* override firefox's default blue border on hover */
-input[type="checkbox"]:not(:disabled):hover {
-  border-color: var(--purple-70);
-}
-
-#connectButton,
-input[type="checkbox"]:not(:disabled) {
+#connectButton {
   background-color: var(--purple-60)!important;
   color: white;
   fill: white;
 }
 
-#connectButton:hover,
-input[type="checkbox"]:not(:disabled):hover {
+#connectButton:hover {
   background-color: var(--purple-70)!important;
   color: white;
   fill: white;
 }
 
-#connectButton:active,
-input[type="checkbox"]:not(:disabled):active {
+#connectButton:active {
   background-color: var(--purple-80)!important;
   color: white;
   fill: white;
+}
+
+/* checkbox css */
+input[type="checkbox"]:not(:disabled) {
+  background-color: var(--grey-20)!important;
+}
+
+input[type="checkbox"]:not(:disabled):checked {
+  background-color: var(--purple-60)!important;
+  color: white;
+  fill: white;
+}
+
+input[type="checkbox"]:not(:disabled):hover {
+  /* override firefox's default blue border on hover */
+  border-color: var(--purple-70);
+  background-color: var(--grey-30)!important;
+}
+
+input[type="checkbox"]:not(:disabled):hover:checked {
+  background-color: var(--purple-70)!important;
+}
+
+input[type="checkbox"]:not(:disabled):active {
+  background-color: var(--grey-40)!important;
+}
+
+input[type="checkbox"]:not(:disabled):active:checked {
+  background-color: var(--purple-80)!important;
 }
 
 #progressBackground {
