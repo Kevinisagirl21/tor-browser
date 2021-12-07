@@ -41,7 +41,7 @@ label#onion-label {
   padding-block: 0;
   padding-inline: 0.5em;
   color: white;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 /* set appropriate sizes for the non-standard ui densities */
