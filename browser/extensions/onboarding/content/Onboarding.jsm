@@ -1770,12 +1770,6 @@ class Onboarding {
     defaultImg.src = Services.prefs.getStringPref("browser.onboarding.default-icon-src",
       "chrome://branding/content/icon64.png");
     button.appendChild(defaultImg);
-    let watermarkImg = this._window.document.createElement("img");
-    watermarkImg.id = "onboarding-overlay-button-watermark-icon";
-    watermarkImg.setAttribute("role", "presentation");
-    watermarkImg.src = Services.prefs.getStringPref("browser.onboarding.watermark-icon-src",
-      "resource://onboarding/img/tor-watermark.png");
-    button.appendChild(watermarkImg);
     return button;
   }
 
