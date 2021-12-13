@@ -186,6 +186,7 @@ pref("dom.enable_event_timing", false);
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
 pref("privacy.partition.network_state", false); // Disable for now until audit
 pref("network.cookie.cookieBehavior", 1);
+pref("network.cookie.cookieBehavior.pbmode", 1);
 pref("network.http.spdy.allow-push", false); // Disabled for now. See https://bugs.torproject.org/27127
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
 
