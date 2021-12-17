@@ -577,8 +577,8 @@ const gTorPane = (function() {
 
     uninit() {
       // unregister our observer topics
-      Services.obs.removeObserver(TorSettingsTopics.SettingChanged, this);
-      Services.obs.removeObserver(TorConnectTopics.StateChange, this);
+      Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
+      Services.obs.removeObserver(this, TorConnectTopics.StateChange);
     },
 
     // whether the page should be present in about:preferences
