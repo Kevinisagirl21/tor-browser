@@ -361,13 +361,6 @@ pref("browser.urlbar.update1.searchTips", false);
 // is only reported via telemetry (which is disabled).
 pref("corroborator.enabled", false);
 
-// Having the RDD Opus option enabled on Windows breaks videos for us.
-// See: https://bugzilla.mozilla.org/show_bug.cgi?id=1667360 and
-// tor-browser#40140.
-#ifdef XP_WIN
-pref("media.rdd-opus.enabled", false);
-#endif
-
 // Onboarding.
 pref("browser.onboarding.tourset-version", 5);
 pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
