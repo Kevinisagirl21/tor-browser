@@ -587,6 +587,10 @@ const TorConnect = (() => {
             );
         },
 
+        getRedirectURL: function(url) {
+            return `about:torconnect?redirect=${encodeURIComponent(url)}`;
+        },
+
         // called from browser.js on browser startup, passed in either the user's homepage(s)
         // or uris passed via command-line; we want to replace them with about:torconnect uris
         // which redirect after bootstrapping
@@ -628,13 +632,10 @@ const TorConnect = (() => {
             let uris = uriStrings.map(uriStringToUri);
 
             // assume we have a valid uri and generate an about:torconnect redirect uri
-            let uriToRedirectUri = (uri) => {
-                return`about:torconnect?redirect=${encodeURIComponent(uri.spec)}`;
-            };
-            let redirectUris = uris.map(uriToRedirectUri);
+            let redirectUrls = uris.map((uri) => this.getRedirectURL(uri.spec));
 
             console.log(`TorConnect: Will load after bootstrap => [${uris.map((uri) => {return uri.spec;}).join(", ")}]`);
-            return redirectUris;
+            return redirectUrls;
         },
     };
     retval.init();
