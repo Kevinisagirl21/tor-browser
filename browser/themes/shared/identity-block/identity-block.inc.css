@@ -59,10 +59,6 @@
   opacity: 1;
 }
 
-toolbar[brighttext] #identity-box[pageproxystate="valid"].chromeUI #identity-icon-label {
-  color: #CC80FF;
-}
-
 #identity-box[pageproxystate="valid"].chromeUI #identity-icon-label,
 #identity-box[pageproxystate="valid"].extensionPage #identity-icon-label,
 .urlbar-label {
