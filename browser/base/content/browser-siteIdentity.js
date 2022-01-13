@@ -58,8 +58,8 @@ var gIdentityHandler = {
    * the browser UI.
    */
   _secureInternalPages: (AppConstants.TOR_BROWSER_UPDATE ?
-                        /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|ion|tor|torconnect|tbupdate)(?:[?#]|$)/i :
-                        /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|ion|tor|torconnect)(?:[?#]|$)/i),
+                        /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor|torconnect|tbupdate)(?:[?#]|$)/i :
+                        /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|tor|torconnect)(?:[?#]|$)/i),
 
 
   /**
