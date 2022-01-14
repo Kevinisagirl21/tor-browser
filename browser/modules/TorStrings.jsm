@@ -443,7 +443,7 @@ var TorStrings = {
       offline: getStringNet("torConnect.offline", "Offline"),
 
       // tor connect strings for message box in about:preferences#tor
-      connectMessage: getStringNet("torConnect.connectMessage", "Changes to Tor Settings will not take effect until you connect to the Tor Network"),
+      connectMessage: getStringNet("torConnect.connectMessage", "Changes to Tor Settings will not take effect until you connect"),
       tryAgainMessage: getStringNet("torConnect.tryAgainMessage", "Tor Browser has failed to establish a connection to the Tor Network"),
     };
   })(),
