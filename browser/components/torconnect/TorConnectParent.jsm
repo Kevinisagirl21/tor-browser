@@ -4,7 +4,7 @@ var EXPORTED_SYMBOLS = ["TorConnectParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const { TorConnect, TorConnectTopics, TorConnectState } = ChromeUtils.import(
+const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
 );
 const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
@@ -24,13 +24,15 @@ class TorConnectParent extends JSWindowActorParent {
 
     this.state = {
       State: TorConnect.state,
+      DetectedCensorshiplevel: TorConnect.detectedCensorshiplevel,
       StateChanged: false,
       ErrorMessage: TorConnect.errorMessage,
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
       BootstrapStatus: TorConnect.bootstrapStatus,
-      ShowCopyLog: TorConnect.logHasWarningOrError,
+      ShowViewLog: TorConnect.logHasWarningOrError,
       QuickStartEnabled: TorSettings.quickstart.enabled,
+      CountryCodes: TorConnect.countryCodes,
     };
 
     // JSWindowActiveParent derived objects cannot observe directly, so create a member
@@ -46,10 +48,11 @@ class TorConnectParent extends JSWindowActorParent {
         // update our state struct based on received torconnect topics and forward on
         // to aboutTorConnect.js
         self.state.StateChanged = false;
-        switch(aTopic) {
+        switch (aTopic) {
           case TorConnectTopics.StateChange: {
             self.state.State = obj.state;
             self.state.StateChanged = true;
+
             // clear any previous error information if we are bootstrapping
             if (self.state.State === TorConnectState.Bootstrapping) {
               self.state.ErrorMessage = null;
@@ -60,7 +63,7 @@ class TorConnectParent extends JSWindowActorParent {
           case TorConnectTopics.BootstrapProgress: {
             self.state.BootstrapProgress = obj.progress;
             self.state.BootstrapStatus = obj.status;
-            self.state.ShowCopyLog = obj.hasWarnings;
+            self.state.ShowViewLog = obj.hasWarnings;
             break;
           }
           case TorConnectTopics.BootstrapComplete: {
@@ -70,14 +73,21 @@ class TorConnectParent extends JSWindowActorParent {
           case TorConnectTopics.BootstrapError: {
             self.state.ErrorMessage = obj.message;
             self.state.ErrorDetails = obj.details;
-            self.state.ShowCopyLog = true;
+            self.state.DetectedCensorshiplevel = obj.censorshipLevel;
+
+            // With severe censorshp, we offer user list of countries to try
+            if (self.state.DetectedCensorshiplevel == TorCensorshipLevel.Severe) {
+              self.state.CountryCodes = TorConnect.countryCodes;
+            }
+
+            self.state.ShowViewLog = true;
             break;
           }
           case TorConnectTopics.FatalError: {
             // TODO: handle
             break;
           }
-          case TorSettingsTopics.SettingChanged:{
+          case TorSettingsTopics.SettingChanged: {
             if (aData === TorSettingsData.QuickStartEnabled) {
               self.state.QuickStartEnabled = obj.value;
             } else {
@@ -100,7 +110,10 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.addObserver(this.torConnectObserver, topic);
     }
-    Services.obs.addObserver(this.torConnectObserver, TorSettingsTopics.SettingChanged);
+    Services.obs.addObserver(
+      this.torConnectObserver,
+      TorSettingsTopics.SettingChanged
+    );
   }
 
   willDestroy() {
@@ -109,10 +122,13 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.removeObserver(this.torConnectObserver, topic);
     }
-    Services.obs.removeObserver(this.torConnectObserver, TorSettingsTopics.SettingChanged);
+    Services.obs.removeObserver(
+      this.torConnectObserver,
+      TorSettingsTopics.SettingChanged
+    );
   }
 
-  receiveMessage(message) {
+  async receiveMessage(message) {
     switch (message.name) {
       case "torconnect:set-quickstart":
         TorSettings.quickstart.enabled = message.data;
@@ -121,13 +137,22 @@ class TorConnectParent extends JSWindowActorParent {
       case "torconnect:open-tor-preferences":
         TorConnect.openTorPreferences();
         break;
-      case "torconnect:copy-tor-logs":
-        return TorConnect.copyTorLogs();
+      case "torconnect:view-tor-logs":
+        TorConnect.viewTorLogs();
+        break;
       case "torconnect:cancel-bootstrap":
         TorConnect.cancelBootstrap();
         break;
       case "torconnect:begin-bootstrap":
         TorConnect.beginBootstrap();
+        break;
+      case "torconnect:begin-autobootstrap":
+        TorConnect.beginAutoBootstrap(message.data);
+        break;
+      case "torconnect:restart":
+        Services.startup.quit(
+          Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit
+        );
         break;
       case "torconnect:get-init-args":
         // called on AboutTorConnect.init(), pass down all state data it needs to init
@@ -136,11 +161,15 @@ class TorConnectParent extends JSWindowActorParent {
         // so we always get fresh UI
         this.state.StateChanged = true;
         return {
-            TorStrings: TorStrings,
-            TorConnectState: TorConnectState,
-            Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
-            State: this.state,
+          TorStrings,
+          TorConnectState,
+          TorCensorshipLevel,
+          Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
+          State: this.state,
+          CountryNames: TorConnect.countryNames,
         };
+      case "torconnect:get-country-codes":
+        return TorConnect.getCountryCodes();
     }
     return undefined;
   }

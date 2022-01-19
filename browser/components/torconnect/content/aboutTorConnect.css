@@ -24,22 +24,133 @@
   }
 }
 
-#connectButton {
+#breadcrumbs {
+  display: flex;
+  margin: 0 0 24px 0;
+  color: var(--grey-40);
+}
+
+#breadcrumbs.hidden {
+  visibility: hidden;
+}
+
+.breadcrumb-item, .breadcrumb-separator {
+  display: flex;
+  margin: 0;
+  margin-inline-start: 20px;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  color: var(--in-content-text-color);
+}
+
+.breadcrumb-item:hover {
+  color: var(--blue-60);
+}
+
+.breadcrumb-separator {
+  width: 15px;
+  list-style-image: url("chrome://browser/content/torconnect/arrow-right.svg");
+}
+
+.breadcrumb-separator:dir(rtl) {
+  scale: -1 1;
+}
+
+.breadcrumb-icon {
+  display: inline list-item;
+  list-style-position: inside;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+.breadcrumb-label {
+  margin-top: -1px;
+}
+
+#breadcrumbs .active {
+  color: var(--blue-60);
+}
+
+#breadcrumbs .disabled, #breadcrumbs .disabled:hover {
+  color: var(--green-90-a40);
+  cursor: default;
+}
+
+#breadcrumbs .error {
+  color: var(--red-60);
+}
+
+#connection-assist {
+  margin-left: 0;
+}
+
+#connection-assist-icon {
+  list-style-image: url("chrome://browser/content/torconnect/onion-slash-fillable.svg");
+}
+
+#location-settings-icon {
+  list-style-image: url("chrome://browser/content/torconnect/globe.svg");
+}
+
+#try-bridge {
+  cursor: default;
+}
+
+#try-bridge-icon {
+  list-style-image: url("chrome://browser/content/torconnect/bridge.svg");
+}
+
+button.primary {
   background-color: var(--purple-60)!important;
-  color: white;
-  fill: white;
+  color: white!important;
+  fill: white!important;
 }
 
-#connectButton:hover {
+button.primary:hover {
   background-color: var(--purple-70)!important;
-  color: white;
-  fill: white;
+  color: white!important;
+  fill: white!important;
 }
 
-#connectButton:active {
+button.primary:active {
   background-color: var(--purple-80)!important;
-  color: white;
-  fill: white;
+  color: white!important;
+  fill: white!important;
+}
+
+div#locationDropdownLabel {
+  margin-block: auto;
+  margin-inline: 4px;
+}
+
+/* these two follow similar css in error-pages.css for buttons */
+@media only screen and (min-width: 480px) {
+  form#locationDropdown {
+    margin-inline: 4px;
+    /* subtracting out the margin is needeed because by
+       default forms have different margins than buttons */
+    max-width: calc(100% - 8px);
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  form#locationDropdown,
+  div#locationDropdownLabel {
+    margin: 0.66em 0 0;
+  }
+
+  form#locationDropdown {
+    width: 100%;
+  }
+}
+
+form#locationDropdown select {
+  max-width: 100%;
+  padding-block: 0;
+  margin-inline: 0;
+  font-weight: 700;
 }
 
 /* checkbox css */
@@ -92,73 +203,26 @@ input[type="checkbox"]:not(:disabled):active:checked {
   vertical-align: middle;
 }
 
-#copyLogButton {
-  position: relative;
-}
-
 /* mirrors p element spacing */
-#copyLogContainer {
+#viewLogContainer {
   margin:  1em 0;
   height:  1.2em;
   min-height:  1.2em;
 }
 
-#copyLogLink {
+#viewLogLink {
   position:  relative;
   display:  inline-block;
   color:  var(--in-content-link-color);
 }
 
 /* hidden apparently only works if no display is set; who knew? */
-#copyLogLink[hidden="true"] {
+#viewLogLink[hidden="true"] {
   display:  none;
 }
 
-#copyLogLink:hover {
+#viewLogLink:hover {
   cursor:pointer;
-}
-
-/* This div:
-   - is centered over its parent
-   - centers its child
-   - has z-index above parent
-   - ignores mouse events from parent
-*/
-#copyLogTooltip {
-  pointer-events: none;
-  visibility: hidden;
-  display:  flex;
-  justify-content: center;
-  white-space: nowrap;
-  width: 0;
-  position:  absolute;
-
-  z-index:  1;
-  left: 50%;
-  bottom:  calc(100% + 0.25em);
-}
-
-/* tooltip content (any content could go here) */
-#copyLogTooltipText {
-  background-color: var(--green-50);
-  color: var(--green-90);
-  border-radius: 2px;
-  padding: 4px;
-  line-height: 13px;
-  font: 11px sans-serif;
-  font-weight: 400;
-}
-
-/* our speech bubble tail */
-#copyLogTooltipText::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -4px;
-  border-width: 4px;
-  border-style: solid;
-  border-color: var(--green-50) transparent transparent transparent;
 }
 
 body {
@@ -175,6 +239,9 @@ body {
 }
 
 .title.error {
-  background-image: url("chrome://browser/content/torconnect/onion-slash.svg");
+  background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
 }
 
+.title.location {
+  background-image: url("chrome://browser/content/torconnect/connection-location.svg");
+}

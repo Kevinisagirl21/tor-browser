@@ -217,23 +217,22 @@ let RemotePageAccessManager = {
       RPMRemoveMessageListener: ["*"],
     },
     "about:tbupdate": {
-      RPMSendQuery: [
-        "FetchUpdateData",
-      ],
+      RPMSendQuery: ["FetchUpdateData"],
     },
     "about:torconnect": {
-      RPMAddMessageListener: [
-        "torconnect:state-change",
-      ],
+      RPMAddMessageListener: ["torconnect:state-change"],
       RPMSendAsyncMessage: [
         "torconnect:open-tor-preferences",
         "torconnect:begin-bootstrap",
+        "torconnect:begin-autobootstrap",
         "torconnect:cancel-bootstrap",
         "torconnect:set-quickstart",
+        "torconnect:view-tor-logs",
+        "torconnect:restart",
       ],
       RPMSendQuery: [
         "torconnect:get-init-args",
-        "torconnect:copy-tor-logs",
+        "torconnect:get-country-codes",
       ],
     },
   },

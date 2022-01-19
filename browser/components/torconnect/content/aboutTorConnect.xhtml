@@ -9,22 +9,35 @@
   <body>
     <div id="progressBackground"></div>
     <div id="connectPageContainer" class="container">
+      <div id="breadcrumbs" class="hidden">
+        <span id="connection-assist" class="breadcrumb-item">
+          <span id="connection-assist-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label"/>
+        </span>
+        <span class="breadcrumb-separator breadcrumb-icon" />
+        <span id="location-settings" class="breadcrumb-item">
+          <span id="location-settings-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label"/>
+        </span>
+        <span class="breadcrumb-separator breadcrumb-icon" />
+        <span id="try-bridge" class="breadcrumb-item">
+          <span id="try-bridge-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label"/>
+        </span>
+      </div>
       <div id="text-container">
         <div class="title">
           <h1 class="title-text"/>
         </div>
         <div id="connectLongContent">
-          <div id="connectShortDesc">
-            <p id="connectShortDescText" />
-          </div>
+          <p id="connectLongContentText" />
+        </div>
+        <div id="connectShortDesc">
+          <p id="connectShortDescText" />
         </div>
 
-        <div id="copyLogContainer">
-          <span id="copyLogLink" hidden="true">
-            <div id="copyLogTooltip">
-              <span id="copyLogTooltipText"/>
-            </div>
-          </span>
+        <div id="viewLogContainer">
+          <span id="viewLogLink" hidden="true"></span>
         </div>
 
         <div id="quickstartContainer">
@@ -33,9 +46,17 @@
         </div>
 
         <div id="connectButtonContainer" class="button-container">
-          <button id="advancedButton" hidden="true"></button>
+          <button id="restartButton" hidden="true"></button>
+          <button id="configureButton" hidden="true"></button>
           <button id="cancelButton" hidden="true"></button>
-          <button id="connectButton" class="primary try-again" hidden="true"></button>
+          <button id="connectButton" class="primary" hidden="true"></button>
+          <button id="tryBridgeButton" class="primary" hidden="true"></button>
+          <div id="locationDropdownLabel"/>
+          <form id="locationDropdown" hidden="true">
+            <select id="countries">
+            </select>
+          </form>
+          <button id="tryAgainButton" class="primary" hidden="true"></button>
         </div>
       </div>
     </div>
