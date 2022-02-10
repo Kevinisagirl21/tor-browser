@@ -13,7 +13,7 @@
 /* import-globals-from findInPage.js */
 /* import-globals-from ../../base/content/utilityOverlay.js */
 /* import-globals-from ../../../toolkit/content/preferencesBindings.js */
-/* import-globals-from ../torpreferences/content/torPane.js */
+/* import-globals-from ../torpreferences/content/connectionPane.js */
 
 "use strict";
 
@@ -137,12 +137,12 @@ function init_all() {
     register_module("paneSync", gSyncPane);
   }
   register_module("paneSearchResults", gSearchResultsPane);
-  if (gTorPane.enabled) {
-    document.getElementById("category-tor").hidden = false;
-    register_module("paneTor", gTorPane);
+  if (gConnectionPane.enabled) {
+    document.getElementById("category-connection").hidden = false;
+    register_module("paneConnection", gConnectionPane);
   } else {
     // Remove the pane from the DOM so it doesn't get incorrectly included in search results.
-    document.getElementById("template-paneTor").remove();
+    document.getElementById("template-paneConnection").remove();
   }
 
   gSearchResultsPane.init();

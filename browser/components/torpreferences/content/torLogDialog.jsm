@@ -2,6 +2,10 @@
 
 var EXPORTED_SYMBOLS = ["TorLogDialog"];
 
+const { setTimeout, clearTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
+
 const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
@@ -12,6 +16,7 @@ class TorLogDialog {
     this._dialog = null;
     this._logTextarea = null;
     this._copyLogButton = null;
+    this._restoreButtonTimeout = null;
   }
 
   static get selectors() {
@@ -36,6 +41,19 @@ class TorLogDialog {
     this._copyLogButton.setAttribute("label", TorStrings.settings.copyLog);
     this._copyLogButton.addEventListener("command", () => {
       this.copyTorLog();
+      const label = this._copyLogButton.querySelector("label");
+      label.setAttribute("value", TorStrings.settings.copied);
+      this._copyLogButton.classList.add("primary");
+
+      const RESTORE_TIME = 1200;
+      if (this._restoreButtonTimeout !== null) {
+        clearTimeout(this._restoreButtonTimeout);
+      }
+      this._restoreButtonTimeout = setTimeout(() => {
+        label.setAttribute("value", TorStrings.settings.copyLog);
+        this._copyLogButton.classList.remove("primary");
+        this._restoreButtonTimeout = null;
+      }, RESTORE_TIME);
     });
 
     this._logTextarea.value = TorProtocolService.getLog();

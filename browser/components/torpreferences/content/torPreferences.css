@@ -1,7 +1,12 @@
 @import url("chrome://branding/content/tor-styles.css");
 
-#category-tor > .category-icon {
+#category-connection > .category-icon {
   list-style-image: url("chrome://browser/content/torpreferences/torPreferencesIcon.svg");
+}
+
+html:dir(rtl) input[type="checkbox"].toggle-button::before {
+  /* For some reason, the rule from toggle-button.css is not applied... */
+  scale: -1;
 }
 
 /* Connect Message Box */
@@ -64,8 +69,7 @@
 
 #torPreferences-connectMessageBox-message {
   line-height: 16px;
-  font-size: 1.11em;
-  padding-left: 8px!important;
+  padding-inline-start: 8px;
 }
 
 #torPreferences-connectMessageBox-button {
@@ -112,36 +116,302 @@
   background-color: var(--purple-90);
 }
 
-/* Advanced Settings */
+/* Status */
+#torPreferences-status-box {
+  display: flex;
+  align-items: center;
+}
 
+#torPreferences-status-internet-icon, #torPreferences-status-tor-icon {
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 8px;
+}
+
+#torPreferences-status-internet-label, #torPreferences-status-tor-label {
+  font-weight: bold;
+}
+
+#torPreferences-status-internet-icon {
+  list-style-image: url("chrome://devtools/skin/images/globe.svg");
+}
+
+#torPreferences-status-internet-statusIcon.online,
+#torPreferences-status-internet-statusIcon.offline,
+#torPreferences-status-tor-statusIcon {
+  margin-inline-start: 12px;
+  margin-inline-end: 9px;
+}
+
+#torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
+  list-style-image: url("chrome://devtools/skin/images/check.svg");
+  -moz-context-properties: fill;
+  fill: var(--purple-60);
+}
+
+#torPreferences-status-internet-status {
+  margin-inline-end: 32px;
+}
+
+#torPreferences-status-tor-icon {
+  list-style-image: url("chrome://browser/skin/onion.svg");
+}
+
+#torPreferences-status-internet-icon, #torPreferences-status-tor-icon {
+  -moz-context-properties: fill;
+  fill: var(--in-content-text-color);
+}
+
+#torPreferences-status-tor-statusIcon, #torPreferences-status-internet-statusIcon.offline {
+  list-style-image: url("chrome://browser/skin/warning.svg");
+}
+
+#torPreferences-status-tor-statusIcon.blocked {
+  -moz-context-properties: fill;
+  fill: var(--red-60);
+}
+
+/* Bridge settings */
+#torPreferences-bridges-location {
+  width: 280px;
+}
+
+/* Bridge cards */
+:root {
+  --bridgeCard-animation-time: 0.25s;
+}
+
+#torPreferences-currentBridges-cards {
+  /* The padding is needed because the mask-image creates an unexpected result
+  otherwise... */
+  padding: 24px 4px;
+}
+
+#torPreferences-currentBridges-cards.list-collapsed {
+  mask-image: linear-gradient(rgb(0, 0, 0), rgba(0, 0, 0, 0.1));
+}
+
+#torPreferences-currentBridges-cards.disabled {
+  opacity: 0.4;
+}
+
+.torPreferences-bridgeCard {
+  padding: 16px 12px;
+  /* define border-radius here because of the transition */
+  border-radius: 4px;
+  transition: margin var(--bridgeCard-animation-time), box-shadow 150ms;
+}
+
+.torPreferences-bridgeCard.expanded {
+  margin: 12px 0;
+  background: var(--in-content-box-background);
+  box-shadow: var(--card-shadow);
+}
+
+.torPreferences-bridgeCard:hover {
+  background: var(--in-content-box-background);
+  box-shadow: var(--card-shadow-hover);
+  cursor: pointer;
+}
+
+.torPreferences-bridgeCard-heading {
+  display: flex;
+  align-items: center;
+}
+
+.torPreferences-bridgeCard-id {
+  font-weight: 700;
+}
+
+.torPreferences-bridgeCard-id .emoji {
+  margin-inline-start: 4px;
+  padding: 4px;
+  font-size: 20px;
+  border-radius: 4px;
+  background: var(--in-content-button-background-hover);
+}
+
+.torPreferences-bridgeCard-headingAddr {
+  /* flex extends the element when needed, but without setting a width (any) the
+  overflow + ellipses does not work. */
+  width: 20px;
+  flex: 1;
+  margin: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expanded .torPreferences-bridgeCard-headingAddr {
+  display: none;
+}
+
+.torPreferences-bridgeCard-buttons {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+  align-self: center;
+}
+
+.torPreferences-bridgeCard-connectedBadge {
+  display: none;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(128, 0, 215, 0.1);
+  color: var(--purple-60);
+}
+
+.currently-connected .torPreferences-bridgeCard-connectedBadge {
+  display: flex;
+}
+
+.torPreferences-bridgeCard-connectedIcon {
+  margin-inline-start: 1px;
+  margin-inline-end: 7px;
+  list-style-image: url("chrome://devtools/skin/images/check.svg");
+  -moz-context-properties: fill;
+  fill: var(--purple-60);
+}
+
+.torPreferences-bridgeCard-options {
+  width: 24px;
+  min-width: 0;
+  height: 24px;
+  min-height: 0;
+  margin-inline-start: 8px;
+  padding: 1px;
+  background-image: url("chrome://global/skin/icons/more.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+.torPreferences-bridgeCard-qrWrapper {
+  grid-area: bridge-qr;
+  display: flex;
+  flex-direction: column;
+}
+
+.torPreferences-bridgeCard-qr {
+  width: 126px;
+  position: relative;
+}
+
+.torPreferences-bridgeCard-qrCode {
+  width: 112px;
+  height: 112px;
+  /* Define these colors, as they will be passed to the QR code library */
+  background: var(--in-content-box-background);
+  color: var(--in-content-text-color);
+}
+
+.torPreferences-bridgeCard-qrOnionBox {
+  width: 28px;
+  height: 28px;
+  position: absolute;
+  top: 42px;
+  inset-inline-start: 42px;
+  background: var(--in-content-box-background);
+}
+
+.torPreferences-bridgeCard-qrOnion {
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  top: 48px;
+  inset-inline-start: 48px;
+
+  mask: url("chrome://browser/skin/onion.svg");
+  mask-repeat: no-repeat;
+  mask-size: 16px;
+  background: var(--in-content-text-color);
+}
+
+.torPreferences-bridgeCard-qr:hover .torPreferences-bridgeCard-qrOnionBox {
+  background: var(--in-content-text-color);
+}
+
+.torPreferences-bridgeCard-qr:hover .torPreferences-bridgeCard-qrOnion {
+  mask: url("chrome://global/skin/icons/search-glass.svg");
+  background: var(--in-content-box-background);
+}
+
+.torPreferences-bridgeCard-filler {
+  flex: 1;
+}
+
+.torPreferences-bridgeCard-grid {
+  height: 0; /* We will set it in JS when expanding it! */
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+  'bridge-qr bridge-share bridge-share'
+  'bridge-qr bridge-address bridge-address'
+  'bridge-qr bridge-learn-more bridge-copy';
+  padding-top: 12px;
+  visibility: hidden;
+}
+
+.expanded .torPreferences-bridgeCard-grid {
+  visibility: visible;
+}
+
+.torPreferences-bridgeCard-grid.to-animate {
+  transition: height var(--bridgeCard-animation-time) ease-out, visibility var(--bridgeCard-animation-time);
+  overflow: hidden;
+}
+
+.torPreferences-bridgeCard-share {
+  grid-area: bridge-share;
+}
+
+.torPreferences-bridgeCard-addrBox {
+  grid-area: bridge-address;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.torPreferences-bridgeCard-addr {
+  width: 100%;
+}
+
+.torPreferences-bridgeCard-leranMoreBox {
+  grid-area: bridge-learn-more;
+}
+
+.torPreferences-bridgeCard-copy {
+  grid-area: bridge-copy;
+}
+
+#torPreferences-bridgeCard-template {
+  display: none;
+}
+
+/* Advanced Settings */
 #torPreferences-advanced-grid {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr auto;
 }
 
-.torPreferences-advanced-checkbox-container {
-  grid-column: 1 / 3;
+#torPreferences-advanced-group button {
+  min-width: 150px;
 }
 
-#torPreferences-localProxy-textboxAddress,
-#torPreferences-localProxy-textboxUsername,
-#torPreferences-localProxy-textboxPassword,
-#torPreferences-advanced-textboxAllowedPorts {
-  -moz-box-flex: 1;
+#torPreferences-advanced-hbox, #torPreferences-torDaemon-hbox {
+  padding-inline-end: 15px;
 }
 
-hbox#torPreferences-torDaemon-hbox {
-  margin-top: 20px;
-}
-
-description#torPreferences-requestBridge-description {
-  /*margin-bottom: 1em;*/
-  min-height: 2em;
+h3#torPreferences-requestBridge-header {
+  margin: 0;
 }
 
 image#torPreferences-requestBridge-captchaImage {
-  margin: 1em;
-  min-height: 125px;
+  margin: 16px 0 8px 0;
+  min-height: 140px;
 }
 
 button#torPreferences-requestBridge-refreshCaptchaButton {
@@ -160,6 +430,61 @@ dialog#torPreferences-requestBridge-dialog > hbox {
   margin-right : 4px;
 }
 
+/* Show bridge QR dialog */
+#bridgeQr-container {
+  position: relative;
+  height: 300px;
+}
+
+#bridgeQr-target {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  left: calc(50% - 150px);
+  background: var(--in-content-box-background);
+  color: var(--in-content-text-color);
+}
+
+#bridgeQr-onionBox {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  top: 115px;
+  left: calc(50% - 35px);
+  background-color: var(--in-content-box-background);
+}
+
+#bridgeQr-onion {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  top: 131px;
+  left: calc(50% - 19px);
+  mask: url("chrome://browser/skin/onion.svg");
+  mask-repeat: no-repeat;
+  mask-size: 38px;
+  background: var(--in-content-text-color);
+}
+
+/* Builtin bridge dialog */
+#torPreferences-builtinBridge-header {
+  margin: 8px 0 10px 0;
+}
+
+#torPreferences-builtinBridge-description {
+  margin-bottom: 18px;
+}
+
+#torPreferences-builtinBridge-typeSelection {
+  margin-bottom: 16px;
+  min-height: 14em; /* Hack: make room for at least 4 lines of content for 3 types + 2 for spacing */
+}
+
+#torPreferences-builtinBridge-typeSelection radio label {
+  font-weight: 700;
+}
+
+/* Request bridge dialog */
 /*
   This hbox is hidden by css here by default so that the
   xul dialog allocates enough screen space for the error message
@@ -178,6 +503,33 @@ groupbox#torPreferences-bridges-group textarea {
   overflow: auto;
 }
 
+/* Provide bridge dialog */
+#torPreferences-provideBridge-header {
+  margin-top: 8px;
+}
+
+/* Connection settings dialog */
+#torPreferences-connection-header {
+  margin: 4px 0 14px 0;
+}
+
+#torPreferences-connection-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.torPreferences-connection-checkbox-container {
+  grid-column: 1 / 3;
+}
+
+#torPreferences-localProxy-textboxAddress,
+#torPreferences-localProxy-textboxUsername,
+#torPreferences-localProxy-textboxPassword,
+#torPreferences-connection-textboxAllowedPorts {
+  -moz-box-flex: 1;
+}
+
+/* Tor logs dialog */
 textarea#torPreferences-torDialog-textarea {
   -moz-box-flex: 1;
   font-family: monospace;

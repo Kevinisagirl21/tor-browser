@@ -9,7 +9,7 @@ class RequestBridgeDialog {
   constructor() {
     this._dialog = null;
     this._submitButton = null;
-    this._dialogDescription = null;
+    this._dialogHeader = null;
     this._captchaImage = null;
     this._captchaEntryTextbox = null;
     this._captchaRefreshButton = null;
@@ -22,7 +22,7 @@ class RequestBridgeDialog {
     return {
       submitButton:
         "accept" /* not really a selector but a key for dialog's getButton */,
-      dialogDescription: "description#torPreferences-requestBridge-description",
+      dialogHeader: "h3#torPreferences-requestBridge-header",
       captchaImage: "image#torPreferences-requestBridge-captchaImage",
       captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
       refreshCaptchaButton:
@@ -34,7 +34,7 @@ class RequestBridgeDialog {
     };
   }
 
-  _populateXUL(dialog) {
+  _populateXUL(window, dialog) {
     const selectors = RequestBridgeDialog.selectors;
 
     this._dialog = dialog;
@@ -66,12 +66,15 @@ class RequestBridgeDialog {
       e.preventDefault();
       this.onSubmitCaptcha();
     });
+    this._dialog.addEventListener("dialoghelp", e => {
+      window.top.openTrustedLinkIn(
+        "https://tb-manual.torproject.org/bridges/",
+        "tab"
+      );
+    });
 
-    this._dialogDescription = this._dialog.querySelector(
-      selectors.dialogDescription
-    );
-    this._dialogDescription.textContent =
-      TorStrings.settings.contactingBridgeDB;
+    this._dialogHeader = this._dialog.querySelector(selectors.dialogHeader);
+    this._dialogHeader.textContent = TorStrings.settings.contactingBridgeDB;
 
     this._captchaImage = this._dialog.querySelector(selectors.captchaImage);
 
@@ -115,7 +118,7 @@ class RequestBridgeDialog {
   _setcaptchaImage(uri) {
     if (uri != this._captchaImage.src) {
       this._captchaImage.src = uri;
-      this._dialogDescription.textContent = TorStrings.settings.solveTheCaptcha;
+      this._dialogHeader.textContent = TorStrings.settings.solveTheCaptcha;
       this._setUIDisabled(false);
       this._captchaEntryTextbox.focus();
       this._captchaEntryTextbox.select();
@@ -135,7 +138,7 @@ class RequestBridgeDialog {
   init(window, dialog) {
     // defer to later until firefox has populated the dialog with all our elements
     window.setTimeout(() => {
-      this._populateXUL(dialog);
+      this._populateXUL(window, dialog);
     }, 0);
   }
 
@@ -176,15 +179,14 @@ class RequestBridgeDialog {
         this._bridges = [];
         this._setUIDisabled(false);
         this._incorrectCaptchaHbox.style.visibility = "visible";
-        console.log(eError);
+        console.log(aError);
       });
   }
 
   onRefreshCaptcha() {
     this._setUIDisabled(true);
     this._captchaImage.src = "";
-    this._dialogDescription.textContent =
-      TorStrings.settings.contactingBridgeDB;
+    this._dialogHeader.textContent = TorStrings.settings.contactingBridgeDB;
     this._captchaEntryTextbox.value = "";
     this._incorrectCaptchaHbox.style.visibility = "hidden";
 
@@ -201,9 +203,9 @@ class RequestBridgeDialog {
         closingCallback: () => {
           this.close();
           aCloseCallback(this._bridges);
-        }
+        },
       },
-      this,
+      this
     );
   }
 }
