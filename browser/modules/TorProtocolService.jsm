@@ -2,16 +2,21 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorProtocolService", "TorProcessStatus", "TorTopics", "TorBootstrapRequest"];
+var EXPORTED_SYMBOLS = [
+  "TorProtocolService",
+  "TorProcessStatus",
+  "TorTopics",
+  "TorBootstrapRequest",
+];
 
-const { Services } = ChromeUtils.import(
-    "resource://gre/modules/Services.jsm"
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const { setTimeout, clearTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
 );
 
-const { setTimeout, clearTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-
 const { TorLauncherUtil } = ChromeUtils.import(
-    "resource://torlauncher/modules/tl-util.jsm"
+  "resource://torlauncher/modules/tl-util.jsm"
 );
 
 // see tl-process.js
@@ -24,24 +29,18 @@ const TorProcessStatus = Object.freeze({
 
 /* tor-launcher observer topics */
 const TorTopics = Object.freeze({
-    BootstrapStatus: "TorBootstrapStatus",
-    BootstrapError: "TorBootstrapError",
-    ProcessExited: "TorProcessExited",
-    LogHasWarnOrErr: "TorLogHasWarnOrErr",
+  BootstrapStatus: "TorBootstrapStatus",
+  BootstrapError: "TorBootstrapError",
+  ProcessExited: "TorProcessExited",
+  LogHasWarnOrErr: "TorLogHasWarnOrErr",
 });
 
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
-    ProfileAfterChange: "profile-after-change",
+  ProfileAfterChange: "profile-after-change",
 });
 
 var TorProtocolService = {
-  _TorLauncherUtil: function() {
-      let { TorLauncherUtil } = ChromeUtils.import(
-        "resource://torlauncher/modules/tl-util.jsm"
-      );
-      return TorLauncherUtil;
-    }(),
   _TorLauncherProtocolService: null,
   _TorProcessService: null,
 
@@ -58,13 +57,12 @@ var TorProtocolService = {
     if (topic === BrowserTopics.ProfileAfterChange) {
       // we have to delay init'ing this or else the crypto service inits too early without a profile
       // which breaks the password manager
-      this._TorLauncherProtocolService = Cc["@torproject.org/torlauncher-protocol-service;1"].getService(
-        Ci.nsISupports
-      ).wrappedJSObject;
-      this._TorProcessService = Cc["@torproject.org/torlauncher-process-service;1"].getService(
-        Ci.nsISupports
-      ).wrappedJSObject,
-
+      this._TorLauncherProtocolService = Cc[
+        "@torproject.org/torlauncher-protocol-service;1"
+      ].getService(Ci.nsISupports).wrappedJSObject;
+      this._TorProcessService = Cc[
+        "@torproject.org/torlauncher-process-service;1"
+      ].getService(Ci.nsISupports).wrappedJSObject;
       Services.obs.removeObserver(this, topic);
     }
   },
@@ -171,7 +169,12 @@ var TorProtocolService = {
       }
 
       let errorObject = {};
-      if (! await this._TorLauncherProtocolService.TorSetConfWithReply(settingsObject, errorObject)) {
+      if (
+        !(await this._TorLauncherProtocolService.TorSetConfWithReply(
+          settingsObject,
+          errorObject
+        ))
+      ) {
         throw new Error(errorObject.details);
       }
 
@@ -195,9 +198,7 @@ var TorProtocolService = {
     let lineArray = await this._readSetting(aSetting);
     if (lineArray.length != 1) {
       throw new Error(
-        `Expected an array with length 1 but received array of length ${
-          lineArray.length
-        }`
+        `Expected an array with length 1 but received array of length ${lineArray.length}`
       );
     }
 
@@ -216,9 +217,7 @@ var TorProtocolService = {
     let lineArray = await this._readSetting(aSetting);
     if (lineArray.length != 1) {
       throw new Error(
-        `Expected an array with length 1 but received array of length ${
-          lineArray.length
-        }`
+        `Expected an array with length 1 but received array of length ${lineArray.length}`
       );
     }
     return lineArray[0];
@@ -260,7 +259,7 @@ var TorProtocolService = {
 
   // true if we launched and control tor, false if using system tor
   get ownsTorDaemon() {
-    return this._TorLauncherUtil.shouldStartAndOwnTor;
+    return TorLauncherUtil.shouldStartAndOwnTor;
   },
 
   // Assumes `ownsTorDaemon` is true
@@ -269,7 +268,9 @@ var TorProtocolService = {
       "DisableNetwork",
       true
     );
-    if (TorProtocolService._TorLauncherProtocolService.TorCommandSucceeded(reply)) {
+    if (
+      TorProtocolService._TorLauncherProtocolService.TorCommandSucceeded(reply)
+    ) {
       return reply.retVal;
     }
     return true;
@@ -279,13 +280,18 @@ var TorProtocolService = {
     let settings = {};
     settings.DisableNetwork = false;
     let errorObject = {};
-    if (! await this._TorLauncherProtocolService.TorSetConfWithReply(settings, errorObject)) {
+    if (
+      !(await this._TorLauncherProtocolService.TorSetConfWithReply(
+        settings,
+        errorObject
+      ))
+    ) {
       throw new Error(errorObject.details);
     }
   },
 
   async sendCommand(cmd) {
-    return await this._TorLauncherProtocolService.TorSendCommand(cmd);
+    return this._TorLauncherProtocolService.TorSendCommand(cmd);
   },
 
   retrieveBootstrapStatus() {
@@ -294,7 +300,7 @@ var TorProtocolService = {
 
   _GetSaveSettingsErrorMessage(aDetails) {
     try {
-      return this._TorLauncherUtil.getSaveSettingsErrorMessage(aDetails);
+      return TorLauncherUtil.getSaveSettingsErrorMessage(aDetails);
     } catch (e) {
       console.log("GetSaveSettingsErrorMessage error", e);
       return "Unexpected Error";
@@ -305,7 +311,10 @@ var TorProtocolService = {
     let result = false;
     const error = {};
     try {
-      result = await this._TorLauncherProtocolService.TorSetConfWithReply(settings, error);
+      result = await this._TorLauncherProtocolService.TorSetConfWithReply(
+        settings,
+        error
+      );
     } catch (e) {
       console.log("TorSetConfWithReply error", e);
       error.details = this._GetSaveSettingsErrorMessage(e.message);
@@ -323,6 +332,10 @@ var TorProtocolService = {
 
   torBootstrapErrorOccurred() {
     return this._TorProcessService.TorBootstrapErrorOccurred;
+  },
+
+  _torBootstrapDebugSetError() {
+    this._TorProcessService._TorSetBootstrapErrorForDebug();
   },
 
   // Resolves to null if ok, or an error otherwise
@@ -396,7 +409,7 @@ class TorBootstrapRequest {
 
   async observe(subject, topic, data) {
     const obj = subject?.wrappedJSObject;
-    switch(topic) {
+    switch (topic) {
       case TorTopics.BootstrapStatus: {
         const progress = obj.PROGRESS;
         const status = TorLauncherUtil.getLocalizedBootstrapStatus(obj, "TAG");
@@ -432,7 +445,9 @@ class TorBootstrapRequest {
 
   // resolves 'true' if bootstrap succeeds, false otherwise
   async bootstrap() {
-    if (this._bootstrapPromise) return this._bootstrapPromise;
+    if (this._bootstrapPromise) {
+      return this._bootstrapPromise;
+    }
 
     this._bootstrapPromise = new Promise(async (resolve, reject) => {
       this._bootstrapPromiseResolve = resolve;
@@ -446,7 +461,10 @@ class TorBootstrapRequest {
         this._timeoutID = setTimeout(async () => {
           await TorProtocolService.torStopBootstrap();
           if (this.onbootstraperror) {
-            this.onbootstraperror("Tor Bootstrap process timed out", `Bootstrap attempt abandoned after waiting ${this.timeout} ms`);
+            this.onbootstraperror(
+              "Tor Bootstrap process timed out",
+              `Bootstrap attempt abandoned after waiting ${this.timeout} ms`
+            );
           }
           this._bootstrapPromiseResolve(false);
         }, this.timeout);
@@ -481,4 +499,4 @@ class TorBootstrapRequest {
 
     this._bootstrapPromiseResolve(false);
   }
-};
+}

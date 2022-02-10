@@ -195,7 +195,7 @@ let parseAddrPortList = function(aAddrPortList) {
   return retval;
 };
 
-// expects a '/n' or '/r/n' delimited bridge string, which we split and trim
+// expects a '\n' or '\r\n' delimited bridge string, which we split and trim
 // each bridge string can also optionally have 'bridge' at the beginning ie:
 // bridge $(type) $(address):$(port) $(certificate)
 // we strip out the 'bridge' prefix here
@@ -226,6 +226,10 @@ let parsePortList = function(aPortListString) {
 };
 
 let getBuiltinBridgeStrings = function(builtinType) {
+    if (!builtinType) {
+        return [];
+    }
+
     let bridgeBranch = Services.prefs.getBranch(TorLauncherPrefs.default_bridge);
     let bridgeBranchPrefs = bridgeBranch.getChildList("");
     let retval = [];
@@ -248,7 +252,7 @@ let getBuiltinBridgeStrings = function(builtinType) {
     return retval;
 };
 
-/* Array methods */
+/* Helper methods */
 
 let arrayShuffle = function(array) {
     // fisher-yates shuffle
@@ -356,37 +360,24 @@ const TorSettings = (() => {
             settings.quickstart.enabled = Services.prefs.getBoolPref(TorSettingsPrefs.quickstart.enabled);
             /* Bridges */
             settings.bridges.enabled = Services.prefs.getBoolPref(TorSettingsPrefs.bridges.enabled);
-            if (settings.bridges.enabled) {
-                settings.bridges.source = Services.prefs.getIntPref(TorSettingsPrefs.bridges.source);
-                // builtin bridge (obfs4, meek, snowlfake, etc)
-                if (settings.bridges.source == TorBridgeSource.BuiltIn) {
-                    let builtinType = Services.prefs.getStringPref(TorSettingsPrefs.bridges.builtin_type);
-                    settings.bridges.builtin_type = builtinType;
-                    // always dynamically load builtin bridges rather than loading the cached versions
-                    // if the user upgrades and the builtin bridges have changed, we want to ensure the user
-                    // can still bootstrap using the provided bridges
-                    let bridgeStrings = getBuiltinBridgeStrings(builtinType);
-                    if (bridgeStrings.length > 0) {
-                        settings.bridges.bridge_strings = bridgeStrings;
-                    } else {
-                        // in this case the user is using a builtin bridge that is no longer supported,
-                        // reset to settings to default values
-                        settings.bridges.enabled = false;
-                        settings.bridges.source = TorBridgeSource.Invalid;
-                        settings.bridges.builtin_type = null;
-                    }
-                } else {
-                    settings.bridges.bridge_strings = [];
-                    let bridgeBranchPrefs = Services.prefs.getBranch(TorSettingsPrefs.bridges.bridge_strings).getChildList("");
-                    bridgeBranchPrefs.forEach(pref => {
-                        let bridgeString = Services.prefs.getStringPref(`${TorSettingsPrefs.bridges.bridge_strings}${pref}`);
-                        settings.bridges.bridge_strings.push(bridgeString);
-                    });
+            settings.bridges.source = Services.prefs.getIntPref(TorSettingsPrefs.bridges.source, TorBridgeSource.Invalid);
+            if (settings.bridges.source == TorBridgeSource.BuiltIn) {
+                let builtinType = Services.prefs.getStringPref(TorSettingsPrefs.bridges.builtin_type);
+                settings.bridges.builtin_type = builtinType;
+                settings.bridges.bridge_strings = getBuiltinBridgeStrings(builtinType);
+                if (settings.bridges.bridge_strings.length == 0) {
+                    // in this case the user is using a builtin bridge that is no longer supported,
+                    // reset to settings to default values
+                    settings.bridges.source = TorBridgeSource.Invalid;
+                    settings.bridges.builtin_type = null;
                 }
             } else {
-                settings.bridges.source = TorBridgeSource.Invalid;
-                settings.bridges.builtin_type = null;
                 settings.bridges.bridge_strings = [];
+                let bridgeBranchPrefs = Services.prefs.getBranch(TorSettingsPrefs.bridges.bridge_strings).getChildList("");
+                bridgeBranchPrefs.forEach(pref => {
+                    const bridgeString = Services.prefs.getStringPref(`${TorSettingsPrefs.bridges.bridge_strings}${pref}`);
+                    settings.bridges.bridge_strings.push(bridgeString);
+                });
             }
             /* Proxy */
             settings.proxy.enabled = Services.prefs.getBoolPref(TorSettingsPrefs.proxy.enabled);
@@ -428,28 +419,17 @@ const TorSettings = (() => {
             Services.prefs.setBoolPref(TorSettingsPrefs.quickstart.enabled, settings.quickstart.enabled);
             /* Bridges */
             Services.prefs.setBoolPref(TorSettingsPrefs.bridges.enabled, settings.bridges.enabled);
-            if (settings.bridges.enabled) {
-                Services.prefs.setIntPref(TorSettingsPrefs.bridges.source, settings.bridges.source);
-                if (settings.bridges.source === TorBridgeSource.BuiltIn) {
-                    Services.prefs.setStringPref(TorSettingsPrefs.bridges.builtin_type, settings.bridges.builtin_type);
-                } else {
-                    Services.prefs.clearUserPref(TorSettingsPrefs.bridges.builtin_type);
-                }
-                // erase existing bridge strings
-                let bridgeBranchPrefs = Services.prefs.getBranch(TorSettingsPrefs.bridges.bridge_strings).getChildList("");
-                bridgeBranchPrefs.forEach(pref => {
-                    Services.prefs.clearUserPref(`${TorSettingsPrefs.bridges.bridge_strings}${pref}`);
-                });
-                // write new ones
+            Services.prefs.setIntPref(TorSettingsPrefs.bridges.source, settings.bridges.source);
+            Services.prefs.setStringPref(TorSettingsPrefs.bridges.builtin_type, settings.bridges.builtin_type);
+            // erase existing bridge strings
+            let bridgeBranchPrefs = Services.prefs.getBranch(TorSettingsPrefs.bridges.bridge_strings).getChildList("");
+            bridgeBranchPrefs.forEach(pref => {
+                Services.prefs.clearUserPref(`${TorSettingsPrefs.bridges.bridge_strings}${pref}`);
+            });
+            // write new ones
+            if (settings.bridges.source !== TorBridgeSource.BuiltIn) {
                 settings.bridges.bridge_strings.forEach((string, index) => {
                     Services.prefs.setStringPref(`${TorSettingsPrefs.bridges.bridge_strings}.${index}`, string);
-                });
-            } else {
-                Services.prefs.clearUserPref(TorSettingsPrefs.bridges.source);
-                Services.prefs.clearUserPref(TorSettingsPrefs.bridges.builtin_type);
-                let bridgeBranchPrefs = Services.prefs.getBranch(TorSettingsPrefs.bridges.bridge_strings).getChildList("");
-                bridgeBranchPrefs.forEach(pref => {
-                    Services.prefs.clearUserPref(`${TorSettingsPrefs.bridges.bridge_strings}${pref}`);
                 });
             }
             /* Proxy */
@@ -488,11 +468,11 @@ const TorSettings = (() => {
             let settingsMap = new Map();
 
             /* Bridges */
-            settingsMap.set(TorConfigKeys.useBridges, settings.bridges.enabled);
-            if (settings.bridges.enabled) {
+            const haveBridges = settings.bridges.enabled && settings.bridges.bridge_strings.length  > 0;
+            settingsMap.set(TorConfigKeys.useBridges, haveBridges);
+            if (haveBridges) {
                 settingsMap.set(TorConfigKeys.bridgeList, settings.bridges.bridge_strings);
             } else {
-                // shuffle bridge list
                 settingsMap.set(TorConfigKeys.bridgeList, null);
             }
 
@@ -545,29 +525,28 @@ const TorSettings = (() => {
             let backup = this.getSettings();
 
             try {
-                if (settings.bridges.enabled) {
-                    this._settings.bridges.enabled = true;
-                    this._settings.bridges.source = settings.bridges.source;
-                    switch(settings.bridges.source) {
-                        case TorBridgeSource.BridgeDB:
-                        case TorBridgeSource.UserProvided:
-                            this._settings.bridges.bridge_strings = settings.bridges.bridge_strings
-                            break;
-                        case TorBridgeSource.BuiltIn: {
-                            this._settings.bridges.builtin_type = settings.bridges.builtin_type;
-                            let bridgeStrings =  getBuiltinBridgeStrings(settings.bridges.builtin_type);
-                            if (bridgeStrings.length > 0) {
-                                this._settings.bridges.bridge_strings = bridgeStrings;
-                            } else {
-                                throw new Error(`No available builtin bridges of type ${settings.bridges.builtin_type}`);
-                            }
-                            break;
+                this._settings.bridges.enabled = !!settings.bridges.enabled;
+                this._settings.bridges.source = settings.bridges.source;
+                switch(settings.bridges.source) {
+                    case TorBridgeSource.BridgeDB:
+                    case TorBridgeSource.UserProvided:
+                        this._settings.bridges.bridge_strings = settings.bridges.bridge_strings;
+                        break;
+                    case TorBridgeSource.BuiltIn: {
+                        this._settings.bridges.builtin_type = settings.bridges.builtin_type;
+                        settings.bridges.bridge_strings = getBuiltinBridgeStrings(settings.bridges.builtin_type);
+                        if (settings.bridges.bridge_strings.length == 0 && settings.bridges.enabled) {
+                            throw new Error(`No available builtin bridges of type ${settings.bridges.builtin_type}`);
                         }
-                        default:
-                            throw new Error(`Bridge source '${settings.source}' is not a valid source`);
+                        break;
                     }
-                } else {
-                    this.bridges.enabled = false;
+                    case TorBridgeSource.Invalid:
+                        break;
+                    default:
+                        if (settings.bridges.enabled) {
+                            throw new Error(`Bridge source '${settings.source}' is not a valid source`);
+                        }
+                        break;
                 }
 
                 // TODO: proxy and firewall
@@ -609,19 +588,20 @@ const TorSettings = (() => {
                 get enabled() { return self._settings.bridges.enabled; },
                 set enabled(val) {
                     self._settings.bridges.enabled = val;
-                    // reset bridge settings
-                    self._settings.bridges.source = TorBridgeSource.Invalid;
-                    self._settings.bridges.builtin_type = null;
-                    self._settings.bridges.bridge_strings = [];
                 },
                 get source() { return self._settings.bridges.source; },
                 set source(val) { self._settings.bridges.source = val; },
                 get builtin_type() { return self._settings.bridges.builtin_type; },
                 set builtin_type(val) {
-                    let bridgeStrings = getBuiltinBridgeStrings(val);
+                    const bridgeStrings = getBuiltinBridgeStrings(val);
                     if (bridgeStrings.length > 0) {
                         self._settings.bridges.builtin_type = val;
                         self._settings.bridges.bridge_strings = bridgeStrings;
+                    } else {
+                        self._settings.bridges.builtin_type = "";
+                        if (self._settings.bridges.source === TorBridgeSource.BuiltIn) {
+                            self._settings.bridges.source = TorBridgeSource.Invalid;
+                        }
                     }
                 },
                 get bridge_strings() { return arrayCopy(self._settings.bridges.bridge_strings); },

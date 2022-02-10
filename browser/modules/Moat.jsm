@@ -16,7 +16,7 @@ const { TorProtocolService } = ChromeUtils.import(
   "resource:///modules/TorProtocolService.jsm"
 );
 
-const { TorSettings, TorBridgeSource, TorProxyType } = ChromeUtils.import(
+const { TorSettings, TorBridgeSource } = ChromeUtils.import(
   "resource:///modules/TorSettings.jsm"
 );
 
@@ -384,11 +384,51 @@ class MoatResponseListener {
   }
 }
 
+class InternetTestResponseListener {
+  constructor() {
+    this._promise = new Promise((resolve, reject) => {
+      this._resolve = resolve;
+      this._reject = reject;
+    });
+  }
+
+  // callers wait on this for final response
+  status() {
+    return this._promise;
+  }
+
+  onStartRequest(request) {}
+
+  // resolve or reject our Promise
+  onStopRequest(request, status) {
+    let statuses = {};
+    try {
+      statuses = {
+        components: status,
+        successful: Components.isSuccessCode(status),
+        http: request.responseStatus,
+      };
+    } catch (err) {
+      this._reject(err);
+    }
+    this._resolve(statuses);
+  }
+
+  onDataAvailable(request, stream, offset, length) {
+    //  We do not care of the actual data, as long as we have a successful
+    // connection
+  }
+}
+
 // constructs the json objects and sends the request over moat
 class MoatRPC {
   constructor() {
     this._meekTransport = null;
     this._inited = false;
+  }
+
+  get inited() {
+    return this._inited;
   }
 
   async init() {
@@ -408,7 +448,7 @@ class MoatRPC {
     this._inited = false;
   }
 
-  async _makeRequest(procedure, args) {
+  _makeHttpHandler(uriString) {
     if (!this._inited) {
       throw new Error("MoatRPC: Not initialized");
     }
@@ -437,16 +477,12 @@ class MoatRPC {
       undefined
     );
 
-    const procedureURIString = `${Services.prefs.getStringPref(
-      TorLauncherPrefs.moat_service
-    )}/${procedure}`;
-
-    const procedureURI = Services.io.newURI(procedureURIString);
+    const uri = Services.io.newURI(uriString);
     // There does not seem to be a way to directly create an nsILoadInfo from
     // JavaScript, so we create a throw away non-proxied channel to get one.
     const secFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
     const loadInfo = Services.io.newChannelFromURI(
-      procedureURI,
+      uri,
       undefined,
       Services.scriptSecurityManager.getSystemPrincipal(),
       undefined,
@@ -458,7 +494,7 @@ class MoatRPC {
       .getProtocolHandler("http")
       .QueryInterface(Ci.nsIHttpProtocolHandler);
     const ch = httpHandler
-      .newProxiedChannel(procedureURI, proxyInfo, 0, undefined, loadInfo)
+      .newProxiedChannel(uri, proxyInfo, 0, undefined, loadInfo)
       .QueryInterface(Ci.nsIHttpChannel);
 
     // remove all headers except for 'Host"
@@ -471,6 +507,15 @@ class MoatRPC {
       },
     });
     headers.forEach(key => ch.setRequestHeader(key, "", false));
+
+    return ch;
+  }
+
+  async _makeRequest(procedure, args) {
+    const procedureURIString = `${Services.prefs.getStringPref(
+      TorLauncherPrefs.moat_service
+    )}/${procedure}`;
+    const ch = this._makeHttpHandler(procedureURIString);
 
     // Arrange for the POST data to be sent.
     const argsJson = JSON.stringify(args);
@@ -495,6 +540,18 @@ class MoatRPC {
     return JSON.parse(responseJSON);
   }
 
+  async testInternetConnection() {
+    const uri = `${Services.prefs.getStringPref(
+      TorLauncherPrefs.moat_service
+    )}/circumvention/countries`;
+    const ch = this._makeHttpHandler(uri);
+    ch.requestMethod = "HEAD";
+
+    const listener = new InternetTestResponseListener();
+    await ch.asyncOpen(listener, ch);
+    return listener.status();
+  }
+
   //
   // Moat APIs
   //
@@ -508,7 +565,6 @@ class MoatRPC {
   // - image: a base64 encoded jpeg with the captcha to complete
   // - challenge: a nonce/cookie string associated with this request
   async fetch(transports) {
-
     if (
       // ensure this is an array
       Array.isArray(transports) &&
@@ -588,10 +644,10 @@ class MoatRPC {
   // In the event of error, just return null
   _fixupSettings(settings) {
     try {
-      let retval = TorSettings.defaultSettings()
+      let retval = TorSettings.defaultSettings();
       if ("bridges" in settings) {
         retval.bridges.enabled = true;
-        switch(settings.bridges.source) {
+        switch (settings.bridges.source) {
           case "builtin":
             retval.bridges.source = TorBridgeSource.BuiltIn;
             retval.bridges.builtin_type = settings.bridges.type;
@@ -606,12 +662,17 @@ class MoatRPC {
             retval.bridges.source = TorBridgeSource.BridgeDB;
             if (settings.bridges.bridge_strings) {
               retval.bridges.bridge_strings = settings.bridges.bridge_strings;
+              retval.bridges.disabled_strings = [];
             } else {
-              throw new Error("MoatRPC::_fixupSettings(): Received no bridge-strings for BridgeDB bridge source");
+              throw new Error(
+                "MoatRPC::_fixupSettings(): Received no bridge-strings for BridgeDB bridge source"
+              );
             }
             break;
           default:
-            throw new Error(`MoatRPC::_fixupSettings(): Unexpected bridge source '${settings.bridges.source}'`);
+            throw new Error(
+              `MoatRPC::_fixupSettings(): Unexpected bridge source '${settings.bridges.source}'`
+            );
         }
       }
       if ("proxy" in settings) {
@@ -621,7 +682,7 @@ class MoatRPC {
         // TODO: populate firewall settings
       }
       return retval;
-    } catch(ex) {
+    } catch (ex) {
       console.log(ex.message);
       return null;
     }
@@ -661,14 +722,16 @@ class MoatRPC {
   async circumvention_settings(transports, country) {
     const args = {
       transports: transports ? transports : [],
-      country: country,
+      country,
     };
     const response = await this._makeRequest("circumvention/settings", args);
     if ("errors" in response) {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
       if (code == 406) {
-        console.log("MoatRPC::circumvention_settings(): Cannot automatically determine user's country-code");
+        console.log(
+          "MoatRPC::circumvention_settings(): Cannot automatically determine user's country-code"
+        );
         // cannot determine user's country
         return null;
       }
@@ -681,26 +744,13 @@ class MoatRPC {
     return [];
   }
 
-  // Request a copy of the censorship circumvention map (as if cirumvention_settings were
-  // queried for all country codes)
+  // Request a list of country codes with available censorship circumvention settings
   //
-  // returns a map whose key is an ISO 3166-1 alpha-2 country code and whose
-  // values are arrays of settings objects
-  async circumvention_map() {
-    const args = { };
-    const response = await this._makeRequest("circumvention/map", args);
-    if ("errors" in response) {
-      const code = response.errors[0].code;
-      const detail = response.errors[0].detail;
-      throw new Error(`MoatRPC: ${detail} (${code})`);
-    }
-
-    let map = new Map();
-    for (const [country, config] of Object.entries(response)) {
-      map.set(country, this._fixupSettingsList(config.settings));
-    }
-
-    return map;
+  // returns an array of ISO 3166-1 alpha-2 country codes which we can query settings
+  // for
+  async circumvention_countries() {
+    const args = {};
+    return this._makeRequest("circumvention/countries", args);
   }
 
   // Request a copy of the builtin bridges, takes the following parameters:

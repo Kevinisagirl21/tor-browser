@@ -1,9 +1,13 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorConnect", "TorConnectTopics", "TorConnectState"];
+var EXPORTED_SYMBOLS = ["TorConnect", "TorConnectTopics", "TorConnectState", "TorCensorshipLevel"];
 
 const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
+);
+
+const { setTimeout } = ChromeUtils.import(
+    "resource://gre/modules/Timer.jsm"
 );
 
 const { BrowserWindowTracker } = ChromeUtils.import(
@@ -22,6 +26,8 @@ const { TorSettings, TorSettingsTopics, TorBridgeSource, TorBuiltinBridgeTypes, 
     "resource:///modules/TorSettings.jsm"
 );
 
+const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+
 const { MoatRPC } = ChromeUtils.import("resource:///modules/Moat.jsm");
 
 /* Browser observer topis */
@@ -31,7 +37,11 @@ const BrowserTopics = Object.freeze({
 
 /* Relevant prefs used by tor-launcher */
 const TorLauncherPrefs = Object.freeze({
-  prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
+    prompt_at_startup: "extensions.torlauncher.prompt_at_startup",
+});
+
+const TorConnectPrefs = Object.freeze({
+    censorship_level: "torbrowser.debug.censorship_level",
 });
 
 const TorConnectState = Object.freeze({
@@ -49,6 +59,17 @@ const TorConnectState = Object.freeze({
     Bootstrapped: "Bootstrapped",
     /* If we are using System tor or the legacy Tor-Launcher */
     Disabled: "Disabled",
+});
+
+const TorCensorshipLevel = Object.freeze({
+    /* No censorship detected */
+    None: 0,
+    /* Moderate censorship detected, autobootstrap may evade it */
+    Moderate: 1,
+    /* Severe censorship detected, but connection may still succeed */
+    Severe: 2,
+    /* Extreme censorship detected, connection will always end in an error */
+    Extreme: 3,
 });
 
 /*
@@ -197,12 +218,31 @@ class StateCallback {
     }
 }
 
+// async method to sleep for a given amount of time
+const debug_sleep = async (ms) => {
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 const TorConnect = (() => {
     let retval = {
 
         _state: TorConnectState.Initial,
         _bootstrapProgress: 0,
         _bootstrapStatus: null,
+        _detectedCensorshiplevel: TorCensorshipLevel.None,
+        // list of country codes Moat has settings for
+        _countryCodes: [],
+        _countryNames: Object.freeze((() => {
+            const codes = Services.intl.getAvailableLocaleDisplayNames("region");
+            const names = Services.intl.getRegionDisplayNames(undefined, codes);
+            let codesNames = {};
+            for (let i = 0; i < codes.length; i++) {
+                codesNames[codes[i]] = names[i];
+            }
+            return codesNames;
+        })()),
         _errorMessage: null,
         _errorDetails: null,
         _logHasWarningOrError: false,
@@ -254,6 +294,22 @@ const TorConnect = (() => {
             [TorConnectState.Bootstrapping, new StateCallback(TorConnectState.Bootstrapping, async function() {
                 // wait until bootstrap completes or we get an error
                 await new Promise(async (resolve, reject) => {
+
+                    // we reset the bootstrap failure count so users can manually try settings without the
+                    // censorship circumvention state machine getting in the way
+                    TorConnect._detectedCensorshipLevel = TorCensorshipLevel.None;
+
+                    // debug hook to simulate censorship preventing bootstrapping
+                    if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) > 0) {
+                        this.on_transition = (nextState) => {
+                            resolve();
+                        };
+                        await debug_sleep(1500);
+                        TorConnect._changeState(TorConnectState.Error, "Bootstrap failed (for debugging purposes)", "Error: Censorship simulation", true);
+                        TorProtocolService._torBootstrapDebugSetError();
+                        return;
+                    }
+
                     const tbr = new TorBootstrapRequest();
                     this.on_transition = async (nextState) => {
                         if (nextState === TorConnectState.Configuring) {
@@ -270,7 +326,7 @@ const TorConnect = (() => {
                         TorConnect._changeState(TorConnectState.Bootstrapped);
                     };
                     tbr.onbootstraperror = (message, details) => {
-                        TorConnect._changeState(TorConnectState.Error, message, details);
+                        TorConnect._changeState(TorConnectState.Error, message, details, true);
                     };
 
                     tbr.bootstrap();
@@ -283,10 +339,40 @@ const TorConnect = (() => {
                         resolve();
                     };
 
+                    // debug hook to simulate censorship preventing bootstrapping
+                    {
+                        const censorshipLevel = Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0);
+                        if (censorshipLevel > 1) {
+                            this.on_transition = (nextState) => {
+                                resolve();
+                            };
+                            // always fail even after manually selecting location specific settings
+                            if (censorshipLevel == 3) {
+                                await debug_sleep(2500);
+                                TorConnect._changeState(TorConnectState.Error, "Error: Extreme Censorship simulation", "", true);
+                                return;
+                            // only fail after auto selecting, manually selecting succeeds
+                            } else if (censorshipLevel == 2 && !countryCode) {
+                                await debug_sleep(2500);
+                                TorConnect._changeState(TorConnectState.Error, "Error: Severe Censorship simulation", "", true);
+                                return;
+                            }
+                            TorProtocolService._torBootstrapDebugSetError();
+                        }
+                    }
+
+                    const throw_error = (message, details) => {
+                        let err = new Error(message);
+                        err.details = details;
+                        throw err;
+                    };
+
                     // lookup user's potential censorship circumvention settings from Moat service
                     try {
                         this.mrpc = new MoatRPC();
                         await this.mrpc.init();
+
+                        if (this.transitioning) return;
 
                         this.settings = await this.mrpc.circumvention_settings([...TorBuiltinBridgeTypes, "vanilla"], countryCode);
 
@@ -294,80 +380,82 @@ const TorConnect = (() => {
 
                         if (this.settings === null) {
                             // unable to determine country
-                            TorConnect._changeState(TorConnectState.Error, "Unable to determine user country", "DETAILS_STRING");
-                            return;
+                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
                         } else if (this.settings.length === 0) {
                             // no settings available for country
-                            TorConnect._changeState(TorConnectState.Error, "No settings available for your location", "DETAILS_STRING");
-                            return;
+                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.noSettingsForCountry);
                         }
-                    } catch (err) {
-                        TorConnect._changeState(TorConnectState.Error, err?.message, err?.details);
-                        return;
+
+                        // apply each of our settings and try to bootstrap with each
+                        try {
+                            this.originalSettings = TorSettings.getSettings();
+
+                            for (const [index, currentSetting] of this.settings.entries()) {
+
+                                // we want to break here so we can fall through and restore original settings
+                                if (this.transitioning) break;
+
+                                console.log(`TorConnect: Attempting Bootstrap with configuration ${index+1}/${this.settings.length}`);
+
+                                TorSettings.setSettings(currentSetting);
+                                await TorSettings.applySettings();
+
+                                // build out our bootstrap request
+                                const tbr = new TorBootstrapRequest();
+                                tbr.onbootstrapstatus = (progress, status) => {
+                                    TorConnect._updateBootstrapStatus(progress, status);
+                                };
+                                tbr.onbootstraperror = (message, details) => {
+                                    console.log(`TorConnect: Auto-Bootstrap error => ${message}; ${details}`);
+                                };
+
+                                // update transition callback for user cancel
+                                this.on_transition = async (nextState) => {
+                                    if (nextState === TorConnectState.Configuring) {
+                                        await tbr.cancel();
+                                    }
+                                    resolve();
+                                };
+
+                                // begin bootstrap
+                                if (await tbr.bootstrap()) {
+                                    // persist the current settings to preferences
+                                    TorSettings.saveToPrefs();
+                                    TorConnect._changeState(TorConnectState.Bootstrapped);
+                                    return;
+                                }
+                            }
+
+                            // bootstrapped failed for all potential settings, so reset daemon to use original
+                            TorSettings.setSettings(this.originalSettings);
+                            await TorSettings.applySettings();
+                            TorSettings.saveToPrefs();
+
+                            // only explicitly change state here if something else has not transitioned us
+                            if (!this.transitioning) {
+                                throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.autoBootstrappingAllFailed);
+                            }
+                            return;
+                        } catch (err) {
+                            // restore original settings in case of error
+                            try {
+                                TorSettings.setSettings(this.originalSettings);
+                                await TorSettings.applySettings();
+                            } catch(err) {
+                                console.log(`TorConnect: Failed to restore original settings => ${err}`);
+                            }
+                            // throw to outer catch to transition us
+                            throw err;
+                        }
+                    } catch(err) {
+                        if (this.mrpc?.inited) {
+                            // lookup countries which have settings available
+                            TorConnect._countryCodes = await this.mrpc.circumvention_countries();
+                        }
+                        TorConnect._changeState(TorConnectState.Error, err?.message, err?.details, true);
                     } finally {
                         // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
                         this.mrpc?.uninit();
-                    }
-
-                    // apply each of our settings and try to bootstrap with each
-                    try {
-                        this.originalSettings = TorSettings.getSettings();
-
-                        let index = 0;
-                        for (let currentSetting of this.settings) {
-                            // let us early out if user cancels
-                            if (this.transitioning) return;
-
-                            console.log(`TorConnect: Attempting Bootstrap with configuration ${++index}/${this.settings.length}`);
-
-                            TorSettings.setSettings(currentSetting);
-                            await TorSettings.applySettings();
-
-                            // build out our bootstrap request
-                            const tbr = new TorBootstrapRequest();
-                            tbr.onbootstrapstatus = (progress, status) => {
-                                TorConnect._updateBootstrapStatus(progress, status);
-                            };
-                            tbr.onbootstraperror = (message, details) => {
-                                console.log(`TorConnect: Auto-Bootstrap error => ${message}; ${details}`);
-                            };
-
-                            // update transition callback for user cancel
-                            this.on_transition = async (nextState) => {
-                                if (nextState === TorConnectState.Configuring) {
-                                    await tbr.cancel();
-                                }
-                                resolve();
-                            };
-
-                            // begin bootstrap
-                            if (await tbr.bootstrap()) {
-                                // persist the current settings to preferences
-                                TorSettings.saveToPrefs();
-                                TorConnect._changeState(TorConnectState.Bootstrapped);
-                                return;
-                            }
-                        }
-                        // bootstrapped failed for all potential settings, so reset daemon to use original
-                        TorSettings.setSettings(this.originalSettings);
-                        await TorSettings.applySettings();
-                        TorSettings.saveToPrefs();
-
-                        // only explicitly change state here if something else has not transitioned us
-                        if (!this.transitioning) {
-                            TorConnect._changeState(TorConnectState.Error, "AutoBootstrapping failed", "DETAILS_STRING");
-                        }
-                        return;
-                    } catch (err) {
-                        // restore original settings in case of error
-                        try {
-                            TorSettings.setSettings(this.originalSettings);
-                            await TorSettings.applySettings();
-                        } catch(err) {
-                            console.log(`TorConnect: Failed to restore original settings => ${err}`);
-                        }
-                        TorConnect._changeState(TorConnectState.Error, err?.message, err?.details);
-                        return;
                     }
                 });
             })],
@@ -380,7 +468,7 @@ const TorConnect = (() => {
                 });
             })],
             /* Error */
-            [TorConnectState.Error, new StateCallback(TorConnectState.Error, async function(errorMessage, errorDetails) {
+            [TorConnectState.Error, new StateCallback(TorConnectState.Error, async function(errorMessage, errorDetails, bootstrappingFailure) {
                 await new Promise((resolve, reject) => {
                     this.on_transition = async(nextState) => {
                         resolve();
@@ -389,7 +477,11 @@ const TorConnect = (() => {
                     TorConnect._errorMessage = errorMessage;
                     TorConnect._errorDetails = errorDetails;
 
-                    Services.obs.notifyObservers({message: errorMessage, details: errorDetails}, TorConnectTopics.BootstrapError);
+                    if (bootstrappingFailure && TorConnect._detectedCensorshipLevel < TorCensorshipLevel.Extreme) {
+                        TorConnect._detectedCensorshipLevel += 1;
+                    }
+
+                    Services.obs.notifyObservers({message: errorMessage, details: errorDetails, censorshipLevel: TorConnect.detectedCensorshipLevel}, TorConnectTopics.BootstrapError);
 
                     TorConnect._changeState(TorConnectState.Configuring);
                 });
@@ -523,6 +615,10 @@ const TorConnect = (() => {
             return this._bootstrapStatus;
         },
 
+        get detectedCensorshipLevel() {
+            return this._detectedCensorshipLevel;
+        },
+
         get errorMessage() {
             return this._errorMessage;
         },
@@ -533,6 +629,14 @@ const TorConnect = (() => {
 
         get logHasWarningOrError() {
             return this._logHasWarningOrError;
+        },
+
+        get countryCodes() {
+            return this._countryCodes;
+        },
+
+        get countryNames() {
+            return this._countryNames;
         },
 
         /*
@@ -564,7 +668,7 @@ const TorConnect = (() => {
         */
         openTorPreferences: function() {
             const win = BrowserWindowTracker.getTopWindow();
-            win.switchToTabHavingURI("about:preferences#tor", true);
+            win.switchToTabHavingURI("about:preferences#connection", true);
         },
 
         openTorConnect: function() {
@@ -572,19 +676,27 @@ const TorConnect = (() => {
             win.switchToTabHavingURI("about:torconnect", true, {ignoreQueryString: true});
         },
 
-        copyTorLogs: function() {
-            // Copy tor log messages to the system clipboard.
-            const chSvc = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
-              Ci.nsIClipboardHelper
-            );
-            const countObj = { value: 0 };
-            chSvc.copyString(TorProtocolService.getLog(countObj));
-            const count = countObj.value;
-            return TorLauncherUtil.getFormattedLocalizedString(
-              "copiedNLogMessagesShort",
-              [count],
-              1
-            );
+        viewTorLogs: function() {
+            const win = BrowserWindowTracker.getTopWindow();
+            win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
+        },
+
+        getCountryCodes: async function() {
+            // Difference with the getter: this is to be called by TorConnectParent, and downloads
+            // the country codes if they are not already in cache.
+            if (this._countryCodes.length) {
+                return this._countryCodes;
+            }
+            const mrpc = new MoatRPC();
+            try {
+              await mrpc.init();
+              this._countryCodes = await mrpc.circumvention_countries();
+            } catch(err) {
+              console.log("An error occurred while fetching country codes", err);
+            } finally {
+              mrpc.uninit();
+            }
+            return this._countryCodes;
         },
 
         getRedirectURL: function(url) {
