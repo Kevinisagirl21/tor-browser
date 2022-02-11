@@ -239,7 +239,7 @@ var TorStrings = {
   })() /* Security Level Strings */,
 
   /*
-    Tor about:preferences#tor Strings
+    Tor about:preferences#connection Strings
   */
   settings: (function() {
     let tsb = new TorDTDStringBundle(
@@ -251,53 +251,172 @@ var TorStrings = {
     };
 
     let retval = {
-      categoryTitle: getString("torPreferences.categoryTitle", "Tor"),
-      torPreferencesHeading: getString(
-        "torPreferences.torSettings",
-        "Tor Settings"
-      ),
+      categoryTitle: getString("torPreferences.categoryTitle", "Connection"),
+      // Message box
       torPreferencesDescription: getString(
         "torPreferences.torSettingsDescription",
         "Tor Browser routes your traffic over the Tor Network, run by thousands of volunteers around the world."
       ),
-      learnMore: getString("torPreferences.learnMore", "Learn More"),
+      // Status
+      statusInternetLabel: getString("torPreferences.statusInternetLabel", "Internet:"),
+      statusInternetTest: getString("torPreferences.statusInternetTest", "Test"),
+      statusInternetOnline: getString("torPreferences.statusInternetOnline", "Online"),
+      statusInternetOffline: getString("torPreferences.statusInternetOffline", "Offline"),
+      statusTorLabel: getString("torPreferences.statusTorLabel", "Tor Network:"),
+      statusTorConnected: getString("torPreferences.statusTorConnected", "Connected"),
+      statusTorNotConnected: getString("torPreferences.statusTorNotConnected", "Not Connected"),
+      statusTorBlocked: getString("torPreferences.statusTorBlocked", "Potentially Blocked"),
+      learnMore: getString("torPreferences.learnMore", "Learn more"),
+      // Quickstart
       quickstartHeading: getString("torPreferences.quickstart", "Quickstart"),
-      quickstartDescription: getString("torPreferences.quickstartDescription", "Quickstart allows Tor Browser to connect automatically."),
+      quickstartDescription: getString(
+        "torPreferences.quickstartDescriptionLong",
+        "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings."
+      ),
       quickstartCheckbox : getString("torPreferences.quickstartCheckbox", "Always connect automatically"),
+      // Bridge settings
       bridgesHeading: getString("torPreferences.bridges", "Bridges"),
       bridgesDescription: getString(
         "torPreferences.bridgesDescription",
         "Bridges help you access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another."
       ),
-      useBridge: getString("torPreferences.useBridge", "Use a bridge"),
-      selectBridge: getString(
-        "torsettings.useBridges.default",
-        "Select a bridge"
+      bridgeLocation: getString("torPreferences.bridgeLocation", "Your location"),
+      bridgeLocationAutomatic: getString("torPreferences.bridgeLocationAutomatic", "Automatic"),
+      bridgeChooseForMe: getString("torPreferences.bridgeChooseForMe", "Choose a Bridge For Me\u2026"),
+      bridgeCurrent: getString("torPreferences.bridgeBadgeCurrent", "Your Current Bridges"),
+      bridgeId: getString("torPreferences.bridgeId", "#1 bridge: #2"),
+      remove: getString("torPreferences.remove", "Remove"),
+      bridgeDisableBuiltIn: getString("torPreferences.bridgeDisableBuiltIn", "Disable built-in bridges"),
+      bridgeShare: getString(
+        "torPreferences.bridgeShare",
+        "Share your bridge by presenting the QR code or copying its bridge line."
       ),
-      requestBridgeFromTorProject: getString(
+      bridgeCopy: getString("torPreferences.bridgeCopy", "Copy Bridge Address"),
+      copied: getString("torPreferences.copied", "Copied!"),
+      bridgeShowAll: getString("torPreferences.bridgeShowAll", "Show all bridges"),
+      bridgeRemoveAll: getString("torPreferences.bridgeRemoveAll", "Remove all bridges"),
+      bridgeAdd: getString("torPreferences.bridgeAdd", "Add a New Bridge"),
+      bridgeSelectBrowserBuiltin: getString(
+        "torPreferences.bridgeSelectBrowserBuiltin",
+        "Choose from one of Tor Browser’s built-in bridges"
+      ),
+      bridgeSelectBuiltin: getString(
+        "torPreferences.bridgeSelectBuiltin",
+        "Select a Built-In Bridge\u2026"
+      ),
+      bridgeRequestFromTorProject: getString(
         "torsettings.useBridges.bridgeDB",
         "Request a bridge from torproject.org"
       ),
-      requestNewBridge: getString(
-        "torPreferences.requestNewBridge",
-        "Request a New Bridge\u2026"
+      bridgeRequest: getString(
+        "torPreferences.bridgeRequest",
+        "Request a Bridge\u2026"
       ),
-      provideBridge: getString(
-        "torPreferences.provideBridge",
-        "Provide a bridge"
+      bridgeEnterKnown: getString(
+        "torPreferences.bridgeEnterKnown",
+        "Enter a bridge address you already know"
       ),
-      provideBridgeDirections: getString(
-        "torsettings.useBridges.label",
-        "Enter bridge information from a trusted source."
+      bridgeAddManually: getString(
+        "torPreferences.bridgeAddManually",
+        "Add a Bridge Manually\u2026"
+      ),
+      // Advanced settings
+      advancedHeading: getString("torPreferences.advanced", "Advanced"),
+      advancedLabel: getString(
+        "torPreferences.advancedDescription",
+        "Configure how Tor Browser connects to the internet"
+      ),
+      advancedButton: getString("torPreferences.advancedButton", "Settings\u2026"),
+      showTorDaemonLogs: getString(
+        "torPreferences.viewTorLogs",
+        "View the Tor logs"
+      ),
+      showLogs: getString("torPreferences.viewLogs", "View Logs\u2026"),
+      // Scan bridge QR dialog
+      scanQrTitle: getString("torPreferences.scanQrTitle", "Scan the QR code"),
+      // Builtin bridges dialog
+      builtinBridgeTitle: getString(
+        "torPreferences.builtinBridgeTitle",
+        "Built-In Bridges"
+      ),
+      builtinBridgeHeader: getString(
+        "torPreferences.builtinBridgeHeader",
+        "Select a Built-In Bridge"
+      ),
+      builtinBridgeDescription: getString(
+        "torPreferences.builtinBridgeDescription",
+        "Tor Browser includes some specific types of bridges known as “pluggable transports”."
+      ),
+      builtinBridgeObfs4: getString(
+        "torPreferences.builtinBridgeObfs4",
+        "obfs4"
+      ),
+      builtinBridgeObfs4Description: getString(
+        "torPreferences.builtinBridgeObfs4Description",
+        "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges."
+      ),
+      builtinBridgeSnowflake: getString(
+        "torPreferences.builtinBridgeSnowflake",
+        "Snowflake"
+      ),
+      builtinBridgeSnowflakeDescription: getString(
+        "torPreferences.builtinBridgeSnowflakeDescription",
+        "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers."
+      ),
+      builtinBridgeMeekAzure: getString(
+        "torPreferences.builtinBridgeMeekAzure",
+        "meek-azure"
+      ),
+      builtinBridgeMeekAzureDescription: getString(
+        "torPreferences.builtinBridgeMeekAzureDescription",
+        "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor."
+      ),
+      // Request bridges dialog
+      requestBridgeDialogTitle: getString(
+        "torPreferences.requestBridgeDialogTitle",
+        "Request Bridge"
+      ),
+      submitCaptcha: getString(
+        "torsettings.useBridges.captchaSubmit",
+        "Submit"
+      ),
+      contactingBridgeDB: getString(
+        "torPreferences.requestBridgeDialogWaitPrompt",
+        "Contacting BridgeDB. Please Wait."
+      ),
+      solveTheCaptcha: getString(
+        "torPreferences.requestBridgeDialogSolvePrompt",
+        "Solve the CAPTCHA to request a bridge."
+      ),
+      captchaTextboxPlaceholder: getString(
+        "torsettings.useBridges.captchaSolution.placeholder",
+        "Enter the characters from the image"
+      ),
+      incorrectCaptcha: getString(
+        "torPreferences.requestBridgeErrorBadSolution",
+        "The solution is not correct. Please try again."
+      ),
+      // Provide bridge dialog
+      provideBridgeTitle: getString(
+        "torPreferences.provideBridgeTitle",
+        "Provide Bridge"
+      ),
+      provideBridgeHeader: getString(
+        "torPreferences.provideBridgeHeader",
+        "Enter bridge information from a trusted source"
       ),
       provideBridgePlaceholder: getString(
-        "torsettings.useBridges.placeholder",
+        "torsettings.bridgePlaceholder",
         "type address:port (one per line)"
       ),
-      advancedHeading: getString("torPreferences.advanced", "Advanced"),
-      advancedDescription: getString(
-        "torPreferences.advancedDescription",
-        "Configure how Tor Browser connects to the internet."
+      // Connection settings dialog
+      connectionSettingsDialogTitle: getString(
+        "torPreferences.connectionSettingsDialogTitle",
+        "Connection Settings"
+      ),
+      connectionSettingsDialogHeader: getString(
+        "torPreferences.connectionSettingsDialogHeader",
+        "Configure how Tor Browser connects to the Internet"
       ),
       useLocalProxy: getString("torsettings.useProxy.checkbox", "I use a proxy to connect to the Internet"),
       proxyType: getString("torsettings.useProxy.type", "Proxy Type"),
@@ -328,35 +447,7 @@ var TorStrings = {
         "torPreferences.firewallPortsPlaceholder",
         "Comma-seperated values"
       ),
-      requestBridgeDialogTitle: getString(
-        "torPreferences.requestBridgeDialogTitle",
-        "Request Bridge"
-      ),
-      submitCaptcha: getString(
-        "torsettings.useBridges.captchaSubmit",
-        "Submit"
-      ),
-      contactingBridgeDB: getString(
-        "torPreferences.requestBridgeDialogWaitPrompt",
-        "Contacting BridgeDB. Please Wait."
-      ),
-      solveTheCaptcha: getString(
-        "torPreferences.requestBridgeDialogSolvePrompt",
-        "Solve the CAPTCHA to request a bridge."
-      ),
-      captchaTextboxPlaceholder: getString(
-        "torsettings.useBridges.captchaSolution.placeholder",
-        "Enter the characters from the image"
-      ),
-      incorrectCaptcha: getString(
-        "torPreferences.requestBridgeErrorBadSolution",
-        "The solution is not correct. Please try again."
-      ),
-      showTorDaemonLogs: getString(
-        "torPreferences.viewTorLogs",
-        "View the Tor logs."
-      ),
-      showLogs: getString("torPreferences.viewLogs", "View Logs\u2026"),
+      // Log dialog
       torLogDialogTitle: getString(
         "torPreferences.torLogsDialogTitle",
         "Tor Logs"
@@ -365,7 +456,6 @@ var TorStrings = {
 
       learnMoreTorBrowserURL: `https://tb-manual.torproject.org/${getLocale()}/about/`,
       learnMoreBridgesURL: `https://tb-manual.torproject.org/${getLocale()}/bridges/`,
-      learnMoreNetworkSettingsURL: `about:blank`,
     };
 
     return retval;
@@ -415,14 +505,89 @@ var TorStrings = {
         "Tor failed to establish a Tor network connection."
       ),
 
-      torConfigure: getStringNet(
-        "torsettings.wizard.title.configure",
-        "Tor Network Settings"
+      couldNotConnect: getStringNet(
+        "torConnect.couldNotConnect",
+        "Tor Browser could not connect to Tor"
       ),
 
-      copyLog: getStringNet(
-        "torConnect.copyLog",
-        "Copy Tor Logs"
+      configureConnection: getStringNet(
+        "torConnect.assistDescriptionConfigure",
+        "configure your connection"
+      ),
+
+      assistDescription: getStringNet(
+        "torConnect.assistDescription",
+        "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead."
+      ),
+
+      tryingBridge: getStringNet(
+        "torConnect.tryingBridge",
+        "Trying a bridge…"
+      ),
+
+      tryingBridgeAgain: getStringNet(
+        "torConnect.tryingBridge",
+        "Trying one more time…"
+      ),
+
+      addLocation: getStringNet(
+        "torConnect.addLocation",
+        "Add your location settings"
+      ),
+
+      addLocationDescription: getStringNet(
+        "torConnect.addLocationDescription",
+        "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."
+      ),
+
+      errorLocation: getStringNet(
+        "torConnect.errorLocation",
+        "Tor Browser couldn’t locate you"
+      ),
+
+      errorLocationDescription: getStringNet(
+        "torConnect.errorLocationDescription",
+        "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again."
+      ),
+
+      finalError: getStringNet(
+        "torConnect.finalError",
+        "Tor Browser still cannot connect",
+      ),
+
+      finalErrorDescription: getStringNet(
+        "torConnect.finalErrorDescription",
+        "Despite its best efforts, connection assist was not able to connect to Tor. Try troubleshooting your connection and adding a bridge manually instead.",
+      ),
+
+      breadcrumbAssist: getStringNet(
+        "torConnect.breadcrumbAssist",
+        "Connection assist"
+      ),
+
+      breadcrumbLocation: getStringNet(
+        "torConnect.breadcrumbLocation",
+        "Location settings"
+      ),
+
+      breadcrumbTryBridge: getStringNet(
+        "torConnect.breadcrumbTryBridge",
+        "Try a bridge"
+      ),
+
+      restartTorBrowser: getStringNet(
+        "torConnect.restartTorBrowser",
+        "Restart Tor Browser"
+      ),
+
+      torConfigure: getStringNet(
+        "torConnect.configureConnection",
+        "Configure Connection…"
+      ),
+
+      viewLog: getStringNet(
+        "torConnect.viewLog",
+        "View logs…"
       ),
 
       torConnectButton: getStringNet("torSettings.connect", "Connect"),
@@ -442,9 +607,36 @@ var TorStrings = {
       tryAgain: getStringNet("torConnect.tryAgain", "Try connecting again"),
       offline: getStringNet("torConnect.offline", "Offline"),
 
-      // tor connect strings for message box in about:preferences#tor
+      // tor connect strings for message box in about:preferences#connection
       connectMessage: getStringNet("torConnect.connectMessage", "Changes to Tor Settings will not take effect until you connect"),
       tryAgainMessage: getStringNet("torConnect.tryAgainMessage", "Tor Browser has failed to establish a connection to the Tor Network"),
+
+      yourLocation: getStringNet("torConnect.yourLocation", "Your Location"),
+
+      tryBridge: getStringNet("torConnect.tryBridge", "Try a Bridge"),
+
+      selectCountryRegion: getStringNet(
+        "torConnect.selectCountryRegion",
+        "Select Country or Region",
+      ),
+
+      // TorConnect.jsm error messages
+      autoBootstrappingFailed: getStringNet(
+        "torConnect.autoBootstrappingFailed",
+        "Automatic configuration failed"
+      ),
+      autoBootstrappingAllFailed: getStringNet(
+        "torConnect.autoBootstrappingFailed",
+        "None of the configurations we tried worked"
+      ),
+      cannotDetermineCountry: getStringNet(
+        "torConnect.cannotDetermineCountry",
+        "Unable to determine user country"
+      ),
+      noSettingsForCountry: getStringNet(
+        "torConnect.noSettingsForCountry",
+        "No settings available for your location"
+      ),
     };
   })(),
 
