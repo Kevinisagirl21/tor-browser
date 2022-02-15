@@ -69,6 +69,10 @@ pref("browser.sessionstore.privacy_level", 2);
 pref("browser.privatebrowsing.forceMediaMemoryCache", true);
 pref("media.memory_cache_max_size", 16384);
 
+// Enable HTTPS-Only mode
+pref("dom.security.https_only_mode", true);
+pref("dom.security.https_only_mode.upgrade_onion", false);
+
 // Misc privacy: Remote
 pref("browser.send_pings", false);
 pref("geo.enabled", false);
