@@ -202,6 +202,7 @@ EXTRA_JS_MODULES += [
     "Promise-backend.js",
     "Promise.jsm",
     "PromiseUtils.jsm",
+    "QRCode.jsm",
     "Region.jsm",
     "RemotePageAccessManager.jsm",
     "ResetProfile.jsm",
