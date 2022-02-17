@@ -204,6 +204,7 @@ EXTRA_JS_MODULES += [
     "ProcessType.sys.mjs",
     "ProfileAge.sys.mjs",
     "PromiseUtils.sys.mjs",
+    "QRCode.sys.mjs",
     "Region.sys.mjs",
     "RemotePageAccessManager.sys.mjs",
     "ResetProfile.sys.mjs",
