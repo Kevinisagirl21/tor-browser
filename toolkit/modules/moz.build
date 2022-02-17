@@ -204,6 +204,7 @@ EXTRA_JS_MODULES += [
     "ProcessType.jsm",
     "ProfileAge.jsm",
     "PromiseUtils.jsm",
+    "QRCode.jsm",
     "Region.jsm",
     "RemotePageAccessManager.jsm",
     "ResetProfile.jsm",
