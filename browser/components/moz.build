@@ -48,6 +48,7 @@ DIRS += [
     "prompts",
     "protocolhandler",
     "resistfingerprinting",
+    "rulesets",
     "search",
     "securitylevel",
     "sessionstore",
