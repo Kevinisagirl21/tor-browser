@@ -1,0 +1,116 @@
+<!-- Copyright (c) 2022, The Tor Project, Inc. -->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src chrome:; object-src 'none'"
+    />
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/rulesets/aboutRulesets.css"
+    />
+  </head>
+  <body>
+    <!-- Warning -->
+    <div id="warning-wrapper">
+      <div id="warning">
+        <h1 id="warning-title"></h1>
+        <p id="warning-description"></p>
+        <p>
+          <label>
+            <input
+              id="warning-enable-checkbox"
+              type="checkbox"
+              checked="checked"
+            />
+            <span id="warning-enable-label"></span>
+          </label>
+        </p>
+        <div id="warning-buttonbar">
+          <button id="warning-button" autofocus="autofocus"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="main-content">
+      <!-- Ruleset list -->
+      <aside>
+        <div id="ruleset-heading"></div>
+        <div id="ruleset-list-container">
+          <div id="ruleset-list-empty">
+            <p id="ruleset-list-empty-title"></p>
+            <p id="ruleset-list-empty-description"></p>
+          </div>
+          <ul id="ruleset-list">
+            <li id="ruleset-template">
+              <div class="icon"></div>
+              <div>
+                <div class="name"></div>
+                <div class="description"></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Ruleset details -->
+      <section id="ruleset-details">
+        <div class="title">
+          <h1 id="ruleset-title"></h1>
+          <button id="ruleset-edit" class="ghost-button"></button>
+        </div>
+        <dl>
+          <dt id="ruleset-jwk-label"></dt>
+          <dd id="ruleset-jwk-value"></dd>
+          <dt id="ruleset-path-prefix-label"></dt>
+          <dd>
+            <a id="ruleset-path-prefix-value" target="_blank"></a>
+          </dd>
+          <dt id="ruleset-scope-label"></dt>
+          <dd id="ruleset-scope-value"></dd>
+        </dl>
+        <label id="ruleset-enable">
+          <input type="checkbox" id="ruleset-enable-checkbox" />
+          <span id="ruleset-enable-label"></span>
+        </label>
+        <div id="ruleset-buttonbar">
+          <button id="ruleset-update-button"></button>
+        </div>
+        <hr />
+        <p id="ruleset-updated"></p>
+      </section>
+
+      <!-- Edit ruleset -->
+      <section id="edit-ruleset">
+        <div class="title">
+          <h1 id="edit-title"></h1>
+        </div>
+        <form id="edit-ruleset-form">
+          <label>
+            <div id="edit-jwk-label"></div>
+            <textarea id="edit-jwk-textarea" rows="10"></textarea>
+          </label>
+          <label>
+            <div id="edit-path-prefix-label"></div>
+            <input id="edit-path-prefix-input" type="text" />
+          </label>
+          <label>
+            <div id="edit-scope-label"></div>
+            <input id="edit-scope-input" type="text" />
+          </label>
+          <label id="edit-enable">
+            <input type="checkbox" id="edit-enable-checkbox" />
+            <span id="edit-enable-label"></span>
+          </label>
+          <div id="edit-buttonbar">
+            <button id="edit-save" class="primary"></button>
+            <button id="edit-cancel"></button>
+          </div>
+        </form>
+      </section>
+    </div>
+    <script src="chrome://browser/content/rulesets/aboutRulesets.js"></script>
+  </body>
+</html>
