@@ -88,6 +88,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   OnboardingMessageProvider:
     "resource://activity-stream/lib/OnboardingMessageProvider.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   PageActions: "resource:///modules/PageActions.jsm",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
@@ -855,6 +856,19 @@ let JSWINDOWACTORS = {
 
     messageManagerGroups: ["browsers"],
     enablePreference: "accessibility.blockautorefresh",
+  },
+
+  Rulesets: {
+    parent: {
+      moduleURI: "resource:///modules/RulesetsParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/RulesetsChild.jsm",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+    matches: ["about:rulesets*"],
   },
 
   ScreenshotsComponent: {
@@ -2148,7 +2162,7 @@ BrowserGlue.prototype = {
           lazy.UpdateListener.reset();
         }
       },
-      () => ClipboardPrivacy.emptyPrivate(), // tor-browser#42019
+      () => lazy.OnionAliasStore.uninit(),
     ];
 
     for (let task of tasks) {
@@ -2852,6 +2866,33 @@ BrowserGlue.prototype = {
         name: "Blocklist.loadBlocklistAsync",
         task: () => {
           lazy.Blocklist.loadBlocklistAsync();
+        },
+      },
+
+      {
+        task: () => {
+          const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+            "resource:///modules/TorConnect.jsm"
+          );
+          if (!TorConnect.shouldShowTorConnect) {
+            // we will take this path when the user is using the legacy tor launcher or
+            // when Tor Browser didn't launch its own tor.
+            lazy.OnionAliasStore.init();
+          } else {
+            // this path is taken when using about:torconnect, we wait to init
+            // after we are bootstrapped and connected to tor
+            const topic = TorConnectTopics.BootstrapComplete;
+            let bootstrapObserver = {
+              observe(aSubject, aTopic, aData) {
+                if (aTopic === topic) {
+                  lazy.OnionAliasStore.init();
+                  // we only need to init once, so remove ourselves as an obvserver
+                  Services.obs.removeObserver(this, topic);
+                }
+              },
+            };
+            Services.obs.addObserver(bootstrapObserver, topic);
+          }
         },
       },
 
