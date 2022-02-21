@@ -6171,7 +6171,10 @@ static bool ShouldSanitizePreference(const Pref* const aPref) {
       const auto* p = prefName;  // This avoids clang-format doing ugly things.
       return !(strncmp("services.settings.clock_skew_seconds", p, 36) == 0 ||
                strncmp("services.settings.last_update_seconds", p, 37) == 0 ||
-               strncmp("services.settings.server", p, 24) == 0);
+               strncmp("services.settings.server", p, 24) == 0 ||
+               // Prevent a crash in debug builds. Please refer to
+               // StaticPrefList.yaml, tor-browser#41165 and tor-browser!765 for details.
+               strncmp("browser.urlbar.onionRewrites.enabled", p, 36) == 0);
     }
   }
 
