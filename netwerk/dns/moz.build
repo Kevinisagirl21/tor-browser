@@ -110,3 +110,7 @@ USE_LIBS += ["icu"]
 
 if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     CXXFLAGS += ["-Wno-error=shadow"]
+
+XPIDL_SOURCES += ["IOnionAliasService.idl"]
+UNIFIED_SOURCES += ["OnionAliasService.cpp"]
+EXPORTS.torproject += ["OnionAliasService.h"]
