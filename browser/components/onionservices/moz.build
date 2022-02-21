@@ -1,6 +1,8 @@
 JAR_MANIFESTS += ["jar.mn"]
 
 EXTRA_JS_MODULES += [
+    "OnionAliasStore.jsm",
     "OnionLocationChild.jsm",
     "OnionLocationParent.jsm",
+    "TorRequestWatch.sys.mjs",
 ]
