@@ -85,6 +85,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabUnloader: "resource:///modules/TabUnloader.jsm",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
   TRRRacer: "resource:///modules/TRRPerformance.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UIState: "resource://services-sync/UIState.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -667,6 +668,19 @@ let JSWINDOWACTORS = {
 
     messageManagerGroups: ["browsers"],
     enablePreference: "accessibility.blockautorefresh",
+  },
+
+  Rulesets: {
+    parent: {
+      moduleURI: "resource:///modules/RulesetsParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/RulesetsChild.jsm",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+    matches: ["about:rulesets*"],
   },
 
   SearchSERPTelemetry: {
@@ -2028,6 +2042,7 @@ BrowserGlue.prototype = {
     Normandy.uninit();
     RFPHelper.uninit();
     ASRouterNewTabHook.destroy();
+    OnionAliasStore.uninit();
   },
 
   // Set up a listener to enable/disable the screenshots extension
@@ -2529,6 +2544,33 @@ BrowserGlue.prototype = {
       {
         task: () => {
           RFPHelper.init();
+        },
+      },
+
+      {
+        task: () => {
+          const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+            "resource:///modules/TorConnect.jsm"
+          );
+          if (!TorConnect.shouldShowTorConnect) {
+            // we will take this path when the user is using the legacy tor launcher or
+            // when Tor Browser didn't launch its own tor.
+            OnionAliasStore.init();
+          } else {
+            // this path is taken when using about:torconnect, we wait to init
+            // after we are bootstrapped and connected to tor
+            const topic = TorConnectTopics.BootstrapComplete;
+            let bootstrapObserver = {
+              observe(aSubject, aTopic, aData) {
+                if (aTopic === topic) {
+                  OnionAliasStore.init();
+                  // we only need to init once, so remove ourselves as an obvserver
+                  Services.obs.removeObserver(this, topic);
+                }
+              }
+            };
+            Services.obs.addObserver(bootstrapObserver, topic);
+          }
         },
       },
 
