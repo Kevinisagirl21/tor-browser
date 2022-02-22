@@ -6,6 +6,7 @@
 
 #include "DNS.h"
 #include "DNSUtils.h"
+#include "ODoH.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
 #include "nsHttpHandler.h"
@@ -20,6 +21,7 @@
 #include "nsIUploadChannel2.h"
 #include "nsIURIMutator.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
 #include "nsURLHelper.h"
