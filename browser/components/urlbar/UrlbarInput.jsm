@@ -359,10 +359,7 @@ class UrlbarInput {
     // user makes the input empty, switches tabs, and switches back, we want the
     // URI to become visible again so the user knows what URI they're viewing.
     if (value === null || (!value && dueToTabSwitch)) {
-      uri =
-        uri ||
-        this.window.gBrowser.selectedBrowser.currentOnionAliasURI ||
-        this.window.gBrowser.currentURI;
+      uri = uri || this.window.gBrowser.currentURI;
       // Strip off usernames and passwords for the location bar
       try {
         uri = Services.io.createExposableURI(uri);
@@ -2132,13 +2129,7 @@ class UrlbarInput {
     }
 
     let uri;
-    // When we rewrite .onion to an alias, gBrowser.currentURI will be different than
-    // the URI displayed in the urlbar. We need to use the urlbar value to copy the
-    // alias instead of the actual .onion URI that is loaded.
-    if (
-      this.getAttribute("pageproxystate") == "valid" &&
-      !this.window.gBrowser.selectedBrowser.currentOnionAliasURI
-    ) {
+    if (this.getAttribute("pageproxystate") == "valid") {
       uri = this.window.gBrowser.currentURI;
     } else {
       // The value could be:

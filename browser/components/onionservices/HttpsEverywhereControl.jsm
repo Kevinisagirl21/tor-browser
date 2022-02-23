@@ -59,9 +59,9 @@ class HttpsEverywhereControl {
   }
 
   /**
-   * Installs the .tor.onion update channel in https-everywhere
+   * Uninstalls old .tor.onion update channels from https-everywhere
    */
-  async installTorOnionUpdateChannel(retries = 5) {
+  async uninstallTorOnionUpdateChannel(retries = 5) {
 
     // TODO: https-everywhere store is initialized asynchronously, so sending a message
     // immediately results in a `store.get is undefined` error.
@@ -70,72 +70,34 @@ class HttpsEverywhereControl {
     // for that here.
     await HttpsEverywhereControl.wait();
 
+    // We now handle .tor.onion domains with our first-party component, so we
+    // remove known rules from HTTPS-Everywhere.
+
     try {
-      // Delete the previous channel signing key, and add the new one below.
       await this._sendMessage(
         "delete_update_channel",
         SECUREDROP_TOR_ONION_CHANNEL_2020.name
       );
     } catch (e) {
       if (retries <= 0) {
-        throw new Error("Could not uninstall SecureDropTorOnion update channel");
+        console.warn("Cannot uninstall the SecureDropTorOnion 2020 channel", e);
+        throw new Error("Could not uninstall the SecureDropTorOnion update channel");
       }
-      await this.installTorOnionUpdateChannel(retries - 1);
+      await this.uninstallTorOnionUpdateChannel(retries - 1);
       return;
     }
-
     try {
-      // TODO: we may want a way to "lock" this update channel, so that it cannot be modified
-      // by the user via UI, but I think this is not possible at the time of writing via
-      // the existing messages in https-everywhere.
       await this._sendMessage(
-        "create_update_channel",
+        "delete_update_channel",
         SECUREDROP_TOR_ONION_CHANNEL.name
       );
     } catch (e) {
       if (retries <= 0) {
-        throw new Error("Could not install SecureDropTorOnion update channel");
+        console.warn("Cannot uninstall the SecureDropTorOnion 2021 channel", e);
+        throw new Error("Could not uninstall the SecureDropTorOnion update channel");
       }
-      await this.installTorOnionUpdateChannel(retries - 1);
+      await this.uninstallTorOnionUpdateChannel(retries - 1);
       return;
-    }
-
-    await this._sendMessage(
-      "update_update_channel",
-      SECUREDROP_TOR_ONION_CHANNEL
-    );
-  }
-
-  /**
-   * Returns the .tor.onion rulesets available in https-everywhere
-   */
-  async getTorOnionRules() {
-    return this._sendMessage("get_simple_rules_ending_with", ".tor.onion");
-  }
-
-  /**
-   * Returns the timestamp of the last .tor.onion update channel update.
-   */
-  async getRulesetTimestamp() {
-    const rulesets = await this._sendMessage("get_update_channel_timestamps");
-    const securedrop =
-      rulesets &&
-      rulesets.find(([{ name }]) => name === SECUREDROP_TOR_ONION_CHANNEL.name);
-    if (securedrop) {
-      const [
-        updateChannel, // This has the same structure as SECUREDROP_TOR_ONION_CHANNEL
-        lastUpdatedTimestamp, // An integer, 0 if the update channel was never updated
-      ] = securedrop;
-      void updateChannel; // Ignore eslint unused warning for ruleset
-      return lastUpdatedTimestamp;
-    }
-    return null;
-  }
-
-  unload() {
-    if (this._extensionMessaging) {
-      this._extensionMessaging.unload();
-      this._extensionMessaging = null;
     }
   }
 
@@ -146,6 +108,8 @@ class HttpsEverywhereControl {
 
     // update all of the existing https-everywhere channels
     setTimeout(async () => {
+      await this.uninstallTorOnionUpdateChannel();
+
       let pinnedChannels = await this._sendMessage("get_pinned_update_channels");
       for(let channel of pinnedChannels.update_channels) {
         this._sendMessage("update_update_channel", channel);
@@ -155,8 +119,9 @@ class HttpsEverywhereControl {
       for(let channel of storedChannels.update_channels) {
         this._sendMessage("update_update_channel", channel);
       }
+
+      this._extensionMessaging.unload();
+      this._extensionMessaging = null;
     }, 0);
-
-
   }
 }

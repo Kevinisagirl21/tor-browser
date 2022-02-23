@@ -248,7 +248,7 @@ var security = {
   },
 };
 
-async function securityOnLoad(uri, windowInfo, onionAliasURI) {
+async function securityOnLoad(uri, windowInfo) {
   await security.init(uri, windowInfo);
 
   let info = security.securityInfo;
@@ -260,21 +260,6 @@ async function securityOnLoad(uri, windowInfo, onionAliasURI) {
     return;
   }
   document.getElementById("securityTab").hidden = false;
-
-  if (onionAliasURI) {
-    setText(
-      "security-view-identity-onionalias",
-      gTorButtonBundle.GetStringFromName("pageInfo_OnionName")
-    );
-    setText("security-view-identity-onionalias-value", onionAliasURI.host);
-    document.getElementById(
-      "security-view-identity-onionalias-row"
-    ).hidden = false;
-  } else {
-    document.getElementById(
-      "security-view-identity-onionalias-row"
-    ).hidden = true;
-  }
 
   /* Set Identity section text */
   setText("security-identity-domain-value", windowInfo.hostName);
