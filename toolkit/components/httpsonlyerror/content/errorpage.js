@@ -8,7 +8,14 @@
 
 const searchParams = new URLSearchParams(document.documentURI.split("?")[1]);
 
-function initPage() {
+async function initPage() {
+  if (await RPMSendQuery("ShouldShowTorConnect")) {
+    // pass orginal destination as redirect param
+    const encodedRedirect = encodeURIComponent(document.location.href);
+    document.location.replace(`about:torconnect?redirect=${encodedRedirect}`);
+    return;
+  }
+
   if (!searchParams.get("e")) {
     document.getElementById("error").remove();
   }

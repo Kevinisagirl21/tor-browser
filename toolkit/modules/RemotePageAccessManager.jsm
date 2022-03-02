@@ -67,6 +67,7 @@ let RemotePageAccessManager = {
       RPMAddMessageListener: ["WWWReachable"],
       RPMTryPingSecureWWWLink: ["*"],
       RPMOpenSecureWWWLink: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:certificate": {
       RPMSendQuery: ["getCertificates"],
