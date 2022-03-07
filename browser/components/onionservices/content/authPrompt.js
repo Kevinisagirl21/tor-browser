@@ -154,7 +154,7 @@ const OnionAuthPrompt = (function() {
       this._showWarning(undefined); // Remove the warning.
     },
 
-    _onDone() {
+    async _onDone() {
       let keyElem = this._getKeyElement();
       if (!keyElem)
         return;
@@ -173,7 +173,8 @@ const OnionAuthPrompt = (function() {
       try {
         let { controller } =
             Cu.import("resource://torbutton/modules/tor-control-port.js", {});
-        let torController = controller(aError => {
+        let torController = await controller(aError => {
+          console.error(controllerFailureMsg, aError);
           this.show(controllerFailureMsg);
         });
         let onionAddr = this._onionName.toLowerCase().replace(/\.onion$/, "");
@@ -189,12 +190,15 @@ const OnionAuthPrompt = (function() {
           );
         })
         .catch(aError => {
-          if (aError.torMessage)
+          if (aError.torMessage) {
             this.show(aError.torMessage);
-          else
+          } else {
+            console.error(controllerFailureMsg, aError);
             this.show(controllerFailureMsg);
+          }
         });
       } catch (e) {
+        console.error(controllerFailureMsg, e);
         this.show(controllerFailureMsg);
       }
     },
