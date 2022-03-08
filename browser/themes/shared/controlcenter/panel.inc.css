@@ -13,7 +13,7 @@
 #identity-popup,
 #permission-popup,
 #protections-popup {
-  --popup-width: 30.81em;
+  --popup-width: 40em;
   /* Set default fill for icons in the identity popup.
      Individual icons can override this. */
   fill: currentColor;
@@ -363,7 +363,7 @@
 
 .identity-popup-security-connection.identity-button {
   padding: 0;
-  width: 28em;
+  width: 37.5em;
   background-position-x: 4px;
   margin-inline-end: -6px;
 }
