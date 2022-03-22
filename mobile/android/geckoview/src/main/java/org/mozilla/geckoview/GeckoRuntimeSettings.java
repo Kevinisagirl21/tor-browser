@@ -453,6 +453,28 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().setAllowInsecureConnections(level);
       return this;
     }
+
+    /**
+     * Set security level.
+     *
+     * @param level A value determining the security level. Default is 0.
+     * @return This Builder instance.
+     */
+    public @NonNull Builder torSecurityLevel(final int level) {
+      getSettings().mTorSecurityLevel.set(level);
+      return this;
+    }
+
+    /**
+     * Sets whether we should spoof locale to English for webpages.
+     *
+     * @param flag True if we should spoof locale to English for webpages, false otherwise.
+     * @return This Builder instance.
+     */
+    public @NonNull Builder spoofEnglish(final boolean flag) {
+      getSettings().mSpoofEnglish.set(flag ? 2 : 1);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -501,6 +523,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
   /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
+  /* package */ final Pref<Integer> mTorSecurityLevel = new Pref<>("extensions.torbutton.security_slider", 4);
+  /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -780,19 +804,25 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   private String computeAcceptLanguages() {
     final ArrayList<String> locales = new ArrayList<String>();
 
-    // Explicitly-set app prefs come first:
-    if (mRequestedLocales != null) {
-      for (final String locale : mRequestedLocales) {
-        locales.add(locale.toLowerCase(Locale.ROOT));
+    // In Desktop, these are defined in the `intl.accept_languages` localized property.
+    // At some point we should probably use the same values here, but for now we use a simple
+    // strategy which will hopefully result in reasonable acceptLanguage values.
+    if (mRequestedLocales != null && mRequestedLocales.length > 0) {
+      String locale = mRequestedLocales[0].toLowerCase(Locale.ROOT);
+      // No need to include `en-us` twice.
+      if (!locale.equals("en-us")) {
+        locales.add(locale);
+        if (locale.contains("-")) {
+          String lang = locale.split("-")[0];
+          // No need to include `en` twice.
+          if (!lang.equals("en")) {
+            locales.add(lang);
+          }
+        }
       }
     }
-    // OS prefs come second:
-    for (final String locale : getDefaultLocales()) {
-      final String localeLowerCase = locale.toLowerCase(Locale.ROOT);
-      if (!locales.contains(localeLowerCase)) {
-        locales.add(localeLowerCase);
-      }
-    }
+    locales.add("en-us");
+    locales.add("en");
 
     return TextUtils.join(",", locales);
   }
@@ -1236,6 +1266,46 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* protected */ @NonNull
   GeckoRuntimeSettings setProcessCount(final int processCount) {
     mProcessCount.commit(processCount);
+    return this;
+  }
+
+  /**
+   * Gets the current security level.
+   *
+   * @return current security protection level
+   */
+  public int getTorSecurityLevel() {
+    return mTorSecurityLevel.get();
+  }
+
+  /**
+   * Sets the Tor Security Level.
+   *
+   * @param level security protection level
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
+    mTorSecurityLevel.commit(level);
+    return this;
+  }
+
+  /**
+   * Get whether we should spoof locale to English for webpages.
+   *
+   * @return Whether we should spoof locale to English for webpages.
+   */
+  public boolean getSpoofEnglish() {
+    return mSpoofEnglish.get() == 2;
+  }
+
+  /**
+   * Set whether we should spoof locale to English for webpages.
+   *
+   * @param flag A flag determining whether we should locale to English for webpages.
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setSpoofEnglish(final boolean flag) {
+    mSpoofEnglish.commit(flag ? 2 : 1);
     return this;
   }
 

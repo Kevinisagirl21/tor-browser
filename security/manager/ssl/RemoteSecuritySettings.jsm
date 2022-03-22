@@ -271,6 +271,16 @@ var RemoteSecuritySettings = {
 
 class IntermediatePreloads {
   constructor() {
+    this.maybeInit();
+  }
+
+  maybeInit() {
+    if (
+      this.client ||
+      !Services.prefs.getBoolPref(INTERMEDIATES_ENABLED_PREF, true)
+    ) {
+      return;
+    }
     this.client = RemoteSettings(
       Services.prefs.getCharPref(INTERMEDIATES_COLLECTION_PREF),
       {
@@ -300,6 +310,7 @@ class IntermediatePreloads {
       );
       return;
     }
+    this.maybeInit();
 
     // Download attachments that are awaiting download, up to a max.
     const maxDownloadsPerRun = Services.prefs.getIntPref(
@@ -507,6 +518,16 @@ function compareFilters(filterA, filterB) {
 
 class CRLiteFilters {
   constructor() {
+    this.maybeInit();
+  }
+
+  maybeInit() {
+    if (
+      this.client ||
+      !Services.prefs.getBoolPref(CRLITE_FILTERS_ENABLED_PREF, true)
+    ) {
+      return;
+    }
     this.client = RemoteSettings(
       Services.prefs.getCharPref(CRLITE_FILTERS_COLLECTION_PREF),
       {
@@ -533,6 +554,8 @@ class CRLiteFilters {
       );
       return;
     }
+
+    this.maybeInit();
 
     let hasPriorFilter = await hasPriorData(
       Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_FULL

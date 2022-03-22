@@ -1,0 +1,77 @@
+#category-tor > .category-icon {
+  list-style-image: url("chrome://browser/content/torpreferences/torPreferencesIcon.svg");
+}
+
+#torPreferences-advanced-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.torPreferences-advanced-checkbox-container {
+  grid-column: 1 / 3;
+}
+
+#torPreferences-localProxy-textboxAddress,
+#torPreferences-localProxy-textboxUsername,
+#torPreferences-localProxy-textboxPassword,
+#torPreferences-advanced-textboxAllowedPorts {
+  -moz-box-flex: 1;
+}
+
+hbox#torPreferences-torDaemon-hbox {
+  margin-top: 20px;
+}
+
+description#torPreferences-requestBridge-description {
+  /*margin-bottom: 1em;*/
+  min-height: 2em;
+}
+
+image#torPreferences-requestBridge-captchaImage {
+  margin: 1em;
+  min-height: 125px;
+}
+
+button#torPreferences-requestBridge-refreshCaptchaButton {
+  min-width: initial;
+}
+
+dialog#torPreferences-requestBridge-dialog > hbox {
+  margin-bottom: 1em;
+}
+
+/*
+ Various elements that really should be lining up don't because they have inconsistent margins
+*/
+.torMarginFix {
+  margin-left : 4px;
+  margin-right : 4px;
+}
+
+/*
+  This hbox is hidden by css here by default so that the
+  xul dialog allocates enough screen space for the error message
+  element, otherwise it gets cut off since dialog's overflow is hidden
+*/
+hbox#torPreferences-requestBridge-incorrectCaptchaHbox {
+  visibility: hidden;
+}
+
+image#torPreferences-requestBridge-errorIcon {
+  list-style-image: url("chrome://browser/skin/warning.svg");
+}
+
+groupbox#torPreferences-bridges-group textarea {
+  white-space: pre;
+  overflow: auto;
+}
+
+textarea#torPreferences-torDialog-textarea {
+  -moz-box-flex: 1;
+  font-family: monospace;
+  font-size: 0.8em;
+  white-space: pre;
+  overflow: auto;
+  /* 10 lines */
+  min-height: 20em;
+}

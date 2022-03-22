@@ -234,6 +234,13 @@
 @RESPATH@/browser/chrome/browser.manifest
 @RESPATH@/chrome/pdfjs.manifest
 @RESPATH@/chrome/pdfjs/*
+#ifndef TOR_BROWSER_DISABLE_TOR_LAUNCHER
+@RESPATH@/browser/chrome/torlauncher.manifest
+@RESPATH@/browser/chrome/torlauncher/*
+@RESPATH@/browser/@PREF_DIR@/torlauncher-prefs.js
+#endif
+@RESPATH@/chrome/torbutton.manifest
+@RESPATH@/chrome/torbutton/*
 @RESPATH@/chrome/toolkit@JAREXT@
 @RESPATH@/chrome/toolkit.manifest
 #ifdef MOZ_GTK
@@ -276,6 +283,7 @@
 @RESPATH@/browser/defaults/settings/blocklists
 @RESPATH@/browser/defaults/settings/main
 @RESPATH@/browser/defaults/settings/security-state
+@RESPATH@/browser/@PREF_DIR@/000-tor-browser.js
 
 ; Warning: changing the path to channel-prefs.js can cause bugs (Bug 756325)
 ; Technically this is an app pref file, but we are keeping it in the original
@@ -424,10 +432,6 @@ bin/libfreebl_64int_3.so
 @BINPATH@/minidump-analyzer@BIN_SUFFIX@
 #endif
 
-; [ Ping Sender ]
-;
-@BINPATH@/pingsender@BIN_SUFFIX@
-
 ; Shutdown Terminator
 @RESPATH@/components/terminator.manifest
 
@@ -440,8 +444,8 @@ bin/libfreebl_64int_3.so
 #endif
 
 ; media
-@RESPATH@/gmp-clearkey/0.1/@DLL_PREFIX@clearkey@DLL_SUFFIX@
-@RESPATH@/gmp-clearkey/0.1/manifest.json
+;@RESPATH@/gmp-clearkey/0.1/@DLL_PREFIX@clearkey@DLL_SUFFIX@
+;@RESPATH@/gmp-clearkey/0.1/manifest.json
 
 #ifdef MOZ_DMD
 ; DMD

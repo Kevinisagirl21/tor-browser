@@ -127,7 +127,11 @@ static const nsLiteralCString kPreloadPermissions[] = {
     // interception when a user has disabled storage for a specific site.  Once
     // service worker interception moves to the parent process this should be
     // removed.  See bug 1428130.
-    "cookie"_ns};
+    "cookie"_ns,
+
+    // Bug 28822: Make sure uitour permissions are preloaded in content
+    // processes.
+    "uitour"_ns};
 
 // NOTE: nullptr can be passed as aType - if it is this function will return
 // "false" unconditionally.

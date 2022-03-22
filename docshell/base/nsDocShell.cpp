@@ -5840,6 +5840,10 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
     return;
   }
 
+  if (!mOnionUrlbarRewritesAllowed && IsTorOnionRedirect(oldURI, newURI)) {
+    mOnionUrlbarRewritesAllowed = true;
+  }
+
   // DocumentChannel adds redirect chain to global history in the parent
   // process. The redirect chain can't be queried from the content process, so
   // there's no need to update global history here.
@@ -7832,11 +7836,71 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     aOpenedChannel->GetURI(getter_AddRefs(mLoadingURI));
   }
   FirePageHideNotification(!mSavingOldViewer);
+
   if (mIsBeingDestroyed) {
     // Force to stop the newly created orphaned viewer.
     viewer->Stop();
     return NS_ERROR_DOCSHELL_DYING;
   }
+
+  // Tor bug 16620: Clear window.name of top-level documents if
+  // there is no referrer. We make an exception for new windows,
+  // e.g., window.open(url, "MyName").
+  bool isNewWindowTarget = false;
+  nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(aRequest, &rv));
+  if (props) {
+    props->GetPropertyAsBool(u"docshell.newWindowTarget"_ns,
+                             &isNewWindowTarget);
+  }
+
+  if (!isNewWindowTarget) {
+    nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aOpenedChannel));
+    nsCOMPtr<nsIURI> httpReferrer;
+    if (httpChannel) {
+      nsCOMPtr<nsIReferrerInfo> referrerInfo;
+      rv = httpChannel->GetReferrerInfo(getter_AddRefs(referrerInfo));
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (referrerInfo) {
+        // We want GetComputedReferrer() instead of GetOriginalReferrer(), since
+        // the former takes into consideration referrer policy, protocol
+        // whitelisting...
+        httpReferrer = referrerInfo->GetComputedReferrer();
+      }
+    }
+
+    bool isTopFrame = mBrowsingContext->IsTop();
+
+#ifdef DEBUG_WINDOW_NAME
+    printf("DOCSHELL %p CreateContentViewer - possibly clearing window.name:\n",
+           this);
+    printf("  current window.name: \"%s\"\n",
+           NS_ConvertUTF16toUTF8(mName).get());
+
+    nsAutoCString curSpec, loadingSpec;
+    if (this->mCurrentURI) mCurrentURI->GetSpec(curSpec);
+    if (mLoadingURI) mLoadingURI->GetSpec(loadingSpec);
+    printf("  current URI: %s\n", curSpec.get());
+    printf("  loading URI: %s\n", loadingSpec.get());
+    printf("  is top document: %s\n", isTopFrame ? "Yes" : "No");
+
+    if (!httpReferrer) {
+      printf("  referrer: None\n");
+    } else {
+      nsAutoCString refSpec;
+      httpReferrer->GetSpec(refSpec);
+      printf("  referrer: %s\n", refSpec.get());
+    }
+#endif
+
+    bool clearName = isTopFrame && !httpReferrer;
+    if (clearName) SetName(u""_ns);
+
+#ifdef DEBUG_WINDOW_NAME
+    printf("  action taken: %s window.name\n",
+           clearName ? "Cleared" : "Preserved");
+#endif
+  }
+
   mLoadingURI = nullptr;
 
   // Set mFiredUnloadEvent = false so that the unload handler for the
@@ -9229,6 +9293,20 @@ static bool NavigationShouldTakeFocus(nsDocShell* aDocShell,
   return !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
 }
 
+/* static */
+bool nsDocShell::IsTorOnionRedirect(nsIURI* aOldURI, nsIURI* aNewURI) {
+  nsAutoCString oldHost;
+  nsAutoCString newHost;
+  if (aOldURI && aNewURI && NS_SUCCEEDED(aOldURI->GetHost(oldHost)) &&
+      StringEndsWith(oldHost, ".tor.onion"_ns) &&
+      NS_SUCCEEDED(aNewURI->GetHost(newHost)) &&
+      StringEndsWith(newHost, ".onion"_ns) &&
+      !StringEndsWith(newHost, ".tor.onion"_ns)) {
+    return true;
+  }
+  return false;
+}
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   Maybe<uint32_t> aCacheKey) {
   MOZ_ASSERT(aLoadState, "need a load state!");
@@ -9383,6 +9461,30 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   mAllowKeywordFixup = aLoadState->HasInternalLoadFlags(
       INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP);
+
+  if (mOnionUrlbarRewritesAllowed) {
+    mOnionUrlbarRewritesAllowed = false;
+    nsCOMPtr<nsIURI> referrer;
+    nsIReferrerInfo* referrerInfo = aLoadState->GetReferrerInfo();
+    if (referrerInfo) {
+      referrerInfo->GetOriginalReferrer(getter_AddRefs(referrer));
+      bool isPrivateWin = false;
+      Document* doc = GetDocument();
+      if (doc) {
+        isPrivateWin =
+            doc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
+        nsCOMPtr<nsIScriptSecurityManager> secMan =
+            do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID);
+        mOnionUrlbarRewritesAllowed =
+            secMan && NS_SUCCEEDED(secMan->CheckSameOriginURI(
+                          aLoadState->URI(), referrer, false, isPrivateWin));
+      }
+    }
+  }
+  mOnionUrlbarRewritesAllowed =
+      mOnionUrlbarRewritesAllowed ||
+      aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_ALLOW_ONION_URLBAR_REWRITES);
+
   mURIResultedInDocument = false;  // reset the clock...
 
   // See if this is actually a load between two history entries for the same
@@ -11860,6 +11962,7 @@ nsresult nsDocShell::AddToSessionHistory(
                 HistoryID(), GetCreatedDynamically(), originalURI,
                 resultPrincipalURI, loadReplace, referrerInfo, srcdoc,
                 srcdocEntry, baseURI, saveLayoutState, expired, userActivation);
+  entry->SetOnionUrlbarRewritesAllowed(mOnionUrlbarRewritesAllowed);
 
   if (mBrowsingContext->IsTop() && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
@@ -13802,4 +13905,13 @@ void nsDocShell::MaybeDisconnectChildListenersOnPageHide() {
     }
     mChannelToDisconnectOnPageHide = 0;
   }
+}
+
+NS_IMETHODIMP
+nsDocShell::GetOnionUrlbarRewritesAllowed(bool* aOnionUrlbarRewritesAllowed) {
+  NS_ENSURE_ARG(aOnionUrlbarRewritesAllowed);
+  *aOnionUrlbarRewritesAllowed =
+      StaticPrefs::browser_urlbar_onionRewrites_enabled() &&
+      mOnionUrlbarRewritesAllowed;
+  return NS_OK;
 }

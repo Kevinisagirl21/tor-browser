@@ -46,11 +46,11 @@ DIRS += [
     "preferences",
     "privatebrowsing",
     "prompts",
-    "protections",
     "protocolhandler",
     "resistfingerprinting",
     "screenshots",
     "search",
+    "securitylevel",
     "sessionstore",
     "shell",
     "syncedtabs",
@@ -58,6 +58,7 @@ DIRS += [
     "translation",
     "uitour",
     "urlbar",
+    "torpreferences",
 ]
 
 DIRS += ["build"]

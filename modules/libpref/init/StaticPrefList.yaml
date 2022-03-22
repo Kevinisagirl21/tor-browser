@@ -1484,6 +1484,12 @@
   value: true
   mirror: always
 
+  # Whether rewriting the urlbar to a short .onion alias is allowed.
+- name: browser.urlbar.onionRewrites.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 - name: browser.viewport.desktopWidth
   type: RelaxedAtomicInt32
   value: 980
@@ -11443,7 +11449,7 @@
 
 - name: privacy.window.name.update.enabled
   type: bool
-  value: true
+  value: false
   mirror: always
 
 # By default, the network state isolation is not active when there is a proxy
@@ -11490,6 +11496,11 @@
   type: String
   value: ""
   mirror: never
+
+- name: privacy.prioritizeonions.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
 
 #---------------------------------------------------------------------------
 # Prefs starting with "prompts."

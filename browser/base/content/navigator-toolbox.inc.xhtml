@@ -353,6 +353,9 @@
                      onclick="FullZoom.reset(); FullZoom.resetScalingZoom();"
                      tooltip="dynamic-shortcut-tooltip"
                      hidden="true"/>
+
+#include ../../components/onionservices/content/onionlocation-urlbar.inc.xhtml
+
               <hbox id="pageActionButton"
                     class="urlbar-page-action"
                     role="button"
@@ -407,6 +410,8 @@
           <image class="toolbarbutton-animatable-image" id="downloads-indicator-finish-image"/>
         </box>
       </toolbarbutton>
+
+#include ../../components/securitylevel/content/securityLevelButton.inc.xhtml
 
       <toolbarbutton id="fxa-toolbar-menu-button" class="toolbarbutton-1 chromeclass-toolbar-additional subviewbutton-nav"
                      badged="true"
@@ -537,6 +542,16 @@
                    ondrop="newWindowButtonObserver.onDrop(event)"
                    ondragover="newWindowButtonObserver.onDragOver(event)"
                    ondragenter="newWindowButtonObserver.onDragOver(event)"/>
+
+    <toolbarbutton id="new-identity-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   label="&torbutton.context_menu.new_identity;"
+                   oncommand="torbutton_new_identity();"
+                   tooltiptext="&torbutton.context_menu.new_identity;"/>
+
+    <toolbarbutton id="new-circuit-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   label="&torbutton.context_menu.new_circuit;"
+                   oncommand="torbutton_new_circuit();"
+                   tooltiptext="&torbutton.context_menu.new_circuit;"/>
 
     <toolbarbutton id="fullscreen-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
                    observes="View:FullScreen"

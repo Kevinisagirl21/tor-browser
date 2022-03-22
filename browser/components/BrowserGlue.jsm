@@ -18,7 +18,6 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
@@ -45,6 +44,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadsViewableInternally:
     "resource:///modules/DownloadsViewableInternally.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
+  ExtensionData: "resource://gre/modules/Extension.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
   FeatureGate: "resource://featuregates/FeatureGate.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
@@ -70,7 +70,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
-  PublicSuffixList: "resource://gre/modules/netwerk-dns/PublicSuffixList.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   RemoteSecuritySettings:
     "resource://gre/modules/psm/RemoteSecuritySettings.jsm",
@@ -89,6 +88,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabUnloader: "resource:///modules/TabUnloader.jsm",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.jsm",
   TRRRacer: "resource:///modules/TRRPerformance.jsm",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.jsm",
   UIState: "resource://services-sync/UIState.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -122,6 +122,13 @@ let initializedModules = {};
 XPCOMUtils.defineLazyServiceGetters(this, {
   BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
   PushService: ["@mozilla.org/push/Service;1", "nsIPushService"],
+});
+
+XPCOMUtils.defineLazyServiceGetters(this, {
+  resProto: [
+    "@mozilla.org/network/protocol;1?name=resource",
+    "nsISubstitutingProtocolHandler",
+  ],
 });
 
 const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
@@ -215,28 +222,6 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:logins", "about:logins?*", "about:loginsimportreport"],
-  },
-
-  AboutNewTab: {
-    parent: {
-      moduleURI: "resource:///actors/AboutNewTabParent.jsm",
-    },
-    child: {
-      moduleURI: "resource:///actors/AboutNewTabChild.jsm",
-      events: {
-        DOMContentLoaded: {},
-        pageshow: {},
-        visibilitychange: {},
-      },
-    },
-    // The wildcard on about:newtab is for the ?endpoint query parameter
-    // that is used for snippets debugging. The wildcard for about:home
-    // is similar, and also allows for falling back to loading the
-    // about:home document dynamically if an attempt is made to load
-    // about:home?jscache from the AboutHomeStartupCache as a top-level
-    // load.
-    matches: ["about:home*", "about:welcome", "about:newtab*"],
-    remoteTypes: ["privilegedabout"],
   },
 
   AboutPlugins: {
@@ -577,6 +562,19 @@ let JSWINDOWACTORS = {
 
     matches: ["about:certerror?*", "about:neterror?*"],
     allFrames: true,
+  },
+
+  OnionLocation: {
+    parent: {
+      moduleURI: "resource:///modules/OnionLocationParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///modules/OnionLocationChild.jsm",
+      events: {
+        pageshow: { mozSystemGroup: true },
+      },
+    },
+    messageManagerGroups: ["browsers"],
   },
 
   PageInfo: {
@@ -1354,6 +1352,20 @@ BrowserGlue.prototype = {
     // handle any UI migration
     this._migrateUI();
 
+    // Clear possibly auto enabled enterprise_roots prefs (see bug 40166)
+    if (
+      !Services.prefs.getBoolPref(
+        "security.certerrors.mitm.auto_enable_enterprise_roots"
+      ) &&
+      Services.prefs.getBoolPref(
+        "security.enterprise_roots.auto-enabled",
+        false
+      )
+    ) {
+      Services.prefs.clearUserPref("security.enterprise_roots.enabled");
+      Services.prefs.clearUserPref("security.enterprise_roots.auto-enabled");
+    }
+
     if (!Services.prefs.prefHasUserValue(PREF_PDFJS_ISDEFAULT_CACHE_STATE)) {
       PdfJs.checkIsDefault(this._isNewProfile);
     }
@@ -1363,6 +1375,35 @@ BrowserGlue.prototype = {
     SessionStore.init();
 
     BuiltInThemes.maybeInstallActiveBuiltInTheme();
+
+    // Install https-everywhere builtin addon if needed.
+    (async () => {
+      const HTTPS_EVERYWHERE_ID = "https-everywhere-eff@eff.org";
+      const HTTPS_EVERYWHERE_BUILTIN_URL =
+        "resource://torbutton/content/extensions/https-everywhere/";
+      // This does something similar as GeckoViewWebExtension.jsm: it tries
+      // to load the manifest to retrieve the version of the builtin and
+      // compares it to the currently installed one to see whether we need
+      // to install or not. Here we delegate that to
+      // AddonManager.maybeInstallBuiltinAddon.
+      try {
+        const resolvedURI = Services.io.newURI(
+          resProto.resolveURI(Services.io.newURI(HTTPS_EVERYWHERE_BUILTIN_URL))
+        );
+        const extensionData = new ExtensionData(resolvedURI);
+        const manifest = await extensionData.loadManifest();
+
+        await AddonManager.maybeInstallBuiltinAddon(
+          HTTPS_EVERYWHERE_ID,
+          manifest.version,
+          HTTPS_EVERYWHERE_BUILTIN_URL
+        );
+      } catch (e) {
+        const log = Log.repository.getLogger("HttpsEverywhereBuiltinLoader");
+        log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+        log.error("Could not install https-everywhere extension", e);
+      }
+    })();
 
     if (AppConstants.MOZ_NORMANDY) {
       Normandy.init();
@@ -1594,8 +1635,6 @@ BrowserGlue.prototype = {
 
   // the first browser window has finished initializing
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
-    AboutNewTab.init();
-
     TabCrashHandler.init();
 
     ProcessHangMonitor.init();
@@ -1986,6 +2025,7 @@ BrowserGlue.prototype = {
       () => Normandy.uninit(),
       () => RFPHelper.uninit(),
       () => ASRouterNewTabHook.destroy(),
+      () => OnionAliasStore.uninit(),
     ];
 
     tasks.push(
@@ -2019,6 +2059,9 @@ BrowserGlue.prototype = {
     const ID = "screenshots@mozilla.org";
     const _checkScreenshotsPref = async () => {
       let addon = await AddonManager.getAddonByID(ID);
+      if (!addon) {
+        return;
+      }
       let screenshotsDisabled = Services.prefs.getBoolPref(
         SCREENSHOTS_PREF,
         false
@@ -2048,6 +2091,9 @@ BrowserGlue.prototype = {
     const ID = "webcompat-reporter@mozilla.org";
     Services.prefs.addObserver(PREF, async () => {
       let addon = await AddonManager.getAddonByID(ID);
+      if (!addon) {
+        return;
+      }
       let enabled = Services.prefs.getBoolPref(PREF, false);
       if (enabled && !addon.isActive) {
         await addon.enable({ allowSystemAddons: true });
@@ -2640,6 +2686,12 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
+          OnionAliasStore.init();
+        },
+      },
+
+      {
+        task: () => {
           Blocklist.loadBlocklistAsync();
         },
       },
@@ -2864,10 +2916,6 @@ BrowserGlue.prototype = {
       () => {
         RemoteSettings.init();
         this._addBreachesSyncHandler();
-      },
-
-      () => {
-        PublicSuffixList.init();
       },
 
       () => {
@@ -3546,17 +3594,6 @@ BrowserGlue.prototype = {
         // Some old versions used to dump without subfolders. Clean them while we are at it.
         const path = PathUtils.join(PROFILE_DIR, `blocklists-${filename}`);
         IOUtils.remove(path, { ignoreAbsent: true });
-      }
-    }
-
-    if (currentUIVersion < 76) {
-      // Clear old onboarding prefs from profile (bug 1462415)
-      let onboardingPrefs = Services.prefs.getBranch("browser.onboarding.");
-      if (onboardingPrefs) {
-        let onboardingPrefsArray = onboardingPrefs.getChildList("");
-        for (let item of onboardingPrefsArray) {
-          Services.prefs.clearUserPref("browser.onboarding." + item);
-        }
       }
     }
 
@@ -5807,12 +5844,8 @@ var AboutHomeStartupCache = {
       return { pageInputStream: null, scriptInputStream: null };
     }
 
-    let state = AboutNewTab.activityStream.store.getState();
-    return new Promise(resolve => {
-      this._cacheDeferred = resolve;
-      this.log.trace("Parent is requesting cache streams.");
-      this._procManager.sendAsyncMessage(this.CACHE_REQUEST_MESSAGE, { state });
-    });
+    this.log.error("Activity Stream is disabled in Tor Browser.");
+    return { pageInputStream: null, scriptInputStream: null };
   },
 
   /**
