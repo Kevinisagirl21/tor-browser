@@ -538,6 +538,7 @@ const TorSettings = (() => {
                         if (settings.bridges.bridge_strings.length == 0 && settings.bridges.enabled) {
                             throw new Error(`No available builtin bridges of type ${settings.bridges.builtin_type}`);
                         }
+                        this._settings.bridges.bridge_strings = settings.bridges.bridge_strings;
                         break;
                     }
                     case TorBridgeSource.Invalid:
