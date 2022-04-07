@@ -282,6 +282,8 @@ var TorStrings = {
       ),
       bridgeLocation: getString("torPreferences.bridgeLocation", "Your location"),
       bridgeLocationAutomatic: getString("torPreferences.bridgeLocationAutomatic", "Automatic"),
+      bridgeLocationFrequent: getString("torPreferences.bridgeLocationFrequent", "Frequently selected locations"),
+      bridgeLocationOther: getString("torPreferences.bridgeLocationOther", "Other locations"),
       bridgeChooseForMe: getString("torPreferences.bridgeChooseForMe", "Choose a Bridge For Me\u2026"),
       bridgeCurrent: getString("torPreferences.bridgeBadgeCurrent", "Your Current Bridges"),
       bridgeId: getString("torPreferences.bridgeId", "#1 bridge: #2"),
@@ -293,8 +295,8 @@ var TorStrings = {
       ),
       bridgeCopy: getString("torPreferences.bridgeCopy", "Copy Bridge Address"),
       copied: getString("torPreferences.copied", "Copied!"),
-      bridgeShowAll: getString("torPreferences.bridgeShowAll", "Show all bridges"),
-      bridgeRemoveAll: getString("torPreferences.bridgeRemoveAll", "Remove all bridges"),
+      bridgeShowAll: getString("torPreferences.bridgeShowAll", "Show All Bridges"),
+      bridgeRemoveAll: getString("torPreferences.bridgeRemoveAll", "Remove All Bridges"),
       bridgeAdd: getString("torPreferences.bridgeAdd", "Add a New Bridge"),
       bridgeSelectBrowserBuiltin: getString(
         "torPreferences.bridgeSelectBrowserBuiltin",
@@ -332,6 +334,10 @@ var TorStrings = {
         "View the Tor logs"
       ),
       showLogs: getString("torPreferences.viewLogs", "View Logs\u2026"),
+      // Remove all bridges dialog
+      removeBridgesQuestion: getString("torPreferences.removeBridgesQuestion", "Remove all the bridges?"),
+      removeBridgesWarning: getString("torPreferences.removeBridgesWarning", "This action cannot be undone."),
+      cancel: getString("torPreferences.cancel", "Cancel"),
       // Scan bridge QR dialog
       scanQrTitle: getString("torPreferences.scanQrTitle", "Scan the QR code"),
       // Builtin bridges dialog
@@ -500,6 +506,13 @@ var TorStrings = {
         "Connecting…"
       ),
 
+      tryingAgain: getStringNet("torConnect.tryingAgain", "Trying again…"),
+
+      noInternet: getStringNet(
+        "torConnect.noInternet",
+        "Tor Browser couldn’t reach the Internet"
+      ),
+
       torBootstrapFailed: getStringLauncher(
         "tor_bootstrap_failed",
         "Tor failed to establish a Tor network connection."
@@ -526,18 +539,8 @@ var TorStrings = {
       ),
 
       tryingBridgeAgain: getStringNet(
-        "torConnect.tryingBridge",
+        "torConnect.tryingBridgeAgain",
         "Trying one more time…"
-      ),
-
-      addLocation: getStringNet(
-        "torConnect.addLocation",
-        "Add your location settings"
-      ),
-
-      addLocationDescription: getStringNet(
-        "torConnect.addLocationDescription",
-        "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."
       ),
 
       errorLocation: getStringNet(
@@ -547,7 +550,17 @@ var TorStrings = {
 
       errorLocationDescription: getStringNet(
         "torConnect.errorLocationDescription",
-        "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again."
+        "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead."
+      ),
+
+      isLocationCorrect: getStringNet(
+        "torConnect.isLocationCorrect",
+        "Are these location settings correct?"
+      ),
+
+      isLocationCorrectDescription: getStringNet(
+        "torConnect.isLocationCorrectDescription",
+        "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead."
       ),
 
       finalError: getStringNet(
@@ -604,8 +617,7 @@ var TorStrings = {
         "Connected"
       ),
 
-      tryAgain: getStringNet("torConnect.tryAgain", "Try connecting again"),
-      offline: getStringNet("torConnect.offline", "Offline"),
+      tryAgain: getStringNet("torConnect.tryAgain", "Try Again"),
 
       // tor connect strings for message box in about:preferences#connection
       connectMessage: getStringNet("torConnect.connectMessage", "Changes to Tor Settings will not take effect until you connect"),
@@ -615,12 +627,22 @@ var TorStrings = {
 
       tryBridge: getStringNet("torConnect.tryBridge", "Try a Bridge"),
 
+      automatic: getStringNet("torConnect.automatic", "Automatic"),
       selectCountryRegion: getStringNet(
         "torConnect.selectCountryRegion",
-        "Select Country or Region",
+        "Select Country or Region"
+      ),
+      frequentLocations: getStringNet(
+        "torConnect.frequentLocations",
+        "Frequently selected locations"
+      ),
+      otherLocations: getStringNet(
+        "torConnect.otherLocations",
+        "Other locations"
       ),
 
       // TorConnect.jsm error messages
+      offline: getStringNet("torConnect.offline", "Internet not reachable"),
       autoBootstrappingFailed: getStringNet(
         "torConnect.autoBootstrappingFailed",
         "Automatic configuration failed"
