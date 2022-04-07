@@ -79,7 +79,15 @@
 }
 
 #breadcrumbs .error {
-  color: var(--red-60);
+  color: var(--in-content-danger-button-background);
+}
+
+#breadcrumbs .error:hover {
+  color: var(--in-content-danger-button-background-hover);
+}
+
+#breadcrumbs .error:active {
+  color: var(--in-content-danger-button-background-active);
 }
 
 #connection-assist {
