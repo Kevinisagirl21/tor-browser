@@ -41,6 +41,7 @@ class AboutTorConnect {
       },
     },
     viewLog: {
+      container: "#viewLogContainer",
       link: "span#viewLogLink",
     },
     quickstart: {
@@ -92,6 +93,7 @@ class AboutTorConnect {
     tryBridgeLabel: document.querySelector(
       this.selectors.breadcrumbs.tryBridge.label
     ),
+    viewLogContainer: document.querySelector(this.selectors.viewLog.container),
     viewLogLink: document.querySelector(this.selectors.viewLog.link),
     quickstartContainer: document.querySelector(
       this.selectors.quickstart.container
@@ -331,7 +333,7 @@ class AboutTorConnect {
       showProgressbar
     );
     this.hide(this.elements.quickstartContainer);
-    this.hide(this.elements.viewLogLink);
+    this.hide(this.elements.viewLogContainer);
     this.hideButtons();
   }
 
@@ -340,7 +342,7 @@ class AboutTorConnect {
     const showProgressbar = false;
 
     this.hide(this.elements.quickstartContainer);
-    this.hide(this.elements.viewLogLink);
+    this.hide(this.elements.viewLogContainer);
     this.hideButtons();
 
     if (hasError) {
@@ -402,9 +404,9 @@ class AboutTorConnect {
       BreadcrumbStatus.Active
     );
     if (state.ShowViewLog) {
-      this.show(this.elements.viewLogLink);
+      this.show(this.elements.viewLogContainer);
     } else {
-      this.hide(this.elements.viewLogLink);
+      this.hide(this.elements.viewLogContainer);
     }
     this.hideButtons();
     this.show(this.elements.cancelButton, true);
@@ -421,9 +423,9 @@ class AboutTorConnect {
     this.setProgress("", showProgressbar, state.BootstrapProgress);
     this.hideBreadcrumbs();
     if (state.ShowViewLog) {
-      this.show(this.elements.viewLogLink);
+      this.show(this.elements.viewLogContainer);
     } else {
-      this.hide(this.elements.viewLogLink);
+      this.hide(this.elements.viewLogContainer);
     }
     this.hideButtons();
     this.show(this.elements.cancelButton, true);
@@ -439,7 +441,7 @@ class AboutTorConnect {
     this.setLongText("");
     this.setProgress(state.ErrorDetails, showProgressbar);
     this.hideButtons();
-    this.show(this.elements.viewLogLink);
+    this.show(this.elements.viewLogContainer);
   }
 
   update_Bootstrapped(state) {
@@ -563,6 +565,7 @@ class AboutTorConnect {
     this.elements.tryBridgeLabel.textContent =
       TorStrings.torConnect.breadcrumbTryBridge;
 
+    this.hide(this.elements.viewLogContainer);
     this.elements.viewLogLink.textContent = TorStrings.torConnect.viewLog;
     this.elements.viewLogLink.addEventListener("click", event => {
       RPMSendAsyncMessage("torconnect:view-tor-logs");
