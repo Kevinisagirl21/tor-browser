@@ -187,7 +187,6 @@ class AboutTorConnect {
     locationNodes.sort((left, right) =>
       left.textContent.localeCompare(right.textContent)
     );
-
     this.elements.locationDropdownSelect.append(
       selectCountryRegion,
       ...locationNodes
@@ -204,14 +203,13 @@ class AboutTorConnect {
     for (const code of specialLocations) {
       const option = document.createElement("option");
       option.value = code;
-
+      option.className = "frequent-location";
       // codes (partially) come from rdsys service, so make sure we have a
       // string defined for it
       let name = this.locations[code];
       if (!name) {
         name = code;
       }
-
       option.textContent = name;
       locationNodes.push(option);
     }
@@ -220,28 +218,24 @@ class AboutTorConnect {
       left.textContent.localeCompare(right.textContent)
     );
 
-    const disabledDividerNode = document.createElement("option");
-    disabledDividerNode.setAttribute("disabled", true);
-    disabledDividerNode.className = "divider";
+    const specialGroup = document.createElement("optgroup");
+    specialGroup.setAttribute("label", TorStrings.torConnect.frequentLocations);
+    specialGroup.className = "frequent-location";
+    const locationGroup = document.createElement("optgroup");
+    locationGroup.setAttribute("label", TorStrings.torConnect.otherLocations);
+    locationGroup.className = "frequent-location";
+    // options[0] is "Select Country or Region"
     this.elements.locationDropdownSelect.options[0].after(
+      specialGroup,
       ...locationNodes,
-      disabledDividerNode
+      locationGroup
     );
   }
 
   removeSpecialLocations() {
     const select = this.elements.locationDropdownSelect;
-    if (select.querySelector(".divider") === null) {
-      return;
-    }
-
-    while (select.options.length > 1) {
-      // Skip the "select country/region" option
-      const opt = select.options[1];
-      opt.remove();
-      if (opt.className === "divider") {
-        break;
-      }
+    for (const option of select.querySelectorAll(".frequent-location")) {
+      option.remove();
     }
   }
 
