@@ -546,8 +546,7 @@ class AboutTorConnect {
     this.setProgress(state ? state.ErrorDetails : "", false);
     this.hideButtons();
     this.show(this.elements.restartButton);
-    this.show(this.elements.configureButton);
-    this.show(this.elements.connectButton, true);
+    this.show(this.elements.configureButton, true);
   }
 
   initElements(direction) {
