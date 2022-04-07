@@ -5,7 +5,6 @@ browser.jar:
     content/browser/torconnect/aboutTorConnect.js                  (content/aboutTorConnect.js)
     content/browser/torconnect/arrow-right.svg                     (content/arrow-right.svg)
     content/browser/torconnect/bridge.svg                          (content/bridge.svg)
-    content/browser/torconnect/globe.svg                           (content/globe.svg)
     content/browser/torconnect/connection-failure.svg              (content/connection-failure.svg)
     content/browser/torconnect/connection-location.svg             (content/connection-location.svg)
     content/browser/torconnect/onion.svg                           (content/onion.svg)

@@ -7,19 +7,22 @@
     <link rel="stylesheet" href="chrome://browser/content/torconnect/aboutTorConnect.css" type="text/css" media="all" />
   </head>
   <body>
-    <div id="progressBackground"></div>
+    <div id="progressBar">
+      <div id="progressBackground" />
+      <div id="progressSolid" />
+    </div>
     <div id="connectPageContainer" class="container">
       <div id="breadcrumbs" class="hidden">
+        <span id="connect-to-tor" class="breadcrumb-item">
+          <span id="connect-to-tor-icon" class="breadcrumb-icon" />
+          <span class="breadcrumb-label"/>
+        </span>
+        <span id="connection-assist-separator" class="breadcrumb-separator breadcrumb-icon" />
         <span id="connection-assist" class="breadcrumb-item">
           <span id="connection-assist-icon" class="breadcrumb-icon" />
           <span class="breadcrumb-label"/>
         </span>
-        <span class="breadcrumb-separator breadcrumb-icon" />
-        <span id="location-settings" class="breadcrumb-item">
-          <span id="location-settings-icon" class="breadcrumb-icon" />
-          <span class="breadcrumb-label"/>
-        </span>
-        <span class="breadcrumb-separator breadcrumb-icon" />
+        <span id="try-bridge-separator" class="breadcrumb-separator breadcrumb-icon" />
         <span id="try-bridge" class="breadcrumb-item">
           <span id="try-bridge-icon" class="breadcrumb-icon" />
           <span class="breadcrumb-label"/>
@@ -37,7 +40,7 @@
         </div>
 
         <div id="viewLogContainer">
-          <span id="viewLogLink" hidden="true"></span>
+          <span id="viewLogLink"></span>
         </div>
 
         <div id="quickstartContainer">
@@ -50,13 +53,12 @@
           <button id="configureButton" hidden="true"></button>
           <button id="cancelButton" hidden="true"></button>
           <button id="connectButton" class="primary" hidden="true"></button>
-          <button id="tryBridgeButton" class="primary" hidden="true"></button>
-          <div id="locationDropdownLabel"/>
+          <label id="locationDropdownLabel" for="countries"/>
           <form id="locationDropdown" hidden="true">
             <select id="countries">
             </select>
           </form>
-          <button id="tryAgainButton" class="primary" hidden="true"></button>
+          <button id="tryBridgeButton" class="primary" hidden="true"></button>
         </div>
       </div>
     </div>
