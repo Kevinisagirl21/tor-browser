@@ -125,7 +125,7 @@ div#locationDropdownLabel {
   margin-inline: 4px;
 }
 
-/* these two follow similar css in error-pages.css for buttons */
+/* this follows similar css in error-pages.css for buttons */
 @media only screen and (min-width: 480px) {
   form#locationDropdown {
     margin-inline: 4px;
@@ -136,14 +136,13 @@ div#locationDropdownLabel {
 }
 
 @media only screen and (max-width: 480px) {
-  form#locationDropdown,
-  div#locationDropdownLabel {
-    margin: 0.66em 0 0;
+  #tryAgainButton {
+    margin-top: 4px;
   }
+}
 
-  form#locationDropdown {
-    width: 100%;
-  }
+form#locationDropdown {
+  width: 240px;
 }
 
 form#locationDropdown select {
