@@ -196,7 +196,8 @@ input[type="checkbox"]:not(:disabled):active:checked {
 
 #connectPageContainer {
   margin-top: 10vh;
-  width: 50%;
+  width: 100%;
+  max-width: 45em;
 }
 
 #quickstartCheckbox, #quickstartCheckboxLabel {
