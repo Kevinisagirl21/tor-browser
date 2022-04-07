@@ -380,11 +380,11 @@ class AboutTorConnect {
       this.show(this.elements.quickstartContainer);
       this.show(this.elements.configureButton);
       this.show(this.elements.connectButton, true);
+      this.elements.connectButton.textContent =
+        TorStrings.torConnect.torConnectButton;
       if (state.StateChanged) {
         this.elements.connectButton.focus();
       }
-      this.elements.connectButton.textContent =
-        TorStrings.torConnect.torConnectButton;
     }
   }
 
@@ -483,6 +483,7 @@ class AboutTorConnect {
     this.hideButtons();
     this.show(this.elements.configureButton);
     this.show(this.elements.connectButton);
+    this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
     this.show(this.elements.tryBridgeButton, true);
   }
 
