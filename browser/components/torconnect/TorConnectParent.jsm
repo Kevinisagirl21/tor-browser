@@ -4,9 +4,12 @@ var EXPORTED_SYMBOLS = ["TorConnectParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } = ChromeUtils.import(
-  "resource:///modules/TorConnect.jsm"
-);
+const {
+  TorConnect,
+  TorConnectTopics,
+  TorConnectState,
+  TorCensorshipLevel,
+} = ChromeUtils.import("resource:///modules/TorConnect.jsm");
 const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
   "resource:///modules/TorSettings.jsm"
 );
@@ -24,7 +27,7 @@ class TorConnectParent extends JSWindowActorParent {
 
     this.state = {
       State: TorConnect.state,
-      DetectedCensorshiplevel: TorConnect.detectedCensorshiplevel,
+      DetectedCensorshipLevel: TorConnect.detectedCensorshipLevel,
       StateChanged: false,
       ErrorMessage: TorConnect.errorMessage,
       ErrorDetails: TorConnect.errorDetails,
@@ -73,10 +76,12 @@ class TorConnectParent extends JSWindowActorParent {
           case TorConnectTopics.BootstrapError: {
             self.state.ErrorMessage = obj.message;
             self.state.ErrorDetails = obj.details;
-            self.state.DetectedCensorshiplevel = obj.censorshipLevel;
+            self.state.DetectedCensorshipLevel = obj.censorshipLevel;
 
             // With severe censorshp, we offer user list of countries to try
-            if (self.state.DetectedCensorshiplevel == TorCensorshipLevel.Severe) {
+            if (
+              self.state.DetectedCensorshipLevel == TorCensorshipLevel.Severe
+            ) {
               self.state.CountryCodes = TorConnect.countryCodes;
             }
 

@@ -346,7 +346,7 @@ class AboutTorConnect {
     this.hideButtons();
 
     if (hasError) {
-      switch (state.DetectedCensorshiplevel) {
+      switch (state.DetectedCensorshipLevel) {
         case TorCensorshipLevel.None:
           // we shouldn't be able to get here
           break;
@@ -387,7 +387,7 @@ class AboutTorConnect {
   update_AutoBootstrapping(state) {
     const showProgressbar = true;
 
-    if (state.DetectedCensorshiplevel >= TorCensorshipLevel.Severe) {
+    if (state.DetectedCensorshipLevel >= TorCensorshipLevel.Severe) {
       this.setTitle(TorStrings.torConnect.tryingBridgeAgain, "");
     } else {
       this.setTitle(TorStrings.torConnect.tryingBridge, "");
