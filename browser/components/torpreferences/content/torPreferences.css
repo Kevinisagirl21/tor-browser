@@ -176,6 +176,11 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 280px;
 }
 
+#torPreferences-bridges-location menuitem[disabled="true"] {
+  color: var(--in-content-button-text-color, inherit);
+  font-weight: 700;
+}
+
 /* Bridge cards */
 :root {
   --bridgeCard-animation-time: 0.25s;
@@ -188,7 +193,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 #torPreferences-currentBridges-cards.list-collapsed {
-  mask-image: linear-gradient(rgb(0, 0, 0), rgba(0, 0, 0, 0.1));
+  mask-image: linear-gradient(rgb(0, 0, 0) 0% 75%, rgba(0, 0, 0, 0.1));
 }
 
 #torPreferences-currentBridges-cards.disabled {
@@ -200,9 +205,12 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   /* define border-radius here because of the transition */
   border-radius: 4px;
   transition: margin var(--bridgeCard-animation-time), box-shadow 150ms;
+  cursor: pointer;
 }
 
-.torPreferences-bridgeCard.expanded {
+.torPreferences-bridgeCard.expanded,
+.torPreferences-bridgeCard.currently-connected,
+.single-card .torPreferences-bridgeCard {
   margin: 12px 0;
   background: var(--in-content-box-background);
   box-shadow: var(--card-shadow);
@@ -211,7 +219,11 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 .torPreferences-bridgeCard:hover {
   background: var(--in-content-box-background);
   box-shadow: var(--card-shadow-hover);
-  cursor: pointer;
+}
+
+.single-card .torPreferences-bridgeCard,
+.torPreferences-bridgeCard.currently-connected {
+  cursor: default;
 }
 
 .torPreferences-bridgeCard-heading {
@@ -228,7 +240,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   padding: 4px;
   font-size: 20px;
   border-radius: 4px;
-  background: var(--in-content-button-background-hover);
+  background: var(--in-content-box-background-odd);
 }
 
 .torPreferences-bridgeCard-headingAddr {
@@ -237,12 +249,15 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 20px;
   flex: 1;
   margin: 0 8px;
-  white-space: nowrap;
   overflow: hidden;
+  color: var(--in-content-deemphasized-text);
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.expanded .torPreferences-bridgeCard-headingAddr {
+.expanded .torPreferences-bridgeCard-headingAddr,
+.currently-connected .torPreferences-bridgeCard-headingAddr,
+.single-card .torPreferences-bridgeCard-headingAddr {
   display: none;
 }
 
@@ -354,8 +369,15 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   visibility: hidden;
 }
 
-.expanded .torPreferences-bridgeCard-grid {
+.expanded .torPreferences-bridgeCard-grid,
+.currently-connected .torPreferences-bridgeCard-grid,
+.single-card .torPreferences-bridgeCard-grid {
   visibility: visible;
+}
+
+.currently-connected .torPreferences-bridgeCard-grid,
+.single-card .torPreferences-bridgeCard-grid {
+  height: auto;
 }
 
 .torPreferences-bridgeCard-grid.to-animate {
@@ -375,8 +397,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   margin: 8px 0;
 }
 
-.torPreferences-bridgeCard-addr {
+input.torPreferences-bridgeCard-addr {
   width: 100%;
+  color: var(--in-content-deemphasized-text);
 }
 
 .torPreferences-bridgeCard-leranMoreBox {
@@ -538,4 +561,95 @@ textarea#torPreferences-torDialog-textarea {
   overflow: auto;
   /* 10 lines */
   min-height: 20em;
+}
+
+/* Bridge remove overlay */
+#bridge-remove-overlay {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+#bridge-remove-overlay.hidden {
+  display: none;
+}
+
+#bridge-remove-modal {
+  position: relative;
+  min-width: 250px;
+  max-width: 500px;
+  min-height: 200px;
+  z-index: 2;
+  text-align: center;
+  background: var(--in-content-page-background);
+  box-shadow: var(--shadow-30);
+}
+
+#bridge-remove-dismiss {
+  position: absolute;
+  top: 16px;
+  inset-inline-end: 16px;
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+#bridge-remove-dismiss:hover {
+  background-color: var(--in-content-button-background-hover);
+  color: var(--in-content-button-text-color-hover);
+  border: 1px solid var(--in-content-button-border-color-hover);
+  border-radius: 4px;
+}
+
+#bridge-remove-dismiss:hover:active {
+  background-color: var(--in-content-button-background-active);
+}
+
+#bridge-remove-icon {
+  width: 40px;
+  height: 40px;
+  background-image: url("chrome://global/skin/icons/warning.svg");
+  background-size: 40px;
+  margin: 16px auto;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+#bridge-remove-question {
+  font-size: 150%;
+}
+
+#bridge-remove-warning {
+  color: var(--in-content-deemphasized-text);
+}
+
+#bridge-remove-buttonbar {
+  padding: 16px 32px;
+}
+
+#bridge-remove-buttonbar button {
+  min-width: 140px;
+}
+
+#bridge-remove-confirm {
+  background: var(--in-content-danger-button-background);
+  color: var(--in-content-primary-button-text-color);
+}
+
+#bridge-remove-confirm:hover {
+  background: var(--in-content-danger-button-background-hover);
+  color: var(--in-content-primary-button-text-color-hover);
+  border-color: var(--in-content-primary-button-border-hover);
+}
+
+#bridge-remove-confirm:hover:active {
+  background: var(--in-content-danger-button-background-active);
 }

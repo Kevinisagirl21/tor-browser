@@ -110,6 +110,7 @@ const gConnectionPane = (function() {
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
       currentHeader: "#torPreferences-currentBridges-header",
       currentHeaderText: "#torPreferences-currentBridges-headerText",
+      currentDescriptionText: "#torPreferences-currentBridges-description",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -135,6 +136,13 @@ const gConnectionPane = (function() {
       requestButton: "#torPreferences-addBridge-buttonRequestBridge",
       enterLabel: "#torPreferences-addBridge-labelEnterBridge",
       enterButton: "#torPreferences-addBridge-buttonEnterBridge",
+      removeOverlay: "#bridge-remove-overlay",
+      removeModal: "#bridge-remove-modal",
+      removeDismiss: "#bridge-remove-dismiss",
+      removeQuestion: "#bridge-remove-question",
+      removeWarning: "#bridge-remove-warning",
+      removeConfirm: "#bridge-remove-confirm",
+      removeCancel: "#bridge-remove-cancel",
     },
     advanced: {
       header: "h1#torPreferences-advanced-header",
@@ -280,9 +288,7 @@ const gConnectionPane = (function() {
         if (TorConnect.state === TorConnectState.Bootstrapped) {
           torIcon.className = "connected";
           torStatus.textContent = TorStrings.settings.statusTorConnected;
-        } else if (
-          TorConnect.detectedCensorshipLevel > TorCensorshipLevel.None
-        ) {
+        } else if (TorConnect.hasBootstrapEverFailed) {
           torIcon.className = "blocked";
           torStatus.textContent = TorStrings.settings.statusTorBlocked;
         } else {
@@ -346,36 +352,46 @@ const gConnectionPane = (function() {
           TorConnect.beginAutoBootstrap(location.value);
         });
         this._populateLocations = () => {
-          let value = location.value;
+          const currentValue = location.value;
           locationEntries.textContent = "";
-
-          {
+          const createItem = (value, label, disabled) => {
             const item = document.createXULElement("menuitem");
-            item.setAttribute("value", "");
-            item.setAttribute(
-              "label",
-              TorStrings.settings.bridgeLocationAutomatic
-            );
-            locationEntries.appendChild(item);
-          }
-
-          const codes = TorConnect.countryCodes;
-          const items = codes.map(code => {
-            const item = document.createXULElement("menuitem");
-            item.setAttribute("value", code);
-            item.setAttribute(
-              "label",
-              TorConnect.countryNames[code]
-                ? TorConnect.countryNames[code]
-                : code
-            );
+            item.setAttribute("value", value);
+            item.setAttribute("label", label);
+            if (disabled) {
+              item.setAttribute("disabled", "true");
+            }
             return item;
-          });
-          items.sort((left, right) =>
-            left.textContent.localeCompare(right.textContent)
+          };
+          const addLocations = codes => {
+            const items = [];
+            for (const code of codes) {
+              items.push(
+                createItem(
+                  code,
+                  TorConnect.countryNames[code]
+                    ? TorConnect.countryNames[code]
+                    : code
+                )
+              );
+            }
+            items.sort((left, right) => left.label.localeCompare(right.label));
+            locationEntries.append(...items);
+          };
+          locationEntries.append(
+            createItem("", TorStrings.settings.bridgeLocationAutomatic)
           );
-          locationEntries.append(...items);
-          location.value = value;
+          if (TorConnect.countryCodes.length) {
+            locationEntries.append(
+              createItem("", TorStrings.settings.bridgeLocationFrequent, true)
+            );
+            addLocations(TorConnect.countryCodes);
+            locationEntries.append(
+              createItem("", TorStrings.settings.bridgeLocationOther, true)
+            );
+          }
+          addLocations(Object.keys(TorConnect.countryNames));
+          location.value = currentValue;
         };
         this._showAutoconfiguration = () => {
           if (
@@ -413,6 +429,9 @@ const gConnectionPane = (function() {
           this._populateBridgeCards();
         });
       });
+      prefpane.querySelector(
+        selectors.bridges.currentDescriptionText
+      ).textContent = TorStrings.settings.bridgeCurrentDescription;
       const bridgeTemplate = prefpane.querySelector(
         selectors.bridges.cardTemplate
       );
@@ -439,6 +458,12 @@ const gConnectionPane = (function() {
         card.removeAttribute("id");
         const grid = card.querySelector(selectors.bridges.cardQrGrid);
         card.addEventListener("click", e => {
+          if (
+            card.classList.contains("currently-connected") ||
+            bridgeCards.classList.contains("single-card")
+          ) {
+            return;
+          }
           let target = e.target;
           let apply = true;
           while (target !== null && target !== card && apply) {
@@ -598,7 +623,7 @@ const gConnectionPane = (function() {
       const removeAll = prefpane.querySelector(selectors.bridges.removeAll);
       removeAll.setAttribute("label", TorStrings.settings.bridgeRemoveAll);
       removeAll.addEventListener("command", () => {
-        this.onRemoveAllBridges();
+        this._confirmBridgeRemoval();
       });
       this._populateBridgeCards = async () => {
         const collapseThreshold = 4;
@@ -617,6 +642,7 @@ const gConnectionPane = (function() {
         bridgeCards.removeAttribute("hidden");
         bridgeSwitch.checked = TorSettings.bridges.enabled;
         bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
+        bridgeCards.classList.toggle("single-card", numBridges === 1);
 
         let shownCards = 0;
         const toShow = this._currentBridgesExpanded
@@ -787,7 +813,37 @@ const gConnectionPane = (function() {
         });
       }
 
-      Services.obs.addObserver(this, TorConnectTopics.StateChange);
+      {
+        const overlay = prefpane.querySelector(selectors.bridges.removeOverlay);
+        this._confirmBridgeRemoval = () => {
+          overlay.classList.remove("hidden");
+        };
+        const closeDialog = () => {
+          overlay.classList.add("hidden");
+        };
+        overlay.addEventListener("click", closeDialog);
+        const modal = prefpane.querySelector(selectors.bridges.removeModal);
+        modal.addEventListener("click", e => {
+          e.stopPropagation();
+        });
+        const dismiss = prefpane.querySelector(selectors.bridges.removeDismiss);
+        dismiss.addEventListener("click", closeDialog);
+        const question = prefpane.querySelector(
+          selectors.bridges.removeQuestion
+        );
+        question.textContent = TorStrings.settings.removeBridgesQuestion;
+        const warning = prefpane.querySelector(selectors.bridges.removeWarning);
+        warning.textContent = TorStrings.settings.removeBridgesWarning;
+        const confirm = prefpane.querySelector(selectors.bridges.removeConfirm);
+        confirm.setAttribute("label", TorStrings.settings.remove);
+        confirm.addEventListener("command", () => {
+          this.onRemoveAllBridges();
+          closeDialog();
+        });
+        const cancel = prefpane.querySelector(selectors.bridges.removeCancel);
+        cancel.setAttribute("label", TorStrings.settings.cancel);
+        cancel.addEventListener("command", closeDialog);
+      }
 
       // Advanced setup
       prefpane.querySelector(selectors.advanced.header).innerText =
@@ -816,6 +872,8 @@ const gConnectionPane = (function() {
       torLogsButton.addEventListener("command", () => {
         this.onViewTorLogs();
       });
+
+      Services.obs.addObserver(this, TorConnectTopics.StateChange);
     },
 
     init() {
@@ -915,6 +973,9 @@ const gConnectionPane = (function() {
     onRemoveAllBridges() {
       TorSettings.bridges.enabled = false;
       TorSettings.bridges.bridge_strings = "";
+      if (TorSettings.bridges.source == TorBridgeSource.BuiltIn) {
+        TorSettings.bridges.builtin_type = "";
+      }
       TorSettings.saveToPrefs();
       TorSettings.applySettings().then(result => {
         this._populateBridgeCards();
@@ -1018,272 +1079,33 @@ function makeBridgeId(bridgeString) {
   // JS uses UTF-16. While most of these emojis are surrogate pairs, a few
   // ones fit one UTF-16 character. So we could not use neither indices,
   // nor substr, nor some function to split the string.
-  const emojis = [
-    "😄️",
-    "😒️",
-    "😉",
-    "😭️",
-    "😂️",
-    "😎️",
-    "🤩️",
-    "😘",
-    "😜️",
-    "😏️",
-    "😷",
-    "🤢",
-    "🤕",
-    "🤧",
-    "🥵",
-    "🥶",
-    "🥴",
-    "😵️",
-    "🤮️",
-    "🤑",
-    "🤔",
-    "🫢",
-    "🤐",
-    "😮‍💨",
-    "😐",
-    "🤤",
-    "😴",
-    "🤯",
-    "🤠",
-    "🥳",
-    "🥸",
-    "🤓",
-    "🧐",
-    "😨",
-    "😳",
-    "🥺",
-    "🤬",
-    "😈",
-    "👿",
-    "💀",
-    "💩",
-    "🤡",
-    "👺",
-    "👻",
-    "👽",
-    "🦴",
-    "🤖",
-    "😸",
-    "🙈",
-    "🙉",
-    "🙊",
-    "💋",
-    "💖",
-    "💯",
-    "💢",
-    "💧",
-    "💨",
-    "💭",
-    "💤",
-    "👋",
-    "👌",
-    "✌",
-    "👍",
-    "👎",
-    "🤛",
-    "🙌",
-    "💪",
-    "🙏",
-    "✍",
-    "🧠",
-    "👀",
-    "👂",
-    "👅",
-    "🦷",
-    "🐾",
-    "🐶",
-    "🦊",
-    "🦝",
-    "🐈",
-    "🦁",
-    "🐯",
-    "🐴",
-    "🦄",
-    "🦓",
-    "🐮",
-    "🐷",
-    "🐑",
-    "🐪",
-    "🐘",
-    "🐭",
-    "🐰",
-    "🦔",
-    "🦇",
-    "🐻",
-    "🐨",
-    "🐼",
-    "🐔",
-    "🦨",
-    "🦘",
-    "🐦",
-    "🐧",
-    "🦩",
-    "🦉",
-    "🦜",
-    "🪶",
-    "🐸",
-    "🐊",
-    "🐢",
-    "🦎",
-    "🐍",
-    "🦖",
-    "🦀",
-    "🐬",
-    "🐙",
-    "🐌",
-    "🐝",
-    "🐞",
-    "🌸",
-    "🌲",
-    "🌵",
-    "🍀",
-    "🍁",
-    "🍇",
-    "🍉",
-    "🍊",
-    "🍋",
-    "🍌",
-    "🍍",
-    "🍎",
-    "🥥",
-    "🍐",
-    "🍒",
-    "🍓",
-    "🫐",
-    "🥝",
-    "🥔",
-    "🥕",
-    "🧅",
-    "🌰",
-    "🍄",
-    "🍞",
-    "🥞",
-    "🧀",
-    "🍖",
-    "🍔",
-    "🍟",
-    "🍕",
-    "🥚",
-    "🍿",
-    "🧂",
-    "🍙",
-    "🍦",
-    "🍩",
-    "🍪",
-    "🎂",
-    "🍬",
-    "🍭",
-    "🥛",
-    "☕",
-    "🫖",
-    "🍾",
-    "🍷",
-    "🍹",
-    "🍺",
-    "🍴",
-    "🥄",
-    "🫙",
-    "🧭",
-    "🌋",
-    "🪵",
-    "🏡",
-    "🏢",
-    "🏰",
-    "⛲",
-    "⛺",
-    "🎡",
-    "🚂",
-    "🚘",
-    "🚜",
-    "🚲",
-    "🚔",
-    "🚨",
-    "⛽",
-    "🚥",
-    "🚧",
-    "⚓",
-    "⛵",
-    "🛟",
-    "🪂",
-    "🚀",
-    "⌛",
-    "⏰",
-    "🌂",
-    "🌞",
-    "🌙",
-    "🌟",
-    "⛅",
-    "⚡",
-    "🔥",
-    "🌊",
-    "🎃",
-    "🎈",
-    "🎉",
-    "✨",
-    "🎀",
-    "🎁",
-    "🏆",
-    "🏅",
-    "🔮",
-    "🪄",
-    "🎾",
-    "🎳",
-    "🎲",
-    "🎭",
-    "🎨",
-    "🧵",
-    "🎩",
-    "📢",
-    "🔔",
-    "🎵",
-    "🎤",
-    "🎧",
-    "🎷",
-    "🎸",
-    "🥁",
-    "🔋",
-    "🔌",
-    "💻",
-    "💾",
-    "💿",
-    "🎬",
-    "📺",
-    "📷",
-    "🎮",
-    "🧩",
-    "🔍",
-    "💡",
-    "📖",
-    "💰",
-    "💼",
-    "📈",
-    "📌",
-    "📎",
-    "🔒",
-    "🔑",
-    "🔧",
-    "🪛",
-    "🔩",
-    "🧲",
-    "🔬",
-    "🔭",
-    "📡",
-    "🚪",
-    "🪑",
-    "⛔",
-    "🚩",
+const emojis = [
+    "👽","🤖","🧚","🧜","🏄","🐵","🦍","🐶","🐺","🦊","🐈","🦁","🐯","🐴","🦄","🦓",
+    "🦌","🐮","🐷","🐗","🐑","🦙","🦒","🐘","🐭","🐹","🐇","🐿","🦔","🐨","🐼","🦥",
+    "🦨","🦘","🐓","🐥","🐦","🐧","🕊","🦆","🦢","🦉","🦤","🦩","🦚","🦜","🐊","🐢",
+    "🦎","🐍","🐉","🦕","🦖","🐋","🐬","🐟","🐠","🐡","🦈","🐙","🐚","🐌","🦋","🐛",
+    "🐝","🐞","💐","🌸","🌹","🌺","🌻","🌼","🌷","🌱","🌲","🌳","🌴","🌵","🌿","🍁",
+    "🍇","🍉","🍊","🍋","🍌","🍍","🥭","🍏","🍐","🍑","🍒","🍓","🥝","🍅","🥥","🥑",
+    "🍆","🥕","🌽","🌶","🥬","🥦","🧅","🍄","🥜","🥐","🥖","🥨","🥞","🧇","🍔","🍕",
+    "🌭","🌮","🌯","🥚","🍿","🍙","🥟","🦀","🦞","🦑","🍦","🍩","🧁","🍬","🍭","🧃",
+    "🧉","🧭","⛰","🌋","🏝","🏡","⛲","⛺","🎠","🎡","💈","🚂","🚃","🚌","🚗","🚚",
+    "🚜","🛵","🛺","🚲","🛴","🛹","⚓️","⛵","🛶","🚤","🚢","✈️","🪂","🚁","🚠","🛰",
+    "🚀","🛸","⏳","🌙","🌡","☀️","🪐","⭐","☁️","🌧","🌩","🌀","🌈","☂️","❄️","☄️",
+    "🔥","💧","🌊","🎃","✨","🎈","🎉","🎊","🎏","🎟","🏆","⚽","🏀","🏈","🎾","🥏",
+    "🏓","⛸","🪀","🪁","🎱","🔮","🪄","🕹","🎲","🧩","🧸","🎨","🧵","🧶","🕶","🧦",
+    "🎒","👟","👠","👑","🎓","🧢","💍","💎","📢","🎵","🎙","🎤","🎧","📻","🎷","🪗",
+    "🎸","🎺","🎻","🪕","🥁","☎️","💿","🎥","🎬","📺","📷","🔍","💡","🔦","📖","📚",
+    "🏷","✏️","🖌","🖍","📎","📌","🔑","🪃","🏹","⚙️","🧲","🧪","🧬","🔭","📡","🗿",
   ];
+
 
   // FNV-1a implementation that is compatible with other languages
   const prime = 0x01000193;
   const offset = 0x811c9dc5;
   let hash = offset;
   const encoder = new TextEncoder();
-  for (const charCode of encoder.encode(bridgeString)) {
-    hash = Math.imul(hash ^ charCode, prime);
+  for (const byte of encoder.encode(bridgeString)) {
+    hash = Math.imul(hash ^ byte, prime);
   }
 
   const hashBytes = [

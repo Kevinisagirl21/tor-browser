@@ -93,6 +93,9 @@
     <html:span id="torPreferences-currentBridges-headerText"/>
     <html:input type="checkbox" id="torPreferences-currentBridges-switch" class="toggle-button"/>
   </html:h2>
+  <description flex="1">
+    <html:span id="torPreferences-currentBridges-description"/>
+  </description>
   <menupopup id="torPreferences-bridgeCard-menu"/>
   <vbox id="torPreferences-bridgeCard-template" class="torPreferences-bridgeCard">
     <hbox class="torPreferences-bridgeCard-heading">
@@ -174,4 +177,18 @@
     </hbox>
   </box>
 </groupbox>
+
+<html:div id="bridge-remove-overlay" class="hidden">
+  <html:div id="bridge-remove-modal">
+    <html:img id="bridge-remove-dismiss" src="chrome://global/skin/icons/close.svg"/>
+    <html:div id="bridge-remove-icon"/>
+    <html:p id="bridge-remove-question"/>
+    <html:p id="bridge-remove-warning"/>
+    <html:div id="bridge-remove-buttonbar">
+    <button id="bridge-remove-cancel"/>
+    <button id="bridge-remove-confirm"/>
+    </html:div>
+  </html:div>
+</html:div>
+
 </html:template>
