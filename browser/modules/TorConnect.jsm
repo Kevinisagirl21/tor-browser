@@ -1,12 +1,12 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorConnect", "TorConnectTopics", "TorConnectState", "TorCensorshipLevel"];
+var EXPORTED_SYMBOLS = ["InternetStatus", "TorConnect", "TorConnectTopics", "TorConnectState"];
 
 const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
 );
 
-const { setTimeout } = ChromeUtils.import(
+const { setTimeout, clearTimeout } = ChromeUtils.import(
     "resource://gre/modules/Timer.jsm"
 );
 
@@ -59,17 +59,6 @@ const TorConnectState = Object.freeze({
     Bootstrapped: "Bootstrapped",
     /* If we are using System tor or the legacy Tor-Launcher */
     Disabled: "Disabled",
-});
-
-const TorCensorshipLevel = Object.freeze({
-    /* No censorship detected */
-    None: 0,
-    /* Moderate censorship detected, autobootstrap may evade it */
-    Moderate: 1,
-    /* Severe censorship detected, but connection may still succeed */
-    Severe: 2,
-    /* Extreme censorship detected, connection will always end in an error */
-    Extreme: 3,
 });
 
 /*
@@ -225,13 +214,98 @@ const debug_sleep = async (ms) => {
     });
 }
 
+const InternetStatus = Object.freeze({
+    Unknown: -1,
+    Offline: 0,
+    Online: 1,
+});
+
+class InternetTest {
+    constructor() {
+        this._status = InternetStatus.Unknown;
+        this._error = null;
+        this._pending = false;
+        this._timeout = setTimeout(() => {
+            this._timeout = null;
+            this.test();
+        }, this.timeoutRand());
+        this.onResult = (online, date) => {}
+        this.onError = (err) => {};
+    }
+
+    test() {
+        if (this._pending) {
+            return;
+        }
+        this.cancel();
+        this._pending = true;
+
+        this._testAsync()
+            .then((status) => {
+                this._pending = false;
+                this._status = status.successful ? InternetStatus.Online : InternetStatus.Offline;
+                this.onResult(this.status, status.date);
+            })
+            .catch(error => {
+                this._error = error;
+                this._pending = false;
+                this.onError(error);
+            });
+    }
+
+    cancel() {
+        if (this._timeout !== null) {
+            clearTimeout(this._timeout);
+            this._timeout = null;
+        }
+    }
+
+    async _testAsync() {
+        // Callbacks for the Internet test are desirable, because we will be
+        // waiting both for the bootstrap, and for the Internet test.
+        // However, managing Moat with async/await is much easier as it avoids a
+        // callback hell, and it makes extra explicit that we are uniniting it.
+        const mrpc = new MoatRPC();
+        let status = null;
+        let error = null;
+        try {
+            await mrpc.init();
+            status = await mrpc.testInternetConnection();
+        } catch (err) {
+            console.error("Error while checking the Internet connection", err);
+            error = err;
+        } finally {
+            mrpc.uninit();
+        }
+        if (error !== null) {
+            throw error;
+        }
+        return status;
+    }
+
+    get status() {
+        return this._status;
+    }
+
+    get error() {
+        return this._error;
+    }
+
+    // We randomize the Internet test timeout to make fingerprinting it harder, at least a little bit...
+    timeoutRand() {
+        const offset = 30000;
+        const randRange = 5000;
+        return offset + randRange * (Math.random() * 2 - 1);
+    }
+}
+
 const TorConnect = (() => {
     let retval = {
 
         _state: TorConnectState.Initial,
         _bootstrapProgress: 0,
         _bootstrapStatus: null,
-        _detectedCensorshiplevel: TorCensorshipLevel.None,
+        _internetStatus: InternetStatus.Unknown,
         // list of country codes Moat has settings for
         _countryCodes: [],
         _countryNames: Object.freeze((() => {
@@ -246,7 +320,12 @@ const TorConnect = (() => {
         _errorMessage: null,
         _errorDetails: null,
         _logHasWarningOrError: false,
+        _hasBootstrapEverFailed: false,
         _transitionPromise: null,
+
+        // This is used as a helper to make the state of about:torconnect persistent
+        // during a session, but TorConnect does not use this data at all.
+        _uiState: {},
 
         /* These functions represent ongoing work associated with one of our states
            Some of these functions are mostly empty, apart from defining an
@@ -294,26 +373,49 @@ const TorConnect = (() => {
             [TorConnectState.Bootstrapping, new StateCallback(TorConnectState.Bootstrapping, async function() {
                 // wait until bootstrap completes or we get an error
                 await new Promise(async (resolve, reject) => {
-
-                    // we reset the bootstrap failure count so users can manually try settings without the
-                    // censorship circumvention state machine getting in the way
-                    TorConnect._detectedCensorshipLevel = TorCensorshipLevel.None;
-
                     // debug hook to simulate censorship preventing bootstrapping
                     if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) > 0) {
                         this.on_transition = (nextState) => {
                             resolve();
                         };
                         await debug_sleep(1500);
+                        TorConnect._hasBootstrapEverFailed = true;
                         TorConnect._changeState(TorConnectState.Error, "Bootstrap failed (for debugging purposes)", "Error: Censorship simulation", true);
                         TorProtocolService._torBootstrapDebugSetError();
                         return;
                     }
 
                     const tbr = new TorBootstrapRequest();
+                    const internetTest = new InternetTest();
+
+                    let bootstrapError = "";
+                    let bootstrapErrorDetails = "";
+                    const maybeTransitionToError = () => {
+                        if (internetTest.status === InternetStatus.Unknown && internetTest.error === null) {
+                            // We have been called by a failed bootstrap, but the internet test has not run yet - force
+                            // it to run immediately!
+                            internetTest.test();
+                            // Return from this call, because the Internet test's callback will call us again
+                            return;
+                        }
+                        // Do not transition to the offline error until we are sure that also the bootstrap failed, in
+                        // case Moat is down but the bootstrap can proceed anyway.
+                        if (bootstrapError === "") {
+                            return;
+                        }
+                        if (internetTest.status === InternetStatus.Offline) {
+                            TorConnect._changeState(TorConnectState.Error, TorStrings.torConnect.offline, "", true);
+                        } else {
+                            // Give priority to the bootstrap error, in case the Internet test fails
+                            TorConnect._hasBootstrapEverFailed = true;
+                            TorConnect._changeState(TorConnectState.Error, bootstrapError, bootstrapErrorDetails, true);
+                        }
+                    }
+
                     this.on_transition = async (nextState) => {
                         if (nextState === TorConnectState.Configuring) {
                             // stop bootstrap process if user cancelled
+                            internetTest.cancel();
                             await tbr.cancel();
                         }
                         resolve();
@@ -323,11 +425,24 @@ const TorConnect = (() => {
                         TorConnect._updateBootstrapStatus(progress, status);
                     };
                     tbr.onbootstrapcomplete = () => {
+                        internetTest.cancel();
                         TorConnect._changeState(TorConnectState.Bootstrapped);
                     };
                     tbr.onbootstraperror = (message, details) => {
-                        TorConnect._changeState(TorConnectState.Error, message, details, true);
+                        // We have to wait for the Internet test to finish before sending the bootstrap error
+                        bootstrapError = message;
+                        bootstrapErrorDetails = details;
+                        maybeTransitionToError();
                     };
+
+                    internetTest.onResult = (status, date) => {
+                        // TODO: Use the date to save the clock skew?
+                        TorConnect._internetStatus = status;
+                        maybeTransitionToError();
+                    };
+                    internetTest.onError = () => {
+                        maybeTransitionToError();
+                    }
 
                     tbr.bootstrap();
                 });
@@ -349,7 +464,7 @@ const TorConnect = (() => {
                             // always fail even after manually selecting location specific settings
                             if (censorshipLevel == 3) {
                                 await debug_sleep(2500);
-                                TorConnect._changeState(TorConnectState.Error, "Error: Extreme Censorship simulation", "", true);
+                                TorConnect._changeState(TorConnectState.Error, "Error: censorship simulation", "", true);
                                 return;
                             // only fail after auto selecting, manually selecting succeeds
                             } else if (censorshipLevel == 2 && !countryCode) {
@@ -378,12 +493,24 @@ const TorConnect = (() => {
 
                         if (this.transitioning) return;
 
-                        if (this.settings === null) {
-                            // unable to determine country
-                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
-                        } else if (this.settings.length === 0) {
-                            // no settings available for country
-                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.noSettingsForCountry);
+                        const noCountry = this.settings !== null;
+                        const noLocalizedSettings = this.settings && this.settings.length === 0;
+                        if (noCountry || noLocalizedSettings) {
+                            try {
+                                this.settings = await this.mrpc.circumvention_defaults([...TorBuiltinBridgeTypes, "vanilla"]);
+                            } catch (err) {
+                                console.error("We could not get localized settings, but defaults settings failed as well", err);
+                            }
+                        }
+                        if (this.settings === null || this.settings.length === 0) {
+                            // The fallback has failed as well, so throw the original error
+                            if (noCountry) {
+                                // unable to determine country
+                                throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
+                            } else {
+                                // no settings available for country
+                                throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.noSettingsForCountry);
+                            }
                         }
 
                         // apply each of our settings and try to bootstrap with each
@@ -477,11 +604,7 @@ const TorConnect = (() => {
                     TorConnect._errorMessage = errorMessage;
                     TorConnect._errorDetails = errorDetails;
 
-                    if (bootstrappingFailure && TorConnect._detectedCensorshipLevel < TorCensorshipLevel.Extreme) {
-                        TorConnect._detectedCensorshipLevel += 1;
-                    }
-
-                    Services.obs.notifyObservers({message: errorMessage, details: errorDetails, censorshipLevel: TorConnect.detectedCensorshipLevel}, TorConnectTopics.BootstrapError);
+                    Services.obs.notifyObservers({message: errorMessage, details: errorDetails}, TorConnectTopics.BootstrapError);
 
                     TorConnect._changeState(TorConnectState.Configuring);
                 });
@@ -615,8 +738,16 @@ const TorConnect = (() => {
             return this._bootstrapStatus;
         },
 
-        get detectedCensorshipLevel() {
-            return this._detectedCensorshipLevel;
+        get internetStatus() {
+            return this._internetStatus;
+        },
+
+        get countryCodes() {
+            return this._countryCodes;
+        },
+
+        get countryNames() {
+            return this._countryNames;
         },
 
         get errorMessage() {
@@ -631,12 +762,15 @@ const TorConnect = (() => {
             return this._logHasWarningOrError;
         },
 
-        get countryCodes() {
-            return this._countryCodes;
+        get hasBootstrapEverFailed() {
+            return this._hasBootstrapEverFailed;
         },
 
-        get countryNames() {
-            return this._countryNames;
+        get uiState() {
+            return this._uiState;
+        },
+        set uiState(newState) {
+            this._uiState = newState;
         },
 
         /*

@@ -393,7 +393,7 @@ class InternetTestResponseListener {
   }
 
   // callers wait on this for final response
-  status() {
+  get status() {
     return this._promise;
   }
 
@@ -406,8 +406,18 @@ class InternetTestResponseListener {
       statuses = {
         components: status,
         successful: Components.isSuccessCode(status),
-        http: request.responseStatus,
       };
+      try {
+        if (statuses.successful) {
+          statuses.http = request.responseStatus;
+          statuses.date = request.getResponseHeader("Date");
+        }
+      } catch (err) {
+        console.warn(
+          "Successful request, but could not get the HTTP status or date",
+          err
+        );
+      }
     } catch (err) {
       this._reject(err);
     }
@@ -549,7 +559,7 @@ class MoatRPC {
 
     const listener = new InternetTestResponseListener();
     await ch.asyncOpen(listener, ch);
-    return listener.status();
+    return listener.status;
   }
 
   //
@@ -776,5 +786,26 @@ class MoatRPC {
     }
 
     return map;
+  }
+
+  // Request a copy of the defaul/fallback bridge settings, takes the following parameters:
+  // - transports: optional, an array of transports available to the client; if empty (or not
+  //   given) returns settings using all working transports known to the server
+  //
+  // returns an array of settings objects in roughly the same format as the _settings
+  // object on the TorSettings module
+  async circumvention_defaults(transports) {
+    const args = {
+      transports: transports ? transports : [],
+    };
+    const response = await this._makeRequest("circumvention/defaults", args);
+    if ("errors" in response) {
+      const code = response.errors[0].code;
+      const detail = response.errors[0].detail;
+      throw new Error(`MoatRPC: ${detail} (${code})`);
+    } else if ("settings" in response) {
+      return this._fixupSettingsList(response.settings);
+    }
+    return [];
   }
 }
