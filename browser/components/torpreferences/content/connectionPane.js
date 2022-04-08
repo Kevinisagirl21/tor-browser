@@ -346,36 +346,48 @@ const gConnectionPane = (function() {
           TorConnect.beginAutoBootstrap(location.value);
         });
         this._populateLocations = () => {
-          let value = location.value;
+          const currentValue = location.value;
           locationEntries.textContent = "";
-
-          {
+          const createItem = (value, label, disabled) => {
             const item = document.createXULElement("menuitem");
-            item.setAttribute("value", "");
-            item.setAttribute(
-              "label",
-              TorStrings.settings.bridgeLocationAutomatic
-            );
-            locationEntries.appendChild(item);
-          }
-
-          const codes = TorConnect.countryCodes;
-          const items = codes.map(code => {
-            const item = document.createXULElement("menuitem");
-            item.setAttribute("value", code);
-            item.setAttribute(
-              "label",
-              TorConnect.countryNames[code]
-                ? TorConnect.countryNames[code]
-                : code
-            );
+            item.setAttribute("value", value);
+            item.setAttribute("label", label);
+            if (disabled) {
+              item.setAttribute("disabled", "true");
+            }
             return item;
-          });
-          items.sort((left, right) =>
-            left.textContent.localeCompare(right.textContent)
+          };
+          const addLocations = codes => {
+            const items = [];
+            for (const code of codes) {
+              items.push(
+                createItem(
+                  code,
+                  TorConnect.countryNames[code]
+                    ? TorConnect.countryNames[code]
+                    : code
+                )
+              );
+            }
+            items.sort((left, right) =>
+              left.label.localeCompare(right.label)
+            );
+            locationEntries.append(...items);
+          };
+          locationEntries.append(
+            createItem("", TorStrings.settings.bridgeLocationAutomatic)
           );
-          locationEntries.append(...items);
-          location.value = value;
+          if (TorConnect.countryCodes.length) {
+            locationEntries.append(
+              createItem("", TorStrings.settings.bridgeLocationFrequent, true)
+            );
+            addLocations(TorConnect.countryCodes);
+            locationEntries.append(
+              createItem("", TorStrings.settings.bridgeLocationOther, true)
+            );
+          }
+          addLocations(Object.keys(TorConnect.countryNames));
+          location.value = currentValue;
         };
         this._showAutoconfiguration = () => {
           if (

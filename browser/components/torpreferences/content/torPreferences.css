@@ -176,6 +176,11 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 280px;
 }
 
+#torPreferences-bridges-location menuitem[disabled="true"] {
+  color: var(--in-content-button-text-color, inherit);
+  font-weight: 700;
+}
+
 /* Bridge cards */
 :root {
   --bridgeCard-animation-time: 0.25s;
