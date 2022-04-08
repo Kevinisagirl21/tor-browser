@@ -393,7 +393,7 @@ class InternetTestResponseListener {
   }
 
   // callers wait on this for final response
-  status() {
+  get status() {
     return this._promise;
   }
 
@@ -406,8 +406,18 @@ class InternetTestResponseListener {
       statuses = {
         components: status,
         successful: Components.isSuccessCode(status),
-        http: request.responseStatus,
       };
+      try {
+        if (statuses.successful) {
+          statuses.http = request.responseStatus;
+          statuses.date = request.getResponseHeader("Date");
+        }
+      } catch (err) {
+        console.warn(
+          "Successful request, but could not get the HTTP status or date",
+          err
+        );
+      }
     } catch (err) {
       this._reject(err);
     }
@@ -549,7 +559,7 @@ class MoatRPC {
 
     const listener = new InternetTestResponseListener();
     await ch.asyncOpen(listener, ch);
-    return listener.status();
+    return listener.status;
   }
 
   //
