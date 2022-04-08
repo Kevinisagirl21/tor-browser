@@ -231,7 +231,7 @@ const TorConnect = (() => {
         _state: TorConnectState.Initial,
         _bootstrapProgress: 0,
         _bootstrapStatus: null,
-        _detectedCensorshiplevel: TorCensorshipLevel.None,
+        _detectedCensorshipLevel: TorCensorshipLevel.None,
         // list of country codes Moat has settings for
         _countryCodes: [],
         _countryNames: Object.freeze((() => {
