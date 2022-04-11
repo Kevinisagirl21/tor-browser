@@ -5,6 +5,7 @@ var EXPORTED_SYMBOLS = ["TorConnectParent"];
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 const {
+  InternetStatus,
   TorConnect,
   TorConnectTopics,
   TorConnectState,
@@ -27,12 +28,13 @@ class TorConnectParent extends JSWindowActorParent {
 
     this.state = {
       State: TorConnect.state,
-      DetectedCensorshipLevel: TorConnect.detectedCensorshipLevel,
       StateChanged: false,
       ErrorMessage: TorConnect.errorMessage,
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
       BootstrapStatus: TorConnect.bootstrapStatus,
+      DetectedCensorshipLevel: TorConnect.detectedCensorshipLevel,
+      InternetStatus: TorConnect.internetStatus,
       ShowViewLog: TorConnect.logHasWarningOrError,
       QuickStartEnabled: TorSettings.quickstart.enabled,
       CountryCodes: TorConnect.countryCodes,
@@ -77,6 +79,7 @@ class TorConnectParent extends JSWindowActorParent {
             self.state.ErrorMessage = obj.message;
             self.state.ErrorDetails = obj.details;
             self.state.DetectedCensorshipLevel = obj.censorshipLevel;
+            self.state.InternetStatus = TorConnect.internetStatus;
 
             // With severe censorshp, we offer user list of countries to try
             if (
@@ -142,9 +145,6 @@ class TorConnectParent extends JSWindowActorParent {
       case "torconnect:open-tor-preferences":
         TorConnect.openTorPreferences();
         break;
-      case "torconnect:view-tor-logs":
-        TorConnect.viewTorLogs();
-        break;
       case "torconnect:cancel-bootstrap":
         TorConnect.cancelBootstrap();
         break;
@@ -153,6 +153,9 @@ class TorConnectParent extends JSWindowActorParent {
         break;
       case "torconnect:begin-autobootstrap":
         TorConnect.beginAutoBootstrap(message.data);
+        break;
+      case "torconnect:view-tor-logs":
+        TorConnect.viewTorLogs();
         break;
       case "torconnect:restart":
         Services.startup.quit(
@@ -169,6 +172,7 @@ class TorConnectParent extends JSWindowActorParent {
           TorStrings,
           TorConnectState,
           TorCensorshipLevel,
+          InternetStatus,
           Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
           State: this.state,
           CountryNames: TorConnect.countryNames,

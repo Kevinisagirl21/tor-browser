@@ -6,12 +6,14 @@
 let TorStrings = {};
 let TorConnectState = {};
 let TorCensorshipLevel = {};
+let InternetStatus = {};
 
 const BreadcrumbStatus = Object.freeze({
-  Disabled: -1,
-  Default: 0,
-  Active: 1,
-  Error: 2,
+  Hidden: "hidden",
+  Disabled: "disabled",
+  Default: "default",
+  Active: "active",
+  Error: "error",
 });
 
 class AboutTorConnect {
@@ -32,10 +34,12 @@ class AboutTorConnect {
         label: "#connection-assist .breadcrumb-label",
       },
       locationSettings: {
+        separator: "#location-settings-separator",
         link: "#location-settings",
         label: "#location-settings .breadcrumb-label",
       },
       tryBridge: {
+        separator: "#try-bridge-separator",
         link: "#try-bridge",
         label: "#try-bridge .breadcrumb-label",
       },
@@ -81,11 +85,17 @@ class AboutTorConnect {
     connectionAssistLabel: document.querySelector(
       this.selectors.breadcrumbs.connectionAssist.label
     ),
+    locationSettingsSeparator: document.querySelector(
+      this.selectors.breadcrumbs.locationSettings.separator
+    ),
     locationSettingsLink: document.querySelector(
       this.selectors.breadcrumbs.locationSettings.link
     ),
     locationSettingsLabel: document.querySelector(
       this.selectors.breadcrumbs.locationSettings.label
+    ),
+    tryBridgeSeparator: document.querySelector(
+      this.selectors.breadcrumbs.tryBridge.separator
     ),
     tryBridgeLink: document.querySelector(
       this.selectors.breadcrumbs.tryBridge.link
@@ -284,26 +294,28 @@ class AboutTorConnect {
 
   setBreadcrumbsStatus(connectionAssist, locationSettings, tryBridge) {
     this.elements.breadcrumbContainer.classList.remove("hidden");
-    let elems = [
-      [this.elements.connectionAssistLink, connectionAssist],
-      [this.elements.locationSettingsLink, locationSettings],
-      [this.elements.tryBridgeLink, tryBridge],
+    const elems = [
+      [this.elements.connectionAssistLink, connectionAssist, null],
+      [
+        this.elements.locationSettingsLink,
+        locationSettings,
+        this.elements.locationSettingsSeparator,
+      ],
+      [
+        this.elements.tryBridgeLink,
+        tryBridge,
+        this.elements.tryBridgeSeparator,
+      ],
     ];
-    elems.forEach(([elem, status]) => {
-      elem.classList.remove("disabled");
-      elem.classList.remove("active");
-      elem.classList.remove("error");
-      switch (status) {
-        case BreadcrumbStatus.Disabled:
-          elem.classList.add("disabled");
-          break;
-        case BreadcrumbStatus.Active:
-          elem.classList.add("active");
-          break;
-        case BreadcrumbStatus.Error:
-          elem.classList.add("error");
-          break;
+    elems.forEach(([elem, status, separator]) => {
+      elem.classList.remove(BreadcrumbStatus.Hidden);
+      elem.classList.remove(BreadcrumbStatus.Disabled);
+      elem.classList.remove(BreadcrumbStatus.Active);
+      elem.classList.remove(BreadcrumbStatus.Error);
+      if (status !== "") {
+        elem.classList.add(status);
       }
+      separator?.classList.toggle("hidden", status === BreadcrumbStatus.Hidden);
     });
   }
 
@@ -346,6 +358,10 @@ class AboutTorConnect {
     this.hideButtons();
 
     if (hasError) {
+      if (state.InternetStatus === InternetStatus.Offline) {
+        this.showOffline(state.ErrorMessage);
+        return;
+      }
       switch (state.DetectedCensorshipLevel) {
         case TorCensorshipLevel.None:
           // we shouldn't be able to get here
@@ -461,6 +477,21 @@ class AboutTorConnect {
   update_Disabled(state) {
     // TODO: we should probably have some UX here if a user goes to about:torconnect when
     // it isn't in use (eg using tor-launcher or system tor)
+  }
+
+  showOffline(error) {
+    this.setTitle(TorStrings.torConnect.noInternet, "error");
+    this.setLongText("Some long text from 🍩️");
+    this.setProgress(error, false);
+    this.setBreadcrumbsStatus(
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Active,
+      BreadcrumbStatus.Hidden
+    );
+    this.hideButtons();
+    this.show(this.elements.configureButton);
+    this.show(this.elements.connectButton, true);
+    this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
   }
 
   showConnectionAssistant(error) {
@@ -662,6 +693,7 @@ class AboutTorConnect {
     TorStrings = Object.freeze(args.TorStrings);
     TorConnectState = Object.freeze(args.TorConnectState);
     TorCensorshipLevel = Object.freeze(args.TorCensorshipLevel);
+    InternetStatus = Object.freeze(args.InternetStatus);
     this.locations = args.CountryNames;
 
     this.initElements(args.Direction);
