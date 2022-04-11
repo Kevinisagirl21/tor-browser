@@ -1,12 +1,12 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorConnect", "TorConnectTopics", "TorConnectState", "TorCensorshipLevel"];
+var EXPORTED_SYMBOLS = ["InternetStatus", "TorConnect", "TorConnectTopics", "TorConnectState", "TorCensorshipLevel"];
 
 const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
 );
 
-const { setTimeout } = ChromeUtils.import(
+const { setTimeout, clearTimeout } = ChromeUtils.import(
     "resource://gre/modules/Timer.jsm"
 );
 
@@ -225,6 +225,94 @@ const debug_sleep = async (ms) => {
     });
 }
 
+const InternetStatus = Object.freeze({
+    Unknown: -1,
+    Offline: 0,
+    Online: 1,
+});
+
+class InternetTest {
+    static get TIMEOUT() {
+        return 30000;
+    }
+
+    constructor() {
+        this._status = InternetStatus.Unknown;
+        this._error = null;
+        this._pending = false;
+        this._timeout = setTimeout(() => {
+            this._timeout = null;
+            this.test();
+        }, InternetTest.TIMEOUT + this.timeoutRand());
+        this.onResult = (online, date) => {}
+        this.onError = (err) => {};
+    }
+
+    test() {
+        if (this._pending) {
+            return;
+        }
+        this.cancel();
+        this._pending = true;
+
+        this._testAsync()
+            .then((status) => {
+                this._pending = false;
+                this._status = status.successful ? InternetStatus.Online : InternetStatus.Offline;
+                this.onResult(this.status, status.date);
+            })
+            .catch(error => {
+                this._error = error;
+                this._pending = false;
+                this.onError(error);
+            });
+    }
+
+    cancel() {
+        if (this._timeout !== null) {
+            clearTimeout(this._timeout);
+            this._timeout = null;
+        }
+    }
+
+    async _testAsync() {
+        // Callbacks for the Internet test are desirable, because we will be
+        // waiting both for the bootstrap, and for the Internet test.
+        // However, managing Moat with async/await is much easier as it avoids a
+        // callback hell, and it makes extra esplicit that we are uniniting it.
+        const mrpc = new MoatRPC();
+        let status = null;
+        let error = null;
+        try {
+            await mrpc.init();
+            status = await mrpc.testInternetConnection();
+        } catch (err) {
+            console.error("Error while checking the Internet connection", err);
+            error = err;
+        } finally {
+            mrpc.uninit();
+        }
+        if (error !== null) {
+            throw error;
+        }
+        return status;
+    }
+
+    get status() {
+        return this._status;
+    }
+
+    get error() {
+        return this._error;
+    }
+
+    // We randomize the Internet test timeout to make fingerprinting it harder, at least a little bit...
+    timeoutRand() {
+        const window = 5000;
+        return window * (Math.random() * 2 - 1);
+    }
+}
+
 const TorConnect = (() => {
     let retval = {
 
@@ -232,6 +320,7 @@ const TorConnect = (() => {
         _bootstrapProgress: 0,
         _bootstrapStatus: null,
         _detectedCensorshipLevel: TorCensorshipLevel.None,
+        _internetStatus: InternetStatus.Unknown,
         // list of country codes Moat has settings for
         _countryCodes: [],
         _countryNames: Object.freeze((() => {
@@ -311,9 +400,36 @@ const TorConnect = (() => {
                     }
 
                     const tbr = new TorBootstrapRequest();
+                    const internetTest = new InternetTest();
+
+                    let bootstrapError = "";
+                    let bootstrapErrorDetails = "";
+                    const maybeTransitionToError = () => {
+                        console.log("TorConnect: maybe transition!", internetTest.status, internetTest.error, bootstrapError);
+                        if (internetTest.status === InternetStatus.Unknown && internetTest.error === null) {
+                            // We have been called by a failed bootstrap, but the internet test has not run yet - force
+                            // it to run immediately!
+                            internetTest.test();
+                            // Return from this call, because the Internet test's callback will call us again
+                            return;
+                        }
+                        // Do not transition to the offline error until we are sure that also the bootstrap failed, in
+                        // case Moat is down but the bootstrap can proceed anyway.
+                        if (bootstrapError === "") {
+                            return;
+                        }
+                        if (internetTest.status === InternetStatus.Offline) {
+                            TorConnect._changeState(TorConnectState.Error, TorStrings.torConnect.offline, "", true);
+                        } else {
+                            // Give priority to the bootstrap error, in case the Internet test fails
+                            TorConnect._changeState(TorConnectState.Error, bootstrapError, bootstrapErrorDetails, true);
+                        }
+                    }
+
                     this.on_transition = async (nextState) => {
                         if (nextState === TorConnectState.Configuring) {
                             // stop bootstrap process if user cancelled
+                            internetTest.cancel();
                             await tbr.cancel();
                         }
                         resolve();
@@ -323,11 +439,25 @@ const TorConnect = (() => {
                         TorConnect._updateBootstrapStatus(progress, status);
                     };
                     tbr.onbootstrapcomplete = () => {
+                        internetTest.cancel();
                         TorConnect._changeState(TorConnectState.Bootstrapped);
                     };
                     tbr.onbootstraperror = (message, details) => {
-                        TorConnect._changeState(TorConnectState.Error, message, details, true);
+                        // We have to wait for the Internet test to finish before sending the bootstrap error
+                        bootstrapError = message;
+                        bootstrapErrorDetails = details;
+                        maybeTransitionToError();
                     };
+
+                    internetTest.onResult = (status, date) => {
+                        // TODO: Use the date to save the clock skew?
+                        console.log("TorConnect: Internet test", status, date);
+                        TorConnect._internetStatus = status;
+                        maybeTransitionToError();
+                    };
+                    internetTest.onError = () => {
+                        maybeTransitionToError();
+                    }
 
                     tbr.bootstrap();
                 });
@@ -617,6 +747,10 @@ const TorConnect = (() => {
 
         get detectedCensorshipLevel() {
             return this._detectedCensorshipLevel;
+        },
+
+        get internetStatus() {
+            return this._internetStatus;
         },
 
         get errorMessage() {
