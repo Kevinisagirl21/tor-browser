@@ -280,9 +280,7 @@ const gConnectionPane = (function() {
         if (TorConnect.state === TorConnectState.Bootstrapped) {
           torIcon.className = "connected";
           torStatus.textContent = TorStrings.settings.statusTorConnected;
-        } else if (
-          TorConnect.detectedCensorshipLevel > TorCensorshipLevel.None
-        ) {
+        } else if (TorConnect.hasBootstrapEverFailed) {
           torIcon.className = "blocked";
           torStatus.textContent = TorStrings.settings.statusTorBlocked;
         } else {
