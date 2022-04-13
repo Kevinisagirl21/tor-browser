@@ -5,7 +5,6 @@
 // populated in AboutTorConnect.init()
 let TorStrings = {};
 let TorConnectState = {};
-let TorCensorshipLevel = {};
 let InternetStatus = {};
 
 const BreadcrumbStatus = Object.freeze({
@@ -29,14 +28,14 @@ class AboutTorConnect {
     },
     breadcrumbs: {
       container: "#breadcrumbs",
+      connectToTor: {
+        link: "#connect-to-tor",
+        label: "#connect-to-tor .breadcrumb-label",
+      },
       connectionAssist: {
+        separator: "#connection-assist-separator",
         link: "#connection-assist",
         label: "#connection-assist .breadcrumb-label",
-      },
-      locationSettings: {
-        separator: "#location-settings-separator",
-        link: "#location-settings",
-        label: "#location-settings .breadcrumb-label",
       },
       tryBridge: {
         separator: "#try-bridge-separator",
@@ -59,10 +58,9 @@ class AboutTorConnect {
       cancel: "button#cancelButton",
       connect: "button#connectButton",
       tryBridge: "button#tryBridgeButton",
-      locationDropdownLabel: "div#locationDropdownLabel",
+      locationDropdownLabel: "#locationDropdownLabel",
       locationDropdown: "form#locationDropdown",
       locationDropdownSelect: "form#locationDropdown select",
-      tryAgain: "button#tryAgainButton",
     },
   });
 
@@ -79,20 +77,20 @@ class AboutTorConnect {
     breadcrumbContainer: document.querySelector(
       this.selectors.breadcrumbs.container
     ),
+    connectToTorLink: document.querySelector(
+      this.selectors.breadcrumbs.connectToTor.link
+    ),
+    connectToTorLabel: document.querySelector(
+      this.selectors.breadcrumbs.connectToTor.label
+    ),
+    connectionAssistSeparator: document.querySelector(
+      this.selectors.breadcrumbs.connectionAssist.separator
+    ),
     connectionAssistLink: document.querySelector(
       this.selectors.breadcrumbs.connectionAssist.link
     ),
     connectionAssistLabel: document.querySelector(
       this.selectors.breadcrumbs.connectionAssist.label
-    ),
-    locationSettingsSeparator: document.querySelector(
-      this.selectors.breadcrumbs.locationSettings.separator
-    ),
-    locationSettingsLink: document.querySelector(
-      this.selectors.breadcrumbs.locationSettings.link
-    ),
-    locationSettingsLabel: document.querySelector(
-      this.selectors.breadcrumbs.locationSettings.label
     ),
     tryBridgeSeparator: document.querySelector(
       this.selectors.breadcrumbs.tryBridge.separator
@@ -116,7 +114,6 @@ class AboutTorConnect {
     configureButton: document.querySelector(this.selectors.buttons.configure),
     cancelButton: document.querySelector(this.selectors.buttons.cancel),
     connectButton: document.querySelector(this.selectors.buttons.connect),
-    tryBridgeButton: document.querySelector(this.selectors.buttons.tryBridge),
     locationDropdownLabel: document.querySelector(
       this.selectors.buttons.locationDropdownLabel
     ),
@@ -126,12 +123,20 @@ class AboutTorConnect {
     locationDropdownSelect: document.querySelector(
       this.selectors.buttons.locationDropdownSelect
     ),
-    tryAgainButton: document.querySelector(this.selectors.buttons.tryAgain),
+    tryBridgeButton: document.querySelector(this.selectors.buttons.tryBridge),
   });
 
   // a redirect url can be passed as a query parameter for the page to
   // forward us to once bootstrap completes (otherwise the window will just close)
   redirect = null;
+
+  showNext = state => {};
+
+  allowAutomaticLocation = true;
+
+  bootstrappingTitle = "";
+  bootstrappingDescription = "";
+  bootstrappingBreadcrumb = -1;
 
   locations = {};
 
@@ -147,6 +152,9 @@ class AboutTorConnect {
     this.hide(this.elements.tryBridgeButton);
     this.show(this.elements.cancelButton);
     this.elements.cancelButton.focus();
+    if (countryCode === "automatic") {
+      countryCode = "";
+    }
     RPMSendAsyncMessage("torconnect:begin-autobootstrap", countryCode);
   }
 
@@ -159,11 +167,7 @@ class AboutTorConnect {
   */
 
   show(element, primary) {
-    if (primary) {
-      element.classList.add("primary");
-    } else {
-      element.classList.remove("primary");
-    }
+    element.classList.toggle("primary", primary !== undefined && primary);
     element.removeAttribute("hidden");
   }
 
@@ -176,10 +180,9 @@ class AboutTorConnect {
     this.hide(this.elements.configureButton);
     this.hide(this.elements.cancelButton);
     this.hide(this.elements.connectButton);
-    this.hide(this.elements.tryBridgeButton);
     this.hide(this.elements.locationDropdownLabel);
     this.hide(this.elements.locationDropdown);
-    this.hide(this.elements.tryAgainButton);
+    this.hide(this.elements.tryBridgeButton);
   }
 
   populateLocations() {
@@ -205,14 +208,14 @@ class AboutTorConnect {
     );
   }
 
-  populateSpecialLocations(specialLocations) {
-    this.removeSpecialLocations();
-    if (!specialLocations || !specialLocations.length) {
+  populateFrequentLocations(locations) {
+    this.removeFrequentLocations();
+    if (!locations || !locations.length) {
       return;
     }
 
     const locationNodes = [];
-    for (const code of specialLocations) {
+    for (const code of locations) {
       const option = document.createElement("option");
       option.value = code;
       option.className = "frequent-location";
@@ -230,21 +233,24 @@ class AboutTorConnect {
       left.textContent.localeCompare(right.textContent)
     );
 
-    const specialGroup = document.createElement("optgroup");
-    specialGroup.setAttribute("label", TorStrings.torConnect.frequentLocations);
-    specialGroup.className = "frequent-location";
+    const frequentGroup = document.createElement("optgroup");
+    frequentGroup.setAttribute(
+      "label",
+      TorStrings.torConnect.frequentLocations
+    );
+    frequentGroup.className = "frequent-location";
     const locationGroup = document.createElement("optgroup");
     locationGroup.setAttribute("label", TorStrings.torConnect.otherLocations);
     locationGroup.className = "frequent-location";
-    // options[0] is "Select Country or Region"
+    // options[0] is either "Select Country or Region" or "Automatic"
     this.elements.locationDropdownSelect.options[0].after(
-      specialGroup,
+      frequentGroup,
       ...locationNodes,
       locationGroup
     );
   }
 
-  removeSpecialLocations() {
+  removeFrequentLocations() {
     const select = this.elements.locationDropdownSelect;
     for (const option of select.querySelectorAll(".frequent-location")) {
       option.remove();
@@ -257,20 +263,15 @@ class AboutTorConnect {
       selectedIndex
     ];
     if (!selectedOption.value) {
-      this.elements.tryAgainButton.setAttribute("disabled", "disabled");
+      this.elements.tryBridgeButton.setAttribute("disabled", "disabled");
     } else {
-      this.elements.tryAgainButton.removeAttribute("disabled");
+      this.elements.tryBridgeButton.removeAttribute("disabled");
     }
   }
 
   setTitle(title, className) {
     this.elements.titleText.textContent = title;
-    if (className !== "error") {
-      this.elements.title.classList.remove("error");
-    }
-    if (className !== "location") {
-      this.elements.title.classList.remove("location");
-    }
+    this.elements.title.className = "title";
     if (className) {
       this.elements.title.classList.add(className);
     }
@@ -292,14 +293,14 @@ class AboutTorConnect {
     }
   }
 
-  setBreadcrumbsStatus(connectionAssist, locationSettings, tryBridge) {
+  setBreadcrumbsStatus(connectToTor, connectionAssist, tryBridge) {
     this.elements.breadcrumbContainer.classList.remove("hidden");
     const elems = [
-      [this.elements.connectionAssistLink, connectionAssist, null],
+      [this.elements.connectToTorLink, connectToTor, null],
       [
-        this.elements.locationSettingsLink,
-        locationSettings,
-        this.elements.locationSettingsSeparator,
+        this.elements.connectionAssistLink,
+        connectionAssist,
+        this.elements.connectionAssistSeparator,
       ],
       [
         this.elements.tryBridgeLink,
@@ -336,118 +337,29 @@ class AboutTorConnect {
   /* Per-state updates */
 
   update_Initial(state) {
-    const hasError = false;
-    const showProgressbar = false;
-
-    this.setTitle(TorStrings.torConnect.torConnect, hasError ? "error" : "");
-    this.setProgress(
-      TorStrings.settings.torPreferencesDescription,
-      showProgressbar
-    );
-    this.hide(this.elements.quickstartContainer);
-    this.hide(this.elements.viewLogContainer);
-    this.hideButtons();
+    this.showConnectToTor(state, false);
   }
 
   update_Configuring(state) {
-    const hasError = state.ErrorMessage != null;
-    const showProgressbar = false;
-
     this.hide(this.elements.quickstartContainer);
     this.hide(this.elements.viewLogContainer);
     this.hideButtons();
 
-    if (hasError) {
-      if (state.InternetStatus === InternetStatus.Offline) {
-        this.showOffline(state.ErrorMessage);
-        return;
-      }
-      switch (state.DetectedCensorshipLevel) {
-        case TorCensorshipLevel.None:
-          // we shouldn't be able to get here
-          break;
-        case TorCensorshipLevel.Moderate:
-          // bootstrap failed once, offer auto bootstrap
-          this.showConnectionAssistant(state.ErrorDetails);
-          if (state.StateChanged) {
-            this.elements.tryBridgeButton.focus();
-          }
-          break;
-        case TorCensorshipLevel.Severe:
-          // autobootstrap failed, verify correct location
-          this.showLocationSettings(state.CountryCodes, state.ErrorMessage);
-          if (state.StateChanged) {
-            this.elements.tryAgainButton.focus();
-          }
-          break;
-        case TorCensorshipLevel.Extreme:
-          // finally offer to restart tor-browser or go to configure options
-          this.showFinalError(state);
-          break;
-      }
+    if (state.ErrorMessage === null) {
+      this.showConnectToTor(state, false);
+    } else if (state.InternetStatus === InternetStatus.Offline) {
+      this.showOffline(state.ErrorMessage);
     } else {
-      this.setTitle(TorStrings.torConnect.torConnect, "");
-      this.setLongText(TorStrings.settings.torPreferencesDescription);
-      this.setProgress("", showProgressbar);
-      this.show(this.elements.quickstartContainer);
-      this.show(this.elements.configureButton);
-      this.show(this.elements.connectButton, true);
-      this.elements.connectButton.textContent =
-        TorStrings.torConnect.torConnectButton;
-      if (state.StateChanged) {
-        this.elements.connectButton.focus();
-      }
+      this.showNext(state);
     }
   }
 
   update_AutoBootstrapping(state) {
-    const showProgressbar = true;
-
-    if (state.DetectedCensorshipLevel >= TorCensorshipLevel.Severe) {
-      this.setTitle(TorStrings.torConnect.tryingBridgeAgain, "");
-    } else {
-      this.setTitle(TorStrings.torConnect.tryingBridge, "");
-    }
-    this.showConfigureConnectionLink(TorStrings.torConnect.assistDescription);
-    this.setProgress(
-      state.BootstrapStatus,
-      showProgressbar,
-      state.BootstrapProgress
-    );
-    this.setBreadcrumbsStatus(
-      BreadcrumbStatus.Disabled,
-      BreadcrumbStatus.Disabled,
-      BreadcrumbStatus.Active
-    );
-    if (state.ShowViewLog) {
-      this.show(this.elements.viewLogContainer);
-    } else {
-      this.hide(this.elements.viewLogContainer);
-    }
-    this.hideButtons();
-    this.show(this.elements.cancelButton, true);
-    if (state.StateChanged) {
-      this.elements.cancelButton.focus();
-    }
+    this.showBootstrapping(state);
   }
 
   update_Bootstrapping(state) {
-    const showProgressbar = true;
-
-    this.setTitle(TorStrings.torConnect.torConnecting, "");
-    this.setLongText(TorStrings.settings.torPreferencesDescription);
-    this.setProgress("", showProgressbar, state.BootstrapProgress);
-    this.hideBreadcrumbs();
-    if (state.ShowViewLog) {
-      this.show(this.elements.viewLogContainer);
-    } else {
-      this.hide(this.elements.viewLogContainer);
-    }
-    this.hideButtons();
-    this.show(this.elements.cancelButton, true);
-    if (state.StateChanged) {
-      this.elements.cancelButton.focus();
-    }
+    this.showBootstrapping(state);
   }
 
   update_Error(state) {
@@ -479,6 +391,63 @@ class AboutTorConnect {
     // it isn't in use (eg using tor-launcher or system tor)
   }
 
+  showConnectToTor(state, tryAgain) {
+    this.setTitle(TorStrings.torConnect.torConnect, "");
+    this.setLongText(TorStrings.settings.torPreferencesDescription);
+    this.setProgress("", false);
+    this.hideButtons();
+    this.show(this.elements.quickstartContainer);
+    this.show(this.elements.configureButton);
+    this.show(this.elements.connectButton, true);
+    if (state?.StateChanged) {
+      this.elements.connectButton.focus();
+    }
+    if (tryAgain) {
+      this.setBreadcrumbsStatus(
+        BreadcrumbStatus.Active,
+        BreadcrumbStatus.Default,
+        BreadcrumbStatus.Disabled
+      );
+      this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
+    }
+    this.bootstrappingDescription =
+      TorStrings.settings.torPreferencesDescription;
+    this.showNext = fromState => {
+      this.showConnectionAssistant(fromState.ErrorDetails);
+      if (fromState.StateChanged) {
+        this.elements.tryBridgeButton.focus();
+      }
+    };
+  }
+
+  showBootstrapping(state) {
+    const showProgressbar = true;
+    this.setTitle(this.bootstrappingTitle, "");
+    this.showConfigureConnectionLink(this.bootstrappingDescription);
+    this.setProgress("", showProgressbar, state.BootstrapProgress);
+    if (this.bootstrappingBreadcrumb < 0) {
+      this.hideBreadcrumbs();
+    } else {
+      const breadcrumbs = [
+        BreadcrumbStatus.Disabled,
+        BreadcrumbStatus.Disabled,
+        BreadcrumbStatus.Disabled,
+      ];
+      breadcrumbs[this.bootstrappingBreadcrumb] = BreadcrumbStatus.Active;
+      this.setBreadcrumbsStatus(...breadcrumbs);
+    }
+    if (state.ShowViewLog) {
+      this.show(this.elements.viewLogContainer);
+    } else {
+      this.hide(this.elements.viewLogContainer);
+    }
+    this.hideButtons();
+    this.show(this.elements.cancelButton, true);
+    if (state.StateChanged) {
+      this.elements.cancelButton.focus();
+    }
+  }
+
   showOffline(error) {
     this.setTitle(TorStrings.torConnect.noInternet, "error");
     this.setLongText("Some long text from 🍩️");
@@ -494,24 +463,89 @@ class AboutTorConnect {
     this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
   }
 
-  showConnectionAssistant(error) {
-    const hasError = !!error;
-    this.setTitle(
-      TorStrings.torConnect.couldNotConnect,
-      hasError ? "error" : ""
-    );
+  showConnectionAssistant(errorMessage) {
+    this.setTitle(TorStrings.torConnect.couldNotConnect, "assit");
     this.showConfigureConnectionLink(TorStrings.torConnect.assistDescription);
-    this.setProgress(error, false);
+    this.setProgress(errorMessage, false);
     this.setBreadcrumbsStatus(
-      BreadcrumbStatus.Active,
       BreadcrumbStatus.Default,
+      BreadcrumbStatus.Active,
       BreadcrumbStatus.Disabled
     );
+    this.showLocationForm(false, TorStrings.torConnect.tryBridge);
+    this.bootstrappingBreadcrumb = 2;
+    this.bootstrappingTitle = TorStrings.torConnect.tryingBridge;
+    this.bootstrappingDescription = TorStrings.torConnect.assistDescription;
+    this.showNext = state => {
+      if (this.getLocation() === "automatic") {
+        this.showCannotLocate(state.ErrorMessage);
+      } else {
+        this.showLocationConfirmation(state.ErrorMessage);
+      }
+      if (state.StateChanged) {
+        this.elements.tryBridgeButton.focus();
+      }
+    };
+  }
+
+  showCannotLocate(errorMessage) {
+    this.allowAutomaticLocation = false;
+    this.setTitle(TorStrings.torConnect.errorLocation, "location");
+    this.showConfigureConnectionLink(
+      TorStrings.torConnect.errorLocationDescription
+    );
+    this.setProgress(errorMessage, false);
+    this.setBreadcrumbsStatus(
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Active,
+      BreadcrumbStatus.Disabled
+    );
+    this.showLocationForm(true, TorStrings.torConnect.tryBridge);
+    this.bootstrappingBreadcrumb = 2;
+    this.bootstrappingTitle = TorStrings.torConnect.tryingBridgeAgain;
+    this.bootstrappingDescription =
+      TorStrings.torConnect.errorLocationDescription;
+    this.showNext = state => {
+      this.showFinalError(state);
+    };
+  }
+
+  showLocationConfirmation(errorMessage) {
+    this.setTitle(TorStrings.torConnect.isLocationCorrect, "location");
+    this.showConfigureConnectionLink(
+      TorStrings.torConnect.isLocationCorrectDescription
+    );
+    this.setProgress(errorMessage, false);
+    this.setBreadcrumbsStatus(
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Active
+    );
+    this.showLocationForm(true, TorStrings.torConnect.tryAgain);
+    this.bootstrappingBreadcrumb = 2;
+    this.bootstrappingTitle = TorStrings.torConnect.tryingBridgeAgain;
+    this.bootstrappingDescription =
+      TorStrings.torConnect.isLocationCorrectDescription;
+    this.showNext = state => {
+      this.showFinalError(state);
+    };
+  }
+
+  showFinalError(state) {
+    this.setTitle(TorStrings.torConnect.finalError, "error");
+    this.setLongText(TorStrings.torConnect.finalErrorDescription);
+    this.setProgress(state ? state.ErrorDetails : "", false);
+    this.setBreadcrumbsStatus(
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Default,
+      BreadcrumbStatus.Active
+    );
     this.hideButtons();
-    this.show(this.elements.configureButton);
-    this.show(this.elements.connectButton);
-    this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
-    this.show(this.elements.tryBridgeButton, true);
+    this.show(this.elements.restartButton);
+    this.show(this.elements.configureButton, true);
+    this.showNext = fromState => {
+      this.showFinalError(fromState);
+    };
   }
 
   showConfigureConnectionLink(text) {
@@ -523,76 +557,77 @@ class AboutTorConnect {
       e.preventDefault();
       RPMSendAsyncMessage("torconnect:open-tor-preferences");
     });
-    this.setLongText(pieces[0], link, pieces[1]);
+    if (pieces.length > 1) {
+      const first = pieces.shift();
+      this.setLongText(first, link, ...pieces);
+    } else {
+      this.setLongText(text);
+    }
   }
 
-  showLocationSettings(locations, error) {
-    const hasError = !!error;
-    if (hasError) {
-      this.setTitle(TorStrings.torConnect.errorLocation, "location");
-      this.setLongText(TorStrings.torConnect.errorLocationDescription);
-      this.setBreadcrumbsStatus(
-        BreadcrumbStatus.Disabled,
-        BreadcrumbStatus.Error,
-        BreadcrumbStatus.Disabled
-      );
-      this.elements.tryAgainButton.textContent = TorStrings.torConnect.tryAgain;
-    } else {
-      this.setTitle(TorStrings.torConnect.addLocation, "location");
-      this.showConfigureConnectionLink(
-        TorStrings.torConnect.addLocationDescription
-      );
-      this.setBreadcrumbsStatus(
-        BreadcrumbStatus.Default,
-        BreadcrumbStatus.Active,
-        BreadcrumbStatus.Disabled
-      );
-      this.elements.tryAgainButton.textContent =
-        TorStrings.torConnect.tryBridge;
-    }
-    this.setProgress(error, false);
+  showLocationForm(isError, buttonLabel) {
     this.hideButtons();
-    if (!locations || !locations.length) {
-      RPMSendQuery("torconnect:get-country-codes").then(codes => {
-        if (codes && codes.length) {
-          this.populateSpecialLocations(codes);
-        }
-      });
+    RPMSendQuery("torconnect:get-country-codes").then(codes => {
+      if (codes && codes.length) {
+        this.populateFrequentLocations(codes);
+      }
+    });
+    let firstOpt = this.elements.locationDropdownSelect.options[0];
+    if (this.allowAutomaticLocation) {
+      firstOpt.value = "automatic";
+      firstOpt.textContent = TorStrings.torConnect.automatic;
     } else {
-      this.populateSpecialLocations(locations);
+      firstOpt.value = "";
+      firstOpt.textContent = TorStrings.torConnect.selectCountryRegion;
     }
     this.validateLocation();
     this.show(this.elements.locationDropdownLabel);
     this.show(this.elements.locationDropdown);
-    this.show(this.elements.tryAgainButton, true);
+    this.elements.locationDropdownLabel.classList.toggle("error", isError);
+    this.show(this.elements.tryBridgeButton, true);
+    this.elements.tryBridgeButton.classList.toggle("danger-button", isError);
+    if (buttonLabel !== undefined) {
+      this.elements.tryBridgeButton.textContent = buttonLabel;
+    }
   }
 
-  showFinalError(state) {
-    this.setTitle(TorStrings.torConnect.finalError, "error");
-    this.setLongText(TorStrings.torConnect.finalErrorDescription);
-    this.setProgress(state ? state.ErrorDetails : "", false);
-    this.hideButtons();
-    this.show(this.elements.restartButton);
-    this.show(this.elements.configureButton, true);
+  getLocation() {
+    const selectedIndex = this.elements.locationDropdownSelect.selectedIndex;
+    return this.elements.locationDropdownSelect.options[selectedIndex].value;
   }
 
   initElements(direction) {
     document.documentElement.setAttribute("dir", direction);
 
-    this.elements.connectionAssistLink.addEventListener("click", event => {
-      if (!this.elements.connectionAssistLink.classList.contains("disabled")) {
-        this.showConnectionAssistant();
+    this.bootstrappingTitle = TorStrings.torConnect.torConnecting;
+
+    this.elements.connectToTorLink.addEventListener("click", event => {
+      if (
+        this.elements.connectToTorLink.classList.contains(
+          BreadcrumbStatus.Active
+        )
+      ) {
+        return;
       }
+      this.showConnectToTor(null, true);
+    });
+    this.elements.connectToTorLabel.textContent =
+      TorStrings.torConnect.torConnect;
+    this.elements.connectionAssistLink.addEventListener("click", event => {
+      if (
+        this.elements.connectionAssistLink.classList.contains(
+          BreadcrumbStatus.Active
+        ) ||
+        this.elements.connectionAssistLink.classList.contains(
+          BreadcrumbStatus.Disabled
+        )
+      ) {
+        return;
+      }
+      this.showConnectionAssistant();
     });
     this.elements.connectionAssistLabel.textContent =
       TorStrings.torConnect.breadcrumbAssist;
-    this.elements.locationSettingsLink.addEventListener("click", event => {
-      if (!this.elements.connectionAssistLink.classList.contains("disabled")) {
-        this.showLocationSettings();
-      }
-    });
-    this.elements.locationSettingsLabel.textContent =
-      TorStrings.torConnect.breadcrumbLocation;
     this.elements.tryBridgeLabel.textContent =
       TorStrings.torConnect.breadcrumbTryBridge;
 
@@ -629,6 +664,13 @@ class AboutTorConnect {
     this.elements.connectButton.textContent =
       TorStrings.torConnect.torConnectButton;
     this.elements.connectButton.addEventListener("click", () => {
+      if (
+        this.elements.connectButton.textContent ===
+        TorStrings.torConnect.tryAgain
+      ) {
+        this.bootstrappingBreadcrumb = 0;
+        this.bootstrappingTitle = TorStrings.torConnect.tryingAgain;
+      }
       this.beginBootstrap();
     });
 
@@ -637,23 +679,17 @@ class AboutTorConnect {
       this.validateLocation();
     });
 
-    this.elements.tryBridgeButton.textContent = TorStrings.torConnect.tryBridge;
-    this.elements.tryBridgeButton.addEventListener("click", () => {
-      this.beginAutoBootstrap();
-    });
-
     this.elements.locationDropdownLabel.textContent =
       TorStrings.torConnect.yourLocation;
 
-    this.elements.tryAgainButton.textContent = TorStrings.torConnect.tryAgain;
-    this.elements.tryAgainButton.setAttribute("disabled", "disabled");
-    this.elements.tryAgainButton.addEventListener("click", () => {
-      let selectedIndex = this.elements.locationDropdownSelect.selectedIndex;
-      let selectedOption = this.elements.locationDropdownSelect.options[
-        selectedIndex
-      ];
-
-      this.beginAutoBootstrap(selectedOption.value);
+    this.elements.tryBridgeButton.textContent = TorStrings.torConnect.tryBridge;
+    this.elements.tryBridgeButton.addEventListener("click", () => {
+      const value = this.getLocation();
+      if (value === "automatic") {
+        this.beginAutoBootstrap();
+      } else {
+        this.beginAutoBootstrap(value);
+      }
     });
   }
 
@@ -692,7 +728,6 @@ class AboutTorConnect {
     // various constants
     TorStrings = Object.freeze(args.TorStrings);
     TorConnectState = Object.freeze(args.TorConnectState);
-    TorCensorshipLevel = Object.freeze(args.TorCensorshipLevel);
     InternetStatus = Object.freeze(args.InternetStatus);
     this.locations = args.CountryNames;
 

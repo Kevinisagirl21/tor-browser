@@ -10,22 +10,9 @@
   --onion-radius: 75px;
 }
 
-/* override firefox's default blue focus coloring */
-:focus {
-  outline:  none!important;
-  box-shadow: 0 0 0 3px var(--purple-30) !important;
-  border:  1px var(--purple-80) solid !important;
-}
-
-@media (prefers-color-scheme: dark)
-{
-  :focus {
-    box-shadow: 0 0 0 3px var(--purple-50)!important;
-  }
-}
-
 #breadcrumbs {
   display: flex;
+  align-items: center;
   margin: 0 0 24px 0;
   color: var(--grey-40);
 }
@@ -38,15 +25,24 @@
   display: flex;
   margin: 0;
   margin-inline-start: 20px;
+  padding: 8px;
 }
 
 .breadcrumb-item {
+  align-items: center;
   cursor: pointer;
   color: var(--in-content-text-color);
+  border-radius: 4px;
 }
 
 .breadcrumb-item:hover {
+  color: var(--in-content-accent-color);
+  background-color: var(--grey-20);
+}
+
+.breadcrumb-item:active {
   color: var(--in-content-accent-color-active);
+  background-color: var(--grey-30);
 }
 
 .breadcrumb-separator {
@@ -60,22 +56,24 @@
 
 .breadcrumb-icon {
   display: inline list-item;
+  height: 16px;
   list-style-position: inside;
   fill: currentColor;
   -moz-context-properties: fill;
 }
 
-.breadcrumb-label {
-  margin-top: -1px;
-}
-
 .breadcrumb-item.active {
-  color: var(--in-content-accent-color-active);
+  color: var(--in-content-accent-color);
 }
 
-.breadcrumb-item.disabled, .breadcrumb-item.disabled:hover {
-  color: var(--green-90-a40);
+.breadcrumb-item.disabled, .breadcrumb-item.disabled:hover, .breadcrumb-item.disabled:active {
+  color: var(--in-content-text-color);
+  opacity: 0.4;
   cursor: default;
+}
+
+.breadcrumb-item.disabled:hover, .breadcrumb-item.disabled:active {
+  background-color: var(--grey-20);
 }
 
 .breadcrumb-item.error {
@@ -94,8 +92,12 @@
   display: none;
 }
 
-#connection-assist {
-  margin-left: 0;
+#connect-to-tor {
+  margin-inline-start: 0;
+}
+
+#connect-to-tor-icon {
+  list-style-image: url("chrome://browser/content/torconnect/onion.svg");
 }
 
 #connection-assist-icon {
@@ -114,27 +116,22 @@
   list-style-image: url("chrome://browser/content/torconnect/bridge.svg");
 }
 
-button.primary {
-  background-color: var(--purple-60)!important;
-  color: white!important;
-  fill: white!important;
+button {
+  --in-content-primary-button-background: var(--purple-60);
+  --in-content-primary-button-background-hover: var(--purple-70);
+  --in-content-primary-button-background-active: var(--purple-80);
+  --in-content-focus-outline-color: var(--purple-60);
+  --in-content-primary-button-text-color: white;
+  fill: white;
 }
 
-button.primary:hover {
-  background-color: var(--purple-70)!important;
-  color: white!important;
-  fill: white!important;
-}
-
-button.primary:active {
-  background-color: var(--purple-80)!important;
-  color: white!important;
-  fill: white!important;
-}
-
-div#locationDropdownLabel {
+#locationDropdownLabel {
   margin-block: auto;
   margin-inline: 4px;
+}
+
+#locationDropdownLabel.error {
+  color: var(--in-content-danger-button-background)
 }
 
 /* this follows similar css in error-pages.css for buttons */
@@ -277,7 +274,7 @@ body {
   fill: var(--onion-color);
 }
 
-.title.error {
+.title.assit {
   background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
 }
 

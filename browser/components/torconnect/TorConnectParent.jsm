@@ -9,7 +9,6 @@ const {
   TorConnect,
   TorConnectTopics,
   TorConnectState,
-  TorCensorshipLevel,
 } = ChromeUtils.import("resource:///modules/TorConnect.jsm");
 const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
   "resource:///modules/TorSettings.jsm"
@@ -33,11 +32,9 @@ class TorConnectParent extends JSWindowActorParent {
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
       BootstrapStatus: TorConnect.bootstrapStatus,
-      DetectedCensorshipLevel: TorConnect.detectedCensorshipLevel,
       InternetStatus: TorConnect.internetStatus,
       ShowViewLog: TorConnect.logHasWarningOrError,
       QuickStartEnabled: TorSettings.quickstart.enabled,
-      CountryCodes: TorConnect.countryCodes,
     };
 
     // JSWindowActiveParent derived objects cannot observe directly, so create a member
@@ -78,16 +75,7 @@ class TorConnectParent extends JSWindowActorParent {
           case TorConnectTopics.BootstrapError: {
             self.state.ErrorMessage = obj.message;
             self.state.ErrorDetails = obj.details;
-            self.state.DetectedCensorshipLevel = obj.censorshipLevel;
             self.state.InternetStatus = TorConnect.internetStatus;
-
-            // With severe censorshp, we offer user list of countries to try
-            if (
-              self.state.DetectedCensorshipLevel == TorCensorshipLevel.Severe
-            ) {
-              self.state.CountryCodes = TorConnect.countryCodes;
-            }
-
             self.state.ShowViewLog = true;
             break;
           }
@@ -171,7 +159,6 @@ class TorConnectParent extends JSWindowActorParent {
         return {
           TorStrings,
           TorConnectState,
-          TorCensorshipLevel,
           InternetStatus,
           Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
           State: this.state,
