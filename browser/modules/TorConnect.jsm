@@ -326,6 +326,10 @@ const TorConnect = (() => {
         _hasBootstrapEverFailed: false,
         _transitionPromise: null,
 
+        // This is used as a helper to make the state of about:torconnect persistent
+        // during a session, but TorConnect does not use this data at all.
+        _uiState: {},
+
         /* These functions represent ongoing work associated with one of our states
            Some of these functions are mostly empty, apart from defining an
            on_transition function used to resolve their Promise */
@@ -729,6 +733,14 @@ const TorConnect = (() => {
             return this._internetStatus;
         },
 
+        get countryCodes() {
+            return this._countryCodes;
+        },
+
+        get countryNames() {
+            return this._countryNames;
+        },
+
         get errorMessage() {
             return this._errorMessage;
         },
@@ -745,12 +757,11 @@ const TorConnect = (() => {
             return this._hasBootstrapEverFailed;
         },
 
-        get countryCodes() {
-            return this._countryCodes;
+        get uiState() {
+            return this._uiState;
         },
-
-        get countryNames() {
-            return this._countryNames;
+        set uiState(newState) {
+            this._uiState = newState;
         },
 
         /*
