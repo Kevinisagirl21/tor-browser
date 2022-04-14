@@ -969,6 +969,9 @@ const gConnectionPane = (function() {
     onRemoveAllBridges() {
       TorSettings.bridges.enabled = false;
       TorSettings.bridges.bridge_strings = "";
+      if (TorSettings.bridges.source == TorBridgeSource.BuiltIn) {
+        TorSettings.bridges.builtin_type = "";
+      }
       TorSettings.saveToPrefs();
       TorSettings.applySettings().then(result => {
         this._populateBridgeCards();
