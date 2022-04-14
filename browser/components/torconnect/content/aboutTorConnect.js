@@ -7,6 +7,15 @@ let TorStrings = {};
 let TorConnectState = {};
 let InternetStatus = {};
 
+const UIStates = Object.freeze({
+  ConnectToTor: "ConnectToTor",
+  Offline: "Offline",
+  ConnectionAssist: "ConnectionAssist",
+  CouldNotLocate: "CouldNotLocate",
+  LocationConfirm: "LocationConfirm",
+  FinalError: "FinalError",
+});
+
 const BreadcrumbStatus = Object.freeze({
   Hidden: "hidden",
   Disabled: "disabled",
@@ -130,28 +139,34 @@ class AboutTorConnect {
   // forward us to once bootstrap completes (otherwise the window will just close)
   redirect = null;
 
-  showNext = state => {};
-
-  allowAutomaticLocation = true;
-
-  bootstrappingTitle = "";
-  bootstrappingDescription = "";
-  bootstrappingBreadcrumb = -1;
+  uiState = {
+    currentState: UIStates.ConnectToTor,
+    connectIsTryAgain: false,
+    allowAutomaticLocation: true,
+    selectedLocation: "automatic",
+    bootstrapCause: UIStates.ConnectToTor,
+  };
 
   locations = {};
 
+  constructor() {
+    this.uiStates = Object.freeze(
+      Object.fromEntries([
+        [UIStates.ConnectToTor, this.showConnectToTor.bind(this)],
+        [UIStates.Offline, this.showOffline.bind(this)],
+        [UIStates.ConnectionAssist, this.showConnectionAssistant.bind(this)],
+        [UIStates.CouldNotLocate, this.showCouldNotLocate.bind(this)],
+        [UIStates.LocationConfirm, this.showLocationConfirmation.bind(this)],
+        [UIStates.FinalError, this.showFinalError.bind(this)],
+      ])
+    );
+  }
+
   beginBootstrap() {
-    this.hide(this.elements.connectButton);
-    this.hide(this.elements.quickstartContainer);
-    this.show(this.elements.cancelButton);
-    this.elements.cancelButton.focus();
     RPMSendAsyncMessage("torconnect:begin-bootstrap");
   }
 
   beginAutoBootstrap(countryCode) {
-    this.hide(this.elements.tryBridgeButton);
-    this.show(this.elements.cancelButton);
-    this.elements.cancelButton.focus();
     if (countryCode === "automatic") {
       countryCode = "";
     }
@@ -160,6 +175,18 @@ class AboutTorConnect {
 
   cancelBootstrap() {
     RPMSendAsyncMessage("torconnect:cancel-bootstrap");
+  }
+
+  transitionUIState(nextState, connState) {
+    if (nextState !== this.uiState.currentState) {
+      this.uiState.currentState = nextState;
+      this.saveUIState();
+    }
+    this.uiStates[nextState](connState);
+  }
+
+  saveUIState() {
+    RPMSendAsyncMessage("torconnect:set-ui-state", this.uiState);
   }
 
   /*
@@ -176,6 +203,7 @@ class AboutTorConnect {
   }
 
   hideButtons() {
+    this.hide(this.elements.quickstartContainer);
     this.hide(this.elements.restartButton);
     this.hide(this.elements.configureButton);
     this.hide(this.elements.cancelButton);
@@ -337,20 +365,17 @@ class AboutTorConnect {
   /* Per-state updates */
 
   update_Initial(state) {
-    this.showConnectToTor(state, false);
+    this.showConnectToTor(state);
   }
 
   update_Configuring(state) {
-    this.hide(this.elements.quickstartContainer);
-    this.hide(this.elements.viewLogContainer);
-    this.hideButtons();
-
-    if (state.ErrorMessage === null) {
-      this.showConnectToTor(state, false);
-    } else if (state.InternetStatus === InternetStatus.Offline) {
-      this.showOffline(state.ErrorMessage);
-    } else {
-      this.showNext(state);
+    if (
+      state.StateChanged &&
+      (state.PreviousState === TorConnectState.Bootstrapping ||
+        state.PreviousState === TorConnectState.AutoBootstrapping)
+    ) {
+      // The bootstrap has been cancelled
+      this.transitionUIState(this.uiState.bootstrapCause, state);
     }
   }
 
@@ -363,13 +388,36 @@ class AboutTorConnect {
   }
 
   update_Error(state) {
-    const showProgressbar = false;
-
-    this.setTitle(state.ErrorMessage, "error");
-    this.setLongText("");
-    this.setProgress(state.ErrorDetails, showProgressbar);
-    this.hideButtons();
-    this.show(this.elements.viewLogContainer);
+    if (!this.uiState.connectIsTryAgain) {
+      // TorConnect.hasBootstrapEverFailed remains false in case of Internet
+      // offline
+      this.uiState.connectIsTryAgain = true;
+      this.saveUIState();
+    }
+    if (!state.StateChanged) {
+      return;
+    }
+    if (state.InternetStatus === InternetStatus.Offline) {
+      this.transitionUIState(UIStates.Offline, state);
+    } else if (state.PreviousState === TorConnectState.Bootstrapping) {
+      this.transitionUIState(UIStates.ConnectionAssist, state);
+    } else if (state.PreviousState === TorConnectState.AutoBootstrapping) {
+      if (this.uiState.bootstrapCause === UIStates.ConnectionAssist) {
+        this.transitionUIState(
+          this.getLocation() === "automatic"
+            ? UIStates.CouldNotLocate
+            : UIStates.LocationConfirm,
+          state
+        );
+      } else {
+        this.transitionUIState(UIStates.FinalError, state);
+      }
+    } else {
+      console.error(
+        "We received an error starting from an unexpected state",
+        state
+      );
+    }
   }
 
   update_Bootstrapped(state) {
@@ -391,10 +439,11 @@ class AboutTorConnect {
     // it isn't in use (eg using tor-launcher or system tor)
   }
 
-  showConnectToTor(state, tryAgain) {
+  showConnectToTor(state) {
     this.setTitle(TorStrings.torConnect.torConnect, "");
     this.setLongText(TorStrings.settings.torPreferencesDescription);
     this.setProgress("", false);
+    this.hide(this.elements.viewLogContainer);
     this.hideButtons();
     this.show(this.elements.quickstartContainer);
     this.show(this.elements.configureButton);
@@ -402,7 +451,7 @@ class AboutTorConnect {
     if (state?.StateChanged) {
       this.elements.connectButton.focus();
     }
-    if (tryAgain) {
+    if (this.uiState.connectIsTryAgain) {
       this.setBreadcrumbsStatus(
         BreadcrumbStatus.Active,
         BreadcrumbStatus.Default,
@@ -410,38 +459,53 @@ class AboutTorConnect {
       );
       this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
     }
-    this.bootstrappingDescription =
-      TorStrings.settings.torPreferencesDescription;
-    this.showNext = fromState => {
-      this.showConnectionAssistant(fromState.ErrorDetails);
-      if (fromState.StateChanged) {
-        this.elements.tryBridgeButton.focus();
-      }
-    };
+    this.uiState.bootstrapCause = UIStates.ConnectToTor;
+    this.saveUIState();
   }
 
   showBootstrapping(state) {
     const showProgressbar = true;
-    this.setTitle(this.bootstrappingTitle, "");
-    this.showConfigureConnectionLink(this.bootstrappingDescription);
-    this.setProgress("", showProgressbar, state.BootstrapProgress);
-    if (this.bootstrappingBreadcrumb < 0) {
-      this.hideBreadcrumbs();
-    } else {
-      const breadcrumbs = [
-        BreadcrumbStatus.Disabled,
-        BreadcrumbStatus.Disabled,
-        BreadcrumbStatus.Disabled,
-      ];
-      breadcrumbs[this.bootstrappingBreadcrumb] = BreadcrumbStatus.Active;
-      this.setBreadcrumbsStatus(...breadcrumbs);
+    let title = "";
+    let description = "";
+    const breadcrumbs = [
+      BreadcrumbStatus.Disabled,
+      BreadcrumbStatus.Disabled,
+      BreadcrumbStatus.Disabled,
+    ];
+    switch (this.uiState.bootstrapCause) {
+      case UIStates.ConnectToTor:
+        breadcrumbs[0] = BreadcrumbStatus.Active;
+        title = this.uiState.connectIsTryAgain
+          ? TorStrings.torConnect.tryAgain
+          : TorStrings.torConnect.torConnecting;
+        description = TorStrings.settings.torPreferencesDescription;
+        break;
+      case UIStates.ConnectionAssist:
+        breadcrumbs[2] = BreadcrumbStatus.Active;
+        title = TorStrings.torConnect.tryingBridge;
+        description = TorStrings.torConnect.assistDescription;
+        break;
+      case UIStates.CouldNotLocate:
+        breadcrumbs[2] = BreadcrumbStatus.Active;
+        title = TorStrings.torConnect.tryingBridgeAgain;
+        description = TorStrings.torConnect.errorLocationDescription;
+        break;
+      case UIStates.LocationConfirm:
+        breadcrumbs[2] = BreadcrumbStatus.Active;
+        title = TorStrings.torConnect.tryingBridgeAgain;
+        description = TorStrings.torConnect.isLocationCorrectDescription;
+        break;
     }
+    this.setTitle(title, "");
+    this.showConfigureConnectionLink(description);
+    this.setProgress("", showProgressbar, state.BootstrapProgress);
+    this.setBreadcrumbsStatus(...breadcrumbs);
+    this.hideButtons();
     if (state.ShowViewLog) {
       this.show(this.elements.viewLogContainer);
     } else {
       this.hide(this.elements.viewLogContainer);
     }
-    this.hideButtons();
     this.show(this.elements.cancelButton, true);
     if (state.StateChanged) {
       this.elements.cancelButton.focus();
@@ -449,7 +513,7 @@ class AboutTorConnect {
   }
 
   showOffline(error) {
-    this.setTitle(TorStrings.torConnect.noInternet, "error");
+    this.setTitle(TorStrings.torConnect.noInternet, "offline");
     this.setLongText("Some long text from 🍩️");
     this.setProgress(error, false);
     this.setBreadcrumbsStatus(
@@ -457,82 +521,73 @@ class AboutTorConnect {
       BreadcrumbStatus.Active,
       BreadcrumbStatus.Hidden
     );
+    this.show(this.elements.viewLogContainer);
     this.hideButtons();
     this.show(this.elements.configureButton);
     this.show(this.elements.connectButton, true);
     this.elements.connectButton.textContent = TorStrings.torConnect.tryAgain;
   }
 
-  showConnectionAssistant(errorMessage) {
+  showConnectionAssistant(state) {
     this.setTitle(TorStrings.torConnect.couldNotConnect, "assit");
     this.showConfigureConnectionLink(TorStrings.torConnect.assistDescription);
-    this.setProgress(errorMessage, false);
+    this.setProgress(state?.ErrorDetails, false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active,
       BreadcrumbStatus.Disabled
     );
     this.showLocationForm(false, TorStrings.torConnect.tryBridge);
-    this.bootstrappingBreadcrumb = 2;
-    this.bootstrappingTitle = TorStrings.torConnect.tryingBridge;
-    this.bootstrappingDescription = TorStrings.torConnect.assistDescription;
-    this.showNext = state => {
-      if (this.getLocation() === "automatic") {
-        this.showCannotLocate(state.ErrorMessage);
-      } else {
-        this.showLocationConfirmation(state.ErrorMessage);
-      }
-      if (state.StateChanged) {
-        this.elements.tryBridgeButton.focus();
-      }
-    };
+    if (state?.StateChanged) {
+      this.elements.tryBridgeButton.focus();
+    }
+    this.uiState.bootstrapCause = UIStates.ConnectionAssist;
+    this.saveUIState();
   }
 
-  showCannotLocate(errorMessage) {
-    this.allowAutomaticLocation = false;
+  showCouldNotLocate(state) {
+    this.uiState.allowAutomaticLocation = false;
     this.setTitle(TorStrings.torConnect.errorLocation, "location");
     this.showConfigureConnectionLink(
       TorStrings.torConnect.errorLocationDescription
     );
-    this.setProgress(errorMessage, false);
+    this.setProgress(state.ErrorMessage, false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active,
       BreadcrumbStatus.Disabled
     );
+    this.show(this.elements.viewLogContainer);
     this.showLocationForm(true, TorStrings.torConnect.tryBridge);
-    this.bootstrappingBreadcrumb = 2;
-    this.bootstrappingTitle = TorStrings.torConnect.tryingBridgeAgain;
-    this.bootstrappingDescription =
-      TorStrings.torConnect.errorLocationDescription;
-    this.showNext = state => {
-      this.showFinalError(state);
-    };
+    if (state.StateChanged) {
+      this.elements.tryBridgeButton.focus();
+    }
+    this.uiState.bootstrapCause = UIStates.CouldNotLocate;
+    this.saveUIState();
   }
 
-  showLocationConfirmation(errorMessage) {
+  showLocationConfirmation(state) {
     this.setTitle(TorStrings.torConnect.isLocationCorrect, "location");
     this.showConfigureConnectionLink(
       TorStrings.torConnect.isLocationCorrectDescription
     );
-    this.setProgress(errorMessage, false);
+    this.setProgress(state.ErrorMessage, false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active
     );
+    this.show(this.elements.viewLogContainer);
     this.showLocationForm(true, TorStrings.torConnect.tryAgain);
-    this.bootstrappingBreadcrumb = 2;
-    this.bootstrappingTitle = TorStrings.torConnect.tryingBridgeAgain;
-    this.bootstrappingDescription =
-      TorStrings.torConnect.isLocationCorrectDescription;
-    this.showNext = state => {
-      this.showFinalError(state);
-    };
+    if (state.StateChanged) {
+      this.elements.tryBridgeButton.focus();
+    }
+    this.uiState.bootstrapCause = UIStates.LocationConfirm;
+    this.saveUIState();
   }
 
   showFinalError(state) {
-    this.setTitle(TorStrings.torConnect.finalError, "error");
+    this.setTitle(TorStrings.torConnect.finalError, "final");
     this.setLongText(TorStrings.torConnect.finalErrorDescription);
     this.setProgress(state ? state.ErrorDetails : "", false);
     this.setBreadcrumbsStatus(
@@ -543,9 +598,6 @@ class AboutTorConnect {
     this.hideButtons();
     this.show(this.elements.restartButton);
     this.show(this.elements.configureButton, true);
-    this.showNext = fromState => {
-      this.showFinalError(fromState);
-    };
   }
 
   showConfigureConnectionLink(text) {
@@ -570,16 +622,18 @@ class AboutTorConnect {
     RPMSendQuery("torconnect:get-country-codes").then(codes => {
       if (codes && codes.length) {
         this.populateFrequentLocations(codes);
+        this.setLocationFromState();
       }
     });
     let firstOpt = this.elements.locationDropdownSelect.options[0];
-    if (this.allowAutomaticLocation) {
+    if (this.uiState.allowAutomaticLocation) {
       firstOpt.value = "automatic";
       firstOpt.textContent = TorStrings.torConnect.automatic;
     } else {
       firstOpt.value = "";
       firstOpt.textContent = TorStrings.torConnect.selectCountryRegion;
     }
+    this.setLocationFromState();
     this.validateLocation();
     this.show(this.elements.locationDropdownLabel);
     this.show(this.elements.locationDropdown);
@@ -596,20 +650,34 @@ class AboutTorConnect {
     return this.elements.locationDropdownSelect.options[selectedIndex].value;
   }
 
+  setLocationFromState() {
+    if (this.getLocation() === this.uiState.selectedLocation) {
+      return;
+    }
+    const options = this.elements.locationDropdownSelect.options;
+    // We need to do this way, because we have repeated values that break
+    // the .value way to select (which would however require the label,
+    // rather than the code)...
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].value === this.uiState.selectedLocation) {
+        this.elements.locationDropdownSelect.selectedIndex = i;
+        break;
+      }
+    }
+    this.validateLocation();
+  }
+
   initElements(direction) {
     document.documentElement.setAttribute("dir", direction);
 
-    this.bootstrappingTitle = TorStrings.torConnect.torConnecting;
-
     this.elements.connectToTorLink.addEventListener("click", event => {
-      if (
-        this.elements.connectToTorLink.classList.contains(
-          BreadcrumbStatus.Active
-        )
-      ) {
+      if (this.uiState.currentState === UIStates.ConnectToTor) {
         return;
       }
-      this.showConnectToTor(null, true);
+      this.transitionUIState(UIStates.ConnectToTor, null);
+      RPMSendAsyncMessage("torconnect:broadcast-user-action", {
+        uiState: UIStates.ConnectToTor,
+      });
     });
     this.elements.connectToTorLabel.textContent =
       TorStrings.torConnect.torConnect;
@@ -624,7 +692,10 @@ class AboutTorConnect {
       ) {
         return;
       }
-      this.showConnectionAssistant();
+      this.transitionUIState(UIStates.ConnectionAssist, null);
+      RPMSendAsyncMessage("torconnect:broadcast-user-action", {
+        uiState: UIStates.ConnectionAssist,
+      });
     });
     this.elements.connectionAssistLabel.textContent =
       TorStrings.torConnect.breadcrumbAssist;
@@ -664,19 +735,17 @@ class AboutTorConnect {
     this.elements.connectButton.textContent =
       TorStrings.torConnect.torConnectButton;
     this.elements.connectButton.addEventListener("click", () => {
-      if (
-        this.elements.connectButton.textContent ===
-        TorStrings.torConnect.tryAgain
-      ) {
-        this.bootstrappingBreadcrumb = 0;
-        this.bootstrappingTitle = TorStrings.torConnect.tryingAgain;
-      }
       this.beginBootstrap();
     });
 
     this.populateLocations();
     this.elements.locationDropdownSelect.addEventListener("change", () => {
+      this.uiState.selectedLocation = this.getLocation();
+      this.saveUIState();
       this.validateLocation();
+      RPMSendAsyncMessage("torconnect:broadcast-user-action", {
+        location: this.uiState.selectedLocation,
+      });
     });
 
     this.elements.locationDropdownLabel.textContent =
@@ -697,6 +766,15 @@ class AboutTorConnect {
     // TorConnectParent feeds us state blobs to we use to update our UI
     RPMAddMessageListener("torconnect:state-change", ({ data }) => {
       this.updateUI(data);
+    });
+    RPMAddMessageListener("torconnect:user-action", ({ data }) => {
+      if (data.location) {
+        this.uiState.selectedLocation = data.location;
+        this.setLocationFromState();
+      }
+      if (data.uiState !== undefined) {
+        this.transitionUIState(data.uiState, data.connState);
+      }
     });
   }
 
@@ -735,6 +813,13 @@ class AboutTorConnect {
     this.initObservers();
     this.initKeyboardShortcuts();
 
+    if (Object.keys(args.State.UIState).length) {
+      this.uiState = args.State.UIState;
+    } else {
+      args.State.UIState = this.uiState;
+      this.saveUIState();
+    }
+    this.uiStates[this.uiState.currentState](args.State);
     // populate UI based on current state
     this.updateUI(args.State);
   }

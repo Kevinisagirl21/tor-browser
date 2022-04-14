@@ -220,7 +220,10 @@ let RemotePageAccessManager = {
       RPMSendQuery: ["FetchUpdateData"],
     },
     "about:torconnect": {
-      RPMAddMessageListener: ["torconnect:state-change"],
+      RPMAddMessageListener: [
+        "torconnect:state-change",
+        "torconnect:user-action",
+      ],
       RPMSendAsyncMessage: [
         "torconnect:open-tor-preferences",
         "torconnect:begin-bootstrap",
@@ -229,6 +232,8 @@ let RemotePageAccessManager = {
         "torconnect:set-quickstart",
         "torconnect:view-tor-logs",
         "torconnect:restart",
+        "torconnect:set-ui-state",
+        "torconnect:broadcast-user-action",
       ],
       RPMSendQuery: [
         "torconnect:get-init-args",
