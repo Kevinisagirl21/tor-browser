@@ -496,12 +496,24 @@ const TorConnect = (() => {
 
                         if (this.transitioning) return;
 
-                        if (this.settings === null) {
-                            // unable to determine country
-                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
-                        } else if (this.settings.length === 0) {
-                            // no settings available for country
-                            throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.noSettingsForCountry);
+                        const noCountry = this.settings !== null;
+                        const noLocalizedSettings = this.settings && this.settings.length === 0;
+                        if (noCountry || noLocalizedSettings) {
+                            try {
+                                this.settings = await this.mrpc.circumvention_defaults([...TorBuiltinBridgeTypes, "vanilla"]);
+                            } catch (err) {
+                                console.error("We could not get localized settings, but defaults settings failed as well", err);
+                            }
+                        }
+                        if (this.settings === null || this.settings.length === 0) {
+                            // The fallback has failed as well, so throw the original error
+                            if (noCountry) {
+                                // unable to determine country
+                                throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
+                            } else {
+                                // no settings available for country
+                                throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.noSettingsForCountry);
+                            }
                         }
 
                         // apply each of our settings and try to bootstrap with each
