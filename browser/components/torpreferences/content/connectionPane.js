@@ -135,6 +135,13 @@ const gConnectionPane = (function() {
       requestButton: "#torPreferences-addBridge-buttonRequestBridge",
       enterLabel: "#torPreferences-addBridge-labelEnterBridge",
       enterButton: "#torPreferences-addBridge-buttonEnterBridge",
+      removeOverlay: "#bridge-remove-overlay",
+      removeModal: "#bridge-remove-modal",
+      removeDismiss: "#bridge-remove-dismiss",
+      removeQuestion: "#bridge-remove-question",
+      removeWarning: "#bridge-remove-warning",
+      removeConfirm: "#bridge-remove-confirm",
+      removeCancel: "#bridge-remove-cancel",
     },
     advanced: {
       header: "h1#torPreferences-advanced-header",
@@ -612,7 +619,7 @@ const gConnectionPane = (function() {
       const removeAll = prefpane.querySelector(selectors.bridges.removeAll);
       removeAll.setAttribute("label", TorStrings.settings.bridgeRemoveAll);
       removeAll.addEventListener("command", () => {
-        this.onRemoveAllBridges();
+        this._confirmBridgeRemoval();
       });
       this._populateBridgeCards = async () => {
         const collapseThreshold = 4;
@@ -802,7 +809,37 @@ const gConnectionPane = (function() {
         });
       }
 
-      Services.obs.addObserver(this, TorConnectTopics.StateChange);
+      {
+        const overlay = prefpane.querySelector(selectors.bridges.removeOverlay);
+        this._confirmBridgeRemoval = () => {
+          overlay.classList.remove("hidden");
+        };
+        const closeDialog = () => {
+          overlay.classList.add("hidden");
+        };
+        overlay.addEventListener("click", closeDialog);
+        const modal = prefpane.querySelector(selectors.bridges.removeModal);
+        modal.addEventListener("click", e => {
+          e.stopPropagation();
+        });
+        const dismiss = prefpane.querySelector(selectors.bridges.removeDismiss);
+        dismiss.addEventListener("click", closeDialog);
+        const question = prefpane.querySelector(
+          selectors.bridges.removeQuestion
+        );
+        question.textContent = TorStrings.settings.removeBridgesQuestion;
+        const warning = prefpane.querySelector(selectors.bridges.removeWarning);
+        warning.textContent = TorStrings.settings.removeBridgesWarning;
+        const confirm = prefpane.querySelector(selectors.bridges.removeConfirm);
+        confirm.setAttribute("label", TorStrings.settings.remove);
+        confirm.addEventListener("command", () => {
+          this.onRemoveAllBridges();
+          closeDialog();
+        });
+        const cancel = prefpane.querySelector(selectors.bridges.removeCancel);
+        cancel.setAttribute("label", TorStrings.settings.cancel);
+        cancel.addEventListener("command", closeDialog);
+      }
 
       // Advanced setup
       prefpane.querySelector(selectors.advanced.header).innerText =
@@ -831,6 +868,8 @@ const gConnectionPane = (function() {
       torLogsButton.addEventListener("command", () => {
         this.onViewTorLogs();
       });
+
+      Services.obs.addObserver(this, TorConnectTopics.StateChange);
     },
 
     init() {
