@@ -205,9 +205,12 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   /* define border-radius here because of the transition */
   border-radius: 4px;
   transition: margin var(--bridgeCard-animation-time), box-shadow 150ms;
+  cursor: pointer;
 }
 
-.torPreferences-bridgeCard.expanded {
+.torPreferences-bridgeCard.expanded,
+.torPreferences-bridgeCard.currently-connected,
+.single-card .torPreferences-bridgeCard {
   margin: 12px 0;
   background: var(--in-content-box-background);
   box-shadow: var(--card-shadow);
@@ -216,7 +219,11 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 .torPreferences-bridgeCard:hover {
   background: var(--in-content-box-background);
   box-shadow: var(--card-shadow-hover);
-  cursor: pointer;
+}
+
+.single-card .torPreferences-bridgeCard,
+.torPreferences-bridgeCard.currently-connected {
+  cursor: default;
 }
 
 .torPreferences-bridgeCard-heading {
@@ -248,7 +255,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   text-overflow: ellipsis;
 }
 
-.expanded .torPreferences-bridgeCard-headingAddr {
+.expanded .torPreferences-bridgeCard-headingAddr,
+.currently-connected .torPreferences-bridgeCard-headingAddr,
+.single-card .torPreferences-bridgeCard-headingAddr {
   display: none;
 }
 
@@ -360,8 +369,15 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   visibility: hidden;
 }
 
-.expanded .torPreferences-bridgeCard-grid {
+.expanded .torPreferences-bridgeCard-grid,
+.currently-connected .torPreferences-bridgeCard-grid,
+.single-card .torPreferences-bridgeCard-grid {
   visibility: visible;
+}
+
+.currently-connected .torPreferences-bridgeCard-grid,
+.single-card .torPreferences-bridgeCard-grid {
+  height: auto;
 }
 
 .torPreferences-bridgeCard-grid.to-animate {

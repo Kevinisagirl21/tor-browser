@@ -367,9 +367,7 @@ const gConnectionPane = (function() {
                 )
               );
             }
-            items.sort((left, right) =>
-              left.label.localeCompare(right.label)
-            );
+            items.sort((left, right) => left.label.localeCompare(right.label));
             locationEntries.append(...items);
           };
           locationEntries.append(
@@ -449,6 +447,12 @@ const gConnectionPane = (function() {
         card.removeAttribute("id");
         const grid = card.querySelector(selectors.bridges.cardQrGrid);
         card.addEventListener("click", e => {
+          if (
+            card.classList.contains("currently-connected") ||
+            bridgeCards.classList.contains("single-card")
+          ) {
+            return;
+          }
           let target = e.target;
           let apply = true;
           while (target !== null && target !== card && apply) {
@@ -627,6 +631,7 @@ const gConnectionPane = (function() {
         bridgeCards.removeAttribute("hidden");
         bridgeSwitch.checked = TorSettings.bridges.enabled;
         bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
+        bridgeCards.classList.toggle("single-card", numBridges === 1);
 
         let shownCards = 0;
         const toShow = this._currentBridgesExpanded
