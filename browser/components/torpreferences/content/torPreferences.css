@@ -233,7 +233,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   padding: 4px;
   font-size: 20px;
   border-radius: 4px;
-  background: var(--in-content-button-background-hover);
+  background: var(--in-content-box-background-odd);
 }
 
 .torPreferences-bridgeCard-headingAddr {
@@ -242,8 +242,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 20px;
   flex: 1;
   margin: 0 8px;
-  white-space: nowrap;
   overflow: hidden;
+  color: var(--in-content-deemphasized-text);
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
@@ -380,8 +381,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   margin: 8px 0;
 }
 
-.torPreferences-bridgeCard-addr {
+input.torPreferences-bridgeCard-addr {
   width: 100%;
+  color: var(--in-content-deemphasized-text);
 }
 
 .torPreferences-bridgeCard-leranMoreBox {
