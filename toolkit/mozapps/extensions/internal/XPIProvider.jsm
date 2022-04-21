@@ -480,7 +480,7 @@ class XPIState {
 
     // Builds prior to be 1512436 did not include the rootURI property.
     // If we're updating from such a build, add that property now.
-    if (!("rootURI" in this) && this.file) {
+    if (this.file) {
       this.rootURI = getURIForResourceInFile(this.file, "").spec;
     }
 
@@ -493,7 +493,10 @@ class XPIState {
       saved.currentModifiedTime != this.lastModifiedTime
     ) {
       this.lastModifiedTime = saved.currentModifiedTime;
-    } else if (saved.currentModifiedTime === null) {
+    } else if (
+      saved.currentModifiedTime === null &&
+      (!this.file || !this.file.exists())
+    ) {
       this.missing = true;
     }
   }
@@ -968,6 +971,12 @@ var BuiltInLocation = new (class _BuiltInLocation extends XPIStateLocation {
   // here for correct behavior elsewhere.
   isLinkedAddon(/* aId */) {
     return false;
+  }
+
+  restore(saved) {
+    super.restore(saved);
+    // Bug 33342: avoid restoring disconnect addon from addonStartup.json.lz4.
+    this.removeAddon("disconnect@search.mozilla.org");
   }
 })();
 
@@ -1462,6 +1471,7 @@ var XPIStates = {
 
       if (shouldRestoreLocationData && oldState[loc.name]) {
         loc.restore(oldState[loc.name]);
+        changed = changed || loc.path != oldState[loc.name].path;
       }
       changed = changed || loc.changed;
 
@@ -1484,6 +1494,38 @@ var XPIStates = {
       let knownIds = new Set(loc.keys());
       for (let [id, file] of loc.readAddons()) {
         knownIds.delete(id);
+
+        // Uninstall torbutton if it is installed in the user profile
+        if (id === "torbutton@torproject.org" &&
+            loc.name === KEY_APP_PROFILE) {
+          logger.debug("Uninstalling torbutton from user profile.");
+          loc.installer.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
+
+        // Since it is now part of the browser, uninstall the Tor Launcher
+        // extension. This will remove the Tor Launcher .xpi from user
+        // profiles on macOS.
+        if (id === "tor-launcher@torproject.org") {
+          logger.debug("Uninstalling the Tor Launcher extension.");
+          loc.installer.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
+
+        // Uninstall HTTPS Everywhere if it is installed in the user profile.
+        if (
+          id === "https-everywhere-eff@eff.org" &&
+          loc.name === KEY_APP_PROFILE
+        ) {
+          logger.debug(
+            "Uninstalling the HTTPS Everywhere extension from user profile."
+          );
+          loc.installer.uninstallAddon(id);
+          changed = true;
+          continue;
+        }
 
         let xpiState = loc.get(id);
         if (!xpiState) {

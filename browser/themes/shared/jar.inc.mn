@@ -50,6 +50,9 @@
   skin/classic/browser/downloads/progressmeter.css             (../shared/downloads/progressmeter.css)
   skin/classic/browser/drm-icon.svg                            (../shared/drm-icon.svg)
   skin/classic/browser/permissions.svg                         (../shared/identity-block/permissions.svg)
+  skin/classic/browser/onion.svg                               (../shared/identity-block/onion.svg)
+  skin/classic/browser/onion-slash.svg                         (../shared/identity-block/onion-slash.svg)
+  skin/classic/browser/onion-warning.svg                       (../shared/identity-block/onion-warning.svg)
   skin/classic/browser/notification-icons/autoplay-media.svg                (../shared/notification-icons/autoplay-media.svg)
   skin/classic/browser/notification-icons/autoplay-media-blocked.svg        (../shared/notification-icons/autoplay-media-blocked.svg)
   skin/classic/browser/notification-icons/camera-blocked.svg                (../shared/notification-icons/camera-blocked.svg)
@@ -232,3 +235,6 @@
   skin/classic/browser/places/tree-icons.css                   (../shared/places/tree-icons.css)
   skin/classic/browser/privatebrowsing/aboutPrivateBrowsing.css (../shared/privatebrowsing/aboutPrivateBrowsing.css)
   skin/classic/browser/privatebrowsing/favicon.svg             (../shared/privatebrowsing/favicon.svg)
+
+  skin/classic/browser/new_circuit.svg                         (../shared/icons/new_circuit.svg)
+  skin/classic/browser/new_identity.svg                        (../shared/icons/new_identity.svg)

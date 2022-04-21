@@ -212,6 +212,13 @@ this.AppConstants = Object.freeze({
   false,
 #endif
 
+  MOZ_VERIFY_MAR_SIGNATURE:
+#ifdef MOZ_VERIFY_MAR_SIGNATURE
+  true,
+#else
+  false,
+#endif
+
   MOZ_MAINTENANCE_SERVICE:
 #ifdef MOZ_MAINTENANCE_SERVICE
   true,
@@ -354,6 +361,14 @@ this.AppConstants = Object.freeze({
   MOZ_WIDGET_TOOLKIT: "@MOZ_WIDGET_TOOLKIT@",
   ANDROID_PACKAGE_NAME: "@ANDROID_PACKAGE_NAME@",
 
+  TOR_BROWSER_VERSION: "@TOR_BROWSER_VERSION@",
+  TOR_BROWSER_DATA_OUTSIDE_APP_DIR:
+#ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+  true,
+#else
+  false,
+#endif
+
   DEBUG_JS_MODULES: "@DEBUG_JS_MODULES@",
 
   MOZ_BING_API_CLIENTID: "@MOZ_BING_API_CLIENTID@",
@@ -447,4 +462,11 @@ this.AppConstants = Object.freeze({
       .getCharPref("distribution.id", "default") === "MozillaOnline"
     );
   },
+
+  TOR_BROWSER_UPDATE:
+#ifdef TOR_BROWSER_UPDATE
+    true,
+#else
+    false,
+#endif
 });
