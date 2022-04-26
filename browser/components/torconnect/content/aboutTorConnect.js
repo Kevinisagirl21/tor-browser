@@ -33,7 +33,7 @@ class AboutTorConnect {
     },
     progress: {
       description: "p#connectShortDescText",
-      meter: "div#progressBackground",
+      meter: "div#progressBar",
     },
     breadcrumbs: {
       container: "#breadcrumbs",
