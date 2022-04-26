@@ -221,10 +221,6 @@ const InternetStatus = Object.freeze({
 });
 
 class InternetTest {
-    static get TIMEOUT() {
-        return 30000;
-    }
-
     constructor() {
         this._status = InternetStatus.Unknown;
         this._error = null;
@@ -232,7 +228,7 @@ class InternetTest {
         this._timeout = setTimeout(() => {
             this._timeout = null;
             this.test();
-        }, InternetTest.TIMEOUT + this.timeoutRand());
+        }, this.timeoutRand());
         this.onResult = (online, date) => {}
         this.onError = (err) => {};
     }
@@ -268,7 +264,7 @@ class InternetTest {
         // Callbacks for the Internet test are desirable, because we will be
         // waiting both for the bootstrap, and for the Internet test.
         // However, managing Moat with async/await is much easier as it avoids a
-        // callback hell, and it makes extra esplicit that we are uniniting it.
+        // callback hell, and it makes extra explicit that we are uniniting it.
         const mrpc = new MoatRPC();
         let status = null;
         let error = null;
@@ -297,8 +293,9 @@ class InternetTest {
 
     // We randomize the Internet test timeout to make fingerprinting it harder, at least a little bit...
     timeoutRand() {
-        const window = 5000;
-        return window * (Math.random() * 2 - 1);
+        const offset = 30000;
+        const randRange = 5000;
+        return offset + randRange * (Math.random() * 2 - 1);
     }
 }
 
