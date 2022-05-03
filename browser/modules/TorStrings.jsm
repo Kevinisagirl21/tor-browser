@@ -514,6 +514,11 @@ var TorStrings = {
         "Tor Browser couldn’t reach the Internet"
       ),
 
+      noInternetDescription: getStringNet(
+        "torConnect.noInternetDescription",
+        "This could be due to a connection issue rather than Tor being blocked. Check your Internet connection, proxy and firewall settings before trying again.",
+      ),
+
       torBootstrapFailed: getStringLauncher(
         "tor_bootstrap_failed",
         "Tor failed to establish a Tor network connection."

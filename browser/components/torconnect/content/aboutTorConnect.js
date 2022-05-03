@@ -514,7 +514,7 @@ class AboutTorConnect {
 
   showOffline(error) {
     this.setTitle(TorStrings.torConnect.noInternet, "offline");
-    this.setLongText("Some long text from 🍩️");
+    this.setLongText(TorStrings.torConnect.noInternetDescription);
     this.setProgress(error, false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
@@ -529,7 +529,7 @@ class AboutTorConnect {
   }
 
   showConnectionAssistant(state) {
-    this.setTitle(TorStrings.torConnect.couldNotConnect, "assit");
+    this.setTitle(TorStrings.torConnect.couldNotConnect, "assist");
     this.showConfigureConnectionLink(TorStrings.torConnect.assistDescription);
     this.setProgress(state?.ErrorDetails, false);
     this.setBreadcrumbsStatus(

@@ -316,7 +316,7 @@ body {
   fill: var(--onion-color);
 }
 
-.title.offline, .title.assit, .title.final {
+.title.offline, .title.assist, .title.final {
   background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
 }
 
