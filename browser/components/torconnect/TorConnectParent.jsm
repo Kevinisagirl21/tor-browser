@@ -138,7 +138,7 @@ class TorConnectParent extends JSWindowActorParent {
       this.torConnectObserver,
       TorSettingsTopics.SettingChanged
     );
-    Services.obs.addObserver(this.userActionObserver, BroadcastTopic);
+    Services.obs.removeObserver(this.userActionObserver, BroadcastTopic);
   }
 
   async receiveMessage(message) {
