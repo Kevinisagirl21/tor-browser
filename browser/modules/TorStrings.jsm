@@ -286,6 +286,7 @@ var TorStrings = {
       bridgeLocationOther: getString("torPreferences.bridgeLocationOther", "Other locations"),
       bridgeChooseForMe: getString("torPreferences.bridgeChooseForMe", "Choose a Bridge For Me\u2026"),
       bridgeCurrent: getString("torPreferences.bridgeBadgeCurrent", "Your Current Bridges"),
+      bridgeCurrentDescription: getString("torPreferences.bridgeBadgeCurrentDescription", "You can keep one or more bridges saved, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed."),
       bridgeId: getString("torPreferences.bridgeId", "#1 bridge: #2"),
       remove: getString("torPreferences.remove", "Remove"),
       bridgeDisableBuiltIn: getString("torPreferences.bridgeDisableBuiltIn", "Disable built-in bridges"),

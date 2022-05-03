@@ -110,6 +110,7 @@ const gConnectionPane = (function() {
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
       currentHeader: "#torPreferences-currentBridges-header",
       currentHeaderText: "#torPreferences-currentBridges-headerText",
+      currentDescriptionText: "#torPreferences-currentBridges-description",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -428,6 +429,9 @@ const gConnectionPane = (function() {
           this._populateBridgeCards();
         });
       });
+      prefpane.querySelector(
+        selectors.bridges.currentDescriptionText
+      ).textContent = TorStrings.settings.bridgeCurrentDescription;
       const bridgeTemplate = prefpane.querySelector(
         selectors.bridges.cardTemplate
       );
