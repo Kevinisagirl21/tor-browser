@@ -292,7 +292,7 @@ var TorStrings = {
       bridgeDisableBuiltIn: getString("torPreferences.bridgeDisableBuiltIn", "Disable built-in bridges"),
       bridgeShare: getString(
         "torPreferences.bridgeShare",
-        "Share your bridge by presenting the QR code or copying its bridge line."
+        "Share this bridge using the QR code or by copying its address:"
       ),
       bridgeCopy: getString("torPreferences.bridgeCopy", "Copy Bridge Address"),
       copied: getString("torPreferences.copied", "Copied!"),
