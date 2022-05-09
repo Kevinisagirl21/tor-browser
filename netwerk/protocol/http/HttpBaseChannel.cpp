@@ -3314,16 +3314,12 @@ HttpBaseChannel::SetBeConservative(bool aBeConservative) {
 
 NS_IMETHODIMP
 HttpBaseChannel::GetBypassProxy(bool* aBypassProxy) {
-  NS_ENSURE_ARG_POINTER(aBypassProxy);
-
-  *aBypassProxy = LoadBypassProxy();
-  return NS_OK;
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 HttpBaseChannel::SetBypassProxy(bool aBypassProxy) {
-  StoreBypassProxy(aBypassProxy);
-  return NS_OK;
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP

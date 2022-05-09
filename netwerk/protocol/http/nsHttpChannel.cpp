@@ -5934,7 +5934,7 @@ void nsHttpChannel::MaybeResolveProxyAndBeginConnect() {
   // settings if we are never going to make a network connection.
   if (!mProxyInfo &&
       !(mLoadFlags & (LOAD_ONLY_FROM_CACHE | LOAD_NO_NETWORK_IO)) &&
-      !LoadBypassProxy() && NS_SUCCEEDED(ResolveProxy())) {
+      NS_SUCCEEDED(ResolveProxy())) {
     return;
   }
 
