@@ -360,6 +360,7 @@ pref("extensions.langpacks.signatures.required", false);
 
 // Treat .onions as secure
 pref("dom.securecontext.whitelist_onions", true);
+pref("dom.securecontext.allowlist_onions", true); // FF97+ 1744006 renamed from whitelist
 
 // Disable special URL bar behaviors
 pref("browser.urlbar.suggest.topsites", false);
@@ -416,7 +417,6 @@ pref("extensions.torbutton.updateNeeded", false);
 pref("extensions.torbutton.test_enabled",true);
 pref("extensions.torbutton.test_url","https://check.torproject.org/?TorButton=true");
 pref("extensions.torbutton.local_tor_check",true);
-pref("extensions.torbutton.versioncheck_url","https://www.torproject.org/projects/torbrowser/RecommendedTBBVersions");
 pref("extensions.torbutton.versioncheck_enabled",true);
 pref("extensions.torbutton.use_nontor_proxy",false);
 
