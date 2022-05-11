@@ -358,11 +358,6 @@ pref("security.certerrors.mitm.auto_enable_enterprise_roots", false);
 pref("extensions.langpacks.signatures.required", false);
 #endif
 
-// Workaround for https://bugs.torproject.org/13579. Progress on
-// `about:downloads` is only shown if the following preference is set to `true`
-// in case the download panel got removed from the toolbar.
-pref("browser.download.panel.shown", true);
-
 // Treat .onions as secure
 pref("dom.securecontext.whitelist_onions", true);
 
