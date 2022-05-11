@@ -130,6 +130,10 @@ pref("privacy.annotate_channels.strict_list.enabled", false);
 // Disable the Pocket extension (Bug #18886 and #31602)
 pref("extensions.pocket.enabled", false);
 
+// Disable the screenshot menu when right-clicking (Bug #40912 and #40007)
+pref("extensions.screenshots.disabled", true);
+pref("extensions.webcompat-reporter.enabled", false);
+
 // Disable use of WiFi location information
 pref("browser.region.network.scan", false);
 pref("browser.region.network.url", "");
