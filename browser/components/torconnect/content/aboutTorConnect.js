@@ -403,12 +403,17 @@ class AboutTorConnect {
       this.transitionUIState(UIStates.ConnectionAssist, state);
     } else if (state.PreviousState === TorConnectState.AutoBootstrapping) {
       if (this.uiState.bootstrapCause === UIStates.ConnectionAssist) {
-        this.transitionUIState(
-          this.getLocation() === "automatic"
-            ? UIStates.CouldNotLocate
-            : UIStates.LocationConfirm,
-          state
-        );
+        if (this.getLocation() === "automatic") {
+          this.uiState.allowAutomaticLocation = false;
+          if (!state.DetectedLocation) {
+            this.transitionUIState(UIStates.CouldNotLocate, state);
+            return;
+          }
+          // Change the location only here, to avoid overriding any user change/
+          // insisting with the detected location
+          this.setLocation(state.DetectedLocation);
+        }
+        this.transitionUIState(UIStates.LocationConfirm, state);
       } else {
         this.transitionUIState(UIStates.FinalError, state);
       }
@@ -499,7 +504,11 @@ class AboutTorConnect {
     this.setTitle(title, "");
     this.showConfigureConnectionLink(description);
     this.setProgress("", showProgressbar, state.BootstrapProgress);
-    this.setBreadcrumbsStatus(...breadcrumbs);
+    if (state.HasBootsrapEverFailed) {
+      this.setBreadcrumbsStatus(...breadcrumbs);
+    } else {
+      this.hideBreadcrumbs();
+    }
     this.hideButtons();
     if (state.ShowViewLog) {
       this.show(this.elements.viewLogContainer);
@@ -622,7 +631,7 @@ class AboutTorConnect {
     RPMSendQuery("torconnect:get-country-codes").then(codes => {
       if (codes && codes.length) {
         this.populateFrequentLocations(codes);
-        this.setLocationFromState();
+        this.setLocation();
       }
     });
     let firstOpt = this.elements.locationDropdownSelect.options[0];
@@ -633,7 +642,7 @@ class AboutTorConnect {
       firstOpt.value = "";
       firstOpt.textContent = TorStrings.torConnect.selectCountryRegion;
     }
-    this.setLocationFromState();
+    this.setLocation();
     this.validateLocation();
     this.show(this.elements.locationDropdownLabel);
     this.show(this.elements.locationDropdown);
@@ -650,8 +659,13 @@ class AboutTorConnect {
     return this.elements.locationDropdownSelect.options[selectedIndex].value;
   }
 
-  setLocationFromState() {
-    if (this.getLocation() === this.uiState.selectedLocation) {
+  setLocation(code) {
+    if (!code) {
+      code = this.uiState.selectedLocation;
+    } else {
+      this.uiState.selectedLocation = code;
+    }
+    if (this.getLocation() === code) {
       return;
     }
     const options = this.elements.locationDropdownSelect.options;
@@ -659,7 +673,7 @@ class AboutTorConnect {
     // the .value way to select (which would however require the label,
     // rather than the code)...
     for (let i = 0; i < options.length; i++) {
-      if (options[i].value === this.uiState.selectedLocation) {
+      if (options[i].value === code) {
         this.elements.locationDropdownSelect.selectedIndex = i;
         break;
       }
@@ -770,7 +784,7 @@ class AboutTorConnect {
     RPMAddMessageListener("torconnect:user-action", ({ data }) => {
       if (data.location) {
         this.uiState.selectedLocation = data.location;
-        this.setLocationFromState();
+        this.setLocation();
       }
       if (data.uiState !== undefined) {
         this.transitionUIState(data.uiState, data.connState);
