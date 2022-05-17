@@ -735,6 +735,7 @@ class MoatRPC {
       country,
     };
     const response = await this._makeRequest("circumvention/settings", args);
+    let settings = {};
     if ("errors" in response) {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
@@ -748,10 +749,12 @@ class MoatRPC {
 
       throw new Error(`MoatRPC: ${detail} (${code})`);
     } else if ("settings" in response) {
-      return this._fixupSettingsList(response.settings);
+      settings.settings = this._fixupSettingsList(response.settings);
     }
-
-    return [];
+    if ("country" in response) {
+      settings.country = response.country;
+    }
+    return settings;
   }
 
   // Request a list of country codes with available censorship circumvention settings
