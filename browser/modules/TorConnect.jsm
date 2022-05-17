@@ -317,6 +317,7 @@ const TorConnect = (() => {
             }
             return codesNames;
         })()),
+        _detectedLocation: "",
         _errorMessage: null,
         _errorDetails: null,
         _logHasWarningOrError: false,
@@ -380,6 +381,10 @@ const TorConnect = (() => {
                         };
                         await debug_sleep(1500);
                         TorConnect._hasBootstrapEverFailed = true;
+                        if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) === 2) {
+                            const codes = Object.keys(TorConnect._countryNames);
+                            TorConnect._detectedLocation = codes[Math.floor(Math.random() * codes.length)];
+                        }
                         TorConnect._changeState(TorConnectState.Error, "Bootstrap failed (for debugging purposes)", "Error: Censorship simulation", true);
                         TorProtocolService._torBootstrapDebugSetError();
                         return;
@@ -489,22 +494,25 @@ const TorConnect = (() => {
 
                         if (this.transitioning) return;
 
-                        this.settings = await this.mrpc.circumvention_settings([...TorBuiltinBridgeTypes, "vanilla"], countryCode);
+                        const settings = await this.mrpc.circumvention_settings([...TorBuiltinBridgeTypes, "vanilla"], countryCode);
 
                         if (this.transitioning) return;
 
-                        const noCountry = this.settings !== null;
-                        const noLocalizedSettings = this.settings && this.settings.length === 0;
-                        if (noCountry || noLocalizedSettings) {
+                        if (settings?.country) {
+                            TorConnect._detectedLocation = settings.country;
+                        }
+                        if (settings?.settings && settings.settings.length > 0) {
+                            this.settings = settings.settings;
+                        } else {
                             try {
                                 this.settings = await this.mrpc.circumvention_defaults([...TorBuiltinBridgeTypes, "vanilla"]);
                             } catch (err) {
-                                console.error("We could not get localized settings, but defaults settings failed as well", err);
+                                console.error("We did not get localized settings, and default settings failed as well", err);
                             }
                         }
                         if (this.settings === null || this.settings.length === 0) {
                             // The fallback has failed as well, so throw the original error
-                            if (noCountry) {
+                            if (!TorConnect._detectedLocation) {
                                 // unable to determine country
                                 throw_error(TorStrings.torConnect.autoBootstrappingFailed, TorStrings.torConnect.cannotDetermineCountry);
                             } else {
@@ -748,6 +756,10 @@ const TorConnect = (() => {
 
         get countryNames() {
             return this._countryNames;
+        },
+
+        get detectedLocation() {
+            return this._detectedLocation;
         },
 
         get errorMessage() {
