@@ -13,6 +13,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/intl/MozLocale.h"
 #include "mozilla/intl/OSPreferences.h"
+#include "nsContentUtils.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIObserverService.h"
@@ -442,6 +443,11 @@ LocaleService::GetAppLocaleAsBCP47(nsACString& aRetVal) {
 
 NS_IMETHODIMP
 LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
+  if (nsContentUtils::ShouldResistFingerprinting()) {
+    GetAppLocalesAsBCP47(aRetVal);
+    return NS_OK;
+  }
+
   bool useOSLocales =
       Preferences::GetBool("intl.regional_prefs.use_os_locales", false);
 
