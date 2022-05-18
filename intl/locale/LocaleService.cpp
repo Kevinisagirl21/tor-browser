@@ -15,6 +15,7 @@
 #include "mozilla/intl/OSPreferences.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsContentUtils.h"
 #include "nsIObserverService.h"
 #include "nsStringEnumerator.h"
 #include "nsXULAppAPI.h"
@@ -447,11 +448,36 @@ LocaleService::GetRegionalPrefsLocales(nsTArray<nsCString>& aRetVal) {
 
   // If the user specified that they want to use OS Regional Preferences
   // locales, try to retrieve them and use.
-  if (useOSLocales) {
-    if (NS_SUCCEEDED(
+  if (useOSLocales && NS_SUCCEEDED(
             OSPreferences::GetInstance()->GetRegionalPrefsLocales(aRetVal))) {
-      return NS_OK;
-    }
+    return NS_OK;
+  }
+  if (useOSLocales || nsContentUtils::ShouldResistFingerprinting()) {
+    // If we fail to retrieve them, or we have RFP enabled, just return the app
+    // locales.
+    GetAppLocalesAsBCP47(aRetVal);
+    return NS_OK;
+  }
+
+  // Otherwise, fetch OS Regional Preferences locales and compare the first one
+  // to the app locale. If the language subtag matches, we can safely use
+  // the OS Regional Preferences locale.
+  //
+  // This facilitates scenarios such as Firefox in "en-US" and User sets
+  // regional prefs to "en-GB".
+  nsAutoCString appLocale;
+  AutoTArray<nsCString, 10> regionalPrefsLocales;
+  LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
+
+  if (NS_FAILED(OSPreferences::GetInstance()->GetRegionalPrefsLocales(
+          regionalPrefsLocales))) {
+    GetAppLocalesAsBCP47(aRetVal);
+    return NS_OK;
+  }
+
+  if (LocaleService::LanguagesMatch(appLocale, regionalPrefsLocales[0])) {
+    aRetVal = regionalPrefsLocales.Clone();
+    return NS_OK;
   }
 
   // Otherwise use the app locales.
