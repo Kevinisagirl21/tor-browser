@@ -38,6 +38,7 @@ class TorConnectParent extends JSWindowActorParent {
       InternetStatus: TorConnect.internetStatus,
       DetectedLocation: TorConnect.detectedLocation,
       ShowViewLog: TorConnect.logHasWarningOrError,
+      HasBootsrapEverFailed: TorConnect.hasBootstrapEverFailed,
       QuickStartEnabled: TorSettings.quickstart.enabled,
       UIState: TorConnect.uiState,
     };
@@ -66,6 +67,8 @@ class TorConnectParent extends JSWindowActorParent {
               self.state.ErrorMessage = null;
               self.state.ErrorDetails = null;
             }
+            self.state.HasBootsrapEverFailed =
+              TorConnect.hasBootstrapEverFailed;
             break;
           }
           case TorConnectTopics.BootstrapProgress: {

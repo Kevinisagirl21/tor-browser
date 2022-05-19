@@ -145,7 +145,6 @@ class AboutTorConnect {
     allowAutomaticLocation: true,
     selectedLocation: "automatic",
     bootstrapCause: UIStates.ConnectToTor,
-    bootstrapEverAttempted: false,
   };
 
   locations = {};
@@ -505,12 +504,10 @@ class AboutTorConnect {
     this.setTitle(title, "");
     this.showConfigureConnectionLink(description);
     this.setProgress("", showProgressbar, state.BootstrapProgress);
-    if (this.uiState.bootstrapEverAttempted) {
+    if (state.HasBootsrapEverFailed) {
       this.setBreadcrumbsStatus(...breadcrumbs);
     } else {
       this.hideBreadcrumbs();
-      this.uiState.bootstrapEverAttempted = true;
-      this.saveUIState();
     }
     this.hideButtons();
     if (state.ShowViewLog) {
