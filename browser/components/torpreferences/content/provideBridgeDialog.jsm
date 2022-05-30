@@ -22,7 +22,7 @@ class ProvideBridgeDialog {
     };
   }
 
-  _populateXUL(aDialog) {
+  _populateXUL(window, aDialog) {
     const selectors = ProvideBridgeDialog.selectors;
 
     this._dialog = aDialog;
@@ -45,12 +45,18 @@ class ProvideBridgeDialog {
     this._dialog.addEventListener("dialogaccept", e => {
       this._bridgeString = this._textarea.value;
     });
+    this._dialog.addEventListener("dialoghelp", e => {
+      window.top.openTrustedLinkIn(
+        "https://tb-manual.torproject.org/bridges/",
+        "tab"
+      );
+    });
   }
 
   init(window, aDialog) {
     // defer to later until firefox has populated the dialog with all our elements
     window.setTimeout(() => {
-      this._populateXUL(aDialog);
+      this._populateXUL(window, aDialog);
     }, 0);
   }
 
