@@ -748,6 +748,82 @@ var TorStrings = {
   })() /* OnionLocation */,
 
   /*
+    Rulesets
+  */
+  rulesets: (() => {
+    const tsb = new TorPropertyStringBundle(
+      ["chrome://torbutton/locale/torbutton.properties"],
+      "rulesets."
+    );
+    const getString/*(key, fallback)*/ = tsb.getString;
+
+    const retval = {
+      // Initial warning
+      warningTitle: getString("warningTitle", "Proceed with Caution"),
+      warningDescription: getString(
+        "warningDescription",
+        "Adding or modifying rulesets can cause attackers to hijack your browser. Proceed only if you know what you are doing."
+      ),
+      warningEnable: getString(
+        "warningEnable",
+        "Warn me when I attempt to access these preferences",
+      ),
+      warningButton: getString("warningButton", "Accept the Risk and Continue"),
+      // Ruleset list
+      rulesets: getString("rulesets", "Rulesets"),
+      noRulesets: getString("noRulesets", "No rulesets found"),
+      noRulesetsDescr: getString(
+        "noRulesetsDescr",
+        "When you save a ruleset in Tor Browser, it will show up here."
+      ),
+      lastUpdated: getString("lastUpdated", "Last updated %S"),
+      neverUpdated: getString(
+        "neverUpdated",
+        "Never updated, or last update failed"
+      ),
+      enabled: getString("enabled", "Enabled"),
+      disabled: getString("disabled", "Disabled"),
+      // Ruleset details
+      edit: getString("edit", "Edit"),
+      name: getString("name", "Name"),
+      jwk: getString("jwk", "JWK"),
+      pathPrefix: getString("pathPrefix", "Path Prefix"),
+      scope: getString("scope", "Scope"),
+      enable: getString("enable", "Enable this ruleset"),
+      checkUpdates: getString("checkUpdates", "Check for Updates"),
+      // Add ruleset
+      jwkPlaceholder: getString(
+        "jwkPlaceholder",
+        "The key used to sign this ruleset in the JWK (JSON Web Key) format"
+      ),
+      jwkInvalid: getString(
+        "jwkInvalid",
+        "The JWK could not be parsed, or it is not a valid key"
+      ),
+      pathPrefixPlaceholder: getString(
+        "pathPrefixPlaceholder",
+        "URL prefix that contains the files needed by the ruleset"
+      ),
+      pathPrefixInvalid: getString(
+        "pathPrefixInvalid",
+        "The path prefix is not a valid HTTP(S) URL"
+      ),
+      scopePlaceholder: getString(
+        "scopePlaceholder",
+        "Regular expression for the scope of the rules"
+      ),
+      scopeInvalid: getString(
+        "scopeInvalid",
+        "The scope could not be parsed as a regular expression"
+      ),
+      save: getString("save", "Save"),
+      cancel: getString("cancel", "Cancel"),
+    };
+
+    return retval;
+  })() /* Rulesets */,
+
+  /*
     Tor Deamon Configuration Key Strings
   */
 
