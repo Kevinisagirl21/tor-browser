@@ -115,6 +115,10 @@ pref("privacy.annotate_channels.strict_list.enabled", false);
 // Disable the Pocket extension (Bug #18886 and #31602)
 pref("extensions.pocket.enabled", false);
 
+// Disable activity stream/"Recommended by Pocket" in about:home (Bug #41029)
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
+pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
+
 // Disable the screenshot menu when right-clicking (Bug #40912 and #40007)
 pref("extensions.screenshots.disabled", true);
 pref("extensions.webcompat-reporter.enabled", false);
