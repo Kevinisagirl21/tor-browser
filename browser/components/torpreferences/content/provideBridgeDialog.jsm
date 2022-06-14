@@ -47,7 +47,7 @@ class ProvideBridgeDialog {
     });
     this._dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
-        "https://tb-manual.torproject.org/bridges/",
+        TorStrings.settings.learnMoreBridgesURL,
         "tab"
       );
     });

@@ -242,6 +242,9 @@ const gConnectionPane = (function() {
           "href",
           TorStrings.settings.learnMoreTorBrowserURL
         );
+        if (TorStrings.settings.learnMoreTorBrowserURL.startsWith("about:")) {
+          learnMore.setAttribute("useoriginprincipal", "true");
+        }
       }
 
       // Internet and Tor status
@@ -328,6 +331,9 @@ const gConnectionPane = (function() {
         let learnMore = prefpane.querySelector(selectors.bridges.learnMore);
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
         learnMore.setAttribute("href", TorStrings.settings.learnMoreBridgesURL);
+        if (TorStrings.settings.learnMoreBridgesURL.startsWith("about:")) {
+          learnMore.setAttribute("useoriginprincipal", "true");
+        }
       }
 
       // Location
@@ -440,7 +446,13 @@ const gConnectionPane = (function() {
           selectors.bridges.cardLearnMore
         );
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
-        learnMore.setAttribute("href", "about:blank");
+        learnMore.setAttribute(
+          "href",
+          TorStrings.settings.learnMoreBridgesCardURL
+        );
+        if (TorStrings.settings.learnMoreBridgesCardURL.startsWith("about:")) {
+          learnMore.setAttribute("useoriginprincipal", "true");
+        }
       }
       bridgeTemplate.querySelector(
         selectors.bridges.cardConnectedLabel

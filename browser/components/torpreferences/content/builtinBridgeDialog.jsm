@@ -88,7 +88,7 @@ class BuiltinBridgeDialog {
     });
     this._dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
-        "https://tb-manual.torproject.org/circumvention/",
+        TorStrings.settings.learnMoreCircumventionURL,
         "tab"
       );
     });
