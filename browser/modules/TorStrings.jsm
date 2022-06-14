@@ -224,7 +224,7 @@ var TorStrings = {
         ),
       },
       learnMore: getString("learn_more_label", "Learn more"),
-      learnMoreURL: `https://tb-manual.torproject.org/${getLocale()}/security-settings/`,
+      learnMoreURL: 'about:manual#security-settings',
       restoreDefaults: getString("restore_defaults", "Restore Defaults"),
       advancedSecuritySettings: getString(
         "advanced_security_settings",
@@ -461,8 +461,10 @@ var TorStrings = {
       ),
       copyLog: getString("torsettings.copyLog", "Copy Tor Log to Clipboard"),
 
-      learnMoreTorBrowserURL: `https://tb-manual.torproject.org/${getLocale()}/about/`,
-      learnMoreBridgesURL: `https://tb-manual.torproject.org/${getLocale()}/bridges/`,
+      learnMoreTorBrowserURL: 'about:manual#about',
+      learnMoreBridgesURL: 'about:manual#bridges',
+      learnMoreBridgesCardURL: 'about:manual#bridges_bridge-moji',
+      learnMoreCircumventionURL: 'about:manual#circumvention',
     };
 
     return retval;
@@ -786,7 +788,9 @@ var TorStrings = {
       tryThis: getString("tryThis", "Try this: Onionsite"),
       onionAvailable: getString("onionAvailable", "Onionsite available"),
       learnMore: getString("learnMore", "Learn more"),
-      learnMoreURL: `https://tb-manual.torproject.org/${getLocale()}/onion-services/`,
+      learnMoreURL: 'about:manual#onion-services',
+      // XUL popups cannot open about: URLs, but we are online when showing the notification, so just use the online version
+      learnMoreURLNotification: `https://tb-manual.torproject.org/${getLocale()}/onion-services/`,
       always: getString("always", "Always"),
       askEverytime: getString("askEverytime", "Ask you every time"),
       prioritizeOnionsDescription: getString(
