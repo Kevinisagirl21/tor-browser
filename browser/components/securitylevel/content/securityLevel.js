@@ -230,6 +230,9 @@ const SecurityLevelPanel = {
     elements.customLabel.setAttribute("value", TorStrings.securityLevel.customWarning);
     elements.learnMoreLabel.setAttribute("value", TorStrings.securityLevel.learnMore);
     elements.learnMoreLabel.setAttribute("href", TorStrings.securityLevel.learnMoreURL);
+    if (TorStrings.securityLevel.learnMoreURL.startsWith("about:")) {
+      elements.learnMoreLabel.setAttribute("useoriginprincipal", "true");
+    }
     elements.restoreDefaultsButton.setAttribute("label", TorStrings.securityLevel.restoreDefaults);
     elements.changeButton.setAttribute("label", TorStrings.securityLevel.change);
 
@@ -367,6 +370,9 @@ const SecurityLevelPreferences =
     let labelLearnMore = groupbox.querySelector("#securityLevel-learnMore");
     labelLearnMore.setAttribute("value", TorStrings.securityLevel.learnMore);
     labelLearnMore.setAttribute("href", TorStrings.securityLevel.learnMoreURL);
+    if (TorStrings.securityLevel.learnMoreURL.startsWith("about:")) {
+      labelLearnMore.setAttribute("useoriginprincipal", "true");
+    }
 
     let radiogroup =  document.getElementById("securityLevel-radiogroup");
     radiogroup.addEventListener("command", SecurityLevelPreferences.selectSecurityLevel);
