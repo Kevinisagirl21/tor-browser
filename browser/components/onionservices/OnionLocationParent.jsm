@@ -29,7 +29,8 @@ const NOTIFICATION_OK_ACCESSKEY =
   TorStrings.onionLocation.alwaysPrioritizeAccessKey;
 const NOTIFICATION_TITLE = TorStrings.onionLocation.tryThis;
 const NOTIFICATION_DESCRIPTION = TorStrings.onionLocation.description;
-const NOTIFICATION_LEARN_MORE_URL = TorStrings.onionLocation.learnMoreURL;
+const NOTIFICATION_LEARN_MORE_URL =
+  TorStrings.onionLocation.learnMoreURLNotification;
 
 class OnionLocationParent extends JSWindowActorParent {
   // Listeners are added in BrowserGlue.jsm

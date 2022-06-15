@@ -17,6 +17,9 @@ const OnionLocationPreferences = {
     const learnMore = document.getElementById("onionServicesLearnMore");
     learnMore.textContent = TorStrings.onionLocation.learnMore;
     learnMore.href = TorStrings.onionLocation.learnMoreURL;
+    if (TorStrings.onionLocation.learnMoreURL.startsWith("about:")) {
+      learnMore.setAttribute("useoriginprincipal", "true");
+    }
     document.getElementById("onionServicesRadioAlways").label =
       TorStrings.onionLocation.always;
     document.getElementById("onionServicesRadioAsk").label =
