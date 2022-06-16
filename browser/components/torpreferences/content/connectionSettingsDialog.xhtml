@@ -9,11 +9,9 @@
 <dialog id="torPreferences-connection-dialog"
         buttons="accept,cancel">
   <html:h3 id="torPreferences-connection-header">&#8203;</html:h3>
+  <!-- Local Proxy -->
+  <checkbox id="torPreferences-connection-toggleProxy" label="&#8203;"/>
   <box id="torPreferences-connection-grid">
-    <!-- Local Proxy -->
-    <hbox class="torPreferences-connection-checkbox-container">
-      <checkbox id="torPreferences-connection-toggleProxy" label="&#8203;"/>
-    </hbox>
     <hbox class="indent" align="center">
       <label id="torPreferences-localProxy-type"/>
     </hbox>
@@ -40,14 +38,14 @@
       <label id="torPreferences-localProxy-password"/>
       <html:input id="torPreferences-localProxy-textboxPassword" class="torMarginFix" type="password"/>
     </hbox>
-    <!-- Firewall -->
-    <hbox class="torPreferences-connection-checkbox-container">
-      <checkbox id="torPreferences-connection-toggleFirewall" label="&#8203;"/>
-    </hbox>
+  </box>
+  <!-- Firewall -->
+  <checkbox id="torPreferences-connection-toggleFirewall" label="&#8203;"/>
+  <box id="torPreferences-connection-firewall">
     <hbox class="indent" align="center">
       <label id="torPreferences-connection-allowedPorts"/>
     </hbox>
-    <hbox align="center">
+    <hbox id="torPreferences-connection-hboxAllowedPorts" align="center">
       <html:input id="torPreferences-connection-textboxAllowedPorts" type="text" class="torMarginFix" value="80,443"/>
     </hbox>
   </box>

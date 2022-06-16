@@ -14,7 +14,6 @@ class BuiltinBridgeDialog {
   constructor() {
     this._dialog = null;
     this._bridgeType = "";
-    this._windowPadding = 0;
   }
 
   static get selectors() {
@@ -36,14 +35,7 @@ class BuiltinBridgeDialog {
 
     this._dialog = aDialog;
     const dialogWin = this._dialog.parentElement;
-    {
-      dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeTitle);
-      let windowStyle = window.getComputedStyle(dialogWin);
-      this._windowPadding =
-        parseFloat(windowStyle.paddingLeft) +
-        parseFloat(windowStyle.paddingRight);
-    }
-    const initialWidth = dialogWin.clientWidth - this._windowPadding;
+    dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeTitle);
 
     this._dialog.querySelector(selectors.header).textContent =
       TorStrings.settings.builtinBridgeHeader;
@@ -73,10 +65,10 @@ class BuiltinBridgeDialog {
     };
 
     TorBuiltinBridgeTypes.forEach(type => {
-      types[type].elemRadio.parentElement.setAttribute("hidden", "false");
-      types[type].elemDescr.parentElement.setAttribute("hidden", "false");
       types[type].elemRadio.setAttribute("label", types[type].label);
+      types[type].elemRadio.setAttribute("hidden", "false");
       types[type].elemDescr.textContent = types[type].descr;
+      types[type].elemDescr.removeAttribute("hidden");
     });
 
     if (
@@ -91,9 +83,6 @@ class BuiltinBridgeDialog {
       this._bridgeType = "";
     }
 
-    // Use the initial width, because the window is expanded when we add texts
-    this.resized(initialWidth);
-
     this._dialog.addEventListener("dialogaccept", e => {
       this._bridgeType = radioGroup.value;
     });
@@ -102,21 +91,6 @@ class BuiltinBridgeDialog {
         "https://tb-manual.torproject.org/circumvention/",
         "tab"
       );
-    });
-  }
-
-  resized(width) {
-    if (this._dialog === null) {
-      return;
-    }
-    const dialogWin = this._dialog.parentElement;
-    if (width === undefined) {
-      width = dialogWin.clientWidth - this._windowPadding;
-    }
-    let windowPos = dialogWin.getBoundingClientRect();
-    dialogWin.querySelectorAll("div").forEach(div => {
-      let divPos = div.getBoundingClientRect();
-      div.style.width = width - (divPos.left - windowPos.left) + "px";
     });
   }
 

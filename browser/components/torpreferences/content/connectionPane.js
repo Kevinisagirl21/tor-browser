@@ -983,33 +983,8 @@ const gConnectionPane = (function() {
     },
 
     onAddBuiltinBridge() {
-      let builtinBridgeDialog = new BuiltinBridgeDialog();
-
-      let sizeObserver = null;
-      {
-        let ds = document.querySelector("#dialogStack");
-        let boxObserver;
-        boxObserver = new MutationObserver(() => {
-          let dialogBox = document.querySelector(".dialogBox");
-          if (dialogBox) {
-            sizeObserver = new MutationObserver(mutations => {
-              for (const m of mutations) {
-                if (m.attributeName === "style") {
-                  builtinBridgeDialog.resized();
-                  break;
-                }
-              }
-            });
-            sizeObserver.observe(dialogBox, { attributes: true });
-            boxObserver.disconnect();
-          }
-        });
-        boxObserver.observe(ds, { childList: true, subtree: true });
-      }
-
+      const builtinBridgeDialog = new BuiltinBridgeDialog();
       builtinBridgeDialog.openDialog(gSubDialog, aBridgeType => {
-        sizeObserver.disconnect();
-
         if (!aBridgeType) {
           TorSettings.bridges.enabled = false;
           TorSettings.bridges.builtin_type = "";
@@ -1079,7 +1054,8 @@ function makeBridgeId(bridgeString) {
   // JS uses UTF-16. While most of these emojis are surrogate pairs, a few
   // ones fit one UTF-16 character. So we could not use neither indices,
   // nor substr, nor some function to split the string.
-const emojis = [
+  /* eslint-disable */
+  const emojis = [
     "👽","🤖","🧚","🧜","🏄","🐵","🦍","🐶","🐺","🦊","🐈","🦁","🐯","🐴","🦄","🦓",
     "🦌","🐮","🐷","🐗","🐑","🦙","🦒","🐘","🐭","🐹","🐇","🐿","🦔","🐨","🐼","🦥",
     "🦨","🦘","🐓","🐥","🐦","🐧","🕊","🦆","🦢","🦉","🦤","🦩","🦚","🦜","🐊","🐢",
@@ -1097,7 +1073,7 @@ const emojis = [
     "🎸","🎺","🎻","🪕","🥁","☎️","💿","🎥","🎬","📺","📷","🔍","💡","🔦","📖","📚",
     "🏷","✏️","🖌","🖍","📎","📌","🔑","🪃","🏹","⚙️","🧲","🧪","🧬","🔭","📡","🗿",
   ];
-
+  /* eslint-enable */
 
   // FNV-1a implementation that is compatible with other languages
   const prime = 0x01000193;

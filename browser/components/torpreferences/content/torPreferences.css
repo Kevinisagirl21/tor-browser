@@ -541,15 +541,19 @@ groupbox#torPreferences-bridges-group textarea {
   grid-template-columns: auto 1fr;
 }
 
-.torPreferences-connection-checkbox-container {
-  grid-column: 1 / 3;
-}
-
 #torPreferences-localProxy-textboxAddress,
 #torPreferences-localProxy-textboxUsername,
 #torPreferences-localProxy-textboxPassword,
 #torPreferences-connection-textboxAllowedPorts {
   -moz-box-flex: 1;
+}
+
+#torPreferences-connection-firewall {
+  display: flex;
+}
+
+#torPreferences-connection-hboxAllowedPorts {
+  flex: 1;
 }
 
 /* Tor logs dialog */
