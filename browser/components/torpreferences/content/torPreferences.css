@@ -532,6 +532,10 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 /* Connection settings dialog */
+#torPreferences-connection-dialog {
+  min-height: 400px;
+}
+
 #torPreferences-connection-header {
   margin: 4px 0 14px 0;
 }
