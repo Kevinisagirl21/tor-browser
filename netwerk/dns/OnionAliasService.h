@@ -8,7 +8,7 @@ namespace torproject {
 
 class OnionAliasService final : public IOnionAliasService {
 public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_IONIONALIASSERVICE
 
   static already_AddRefed<IOnionAliasService> GetSingleton();
@@ -23,7 +23,7 @@ private:
   virtual ~OnionAliasService() = default;
 
   // mLock protects access to mOnionAliases
-  mozilla::Mutex mLock{"OnionAliasService.mLock"};
+  mozilla::RWLock mLock{"OnionAliasService.mLock"};
 
   // AutoCStrings have a 64 byte buffer, so it is advised not to use them for
   // long storage. However, it is enough to contain onion addresses, so we use

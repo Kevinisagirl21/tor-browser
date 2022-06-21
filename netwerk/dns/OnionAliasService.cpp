@@ -65,7 +65,7 @@ OnionAliasService::AddOnionAlias(const nsACString& aShortHostname,
       !ValidateOnionV3(*longHostname)) {
     return NS_ERROR_INVALID_ARG;
   }
-  mozilla::MutexAutoLock lock(mLock);
+  mozilla::AutoWriteLock lock(mLock);
   mOnionAliases.InsertOrUpdate(shortHostname, std::move(longHostname));
   return NS_OK;
 }
@@ -76,6 +76,9 @@ OnionAliasService::GetOnionAlias(const nsACString& aShortHostname, nsACString& a
   aLongHostname = aShortHostname;
   if (StringEndsWith(aShortHostname, ".tor.onion"_ns)) {
     nsAutoCString* alias = nullptr;
+    // We want to keep the string stored in the map alive at least until we
+    // finish to copy it to the output parameter.
+    mozilla::AutoReadLock lock(mLock);
     if (mOnionAliases.Get(aShortHostname, &alias)) {
       // We take for granted aliases have already been validated
       aLongHostname.Assign(*alias);
@@ -86,7 +89,7 @@ OnionAliasService::GetOnionAlias(const nsACString& aShortHostname, nsACString& a
 
 NS_IMETHODIMP
 OnionAliasService::ClearOnionAliases() {
-  mozilla::MutexAutoLock lock(mLock);
+  mozilla::AutoWriteLock lock(mLock);
   mOnionAliases.Clear();
   return NS_OK;
 }
