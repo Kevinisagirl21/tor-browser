@@ -465,6 +465,7 @@ const gConnectionPane = (function() {
       const bridgeCards = prefpane.querySelector(selectors.bridges.cards);
       const bridgeMenu = prefpane.querySelector(selectors.bridges.cardMenu);
 
+      let emojiAnnotations;
       this._addBridgeCard = bridgeString => {
         const card = bridgeTemplate.cloneNode(true);
         card.removeAttribute("id");
@@ -495,10 +496,16 @@ const gConnectionPane = (function() {
           }
         });
         const emojis = makeBridgeId(bridgeString).map(e => {
-          const span = document.createElement("span");
-          span.className = "emoji";
-          span.textContent = e;
-          return span;
+          const img = document.createElement("img");
+          const cp = e.codePointAt(0).toString(16);
+          img.setAttribute(
+            "src",
+            `chrome://browser/content/torpreferences/bridgemoji/${cp}.svg`
+          );
+          img.setAttribute("alt", e);
+          img.setAttribute("title", emojiAnnotations[e]);
+          img.className = "emoji";
+          return img;
         });
         const idString = TorStrings.settings.bridgeId;
         const id = card.querySelector(selectors.bridges.cardId);
@@ -716,7 +723,25 @@ const gConnectionPane = (function() {
           bridgeCards.classList.remove("list-collapsed");
         }
       };
-      this._populateBridgeCards();
+      // Use a promise to avoid blocking the population of the page
+      // FIXME: Stop using a JSON file, and switch to properties
+      fetch(
+        "chrome://browser/content/torpreferences/bridgemoji-annotations.json"
+      ).then(async res => {
+        const annotations = await res.json();
+        const bcp47 = Services.locale.appLocaleAsBCP47;
+        const dash = bcp47.indexOf("-");
+        const lang = dash !== -1 ? bcp47.substr(dash) : lang;
+        if (bcp47 in annotations) {
+          emojiAnnotations = annotations[bcp47];
+        } else if (lang in annotations) {
+          emojiAnnotations = annotations[lang];
+        } else {
+          // At the moment, nb does not have annotations!
+          emojiAnnotations = annotations.en;
+        }
+        this._populateBridgeCards();
+      });
       this._updateConnectedBridges = () => {
         for (const card of bridgeCards.querySelectorAll(
           ".currently-connected"
@@ -1068,22 +1093,22 @@ function makeBridgeId(bridgeString) {
   // nor substr, nor some function to split the string.
   /* eslint-disable */
   const emojis = [
-    "👽","🤖","🧚","🧜","🏄","🐵","🦍","🐶","🐺","🦊","🐈","🦁","🐯","🐴","🦄","🦓",
-    "🦌","🐮","🐷","🐗","🐑","🦙","🦒","🐘","🐭","🐹","🐇","🐿","🦔","🐨","🐼","🦥",
-    "🦨","🦘","🐓","🐥","🐦","🐧","🕊","🦆","🦢","🦉","🦤","🦩","🦚","🦜","🐊","🐢",
-    "🦎","🐍","🐉","🦕","🦖","🐋","🐬","🐟","🐠","🐡","🦈","🐙","🐚","🐌","🦋","🐛",
-    "🐝","🐞","💐","🌸","🌹","🌺","🌻","🌼","🌷","🌱","🌲","🌳","🌴","🌵","🌿","🍁",
-    "🍇","🍉","🍊","🍋","🍌","🍍","🥭","🍏","🍐","🍑","🍒","🍓","🥝","🍅","🥥","🥑",
-    "🍆","🥕","🌽","🌶","🥬","🥦","🧅","🍄","🥜","🥐","🥖","🥨","🥞","🧇","🍔","🍕",
-    "🌭","🌮","🌯","🥚","🍿","🍙","🥟","🦀","🦞","🦑","🍦","🍩","🧁","🍬","🍭","🧃",
-    "🧉","🧭","⛰","🌋","🏝","🏡","⛲","⛺","🎠","🎡","💈","🚂","🚃","🚌","🚗","🚚",
-    "🚜","🛵","🛺","🚲","🛴","🛹","⚓️","⛵","🛶","🚤","🚢","✈️","🪂","🚁","🚠","🛰",
-    "🚀","🛸","⏳","🌙","🌡","☀️","🪐","⭐","☁️","🌧","🌩","🌀","🌈","☂️","❄️","☄️",
-    "🔥","💧","🌊","🎃","✨","🎈","🎉","🎊","🎏","🎟","🏆","⚽","🏀","🏈","🎾","🥏",
-    "🏓","⛸","🪀","🪁","🎱","🔮","🪄","🕹","🎲","🧩","🧸","🎨","🧵","🧶","🕶","🧦",
-    "🎒","👟","👠","👑","🎓","🧢","💍","💎","📢","🎵","🎙","🎤","🎧","📻","🎷","🪗",
-    "🎸","🎺","🎻","🪕","🥁","☎️","💿","🎥","🎬","📺","📷","🔍","💡","🔦","📖","📚",
-    "🏷","✏️","🖌","🖍","📎","📌","🔑","🪃","🏹","⚙️","🧲","🧪","🧬","🔭","📡","🗿",
+    "👽️", "🤖", "🧠", "👁️", "🧙", "🧚", "🧜", "🐵", "🦧", "🐶", "🐺", "🦊", "🦝", "🐱", "🦁", "🐯",
+    "🐴", "🦄", "🦓", "🦌", "🐮", "🐷", "🐗", "🐪", "🦙", "🦒", "🐘", "🦣", "🦏", "🐭", "🐰", "🐿️",
+    "🦔", "🦇", "🐻", "🐨", "🦥", "🦦", "🦘", "🐥", "🐦️", "🕊️", "🦆", "🦉", "🦤", "🪶", "🦩", "🦚",
+    "🦜", "🐊", "🐢", "🦎", "🐍", "🐲", "🦕", "🐳", "🐬", "🦭", "🐟️", "🐠", "🦈", "🐙", "🐚", "🐌",
+    "🦋", "🐛", "🐝", "🐞", "💐", "🌹", "🌺", "🌻", "🌷", "🌲", "🌳", "🌴", "🌵", "🌿", "🍁", "🍇",
+    "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🥭", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐", "🥝", "🍅", "🫒",
+    "🥥", "🥑", "🍆", "🥕", "🌽", "🌶️", "🥬", "🥦", "🧅", "🍄", "🥜", "🥐", "🥖", "🥨", "🥯", "🥞",
+    "🧇", "🍔", "🍕", "🌭", "🌮", "🍿", "🦀", "🦞", "🍨", "🍩", "🍪", "🎂", "🧁", "🍫", "🍬", "🍭",
+    "🫖", "🧃", "🧉", "🧭", "🏔️", "🌋", "🏕️", "🏝️", "🏡", "⛲️", "🎠", "🎡", "🎢", "💈", "🚆", "🚋",
+    "🚍️", "🚕", "🚗", "🚚", "🚜", "🛵", "🛺", "🛴", "🛹", "🛼", "⚓️", "⛵️", "🛶", "🚤", "🚢", "✈️",
+    "🚁", "🚠", "🛰️", "🚀", "🛸", "⏰", "🌙", "🌡️", "☀️", "🪐", "🌟", "🌀", "🌈", "☂️", "❄️", "☄️",
+    "🔥", "💧", "🌊", "🎃", "✨", "🎈", "🎉", "🎏", "🎀", "🎁", "🎟️", "🏆️", "⚽️", "🏀", "🏈", "🎾",
+    "🥏", "🏓", "🏸", "🤿", "🥌", "🎯", "🪀", "🪁", "🔮", "🎲", "🧩", "🎨", "🧵", "👕", "🧦", "👗",
+    "🩳", "🎒", "👟", "👑", "🧢", "💄", "💍", "💎", "📢", "🎶", "🎙️", "📻️", "🎷", "🪗", "🎸", "🎺",
+    "🎻", "🪕", "🥁", "☎️", "🔋", "💿️", "🧮", "🎬️", "💡", "🔦", "🏮", "📕", "🏷️", "💳️", "✏️", "🖌️",
+    "🖍️", "📌", "📎", "🔑", "🪃", "🏹", "⚖️", "🧲", "🧪", "🧬", "🔬", "🔭", "📡", "🪑", "🧹", "🗿",
   ];
   /* eslint-enable */
 

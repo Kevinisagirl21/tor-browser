@@ -232,10 +232,14 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 .torPreferences-bridgeCard-id {
+  display: flex;
+  align-items: center;
   font-weight: 700;
 }
 
 .torPreferences-bridgeCard-id .emoji {
+  width: 20px;
+  height: 20px;
   margin-inline-start: 4px;
   padding: 4px;
   font-size: 20px;

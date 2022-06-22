@@ -17,3 +17,5 @@ browser.jar:
     content/browser/torpreferences/connectionPane.xhtml              (content/connectionPane.xhtml)
     content/browser/torpreferences/torPreferences.css                (content/torPreferences.css)
     content/browser/torpreferences/torPreferencesIcon.svg            (content/torPreferencesIcon.svg)
+    content/browser/torpreferences/bridgemoji/                       (content/bridgemoji/*.svg)
+    content/browser/torpreferences/bridgemoji-annotations.json       (content/bridgemoji-annotations.json)
