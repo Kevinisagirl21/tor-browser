@@ -40,6 +40,8 @@ const SECURE_DROP = {
   currentTimestamp: 0,
 };
 
+const kPrefOnionAliasEnabled = "browser.urlbar.onionRewrites.enabled";
+
 // Logger adapted from CustomizableUI.jsm
 const kPrefOnionAliasDebug = "browser.onionalias.debug";
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -299,29 +301,19 @@ class _OnionAliasStore {
 
   async init() {
     await this._loadSettings();
-    const dt = Date.now() - this._lastCheck;
-    let force = false;
-    for (const ch of this._channels.values()) {
-      if (ch.enabled && !ch.currentTimestamp) {
-        // Edited while being offline or some other error happened
-        force = true;
-        break;
-      }
+    if (this.enabled) {
+      await this._startUpdates();
     }
-    if (dt > _OnionAliasStore.RULESET_CHECK_INTERVAL || force) {
-      log.debug(
-        `Mappings are stale (${dt}), or force check requested (${force}), checking them immediately`
-      );
-      await this._periodicRulesetCheck();
-    } else {
-      this._scheduleCheck(_OnionAliasStore.RULESET_CHECK_INTERVAL - dt);
-    }
+    Services.prefs.addObserver(kPrefOnionAliasEnabled, this);
   }
 
   uninit() {
     this._clear();
-    clearTimeout(this._rulesetTimeout);
+    if (this._rulesetTimeout) {
+      clearTimeout(this._rulesetTimeout);
+    }
     this._rulesetTimeout = null;
+    Services.prefs.removeObserver(kPrefOnionAliasEnabled, this);
   }
 
   async getChannels() {
@@ -362,13 +354,16 @@ class _OnionAliasStore {
       this._applyMappings();
       this._saveSettings();
       this._notifyChanges();
-      if (enabled && !channel.currentTimestamp) {
+      if (this.enabled && enabled && !channel.currentTimestamp) {
         this.updateChannel(name);
       }
     }
   }
 
   async updateChannel(name) {
+    if (!this.enabled) {
+      throw Error("Onion Aliases are disabled");
+    }
     const channel = this._channels.get(name);
     if (channel === null) {
       throw Error("Channel not found");
@@ -469,6 +464,10 @@ class _OnionAliasStore {
   }
 
   async _periodicRulesetCheck() {
+    if (!this.enabled) {
+      log.debug("Onion Aliases are disabled, not updating rulesets.");
+      return;
+    }
     log.debug("Begin scheduled ruleset update");
     this._lastCheck = Date.now();
     let anyUpdated = false;
@@ -495,12 +494,46 @@ class _OnionAliasStore {
     this._scheduleCheck(_OnionAliasStore.RULESET_CHECK_INTERVAL);
   }
 
+  async _startUpdates() {
+    // This is a "private" function, so we expect the callers to verify wheter
+    // onion aliases are enabled.
+    // Callees will also do, so we avoid an additional check here.
+    const dt = Date.now() - this._lastCheck;
+    let force = false;
+    for (const ch of this._channels.values()) {
+      if (ch.enabled && !ch.currentTimestamp) {
+        // Edited while being offline or some other error happened
+        force = true;
+        break;
+      }
+    }
+    if (dt > _OnionAliasStore.RULESET_CHECK_INTERVAL || force) {
+      log.debug(
+        `Mappings are stale (${dt}), or force check requested (${force}), checking them immediately`
+      );
+      await this._periodicRulesetCheck();
+    } else {
+      this._scheduleCheck(_OnionAliasStore.RULESET_CHECK_INTERVAL - dt);
+    }
+  }
+
   _scheduleCheck(dt) {
+    if (this._rulesetTimeout) {
+      log.warn("The previous update timeout was not null");
+      clearTimeout(this._rulesetTimeout);
+    }
+    if (!this.enabled) {
+      log.warn(
+        "Ignoring the scheduling of a new check because the Onion Alias feature is currently disabled."
+      );
+      this._rulesetTimeout = null;
+      return;
+    }
     log.debug(`Scheduling ruleset update in ${dt}`);
-    this._rulesetTimeout = setTimeout(
-      this._periodicRulesetCheck.bind(this),
-      dt
-    );
+    this._rulesetTimeout = setTimeout(() => {
+      this._rulesetTimeout = null;
+      this._periodicRulesetCheck();
+    }, dt);
   }
 
   _notifyChanges() {
@@ -508,6 +541,21 @@ class _OnionAliasStore {
       Array.from(this._channels.values(), ch => ch.toJSON()),
       OnionAliasStoreTopics.ChannelsChanged
     );
+  }
+
+  get enabled() {
+    return Services.prefs.getBoolPref(kPrefOnionAliasEnabled, true);
+  }
+
+  observe(aSubject, aTopic, aData) {
+    if (aTopic === "nsPref:changed") {
+      if (this.enabled) {
+        this._startUpdates();
+      } else if (this._rulesetTimeout) {
+        clearTimeout(this._rulesetTimeout);
+        this._rulesetTimeout = null;
+      }
+    }
   }
 }
 

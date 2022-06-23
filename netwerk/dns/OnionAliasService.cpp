@@ -1,5 +1,7 @@
 #include "torproject/OnionAliasService.h"
 
+#include "mozilla/StaticPrefs_browser.h"
+
 #include "nsUnicharUtils.h"
 
 /**
@@ -74,7 +76,8 @@ NS_IMETHODIMP
 OnionAliasService::GetOnionAlias(const nsACString& aShortHostname, nsACString& aLongHostname)
 {
   aLongHostname = aShortHostname;
-  if (StringEndsWith(aShortHostname, ".tor.onion"_ns)) {
+  if (mozilla::StaticPrefs::browser_urlbar_onionRewrites_enabled() &&
+      StringEndsWith(aShortHostname, ".tor.onion"_ns)) {
     nsAutoCString* alias = nullptr;
     // We want to keep the string stored in the map alive at least until we
     // finish to copy it to the output parameter.
