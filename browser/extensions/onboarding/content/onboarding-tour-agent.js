@@ -25,7 +25,7 @@ let onClick = evt => {
       Mozilla.UITour.showHighlight("torBrowser-newIdentityButton", "zoom");
       break;
     case "onboarding-tour-tor-network-action-button":
-      Mozilla.UITour.openPreferences("tor");
+      Mozilla.UITour.openPreferences("connection");
       break;
 #if 0
 // Firefox onboarding actions. To reduce conflicts when rebasing against
