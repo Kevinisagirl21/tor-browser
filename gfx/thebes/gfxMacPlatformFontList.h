@@ -215,6 +215,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   void AddFamily(const nsACString& aFamilyName, FontVisibility aVisibility);
 
+  static void ActivateFontsFromDir(
+      const nsACString& aDir,
+      nsTHashSet<nsCStringHashKey>* aLoadedFamilies = nullptr);
+
   gfxFontEntry* CreateFontEntry(
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) override;
@@ -226,6 +230,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   void ReadFaceNamesForFamily(mozilla::fontlist::Family* aFamily,
                               bool aNeedFullnamePostscriptNames) override;
+
+#ifdef MOZ_BUNDLED_FONTS
+  void ActivateBundledFonts();
+#endif
 
   enum { kATSGenerationInitial = -1 };
 
@@ -242,6 +250,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   nsTArray<nsCString> mSingleFaceFonts;
   nsTArray<nsCString> mPreloadFonts;
+
+#ifdef MOZ_BUNDLED_FONTS
+  nsTHashSet<nsCStringHashKey> mBundledFamilies;
+#endif
 };
 
 #endif /* gfxMacPlatformFontList_H_ */
