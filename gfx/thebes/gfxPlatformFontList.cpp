@@ -284,6 +284,7 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
   LoadBadUnderlineList();
 
   gfxFontUtils::GetPrefsFontList(kFontSystemWhitelistPref, mEnabledFontsList);
+  mFontFamilyWhitelistActive = !mEnabledFontsList.IsEmpty();
 
   // pref changes notification setup
   NS_ASSERTION(!gFontListPrefObserver,
@@ -341,7 +342,6 @@ const uint32_t kNumGenerics = 5;
 
 void gfxPlatformFontList::ApplyWhitelist() {
   uint32_t numFonts = mEnabledFontsList.Length();
-  mFontFamilyWhitelistActive = (numFonts > 0);
   if (!mFontFamilyWhitelistActive) {
     return;
   }
@@ -382,7 +382,6 @@ void gfxPlatformFontList::ApplyWhitelist() {
 
 void gfxPlatformFontList::ApplyWhitelist(
     nsTArray<fontlist::Family::InitData>& aFamilies) {
-  mFontFamilyWhitelistActive = !mEnabledFontsList.IsEmpty();
   if (!mFontFamilyWhitelistActive) {
     return;
   }
@@ -520,6 +519,7 @@ bool gfxPlatformFontList::InitFontList() {
     CancelLoader();
 
     gfxFontUtils::GetPrefsFontList(kFontSystemWhitelistPref, mEnabledFontsList);
+    mFontFamilyWhitelistActive = !mEnabledFontsList.IsEmpty();
 
     // Ensure SetVisibilityLevel will clear the mCodepointsWithNoFonts set.
     mVisibilityLevel = FontVisibility::Unknown;
