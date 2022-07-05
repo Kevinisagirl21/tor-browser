@@ -214,6 +214,10 @@ class ConnectionSettingsDialog {
     this._dialog.addEventListener("dialogaccept", e => {
       this._applySettings();
     });
+
+    // Hack: see the CSS
+    this._dialog.style.minWidth = '0';
+    this._dialog.style.minHeight = '0';
   }
 
   // callback when proxy is toggled

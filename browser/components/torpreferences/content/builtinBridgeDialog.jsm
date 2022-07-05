@@ -92,6 +92,10 @@ class BuiltinBridgeDialog {
         "tab"
       );
     });
+
+    // Hack: see the CSS
+    this._dialog.style.minWidth = '0';
+    this._dialog.style.minHeight = '0';
   }
 
   init(window, aDialog) {
