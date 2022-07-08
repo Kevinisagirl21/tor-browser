@@ -1,0 +1,13 @@
+JAR_MANIFESTS += ["jar.mn"]
+
+EXTRA_JS_MODULES += [
+    "SecurityLevel.jsm",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
+]
+
+EXTRA_COMPONENTS += [
+    "SecurityLevel.manifest",
+]
