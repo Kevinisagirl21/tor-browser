@@ -1,0 +1,46 @@
+<panel id="securityLevel-panel"
+       role="group"
+       type="arrow"
+       orient="vertical"
+       level="top"
+       hidden="true"
+       class="panel-no-padding">
+  <panelmultiview mainViewId="securityLevel-panelview">
+    <panelview id="securityLevel-panelview" descriptionheightworkaround="true">
+      <vbox id="securityLevel-vbox">
+        <box class="panel-header">
+          <html:h1 id="securityLevel-header"/>
+        </box>
+        <toolbarseparator></toolbarseparator>
+        <vbox>
+          <hbox>
+            <label id="securityLevel-level"/>
+            <vbox>
+              <spacer flex="1"/>
+              <label id="securityLevel-custom"/>
+              <spacer flex="1"/>
+            </vbox>
+            <spacer flex="1"/>
+          </hbox>
+          <description id="securityLevel-summary"/>
+          <hbox>
+            <label
+              class="learnMore text-link"
+              href="about:manual#security-settings"
+              useoriginprincipal="true"
+              onclick="SecurityLevelPanel.hide();"
+              is="text-link"/>
+            <spacer/>
+          </hbox>
+        </vbox>
+        <hbox class="panel-footer">
+            <button id="securityLevel-restoreDefaults"
+                    data-l10n-id="security-level-restore-defaults"/>
+            <button id="securityLevel-advancedSecuritySettings"
+                    default="true"
+                    data-l10n-id="security-level-change"/>
+        </hbox>
+      </vbox>
+    </panelview>
+  </panelmultiview>
+</panel>

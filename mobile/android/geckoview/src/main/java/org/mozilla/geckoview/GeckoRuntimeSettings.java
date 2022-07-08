@@ -464,6 +464,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mSpoofEnglish.set(flag ? 2 : 1);
       return this;
     }
+
+    /**
+     * Set security level.
+     *
+     * @param level A value determining the security level. Default is 0.
+     * @return This Builder instance.
+     */
+    public @NonNull Builder torSecurityLevel(final int level) {
+      getSettings().mTorSecurityLevel.set(level);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
