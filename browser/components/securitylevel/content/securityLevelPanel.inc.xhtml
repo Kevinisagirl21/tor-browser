@@ -4,14 +4,12 @@
        orient="vertical"
        level="top"
        hidden="true"
-       class="panel-no-padding"
-       onpopupshown="SecurityLevelPanel.onPopupShown(event);"
-       onpopuphidden="SecurityLevelPanel.onPopupHidden(event);">
+       class="panel-no-padding">
   <panelmultiview mainViewId="securityLevel-panelview">
     <panelview id="securityLevel-panelview" descriptionheightworkaround="true">
       <vbox id="securityLevel-vbox">
         <box class="panel-header">
-          <html:h1 id="securityLevel-header"/>
+          <html:h1 data-l10n-id="security-level-header" />
         </box>
         <toolbarseparator></toolbarseparator>
         <vbox>
@@ -19,7 +17,7 @@
             <label id="securityLevel-level"/>
             <vbox>
               <spacer flex="1"/>
-              <label id="securityLevel-custom"/>
+              <label id="securityLevel-custom" data-l10n-id="security-level-custom"/>
               <spacer flex="1"/>
             </vbox>
             <spacer flex="1"/>
@@ -27,19 +25,21 @@
           <description id="securityLevel-summary"/>
           <hbox>
             <label
-              id="securityLevel-learnMore"
               class="learnMore text-link"
+              href="about:manual#security-settings"
+              useoriginprincipal="true"
               onclick="SecurityLevelPanel.hide();"
-              is="text-link"/>
+              is="text-link"
+              data-l10n-id="security-level-learn-more"/>
             <spacer/>
           </hbox>
         </vbox>
         <hbox class="panel-footer">
             <button id="securityLevel-restoreDefaults"
-                    oncommand="SecurityLevelPanel.restoreDefaults();"/>
+                    data-l10n-id="security-level-restore-defaults"/>
             <button id="securityLevel-advancedSecuritySettings"
                     default="true"
-                    oncommand="SecurityLevelPanel.openAdvancedSecuritySettings();"/>
+                    data-l10n-id="security-level-change"/>
         </hbox>
       </vbox>
     </panelview>

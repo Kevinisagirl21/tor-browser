@@ -1,65 +1,72 @@
 <groupbox id="securityLevel-groupbox" data-category="panePrivacy" hidden="true">
-  <label><html:h2 id="securityLevel-header"/></label>
+  <label><html:h2 data-l10n-id="security-level-header"/></label>
   <vbox data-subcategory="securitylevel" flex="1">
     <description flex="1">
-      <html:span id="securityLevel-overview" class="tail-with-learn-more"/>
-      <label id="securityLevel-learnMore" class="learnMore text-link" is="text-link"/>
+      <html:span data-l10n-id="security-level-overview" class="tail-with-learn-more"/>
+      <label data-l10n-id="security-level-learn-more"
+             class="learnMore text-link"
+             is="text-link"
+             href="about:manual#security-settings"
+             useoriginprincipal="true"/>
     </description>
     <radiogroup id="securityLevel-radiogroup">
       <vbox id="securityLevel-vbox-standard">
         <hbox>
-          <radio value="standard"/>
+          <radio value="standard" data-l10n-id="security-level-standard-radio"/>
           <vbox>
             <spacer flex="1"/>
-            <label id="securityLevel-customWarning"/>
+            <label class="securityLevel-customWarning" data-l10n-id="security-level-custom"/>
             <spacer flex="1"/>
           </vbox>
           <spacer flex="1"/>
         </hbox>
         <description flex="1" class="indent">
-          <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
-          <label id="securityLevel-restoreDefaults"
-                 class="learnMore text-link"/>
+          <html:span data-l10n-id="security-level-standard-summary"
+                     class="tail-with-learn-more"/>
+          <label class="securityLevel-restoreDefaults learnMore text-link"
+                 data-l10n-id="security-level-restore-link"/>
         </description>
       </vbox>
       <vbox id="securityLevel-vbox-safer">
         <hbox>
-          <radio value="safer"/>
+          <radio value="safer" data-l10n-id="security-level-safer-radio"/>
           <vbox>
             <spacer flex="1"/>
-            <label id="securityLevel-customWarning"/>
+            <label class="securityLevel-customWarning" data-l10n-id="security-level-custom"/>
             <spacer flex="1"/>
           </vbox>
         </hbox>
         <description flex="1" class="indent">
-          <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
-          <label id="securityLevel-restoreDefaults"
-                 class="learnMore text-link"/>
+          <html:span data-l10n-id="security-level-safer-summary"
+                     class="tail-with-learn-more"/>
+          <label class="securityLevel-restoreDefaults learnMore text-link"
+                 data-l10n-id="security-level-restore-link"/>
         </description>
-        <vbox id="securityLevel-descriptionList" class="indent">
-          <description id="securityLevel-description1" class="indent"/>
-          <description id="securityLevel-description2" class="indent"/>
-          <description id="securityLevel-description3" class="indent"/>
+        <vbox class="securityLevel-descriptionList indent">
+          <description data-l10n-id="security-level-js-https-only" class="indent"/>
+          <description data-l10n-id="security-level-limit-typography" class="indent"/>
+          <description data-l10n-id="security-level-limit-media" class="indent"/>
         </vbox>
       </vbox>
       <vbox id="securityLevel-vbox-safest">
         <hbox>
-          <radio value="safest"/>
+          <radio value="safest" data-l10n-id="security-level-safest-radio"/>
           <vbox>
             <spacer flex="1"/>
-            <label id="securityLevel-customWarning"/>
+            <label class="securityLevel-customWarning" data-l10n-id="security-level-custom"/>
             <spacer flex="1"/>
           </vbox>
         </hbox>
         <description flex="1" class="indent">
-          <html:span id="securityLevel-summary" class="tail-with-learn-more"/>
-          <label id="securityLevel-restoreDefaults"
-                 class="learnMore text-link"/>
+          <html:span data-l10n-id="security-level-safest-summary"
+                     class="tail-with-learn-more"/>
+          <label class="securityLevel-restoreDefaults learnMore text-link"
+                 data-l10n-id="security-level-restore-link"/>
         </description>
-        <vbox id="securityLevel-descriptionList" class="indent">
-          <description id="securityLevel-description1" class="indent"/>
-          <description id="securityLevel-description2" class="indent"/>
-          <description id="securityLevel-description3" class="indent"/>
+        <vbox class="securityLevel-descriptionList indent">
+          <description data-l10n-id="security-level-js-disabled" class="indent"/>
+          <description data-l10n-id="security-level-limit-typography-svg" class="indent"/>
+          <description data-l10n-id="security-level-limit-media" class="indent"/>
         </vbox>
       </vbox>
     </radiogroup>
