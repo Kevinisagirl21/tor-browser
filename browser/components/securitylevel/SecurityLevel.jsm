@@ -452,7 +452,6 @@ class SecurityLevel {
   observe(aSubject, aTopic, aData) {
     if (aTopic == BrowserTopics.ProfileAfterChange) {
       this.init();
-      Services.obs.removeObserver(this, aTopic);
     }
   }
 }

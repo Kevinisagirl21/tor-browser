@@ -39,9 +39,6 @@ vbox#securityLevel-vbox > vbox * {
   margin-inline: 0;
 }
 
-vbox#securityLevel-vbox > vbox > hbox {
-}
-
 label#securityLevel-level {
   font-size: 1.25em;
   font-weight: 600;
@@ -56,12 +53,12 @@ label#securityLevel-custom {
   height: 1.6em;
   line-height: 1.0em;
   padding: 0.4em 0.5em;
-  margin-left: 1em!important;
+  margin-inline-start: 1em !important;
 }
 
 description#securityLevel-summary {
   margin-top: 1em;
-  padding-right: 5em;
+  padding-inline-end: 5em;
 }
 
 vbox#securityLevel-vbox > hbox.panel-footer {

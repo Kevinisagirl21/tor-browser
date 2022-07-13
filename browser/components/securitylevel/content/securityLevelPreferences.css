@@ -1,4 +1,4 @@
-label#securityLevel-customWarning {
+label.securityLevel-customWarning {
   border-radius: 4px;
   background-color: var(--yellow-50);
   color: black;
@@ -31,17 +31,16 @@ radiogroup#securityLevel-radiogroup[value=safest] > vbox#securityLevel-vbox-safe
 
 }
 
-vbox#securityLevel-descriptionList {
+vbox.securityLevel-descriptionList {
   display: none;
-  margin-inline-start:
 }
 
-radiogroup#securityLevel-radiogroup[value=safer] > vbox#securityLevel-vbox-safer > vbox#securityLevel-descriptionList,
-radiogroup#securityLevel-radiogroup[value=safest] > vbox#securityLevel-vbox-safest > vbox#securityLevel-descriptionList {
+radiogroup#securityLevel-radiogroup[value=safer] vbox#securityLevel-vbox-safer vbox.securityLevel-descriptionList,
+radiogroup#securityLevel-radiogroup[value=safest] vbox#securityLevel-vbox-safest vbox.securityLevel-descriptionList {
   display: inherit;
 }
 
-vbox#securityLevel-descriptionList > description {
+vbox.securityLevel-descriptionList description {
   display: list-item;
 }
 

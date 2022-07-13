@@ -227,11 +227,16 @@ const SecurityLevelPanel = {
     this._elements.advancedSecuritySettings.addEventListener("command", () => {
       this.openAdvancedSecuritySettings();
     });
-    this._configUIFromPrefs();
     this._populated = true;
+    this._configUIFromPrefs();
   },
 
   _configUIFromPrefs() {
+    if (!this._populated) {
+      console.warn("_configUIFromPrefs before XUL was populated.");
+      return;
+    }
+
     // get security prefs
     const level = SecurityLevelPrefs.securitySliderLevel;
     const custom = SecurityLevelPrefs.securityCustom;
