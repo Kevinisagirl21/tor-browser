@@ -9,7 +9,7 @@
     <panelview id="securityLevel-panelview" descriptionheightworkaround="true">
       <vbox id="securityLevel-vbox">
         <box class="panel-header">
-          <html:h1 data-l10n-id="security-level-header" />
+          <html:h1 id="securityLevel-header"/>
         </box>
         <toolbarseparator></toolbarseparator>
         <vbox>
@@ -17,7 +17,7 @@
             <label id="securityLevel-level"/>
             <vbox>
               <spacer flex="1"/>
-              <label id="securityLevel-custom" data-l10n-id="security-level-custom"/>
+              <label id="securityLevel-custom"/>
               <spacer flex="1"/>
             </vbox>
             <spacer flex="1"/>
@@ -29,8 +29,7 @@
               href="about:manual#security-settings"
               useoriginprincipal="true"
               onclick="SecurityLevelPanel.hide();"
-              is="text-link"
-              data-l10n-id="security-level-learn-more"/>
+              is="text-link"/>
             <spacer/>
           </hbox>
         </vbox>

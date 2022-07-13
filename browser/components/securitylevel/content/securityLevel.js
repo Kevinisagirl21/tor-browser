@@ -12,6 +12,64 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const SecurityLevels = Object.freeze(["", "safest", "safer", "", "standard"]);
 
+XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
+  let strings = {
+    // Generic terms
+    security_level: "Security Level",
+    security_level_standard: "Standard",
+    security_level_safer: "Safer",
+    security_level_safest: "Safest",
+    security_level_tooltip_standard: "Security Level: Standard",
+    security_level_tooltip_safer: "Security Level: Safer",
+    security_level_tooltip_safest: "Security Level: Safest",
+    // Shown only for custom level
+    security_level_custom: "Custom",
+    security_level_restore: "Restore Defaults",
+    security_level_learn_more: "Learn more",
+    // Panel
+    security_level_change: "Change…",
+    security_level_standard_summary:
+      "All Tor Browser and website features are enabled.",
+    security_level_safer_summary:
+      "Disables website features that are often dangerous, causing some sites to lose functionality.",
+    security_level_safest_summary:
+      "Only allows website features required for static sites and basic services. These changes affect images, media, and scripts.",
+    security_level_custom_summary:
+      "Your custom browser preferences have resulted in unusual security settings. For security and privacy reasons, we recommend you choose one of the default security levels.",
+    // Security level section in about:preferences#privacy
+    security_level_overview:
+      "Disable certain web features that can be used to attack your security and anonymity.",
+    security_level_list_safer: "At the safer setting:",
+    security_level_list_safest: "At the safest setting:",
+    // Strings for descriptions
+    security_level_js_https_only: "JavaScript is disabled on non-HTTPS sites.",
+    security_level_js_disabled:
+      "JavaScript is disabled by default on all sites.",
+    security_level_limit_typography:
+      "Some fonts and math symbols are disabled.",
+    security_level_limit_typography_svg:
+      "Some fonts, icons, math symbols, and images are disabled.",
+    security_level_limit_media:
+      "Audio and video (HTML5 media), and WebGL are click-to-play.",
+  };
+  let bundle = null;
+  try {
+    bundle = Services.strings.createBundle(
+      "chrome://securitylevel/locale/securityLevel.properties"
+    );
+  } catch (e) {
+    console.warn("Could not load the Security Level strings");
+  }
+  if (bundle) {
+    for (const key of Object.keys(strings)) {
+      try {
+        strings[key] = bundle.GetStringFromName(key);
+      } catch (e) {}
+    }
+  }
+  return strings;
+});
+
 /*
   Security Level Prefs
 
@@ -77,9 +135,9 @@ const SecurityLevelButton = {
       }
       const customStr = SecurityLevelPrefs.securityCustom ? "_custom" : "";
       securityLevelButton.setAttribute("level", `${level}${customStr}`);
-      document.l10n.setAttributes(
-        securityLevelButton,
-        `security-level-button-${level}`
+      securityLevelButton.setAttribute(
+        "tooltiptext",
+        SecurityLevelStrings[`security_level_tooltip_${level}`]
       );
     }
   },
@@ -199,6 +257,9 @@ const SecurityLevelPanel = {
     summary: "description#securityLevel-summary",
     restoreDefaults: "button#securityLevel-restoreDefaults",
     advancedSecuritySettings: "button#securityLevel-advancedSecuritySettings",
+    // Selectors used only for l10n - remove them when switching to Fluent
+    header: "#securityLevel-header",
+    learnMore: "#securityLevel-panel .learnMore",
   }),
 
   _populateXUL() {
@@ -214,7 +275,24 @@ const SecurityLevelPanel = {
       advancedSecuritySettings: document.querySelector(
         selectors.advancedSecuritySettings
       ),
+      header: document.querySelector(selectors.header),
+      learnMore: document.querySelector(selectors.learnMore),
     };
+
+    this._elements.header.textContent = SecurityLevelStrings.security_level;
+    this._elements.labelCustom.setAttribute(
+      "value",
+      SecurityLevelStrings.security_level_custom
+    );
+    this._elements.learnMore.setAttribute(
+      "value",
+      SecurityLevelStrings.security_level_learn_more
+    );
+    this._elements.restoreDefaultsButton.textContent =
+      SecurityLevelStrings.security_level_restore;
+    this._elements.advancedSecuritySettings.textContent =
+      SecurityLevelStrings.security_level_change;
+
     this._elements.panel.addEventListener("onpopupshown", e => {
       this.onPopupShown(e);
     });
@@ -251,15 +329,16 @@ const SecurityLevelPanel = {
     // Descriptions change based on security level
     if (level) {
       this._elements.icon.setAttribute("level", level);
-      document.l10n.setAttributes(
-        this._elements.labelLevel,
-        `security-level-${level}-label`
+      this._elements.labelLevel.setAttribute(
+        "value",
+        SecurityLevelStrings[`security_level_${level}`]
       );
-      document.l10n.setAttributes(summary, `security-level-${level}-summary`);
+      summary.textContent =
+        SecurityLevelStrings[`security_level_${level}_summary`];
     }
     // override the summary text with custom warning
     if (custom) {
-      document.l10n.setAttributes(summary, "security-level-custom-summary");
+      summary.textContent = SecurityLevelStrings.security_level_custom_summary;
     }
   },
 
@@ -349,19 +428,58 @@ const SecurityLevelPreferences = {
       SecurityLevelPreferences.selectSecurityLevel
     );
 
-    const populateRadioElements = vboxQuery => {
-      const vbox = groupbox.querySelector(vboxQuery);
+    groupbox.querySelector("h2").textContent =
+      SecurityLevelStrings.security_level;
+    groupbox.querySelector("#securityLevel-overview").textContent =
+      SecurityLevelStrings.security_level_overview;
+    groupbox
+      .querySelector("#securityLevel-learnMore")
+      .setAttribute("value", SecurityLevelStrings.security_level_learn_more);
+
+    const populateRadioElements = (level, descr) => {
+      const vbox = groupbox.querySelector(`#securityLevel-vbox-${level}`);
+      vbox
+        .querySelector("radio")
+        .setAttribute("label", SecurityLevelStrings[`security_level_${level}`]);
+      vbox
+        .querySelector(".securityLevel-customWarning")
+        .setAttribute("value", SecurityLevelStrings.security_level_custom);
+      vbox.querySelector(".summary").textContent =
+        SecurityLevelStrings[`security_level_${level}_summary`];
       const labelRestoreDefaults = vbox.querySelector(
         ".securityLevel-restoreDefaults"
       );
+      labelRestoreDefaults.setAttribute(
+        "value",
+        SecurityLevelStrings.security_level_restore
+      );
       labelRestoreDefaults.addEventListener(
         "click",
-        SecurityLevelPreferences.restoreDefaults
+        SecurityLevelStrings.restoreDefaults
       );
+      if (descr) {
+        const descrList = vbox.querySelector(".securityLevel-descriptionList");
+        // TODO: Add the elements in securityLevelPreferences.inc.xhtml again
+        // when we switch to Fluent
+        for (const text of descr) {
+          let elem = document.createXULElement("description");
+          elem.textContent = text;
+          elem.className = "indent";
+          descrList.append(elem);
+        }
+      }
     };
-    populateRadioElements("#securityLevel-vbox-standard");
-    populateRadioElements("#securityLevel-vbox-safer");
-    populateRadioElements("#securityLevel-vbox-safest");
+    populateRadioElements("standard");
+    populateRadioElements("safer", [
+      SecurityLevelStrings.security_level_js_https_only,
+      SecurityLevelStrings.security_level_limit_typography,
+      SecurityLevelStrings.security_level_limit_media,
+    ]);
+    populateRadioElements("safest", [
+      SecurityLevelStrings.security_level_js_disabled,
+      SecurityLevelStrings.security_level_limit_typography_svg,
+      SecurityLevelStrings.security_level_limit_media,
+    ]);
   },
 
   _configUIFromPrefs() {
