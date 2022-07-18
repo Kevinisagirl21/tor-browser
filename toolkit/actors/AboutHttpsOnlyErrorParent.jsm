@@ -87,6 +87,19 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
     const oldOriginAttributes = aBrowser.contentPrincipal.originAttributes;
     const hasFpiAttribute = !!oldOriginAttributes.firstPartyDomain.length;
 
+    let firstPartyDomain = "";
+    if (hasFpiAttribute) {
+      // This try-catch to check whether a host is an IP address is used also in
+      // other parts of Firefox
+      try {
+        firstPartyDomain = Services.eTLD.getBaseDomain(newURI);
+      } catch (e) {
+        if (e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS) {
+          firstPartyDomain = newURI.host;
+        }
+      }
+    }
+
     // Create new content principal for the permission. If first-party isolation
     // is enabled, we have to replace the about-page first-party domain with the
     // one from the exempt website.
@@ -94,9 +107,7 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
       newURI,
       {
         ...oldOriginAttributes,
-        firstPartyDomain: hasFpiAttribute
-          ? Services.eTLD.getBaseDomain(newURI)
-          : "",
+        firstPartyDomain,
       }
     );
 
