@@ -133,7 +133,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 #torPreferences-status-internet-icon {
-  list-style-image: url("chrome://devtools/skin/images/globe.svg");
+  list-style-image: url("chrome://browser/content/torpreferences/network.svg");
 }
 
 #torPreferences-status-internet-statusIcon.online,
@@ -144,7 +144,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 #torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
-  list-style-image: url("chrome://devtools/skin/images/check.svg");
+  list-style-image: url("chrome://browser/content/torpreferences/check.svg");
   -moz-context-properties: fill;
   fill: var(--purple-60);
 }
