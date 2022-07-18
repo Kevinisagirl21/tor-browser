@@ -3,6 +3,7 @@ browser.jar:
     content/browser/torpreferences/bridgeQrDialog.jsm                (content/bridgeQrDialog.jsm)
     content/browser/torpreferences/builtinBridgeDialog.xhtml         (content/builtinBridgeDialog.xhtml)
     content/browser/torpreferences/builtinBridgeDialog.jsm           (content/builtinBridgeDialog.jsm)
+    content/browser/torpreferences/check.svg                         (content/check.svg)
     content/browser/torpreferences/connectionSettingsDialog.xhtml    (content/connectionSettingsDialog.xhtml)
     content/browser/torpreferences/connectionSettingsDialog.jsm      (content/connectionSettingsDialog.jsm)
     content/browser/torpreferences/network.svg                       (content/network.svg)
