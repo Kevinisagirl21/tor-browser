@@ -731,7 +731,7 @@ const gConnectionPane = (function() {
         const annotations = await res.json();
         const bcp47 = Services.locale.appLocaleAsBCP47;
         const dash = bcp47.indexOf("-");
-        const lang = dash !== -1 ? bcp47.substr(dash) : lang;
+        const lang = dash !== -1 ? bcp47.substr(dash) : bcp47;
         if (bcp47 in annotations) {
           emojiAnnotations = annotations[bcp47];
         } else if (lang in annotations) {
