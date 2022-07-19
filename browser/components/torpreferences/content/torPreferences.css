@@ -323,56 +323,56 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 
 .torPreferences-bridgeCard-qrWrapper {
   grid-area: bridge-qr;
-  display: flex;
-  flex-direction: column;
+  display: block; /* So it doesn't stretch the child vertically. */
+  margin-inline-end: 14px;
 }
 
 .torPreferences-bridgeCard-qr {
-  width: 126px;
+  --qr-one: black;
+  --qr-zero: white;
+  background: var(--qr-zero);
   position: relative;
+  padding: 4px;
+  border-radius: 2px;
 }
 
 .torPreferences-bridgeCard-qrCode {
   width: 112px;
   height: 112px;
   /* Define these colors, as they will be passed to the QR code library */
-  background: var(--in-content-box-background);
-  color: var(--in-content-text-color);
+  background: var(--qr-zero);
+  color: var(--qr-one);
 }
 
 .torPreferences-bridgeCard-qrOnionBox {
   width: 28px;
   height: 28px;
   position: absolute;
-  top: 42px;
-  inset-inline-start: 42px;
-  background: var(--in-content-box-background);
+  top: calc(50% - 14px);
+  inset-inline-start: calc(50% - 14px);
+  background: var(--qr-zero);
 }
 
 .torPreferences-bridgeCard-qrOnion {
   width: 16px;
   height: 16px;
   position: absolute;
-  top: 48px;
-  inset-inline-start: 48px;
+  top: calc(50% - 8px);
+  inset-inline-start: calc(50% - 8px);
 
   mask: url("chrome://browser/skin/onion.svg");
   mask-repeat: no-repeat;
   mask-size: 16px;
-  background: var(--in-content-text-color);
+  background: var(--qr-one);
 }
 
 .torPreferences-bridgeCard-qr:hover .torPreferences-bridgeCard-qrOnionBox {
-  background: var(--in-content-text-color);
+  background: var(--qr-one);
 }
 
 .torPreferences-bridgeCard-qr:hover .torPreferences-bridgeCard-qrOnion {
   mask: url("chrome://global/skin/icons/search-glass.svg");
-  background: var(--in-content-box-background);
-}
-
-.torPreferences-bridgeCard-filler {
-  flex: 1;
+  background: var(--qr-zero);
 }
 
 .torPreferences-bridgeCard-grid {
@@ -478,39 +478,49 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 }
 
 /* Show bridge QR dialog */
-#bridgeQr-container {
+#bridgeQr {
+  /* Some readers don't recognize QRs with inverted colors, so let's make
+  the ones are darker than zeroes. See
+  https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41049 */
+  --qr-one: black;
+  --qr-zero: white;
+  background: var(--qr-zero);
   position: relative;
-  height: 300px;
+  /* Padding is needed in case the dark theme is used so the bits don't blend
+  with whatever the default background color is. */
+  padding: 10px;
+  margin: auto;
+  margin-bottom: 20px;
+  max-width: max-content;
+  border-radius: 5px;
 }
 
 #bridgeQr-target {
-  position: absolute;
   width: 300px;
   height: 300px;
-  left: calc(50% - 150px);
-  background: var(--in-content-box-background);
-  color: var(--in-content-text-color);
+  background: var(--qr-zero);
+  color: var(--qr-one);
 }
 
 #bridgeQr-onionBox {
   position: absolute;
   width: 70px;
   height: 70px;
-  top: 115px;
+  top: calc(50% - 35px);
   left: calc(50% - 35px);
-  background-color: var(--in-content-box-background);
+  background-color: var(--qr-zero);
 }
 
 #bridgeQr-onion {
   position: absolute;
   width: 38px;
   height: 38px;
-  top: 131px;
+  top: calc(50% - 19px);
   left: calc(50% - 19px);
   mask: url("chrome://browser/skin/onion.svg");
   mask-repeat: no-repeat;
   mask-size: 38px;
-  background: var(--in-content-text-color);
+  background: var(--qr-one);
 }
 
 /* Builtin bridge dialog */
