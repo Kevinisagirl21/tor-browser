@@ -35,10 +35,7 @@ class ProvideBridgeDialog {
       "placeholder",
       TorStrings.settings.provideBridgePlaceholder
     );
-    if (
-      TorSettings.bridges.enabled &&
-      TorSettings.bridges.source == TorBridgeSource.UserProvided
-    ) {
+    if (TorSettings.bridges.source == TorBridgeSource.UserProvided) {
       this._textarea.value = TorSettings.bridges.bridge_strings.join("\n");
     }
 
