@@ -110,7 +110,8 @@ const gConnectionPane = (function() {
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
       currentHeader: "#torPreferences-currentBridges-header",
       currentHeaderText: "#torPreferences-currentBridges-headerText",
-      currentDescriptionText: "#torPreferences-currentBridges-description",
+      currentDescription: "#torPreferences-currentBridges-description",
+      currentDescriptionText: "#torPreferences-currentBridges-descriptionText",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -259,7 +260,7 @@ const gConnectionPane = (function() {
         "label",
         TorStrings.settings.statusInternetTest
       );
-      internetTest.addEventListener("command", async () => {
+      internetTest.addEventListener("command", () => {
         this.onInternetTest();
       });
       const internetIcon = prefpane.querySelector(
@@ -435,7 +436,10 @@ const gConnectionPane = (function() {
           this._populateBridgeCards();
         });
       });
-      prefpane.querySelector(
+      const bridgeDescription = prefpane.querySelector(
+        selectors.bridges.currentDescription
+      );
+      bridgeDescription.querySelector(
         selectors.bridges.currentDescriptionText
       ).textContent = TorStrings.settings.bridgeCurrentDescription;
       const bridgeTemplate = prefpane.querySelector(
@@ -596,8 +600,8 @@ const gConnectionPane = (function() {
         try {
           const container = card.querySelector(selectors.bridges.cardQr);
           const style = getComputedStyle(container);
-          const width = style.width.substr(0, style.width.length - 2);
-          const height = style.height.substr(0, style.height.length - 2);
+          const width = style.width.substring(0, style.width.length - 2);
+          const height = style.height.substring(0, style.height.length - 2);
           new QRCode(container, {
             text: bridgeString,
             width,
@@ -621,7 +625,10 @@ const gConnectionPane = (function() {
           // Expanded cards have the height set manually to their details for
           // the CSS animation. However, when resizing the window, we may need
           // to adjust their height.
-          if (card.classList.contains("expanded")) {
+          if (
+            card.classList.contains("expanded") ||
+            card.classList.contains("currently-connected")
+          ) {
             const grid = card.querySelector(selectors.bridges.cardQrGrid);
             // Reset it first, to avoid having a height that is higher than
             // strictly needed. Also, remove the to-animate class, because the
@@ -644,13 +651,14 @@ const gConnectionPane = (function() {
       removeAll.addEventListener("command", () => {
         this._confirmBridgeRemoval();
       });
-      this._populateBridgeCards = async () => {
+      this._populateBridgeCards = () => {
         const collapseThreshold = 4;
 
         let newStrings = new Set(TorSettings.bridges.bridge_strings);
         const numBridges = newStrings.size;
         if (!newStrings.size) {
           bridgeHeader.setAttribute("hidden", "true");
+          bridgeDescription.setAttribute("hidden", "true");
           bridgeCards.setAttribute("hidden", "true");
           showAll.setAttribute("hidden", "true");
           removeAll.setAttribute("hidden", "true");
@@ -658,6 +666,7 @@ const gConnectionPane = (function() {
           return;
         }
         bridgeHeader.removeAttribute("hidden");
+        bridgeDescription.removeAttribute("hidden");
         bridgeCards.removeAttribute("hidden");
         bridgeSwitch.checked = TorSettings.bridges.enabled;
         bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
@@ -731,7 +740,7 @@ const gConnectionPane = (function() {
         const annotations = await res.json();
         const bcp47 = Services.locale.appLocaleAsBCP47;
         const dash = bcp47.indexOf("-");
-        const lang = dash !== -1 ? bcp47.substr(dash) : bcp47;
+        const lang = dash !== -1 ? bcp47.substring(dash) : bcp47;
         if (bcp47 in annotations) {
           emojiAnnotations = annotations[bcp47];
         } else if (lang in annotations) {
@@ -765,6 +774,7 @@ const gConnectionPane = (function() {
         const placeholder = document.createElement("span");
         bridgeCards.prepend(placeholder);
         placeholder.replaceWith(...cards);
+        this._checkBridgeCardsHeight();
       };
       try {
         const { controller } = ChromeUtils.import(
@@ -798,7 +808,7 @@ const gConnectionPane = (function() {
               for (const status of circuitStatuses) {
                 if (status.id === event.CircuitID && status.circuit.length) {
                   // The id in the circuit begins with a $ sign
-                  const bridgeId = status.circuit[0][0].substr(1);
+                  const bridgeId = status.circuit[0][0].substring(1);
                   if (bridgeId !== this._currentBridge) {
                     this._currentBridge = bridgeId;
                     this._updateConnectedBridges();
@@ -916,7 +926,7 @@ const gConnectionPane = (function() {
     init() {
       this._populateXUL();
 
-      let onUnload = () => {
+      const onUnload = () => {
         window.removeEventListener("unload", onUnload);
         gConnectionPane.uninit();
       };
@@ -925,6 +935,9 @@ const gConnectionPane = (function() {
       window.addEventListener("resize", () => {
         this._checkBridgeCardsHeight();
       });
+      window.addEventListener("hashchange", () => {
+        this._checkBridgeCardsHeight();
+      })
     },
 
     uninit() {
