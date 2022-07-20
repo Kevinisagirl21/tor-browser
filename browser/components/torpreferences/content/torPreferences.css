@@ -149,6 +149,12 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   fill: var(--purple-60);
 }
 
+@media (-moz-toolbar-prefers-color-scheme: dark) {
+  #torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
+    fill: var(--purple-30);
+  }
+}
+
 #torPreferences-status-internet-status {
   margin-inline-end: 32px;
 }
@@ -274,10 +280,14 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 
 .torPreferences-bridgeCard-connectedBadge {
   display: none;
-  padding: 8px 12px;
-  border-radius: 16px;
-  background: rgba(128, 0, 215, 0.1);
+  margin-inline-end: 12px;
   color: var(--purple-60);
+}
+
+@media (-moz-toolbar-prefers-color-scheme: dark) {
+  .torPreferences-bridgeCard-connectedBadge {
+    color: var(--purple-30);
+  }
 }
 
 .currently-connected .torPreferences-bridgeCard-connectedBadge {
@@ -287,9 +297,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 .torPreferences-bridgeCard-connectedIcon {
   margin-inline-start: 1px;
   margin-inline-end: 7px;
-  list-style-image: url("chrome://devtools/skin/images/check.svg");
+  list-style-image: url("chrome://browser/content/torpreferences/check.svg");
   -moz-context-properties: fill;
-  fill: var(--purple-60);
+  fill: currentColor;
 }
 
 .torPreferences-bridgeCard-options {
@@ -302,6 +312,11 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   background-image: url("chrome://global/skin/icons/more.svg");
   background-repeat: no-repeat;
   background-position: center center;
+  fill: currentColor;
+  -moz-context-properties: fill;
+}
+
+#torPreferences-bridgeCard-menu menuitem {
   fill: currentColor;
   -moz-context-properties: fill;
 }
@@ -443,6 +458,11 @@ image#torPreferences-requestBridge-captchaImage {
 
 button#torPreferences-requestBridge-refreshCaptchaButton {
   min-width: initial;
+}
+
+#torPreferences-requestBridge-refreshCaptchaButton image {
+  -moz-context-properties: fill;
+  fill: currentColor;
 }
 
 dialog#torPreferences-requestBridge-dialog > hbox {
