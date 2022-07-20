@@ -6,7 +6,8 @@ const { BridgeDB } = ChromeUtils.import("resource:///modules/BridgeDB.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 class RequestBridgeDialog {
-  constructor() {
+  constructor(onSubmit) {
+    this.onSubmit = onSubmit;
     this._dialog = null;
     this._submitButton = null;
     this._dialogHeader = null;
@@ -15,7 +16,6 @@ class RequestBridgeDialog {
     this._captchaRefreshButton = null;
     this._incorrectCaptchaHbox = null;
     this._incorrectCaptchaLabel = null;
-    this._bridges = [];
   }
 
   static get selectors() {
@@ -53,7 +53,7 @@ class RequestBridgeDialog {
       if (uri) {
         this._setcaptchaImage(uri);
       } else if (bridges) {
-        this._bridges = bridges;
+        this.onSubmit(bridges);
         this._submitButton.disabled = false;
         this._dialog.cancelDialog();
       }
@@ -163,20 +163,18 @@ class RequestBridgeDialog {
     BridgeDB.submitCaptchaGuess(captchaText)
       .then(aBridges => {
         if (aBridges) {
-          this._bridges = aBridges;
+          this.onSubmit(aBridges);
           this._submitButton.disabled = false;
           // This was successful, but use cancelDialog() to close, since
           // we intercept the `dialogaccept` event.
           this._dialog.cancelDialog();
         } else {
-          this._bridges = [];
           this._setUIDisabled(false);
           this._incorrectCaptchaHbox.style.visibility = "visible";
         }
       })
       .catch(aError => {
         // TODO: handle other errors properly here when we do the bridge settings re-design
-        this._bridges = [];
         this._setUIDisabled(false);
         this._incorrectCaptchaHbox.style.visibility = "visible";
         console.log(aError);
@@ -195,14 +193,13 @@ class RequestBridgeDialog {
     });
   }
 
-  openDialog(gSubDialog, aCloseCallback) {
+  openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
       {
         features: "resizable=yes",
         closingCallback: () => {
           this.close();
-          aCloseCallback(this._bridges);
         },
       },
       this

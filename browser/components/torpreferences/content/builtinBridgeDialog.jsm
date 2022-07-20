@@ -11,9 +11,9 @@ const {
 } = ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
 class BuiltinBridgeDialog {
-  constructor() {
+  constructor(onSubmit) {
+    this.onSubmit = onSubmit;
     this._dialog = null;
-    this._bridgeType = "";
   }
 
   static get selectors() {
@@ -77,14 +77,12 @@ class BuiltinBridgeDialog {
     ) {
       radioGroup.selectedItem =
         types[TorSettings.bridges.builtin_type]?.elemRadio;
-      this._bridgeType = TorSettings.bridges.builtin_type;
     } else {
       radioGroup.selectedItem = null;
-      this._bridgeType = "";
     }
 
     this._dialog.addEventListener("dialogaccept", e => {
-      this._bridgeType = radioGroup.value;
+      this.onSubmit(radioGroup.value);
     });
     this._dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
@@ -105,15 +103,10 @@ class BuiltinBridgeDialog {
     }, 0);
   }
 
-  openDialog(gSubDialog, aCloseCallback) {
+  openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
-      {
-        features: "resizable=yes",
-        closingCallback: () => {
-          aCloseCallback(this._bridgeType);
-        },
-      },
+      { features: "resizable=yes" },
       this
     );
   }

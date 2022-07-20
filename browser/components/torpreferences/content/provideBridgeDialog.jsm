@@ -9,10 +9,10 @@ const { TorSettings, TorBridgeSource } = ChromeUtils.import(
 );
 
 class ProvideBridgeDialog {
-  constructor() {
+  constructor(onSubmit) {
+    this.onSubmit = onSubmit;
     this._dialog = null;
     this._textarea = null;
-    this._bridgeString = "";
   }
 
   static get selectors() {
@@ -40,7 +40,7 @@ class ProvideBridgeDialog {
     }
 
     this._dialog.addEventListener("dialogaccept", e => {
-      this._bridgeString = this._textarea.value;
+      this.onSubmit(this._textarea.value);
     });
     this._dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
@@ -57,15 +57,10 @@ class ProvideBridgeDialog {
     }, 0);
   }
 
-  openDialog(gSubDialog, aCloseCallback) {
+  openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
-      {
-        features: "resizable=yes",
-        closingCallback: () => {
-          aCloseCallback(this._bridgeString);
-        },
-      },
+      { features: "resizable=yes" },
       this
     );
   }

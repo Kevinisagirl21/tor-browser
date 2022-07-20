@@ -1037,8 +1037,7 @@ const gConnectionPane = (function() {
     },
 
     onAddBuiltinBridge() {
-      const builtinBridgeDialog = new BuiltinBridgeDialog();
-      builtinBridgeDialog.openDialog(gSubDialog, aBridgeType => {
+      const builtinBridgeDialog = new BuiltinBridgeDialog(aBridgeType => {
         if (!aBridgeType) {
           TorSettings.bridges.enabled = false;
           TorSettings.bridges.builtin_type = "";
@@ -1052,12 +1051,12 @@ const gConnectionPane = (function() {
           this._populateBridgeCards();
         });
       });
+      builtinBridgeDialog.openDialog(gSubDialog);
     },
 
     // called when the request bridge button is activated
     onRequestBridge() {
-      const requestBridgeDialog = new RequestBridgeDialog();
-      requestBridgeDialog.openDialog(gSubDialog, aBridges => {
+      const requestBridgeDialog = new RequestBridgeDialog(aBridges => {
         if (aBridges.length) {
           const bridgeStrings = aBridges.join("\n");
           TorSettings.bridges.enabled = true;
@@ -1071,11 +1070,11 @@ const gConnectionPane = (function() {
           TorSettings.bridges.enabled = false;
         }
       });
+      requestBridgeDialog.openDialog(gSubDialog);
     },
 
     onAddBridgeManually() {
-      const provideBridgeDialog = new ProvideBridgeDialog();
-      provideBridgeDialog.openDialog(gSubDialog, aBridgeString => {
+      const provideBridgeDialog = new ProvideBridgeDialog(aBridgeString => {
         if (aBridgeString.length) {
           TorSettings.bridges.enabled = true;
           TorSettings.bridges.source = TorBridgeSource.UserProvided;
@@ -1089,6 +1088,7 @@ const gConnectionPane = (function() {
           TorSettings.bridges.source = TorBridgeSource.Invalid;
         }
       });
+      provideBridgeDialog.openDialog(gSubDialog);
     },
 
     onAdvancedSettings() {
