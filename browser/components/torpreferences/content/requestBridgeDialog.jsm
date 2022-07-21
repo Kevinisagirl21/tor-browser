@@ -53,8 +53,6 @@ class RequestBridgeDialog {
       if (uri) {
         this._setcaptchaImage(uri);
       } else if (bridges) {
-        this.onSubmit(bridges);
-        this._submitButton.disabled = false;
         this._dialog.cancelDialog();
       }
     });
