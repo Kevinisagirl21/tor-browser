@@ -154,7 +154,7 @@ const gConnectionPane = (function() {
     },
   }; /* selectors */
 
-  let retval = {
+  const retval = {
     // cached frequently accessed DOM elements
     _enableQuickstartCheckbox: null,
 
@@ -166,7 +166,7 @@ const gConnectionPane = (function() {
 
     // disables the provided list of elements
     _setElementsDisabled(elements, disabled) {
-      for (let currentElement of elements) {
+      for (const currentElement of elements) {
         currentElement.disabled = disabled;
       }
     },
@@ -182,7 +182,7 @@ const gConnectionPane = (function() {
         .querySelector(selectors.category.title)
         .setAttribute("value", TorStrings.settings.categoryTitle);
 
-      let prefpane = document.getElementById("mainPrefPane");
+      const prefpane = document.getElementById("mainPrefPane");
 
       // 'Connect to Tor' Message Bar
 
@@ -235,7 +235,7 @@ const gConnectionPane = (function() {
       prefpane.querySelector(selectors.torPreferences.description).textContent =
         TorStrings.settings.torPreferencesDescription;
       {
-        let learnMore = prefpane.querySelector(
+        const learnMore = prefpane.querySelector(
           selectors.torPreferences.learnMore
         );
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
@@ -329,7 +329,7 @@ const gConnectionPane = (function() {
       prefpane.querySelector(selectors.bridges.description).textContent =
         TorStrings.settings.bridgesDescription;
       {
-        let learnMore = prefpane.querySelector(selectors.bridges.learnMore);
+        const learnMore = prefpane.querySelector(selectors.bridges.learnMore);
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
         learnMore.setAttribute("href", TorStrings.settings.learnMoreBridgesURL);
         if (TorStrings.settings.learnMoreBridgesURL.startsWith("about:")) {
@@ -654,7 +654,7 @@ const gConnectionPane = (function() {
       this._populateBridgeCards = () => {
         const collapseThreshold = 4;
 
-        let newStrings = new Set(TorSettings.bridges.bridge_strings);
+        const newStrings = new Set(TorSettings.bridges.bridge_strings);
         const numBridges = newStrings.size;
         if (!newStrings.size) {
           bridgeHeader.setAttribute("hidden", "true");
@@ -833,7 +833,9 @@ const gConnectionPane = (function() {
         .querySelector(selectors.bridges.addBuiltinLabel)
         .setAttribute("value", TorStrings.settings.bridgeSelectBrowserBuiltin);
       {
-        let button = prefpane.querySelector(selectors.bridges.addBuiltinButton);
+        const button = prefpane.querySelector(
+          selectors.bridges.addBuiltinButton
+        );
         button.setAttribute("label", TorStrings.settings.bridgeSelectBuiltin);
         button.addEventListener("command", e => {
           this.onAddBuiltinBridge();
@@ -843,7 +845,7 @@ const gConnectionPane = (function() {
         .querySelector(selectors.bridges.requestLabel)
         .setAttribute("value", TorStrings.settings.bridgeRequestFromTorProject);
       {
-        let button = prefpane.querySelector(selectors.bridges.requestButton);
+        const button = prefpane.querySelector(selectors.bridges.requestButton);
         button.setAttribute("label", TorStrings.settings.bridgeRequest);
         button.addEventListener("command", e => {
           this.onRequestBridge();
@@ -898,7 +900,9 @@ const gConnectionPane = (function() {
       prefpane.querySelector(selectors.advanced.label).textContent =
         TorStrings.settings.advancedLabel;
       {
-        let settingsButton = prefpane.querySelector(selectors.advanced.button);
+        const settingsButton = prefpane.querySelector(
+          selectors.advanced.button
+        );
         settingsButton.setAttribute(
           "label",
           TorStrings.settings.advancedButton
@@ -912,7 +916,7 @@ const gConnectionPane = (function() {
       prefpane
         .querySelector(selectors.advanced.torLogsLabel)
         .setAttribute("value", TorStrings.settings.showTorDaemonLogs);
-      let torLogsButton = prefpane.querySelector(
+      const torLogsButton = prefpane.querySelector(
         selectors.advanced.torLogsButton
       );
       torLogsButton.setAttribute("label", TorStrings.settings.showLogs);
@@ -964,7 +968,7 @@ const gConnectionPane = (function() {
       switch (topic) {
         // triggered when a TorSettings param has changed
         case TorSettingsTopics.SettingChanged: {
-          let obj = subject?.wrappedJSObject;
+          const obj = subject?.wrappedJSObject;
           switch (data) {
             case TorSettingsData.QuickStartEnabled: {
               this._enableQuickstartCheckbox.checked = obj.value;
@@ -1014,7 +1018,7 @@ const gConnectionPane = (function() {
     },
 
     onCopyBridgeAddress(addressElem) {
-      let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
+      const clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
         Ci.nsIClipboardHelper
       );
       clipboard.copyString(addressElem.value);
@@ -1052,10 +1056,10 @@ const gConnectionPane = (function() {
 
     // called when the request bridge button is activated
     onRequestBridge() {
-      let requestBridgeDialog = new RequestBridgeDialog();
+      const requestBridgeDialog = new RequestBridgeDialog();
       requestBridgeDialog.openDialog(gSubDialog, aBridges => {
         if (aBridges.length) {
-          let bridgeStrings = aBridges.join("\n");
+          const bridgeStrings = aBridges.join("\n");
           TorSettings.bridges.enabled = true;
           TorSettings.bridges.source = TorBridgeSource.BridgeDB;
           TorSettings.bridges.bridge_strings = bridgeStrings;
@@ -1070,7 +1074,7 @@ const gConnectionPane = (function() {
     },
 
     onAddBridgeManually() {
-      let provideBridgeDialog = new ProvideBridgeDialog();
+      const provideBridgeDialog = new ProvideBridgeDialog();
       provideBridgeDialog.openDialog(gSubDialog, aBridgeString => {
         if (aBridgeString.length) {
           TorSettings.bridges.enabled = true;
@@ -1088,12 +1092,12 @@ const gConnectionPane = (function() {
     },
 
     onAdvancedSettings() {
-      let connectionSettingsDialog = new ConnectionSettingsDialog();
+      const connectionSettingsDialog = new ConnectionSettingsDialog();
       connectionSettingsDialog.openDialog(gSubDialog);
     },
 
     onViewTorLogs() {
-      let torLogDialog = new TorLogDialog();
+      const torLogDialog = new TorLogDialog();
       torLogDialog.openDialog(gSubDialog);
     },
   };
