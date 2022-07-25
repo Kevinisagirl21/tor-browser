@@ -38,6 +38,10 @@
                           command="Tools:NonFissionWindow"
                           accesskey="s" label="New Non-Fission Window"/>
 #endif
+                <menuseparator/>
+                <menuitem id="menu_newIdentity"
+                          key="new-identity-key"/>
+                <menuseparator/>
                 <menuitem id="menu_openLocation"
                           hidden="true"
                           command="Browser:OpenLocation"

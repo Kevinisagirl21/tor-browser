@@ -255,6 +255,8 @@
 @RESPATH@/browser/chrome/securitylevel.manifest
 @RESPATH@/browser/chrome/securitylevel/
 @RESPATH@/browser/components/SecurityLevel.manifest
+@RESPATH@/browser/chrome/newidentity.manifest
+@RESPATH@/browser/chrome/newidentity/
 
 ; [DevTools Startup Files]
 @RESPATH@/browser/chrome/devtools-startup@JAREXT@

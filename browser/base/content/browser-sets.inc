@@ -383,4 +383,5 @@
          data-l10n-id="hide-other-apps-shortcut"
          modifiers="accel,alt"/>
 #endif
+    <key id="new-identity-key" modifiers="accel shift" key="U" oncommand="NewIdentityButton.onCommand(event)"/>
   </keyset>
