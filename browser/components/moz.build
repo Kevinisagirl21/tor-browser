@@ -37,6 +37,7 @@ DIRS += [
     "enterprisepolicies",
     "extensions",
     "migration",
+    "newidentity",
     "newtab",
     "onionservices",
     "originattributes",

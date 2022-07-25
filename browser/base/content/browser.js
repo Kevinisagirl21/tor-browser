@@ -232,6 +232,11 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
+  ["NewIdentityButton"],
+  "chrome://browser/content/newidentity.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
   ["OnionAuthPrompt"],
   "chrome://browser/content/onionservices/authPrompt.js"
 );
@@ -1778,6 +1783,9 @@ var gBrowserInit = {
     // Init the SecuritySettingsButton
     SecurityLevelButton.init();
 
+    // Init the NewIdentityButton
+    NewIdentityButton.init();
+
     // Init the OnionAuthPrompt
     OnionAuthPrompt.init();
 
@@ -2515,6 +2523,8 @@ var gBrowserInit = {
     DownloadsButton.uninit();
 
     SecurityLevelButton.uninit();
+
+    NewIdentityButton.uninit();
 
     OnionAuthPrompt.uninit();
 
