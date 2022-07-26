@@ -164,13 +164,6 @@ const gConnectionPane = (function() {
 
     _currentBridge: "",
 
-    // disables the provided list of elements
-    _setElementsDisabled(elements, disabled) {
-      for (const currentElement of elements) {
-        currentElement.disabled = disabled;
-      }
-    },
-
     // populate xul with strings and cache the relevant elements
     _populateXUL() {
       // saves tor settings to disk when navigate away from about:preferences
