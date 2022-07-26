@@ -1066,8 +1066,6 @@ const gConnectionPane = (function() {
           TorSettings.applySettings().then(result => {
             this._populateBridgeCards();
           });
-        } else {
-          TorSettings.bridges.enabled = false;
         }
       });
       requestBridgeDialog.openDialog(gSubDialog);
@@ -1079,14 +1077,15 @@ const gConnectionPane = (function() {
           TorSettings.bridges.enabled = true;
           TorSettings.bridges.source = TorBridgeSource.UserProvided;
           TorSettings.bridges.bridge_strings = aBridgeString;
-          TorSettings.saveToPrefs();
-          TorSettings.applySettings().then(result => {
-            this._populateBridgeCards();
-          });
         } else {
           TorSettings.bridges.enabled = false;
           TorSettings.bridges.source = TorBridgeSource.Invalid;
+          TorSettings.bridges.bridge_strings = "";
         }
+        TorSettings.saveToPrefs();
+        TorSettings.applySettings().then(result => {
+          this._populateBridgeCards();
+        });
       });
       provideBridgeDialog.openDialog(gSubDialog);
     },
