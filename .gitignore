@@ -193,3 +193,6 @@ config/external/icu4x
 # Ignore Storybook generated files
 browser/components/storybook/node_modules/
 browser/components/storybook/storybook-static/
+
+# Ignore binary base of tor browser
+.binaries
