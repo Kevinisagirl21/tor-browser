@@ -212,3 +212,6 @@ tools/esmify/package-lock.json
 
 # Ignore automatically generated mots documentation
 docs/mots/index.rst
+
+# Ignore binary base of tor browser
+.binaries
