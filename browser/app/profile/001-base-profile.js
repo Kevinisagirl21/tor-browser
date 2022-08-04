@@ -64,6 +64,18 @@ pref("media.memory_cache_max_size", 16384);
 pref("dom.security.https_only_mode", true);
 pref("dom.security.https_only_mode.upgrade_onion", false);
 
+// Require Safe Negotiation ( https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/27719 )
+// Blocks connections to servers that don't support RFC 5746 [2] as they're potentially vulnerable to a
+// MiTM attack [3]. A server without RFC 5746 can be safe from the attack if it disables renegotiations
+// but the problem is that the browser can't know that. Setting this pref to true is the only way for the
+// browser to ensure there will be no unsafe renegotiations on the channel between the browser and the server
+// [STATS] SSL Labs (July 2021) reports over 99% of top sites have secure renegotiation [4]
+// [1] https://wiki.mozilla.org/Security:Renegotiation
+// [2] https://datatracker.ietf.org/doc/html/rfc5746
+// [3] https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2009-3555
+// [4] https://www.ssllabs.com/ssl-pulse/
+pref("security.ssl.require_safe_negotiation", true);
+
 // Misc privacy: Remote
 pref("browser.send_pings", false);
 pref("geo.enabled", false);
