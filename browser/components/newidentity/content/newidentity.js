@@ -133,8 +133,9 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       this.clearOCSPCache();
       this.clearSecuritySettings();
       this.clearImageCaches();
-      await this.clearStorage();
+      this.clearStorage();
       this.clearPreferencesAndPermissions();
+      await this.clearData();
       this.clearConnections();
       this.clearPrivateSession();
     }
@@ -152,7 +153,9 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
 
     closeTabs() {
       logger.info("Closing tabs");
-      if (!Services.prefs.getBoolPref("extensions.torbutton.close_newnym", true)) {
+      if (
+        !Services.prefs.getBoolPref("extensions.torbutton.close_newnym", true)
+      ) {
         logger.info("Not closing tabs");
         return;
       }
@@ -228,7 +231,12 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
     }
 
     clearHTTPAuths() {
-      if (!Services.prefs.getBoolPref("extensions.torbutton.clear_http_auth", true)) {
+      if (
+        !Services.prefs.getBoolPref(
+          "extensions.torbutton.clear_http_auth",
+          true
+        )
+      ) {
         logger.info("Skipping HTTP Auths, because disabled");
         return;
       }
@@ -267,22 +275,6 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
         Ci.nsISiteSecurityService
       );
       sss.clearAll();
-    }
-
-    async clearData(flags) {
-      return new Promise((resolve, reject) => {
-        Services.clearData.deleteData(flags, {
-          onDataDeleted(code) {
-            if (code === Cr.NS_OK) {
-              resolve();
-            } else {
-              reject(
-                new Error(`Error deleting data with flags ${flags}: ${code}`)
-              );
-            }
-          },
-        });
-      });
     }
 
     clearImageCaches() {
@@ -345,23 +337,12 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       }
     }
 
-    async clearStorage() {
+    clearStorage() {
       logger.info("Clearing Disk and Memory Caches");
       try {
         Services.cache2.clear();
       } catch (e) {
         logger.error("Exception on cache clearing", e);
-      }
-
-      logger.info("Clearing storage, media devices and predictor network data");
-      try {
-        await this.clearData(
-          Services.clearData.CLEAR_DOM_STORAGES |
-            Services.clearData.CLEAR_MEDIA_DEVICES |
-            Services.clearData.CLEAR_PREDICTOR_NETWORK_DATA
-        );
-      } catch (e) {
-        logger.error("Exception on storage clearing", e);
       }
 
       logger.info("Clearing Cookies and DOM Storage");
@@ -394,6 +375,24 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       logger.info("Syncing prefs");
       // Force prefs to be synced to disk
       Services.prefs.savePrefFile(null);
+    }
+
+    async clearData() {
+      logger.info("Calling the clearDataService");
+      const flags =
+        Services.clearData.CLEAR_ALL ^ Services.clearData.CLEAR_PASSWORDS;
+      return new Promise((resolve, reject) => {
+        Services.clearData.deleteData(flags, {
+          onDataDeleted(code) {
+            if (code !== Cr.NS_OK) {
+              logger.error(`Error while calling the clearDataService: ${code}`);
+            }
+            // We always resolve, because we do not want to interrupt the new
+            // identity procedure.
+            resolve();
+          },
+        });
+      });
     }
 
     clearConnections() {
