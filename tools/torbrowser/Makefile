@@ -10,6 +10,15 @@ BUILD_OUTPUT = $(DEV_ROOT)/obj-x86_64-pc-linux-gnu
 config:
 	./config.sh $(DEV_ROOT)
 
+ide-vscode:
+	./ide.sh vscode $(DEV_ROOT)
+
+ide-eclipse:
+	./ide.sh eclipse $(DEV_ROOT)
+
+ide-visualstudio:
+	./ide.sh visualstudio $(DEV_ROOT)
+
 fetch:
 	./fetch.sh $(BINARIES)
 
