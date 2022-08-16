@@ -299,6 +299,7 @@ SECStatus DetermineCertOverrideErrors(const UniqueCERTCertificate& cert,
     case mozilla::pkix::MOZILLA_PKIX_ERROR_MITM_DETECTED:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT:
+    case mozilla::pkix::MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_V1_CERT_USED_AS_CA: {
       collectedErrors = nsICertOverrideService::ERROR_UNTRUSTED;
       errorCodeTrust = defaultErrorCodeToReport;
@@ -984,6 +985,17 @@ PRErrorCode AuthCertificateParseResults(
       gPIPNSSLog, LogLevel::Debug,
       ("[0x%" PRIx64 "] Certificate error was not overridden\n", aPtrForLog));
 
+  // If Onion with self signed cert we want to prioritize any other error
+  if (errorCodeTrust == MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT) {
+    if (errorCodeMismatch) {
+      return errorCodeMismatch;
+    } else if (errorCodeTime) {
+      return  errorCodeTime;
+    } else {
+      return MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT;
+    }
+  }
+
   // pick the error code to report by priority
   return errorCodeTrust      ? errorCodeTrust
          : errorCodeMismatch ? errorCodeMismatch
@@ -1389,8 +1401,7 @@ SSLServerCertVerificationResult::Run() {
                             std::move(mPeerCertChain),
                             mCertificateTransparencyStatus, mEVStatus,
                             mSucceeded, mIsBuiltCertChainRootBuiltInRoot);
-
-  if (!mSucceeded && mCollectedErrors != 0) {
+  if (!mSucceeded && mCollectedErrors != 0 && mFinalError != MOZILLA_PKIX_ERROR_ONION_WITH_SELF_SIGNED_CERT) {
     mInfoObject->SetStatusErrorBits(mCert, mCollectedErrors);
   }
   mInfoObject->SetCertVerificationResult(mFinalError);
