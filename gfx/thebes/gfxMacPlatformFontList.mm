@@ -2160,3 +2160,20 @@ void gfxMacPlatformFontList::ReadFaceNamesForFamily(fontlist::Family* aFamily,
     }
   }
 }
+
+#ifdef MOZ_BUNDLED_FONTS
+void gfxMacPlatformFontList::ActivateBundledFonts() {
+  nsCOMPtr<nsIFile> localDir;
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(localDir)))) {
+    return;
+  }
+  if (NS_FAILED(localDir->Append(u"fonts"_ns))) {
+    return;
+  }
+  nsAutoCString path;
+  if (NS_FAILED(localDir->GetNativePath(path))) {
+    return;
+  }
+  ActivateFontsFromDir(path, &mBundledFamilies);
+}
+#endif
