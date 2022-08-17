@@ -288,7 +288,7 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
-#ifdef MOZ_UPDATER
+#if 0
 bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSArray* aArguments) {
   NSTask* task;
   if (@available(macOS 10.13, *)) {
@@ -332,7 +332,7 @@ static bool InstallFromPath(NSString* aBundlePath, NSString* aDestPath) {
 
   bool triedElevatedInstall = false;
 
-#ifdef MOZ_UPDATER
+#if 0
   // The installation may have been unsuccessful if the user did not have the
   // rights to write to the Applications directory. Check for this situation and
   // launch an elevated installation if necessary. Rather than creating a new,
