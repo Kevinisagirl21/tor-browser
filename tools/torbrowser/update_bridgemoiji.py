@@ -51,6 +51,7 @@ LANGS = [
     "sv",
     "th",
     "tr",
+    "uk",
     "vi",
     "zh",  # zh-CN, zh-hans
     "zh_Hant",  # zh-TW, zh-hant
