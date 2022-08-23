@@ -918,6 +918,8 @@ Result CertVerifier::VerifySSLServerCert(
     return Result::ERROR_BAD_CERT_DOMAIN;
   }
 
+  bool errOnionWithSelfSignedCert = false;
+
   // CreateCertErrorRunnable assumes that CheckCertHostname is only called
   // if VerifyCert succeeded.
   Result rv =
@@ -931,9 +933,16 @@ Result CertVerifier::VerifySSLServerCert(
         CertIsSelfSigned(peerCert, pinarg)) {
       // In this case we didn't find any issuer for the certificate and the
       // certificate is self-signed.
-      return Result::ERROR_SELF_SIGNED_CERT;
+      if (StringEndsWith(hostname, ".onion"_ns)) {
+        // Self signed cert over onion is deemed secure, the hidden service provides authentication.
+        // We defer returning this error and keep processing to determine if there are other legitimate
+        // certificate errors (such as expired, wrong domain) that we would like to surface to the user
+        errOnionWithSelfSignedCert = true;
+      } else {
+        return Result::ERROR_SELF_SIGNED_CERT;
+      }
     }
-    if (rv == Result::ERROR_UNKNOWN_ISSUER) {
+    if (rv == Result::ERROR_UNKNOWN_ISSUER && !errOnionWithSelfSignedCert) {
       // In this case we didn't get any valid path for the cert. Let's see if
       // the issuer is the same as the issuer for our canary probe. If yes, this
       // connection is connecting via a misconfigured proxy.
@@ -951,7 +960,9 @@ Result CertVerifier::VerifySSLServerCert(
         return Result::ERROR_MITM_DETECTED;
       }
     }
-    return rv;
+    if (!errOnionWithSelfSignedCert) {
+      return rv;
+    }
   }
 
   if (dcInfo) {
@@ -995,7 +1006,7 @@ Result CertVerifier::VerifySSLServerCert(
   }
   bool isBuiltInRoot;
   rv = IsCertChainRootBuiltInRoot(builtChain, isBuiltInRoot);
-  if (rv != Success) {
+  if (rv != Success && !errOnionWithSelfSignedCert) {
     return rv;
   }
 
@@ -1016,6 +1027,9 @@ Result CertVerifier::VerifySSLServerCert(
     return rv;
   }
 
+  if (errOnionWithSelfSignedCert) {
+    return Result::ERROR_ONION_WITH_SELF_SIGNED_CERT;
+  }
   return Success;
 }
 

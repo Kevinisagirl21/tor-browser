@@ -767,8 +767,10 @@ var gIdentityHandler = {
     issuerCert = this._secInfo.succeededCertChain[
       this._secInfo.succeededCertChain.length - 1
     ];
-
-    return !issuerCert.isBuiltInRoot;
+    if (issuerCert) {
+      return !issuerCert.isBuiltInRoot;
+    }
+    return false;
   },
 
   /**
