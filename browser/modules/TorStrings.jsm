@@ -137,7 +137,7 @@ var TorStrings = {
   */
   settings: (function() {
     let tsb = new TorDTDStringBundle(
-      ["chrome://torlauncher/locale/network-settings.dtd"],
+      ["chrome://torbutton.locale/network-settings.dtd"],
       ""
     );
     let getString = function(key, fallback) {
@@ -435,11 +435,11 @@ var TorStrings = {
 
   torConnect: (() => {
     const tsbNetwork = new TorDTDStringBundle(
-      ["chrome://torlauncher/locale/network-settings.dtd"],
+      ["chrome://torbutton.locale/network-settings.dtd"],
       ""
     );
     const tsbLauncher = new TorPropertyStringBundle(
-      "chrome://torlauncher/locale/torlauncher.properties",
+      "chrome://torbutton.locale/torlauncher.properties",
       "torlauncher."
     );
     const tsbCommon = new TorPropertyStringBundle(
@@ -934,45 +934,4 @@ var TorStrings = {
 
     return retval;
   })() /* Rulesets */,
-
-  /*
-    Tor Deamon Configuration Key Strings
-  */
-
-  // TODO: proper camel case
-  configKeys: {
-    /* Bridge Conf Settings */
-    useBridges: "UseBridges",
-    bridgeList: "Bridge",
-    /* Proxy Conf Strings */
-    socks4Proxy: "Socks4Proxy",
-    socks5Proxy: "Socks5Proxy",
-    socks5ProxyUsername: "Socks5ProxyUsername",
-    socks5ProxyPassword: "Socks5ProxyPassword",
-    httpsProxy: "HTTPSProxy",
-    httpsProxyAuthenticator: "HTTPSProxyAuthenticator",
-    /* Firewall Conf Strings */
-    reachableAddresses: "ReachableAddresses",
-
-    /* BridgeDB Strings */
-    clientTransportPlugin: "ClientTransportPlugin",
-  },
-
-  /*
-    about:config preference keys
-  */
-
-  preferenceKeys: {
-    defaultBridgeType: "extensions.torlauncher.default_bridge_type",
-    recommendedBridgeType:
-      "extensions.torlauncher.default_bridge_recommended_type",
-  },
-
-  /*
-    about:config preference branches
-  */
-  preferenceBranches: {
-    defaultBridge: "extensions.torlauncher.default_bridge.",
-    bridgeDBBridges: "extensions.torlauncher.bridgedb_bridge.",
-  },
 };
