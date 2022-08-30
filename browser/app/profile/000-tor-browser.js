@@ -32,6 +32,10 @@ pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-
 // Treat .onions as secure
 pref("dom.securecontext.allowlist_onions", true);
 
+// Bug 40423/41137: Disable http/3
+// We should re-enable it as soon as Tor gets UDP support
+pref("network.http.http3.enabled", false);
+
 #expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
 
 // Old torbutton prefs
