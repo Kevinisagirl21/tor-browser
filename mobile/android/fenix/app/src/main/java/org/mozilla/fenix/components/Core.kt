@@ -176,6 +176,8 @@ class Core(
                 WebCompatFeature.install(it)
                 WebCompatReporterFeature.install(it, "fenix")
             }
+
+            TorBrowserFeatures.install(context, it)
         }
     }
 
