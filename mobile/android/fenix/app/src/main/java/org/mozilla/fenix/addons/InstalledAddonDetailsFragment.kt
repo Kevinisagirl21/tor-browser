@@ -23,6 +23,7 @@ import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.AddonManagerException
 import mozilla.components.feature.addons.ui.translateName
 import org.mozilla.fenix.BuildConfig
+import mozilla.components.support.webextensions.WebExtensionSupport.installedExtensions
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
@@ -165,7 +166,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                         runIfFragmentIsAttached {
                             this.addon = it
                             switch.isClickable = true
-                            privateBrowsingSwitch.isVisible = it.isEnabled()
+                            privateBrowsingSwitch.isVisible = false
                             privateBrowsingSwitch.isChecked =
                                 it.incognito != Addon.Incognito.NOT_ALLOWED && it.isAllowedInPrivateBrowsing()
                             binding.settings.isVisible = shouldSettingsBeVisible()
@@ -265,7 +266,7 @@ class InstalledAddonDetailsFragment : Fragment() {
     @VisibleForTesting
     internal fun bindAllowInPrivateBrowsingSwitch() {
         val switch = providePrivateBrowsingSwitch()
-        switch.isVisible = addon.isEnabled()
+        switch.isVisible = false
 
         if (addon.incognito == Addon.Incognito.NOT_ALLOWED) {
             switch.isChecked = false
@@ -366,6 +367,8 @@ class InstalledAddonDetailsFragment : Fragment() {
     }
 
     private fun bindRemoveButton() {
+        val isBuiltin = installedExtensions[addon.id]?.isBuiltIn() ?: false
+        binding.removeAddOn.isVisible = !isBuiltin
         binding.removeAddOn.setOnClickListener {
             setAllInteractiveViewsClickable(binding, false)
             requireContext().components.addonManager.uninstallAddon(
