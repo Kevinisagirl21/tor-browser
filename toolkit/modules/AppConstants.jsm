@@ -482,6 +482,13 @@ this.AppConstants = Object.freeze({
     false,
 #endif
 
+  MOZ_PROXY_BYPASS_PROTECTION:
+#ifdef MOZ_PROXY_BYPASS_PROTECTION
+    true,
+#else
+    false,
+#endif
+
   // Returns true for CN region build when distibution id set as 'MozillaOnline'
   isChinaRepack() {
     return (
