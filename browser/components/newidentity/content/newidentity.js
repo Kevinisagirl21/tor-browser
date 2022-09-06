@@ -480,18 +480,11 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       const viewCache = document.getElementById("appMenu-viewCache").content;
       const appButton = viewCache.querySelector("#appMenu-new-identity");
       if (appButton) {
-        appButton.setAttribute("label", NewIdentityStrings.new_identity);
-        appButton.addEventListener("command", () => {
-          this.onCommand();
-        });
-      }
-      const appButton2 = viewCache.querySelector("#appMenu-new-identity2");
-      if (appButton2) {
-        appButton2.setAttribute(
+        appButton.setAttribute(
           "label",
           NewIdentityStrings.new_identity_sentence_case
         );
-        appButton2.addEventListener("command", () => {
+        appButton.addEventListener("command", () => {
           this.onCommand();
         });
       }
