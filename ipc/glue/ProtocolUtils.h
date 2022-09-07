@@ -302,12 +302,14 @@ class IProtocol : public HasResultCodes {
   bool ChannelSend(IPC::Message* aMsg, IPC::Message* aReply);
   bool ChannelCall(IPC::Message* aMsg, IPC::Message* aReply);
   template <typename Value>
-  void ChannelSend(IPC::Message* aMsg, ResolveCallback<Value>&& aResolve,
+  void ChannelSend(IPC::Message* aMsg,
+                   IPC::Message::msgid_t aReplyMsgId,
+                   ResolveCallback<Value>&& aResolve,
                    RejectCallback&& aReject) {
     UniquePtr<IPC::Message> msg(aMsg);
     if (CanSend()) {
-      GetIPCChannel()->Send(std::move(msg), this, std::move(aResolve),
-                            std::move(aReject));
+      GetIPCChannel()->Send(std::move(msg), Id(), aReplyMsgId,
+                            std::move(aResolve), std::move(aReject));
     } else {
       NS_WARNING("IPC message discarded: actor cannot send");
       aReject(ResponseRejectReason::SendError);
