@@ -468,11 +468,18 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
     topics,
 
     init() {
-      CustomizableUI.addListener(this);
-
-      const button = document.querySelector("#new-identity-button");
+      // We first search in the DOM for the identity button. If it does not
+      // exist it may be in the toolbox palette. In the latter case we still
+      // need to initialize the button in case it is added back later through
+      // customization.
+      const button =
+        document.getElementById("new-identity-button") ||
+        window.gNavToolbox.palette.querySelector("#new-identity-button");
       if (button) {
         button.setAttribute("tooltiptext", NewIdentityStrings.new_identity);
+        // Include an equal label, shown in the overflow menu or during
+        // customization.
+        button.setAttribute("label", NewIdentityStrings.new_identity);
         button.addEventListener("command", () => {
           this.onCommand();
         });
@@ -501,16 +508,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       }
     },
 
-    uninit() {
-      CustomizableUI.removeListener(this);
-    },
-
-    onCustomizeStart(window) {
-      const button = document.querySelector("#new-identity-button");
-      button.setAttribute("label", NewIdentityStrings.new_identity);
-    },
-
-    onWidgetAfterDOMChange(aNode, aNextNode, aContainer, aWasRemoval) {},
+    uninit() {},
 
     async onCommand() {
       try {
