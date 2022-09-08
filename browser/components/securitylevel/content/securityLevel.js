@@ -127,7 +127,8 @@ const SecurityLevelPrefs = {
 const SecurityLevelButton = {
   _securityPrefsBranch: null,
 
-  _configUIFromPrefs(securityLevelButton) {
+  _configUIFromPrefs() {
+    const securityLevelButton = this.button;
     if (securityLevelButton != null) {
       const level = SecurityLevelPrefs.securitySliderLevel;
       if (!level) {
@@ -142,42 +143,53 @@ const SecurityLevelButton = {
     }
   },
 
+  /**
+   * The node for this button.
+   *
+   * Note, the returned element may be part of the DOM or may live in the
+   * toolbox palette, where it may be added later to the DOM through
+   * customization.
+   *
+   * @type {MozToolbarbutton}
+   */
   get button() {
-    let button = document.getElementById("security-level-button");
-    if (!button) {
-      return null;
-    }
-    return button;
+    // We first search in the DOM for the security level button. If it does not
+    // exist it may be in the toolbox palette. We still want to return the
+    // button in the latter case to allow it to be initialized or adjusted in
+    // case it is added back through customization.
+    return (
+      document.getElementById("security-level-button") ||
+      window.gNavToolbox.palette.querySelector("#security-level-button")
+    );
   },
 
   get anchor() {
-    let anchor = this.button.icon;
+    let button = this.button;
+    let anchor = button?.icon;
     if (!anchor) {
       return null;
     }
 
-    anchor.setAttribute("consumeanchor", SecurityLevelButton.button.id);
+    anchor.setAttribute("consumeanchor", button.id);
     return anchor;
   },
 
   init() {
+    // Set a label to be be used as the accessible name, and to be shown in the
+    // overflow menu and during customization.
+    this.button?.setAttribute("label", SecurityLevelStrings.security_level);
     // set the initial class based off of the current pref
-    let button = this.button;
-    this._configUIFromPrefs(button);
+    this._configUIFromPrefs();
 
     this._securityPrefsBranch = Services.prefs.getBranch(
       "extensions.torbutton."
     );
     this._securityPrefsBranch.addObserver("", this);
 
-    CustomizableUI.addListener(this);
-
     SecurityLevelPanel.init();
   },
 
   uninit() {
-    CustomizableUI.removeListener(this);
-
     this._securityPrefsBranch.removeObserver("", this);
     this._securityPrefsBranch = null;
 
@@ -188,25 +200,9 @@ const SecurityLevelButton = {
     switch (topic) {
       case "nsPref:changed":
         if (data === "security_slider" || data === "security_custom") {
-          this._configUIFromPrefs(this.button);
+          this._configUIFromPrefs();
         }
         break;
-    }
-  },
-
-  // callback for entering the 'Customize Firefox' screen to set icon
-  onCustomizeStart(window) {
-    let navigatorToolbox = document.getElementById("navigator-toolbox");
-    let button = navigatorToolbox.palette.querySelector(
-      "#security-level-button"
-    );
-    this._configUIFromPrefs(button);
-  },
-
-  // callback when CustomizableUI modifies DOM
-  onWidgetAfterDOMChange(aNode, aNextNode, aContainer, aWasRemoval) {
-    if (aNode.id == "security-level-button" && !aWasRemoval) {
-      this._configUIFromPrefs(aNode);
     }
   },
 
