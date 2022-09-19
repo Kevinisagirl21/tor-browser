@@ -1000,6 +1000,17 @@ widget::LookAndFeelFont nsXPLookAndFeel::StyleToLookAndFeelFont(
 
 bool nsXPLookAndFeel::GetFontValue(FontID aID, nsString& aName,
                                    gfxFontStyle& aStyle) {
+  if (nsContentUtils::ShouldResistFingerprinting()) {
+#ifdef XP_MACOSX
+    aName = u"-apple-system"_ns;
+#else
+    aName = u"sans-serif"_ns;
+#endif
+    aStyle = gfxFontStyle();
+    aStyle.size = 12;
+    return true;
+  }
+
   if (const LookAndFeelFont* cached = sFontCache.Get(aID)) {
     return LookAndFeelFontToStyle(*cached, aName, aStyle);
   }
