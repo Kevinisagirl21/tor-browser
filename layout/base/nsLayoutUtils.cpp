@@ -9564,7 +9564,13 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
                                       const Document* aDocument) {
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
+  if (aDocument->ShouldResistFingerprinting()) {
+#ifdef XP_MACOSX
+    systemFontName = u"-apple-system"_ns;
+#else
+    systemFontName = u"sans-serif"_ns;
+#endif
+  } else if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
     return;
   }
   systemFontName.Trim("\"'");
