@@ -28,6 +28,9 @@ build:
 deploy:
 	./deploy.sh $(BINARIES) $(BUILD_OUTPUT)
 
+fat-aar:
+	./fataar.sh $(DEV_ROOT) $(ARCHS)
+
 all: build deploy
 
 run:
