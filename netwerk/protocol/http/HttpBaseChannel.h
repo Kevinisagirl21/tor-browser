@@ -545,7 +545,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   // was fired.
   void NotifySetCookie(const nsACString& aCookie);
 
-  mozilla::dom::PerformanceStorage* GetPerformanceStorage();
   void MaybeReportTimingData();
   nsIURI* GetReferringPage();
   nsPIDOMWindowInner* GetInnerDOMWindow();
