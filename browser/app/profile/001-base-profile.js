@@ -131,6 +131,9 @@ pref("extensions.pocket.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 
+// Disable moreFromMozilla pane in the preferences/settings (tor-browser#41292).
+pref("browser.preferences.moreFromMozilla", false);
+
 // Disable the screenshot menu when right-clicking (Bug #40912 and #40007)
 pref("extensions.screenshots.disabled", true);
 pref("extensions.webcompat-reporter.enabled", false);
