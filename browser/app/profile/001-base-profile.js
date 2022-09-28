@@ -178,7 +178,7 @@ pref("signon.management.page.mobileAndroidURL", "");
 pref("signon.management.page.mobileAppleURL", "");
 
 // Disable remote "password recipes"
-pref("signon.recipes.remoteRecipesEnabled", false);
+pref("signon.recipes.remoteRecipes.enabled", false);
 
 // Disable ServiceWorkers and push notifications by default
 pref("dom.serviceWorkers.enabled", false);
