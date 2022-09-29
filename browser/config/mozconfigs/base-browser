@@ -30,5 +30,7 @@ ac_add_options --enable-proxy-bypass-protection
 # could allow proxy bypass, and override a number of other preferences we set
 ac_add_options --disable-system-policies
 
+ac_add_options --enable-base-browser
+
 # Disable telemetry
 ac_add_options MOZ_TELEMETRY_REPORTING=
