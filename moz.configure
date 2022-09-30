@@ -1035,7 +1035,7 @@ option(
 @depends("--with-relative-profile", target)
 @imports("json")
 def relative_profile(value, target):
-    if target.os == "Android":
+    if value and target.os == "Android":
         die("--with-relative-profile is not supported on Android")
     if value:
         return json.dumps(value[0])
