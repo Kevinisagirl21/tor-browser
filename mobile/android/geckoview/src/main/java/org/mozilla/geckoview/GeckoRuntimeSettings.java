@@ -523,6 +523,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
   /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
+  /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1264,6 +1265,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* protected */ @NonNull
   GeckoRuntimeSettings setProcessCount(final int processCount) {
     mProcessCount.commit(processCount);
+    return this;
+  }
+
+  /**
+   * Get whether we should spoof locale to English for webpages.
+   *
+   * @return Whether we should spoof locale to English for webpages.
+   */
+  public boolean getSpoofEnglish() {
+    return mSpoofEnglish.get() == 2;
+  }
+
+  /**
+   * Set whether we should spoof locale to English for webpages.
+   *
+   * @param flag A flag determining whether we should locale to English for webpages.
+   * @return This GeckoRuntimeSettings instance.
+   */
+  public @NonNull GeckoRuntimeSettings setSpoofEnglish(final boolean flag) {
+    mSpoofEnglish.commit(flag ? 2 : 1);
     return this;
   }
 
