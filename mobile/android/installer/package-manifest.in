@@ -134,6 +134,9 @@
 @BINPATH@/chrome/devtools@JAREXT@
 @BINPATH@/chrome/devtools.manifest
 
+; Base Browser
+@BINPATH@/components/SecurityLevel.manifest
+
 ; Torbutton
 @BINPATH@/chrome/torbutton@JAREXT@
 @BINPATH@/chrome/torbutton.manifest
