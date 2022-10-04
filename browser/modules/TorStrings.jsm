@@ -137,7 +137,7 @@ var TorStrings = {
   */
   settings: (function() {
     let tsb = new TorDTDStringBundle(
-      ["chrome://torbutton.locale/network-settings.dtd"],
+      ["chrome://torbutton/locale/network-settings.dtd"],
       ""
     );
     let getString = function(key, fallback) {
@@ -435,11 +435,11 @@ var TorStrings = {
 
   torConnect: (() => {
     const tsbNetwork = new TorDTDStringBundle(
-      ["chrome://torbutton.locale/network-settings.dtd"],
+      ["chrome://torbutton/locale/network-settings.dtd"],
       ""
     );
     const tsbLauncher = new TorPropertyStringBundle(
-      "chrome://torbutton.locale/torlauncher.properties",
+      "chrome://torbutton/locale/torlauncher.properties",
       "torlauncher."
     );
     const tsbCommon = new TorPropertyStringBundle(
