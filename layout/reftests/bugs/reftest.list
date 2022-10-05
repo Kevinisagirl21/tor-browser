@@ -2105,3 +2105,4 @@ fuzzy(0-2,0-96600) == 1648282-1b.html 1648282-1-ref.html
 != chrome://reftest/content/bugs/1688004.xhtml about:blank
 == 1726663-1.html 1726663-1-ref.html
 == 1735265-1.html 1735265-1-ref.html
+== 1792643-1.html 1792643-1-ref.html
