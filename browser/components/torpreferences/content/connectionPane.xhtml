@@ -88,7 +88,7 @@
     <menulist id="torPreferences-bridges-location">
       <menupopup id="torPreferences-bridges-locationEntries"/>
     </menulist>
-    <button id="torPreferences-bridges-buttonChooseBridgeForMe" class="torMarginFix primary"/>
+    <button id="torPreferences-bridges-buttonChooseBridgeForMe" class="primary"/>
   </hbox>
   <html:h2 id="torPreferences-currentBridges-header">
     <html:span id="torPreferences-currentBridges-headerText"/>
@@ -120,7 +120,7 @@
       </box>
       <description class="torPreferences-bridgeCard-share"></description>
       <hbox class="torPreferences-bridgeCard-addrBox">
-        <html:input class="torPreferences-bridgeCard-addr torMarginFix stop-click" type="text" readonly="readonly"/>
+        <html:input class="torPreferences-bridgeCard-addr stop-click" type="text" readonly="readonly"/>
       </hbox>
       <hbox class="torPreferences-bridgeCard-learnMoreBox" align="center">
         <label class="torPreferences-bridgeCard-learnMore learnMore text-link stop-click" is="text-link"/>
@@ -137,19 +137,19 @@
   </vbox>
   <html:h2 id="torPreferences-addBridge-header"></html:h2>
   <hbox align="center">
-    <label id="torPreferences-addBridge-labelBuiltinBridge"/>
-    <space flex="1"/>
-    <button id="torPreferences-addBridge-buttonBuiltinBridge" class="torMarginFix"/>
+    <label id="torPreferences-addBridge-labelBuiltinBridge" flex="1"/>
+    <button id="torPreferences-addBridge-buttonBuiltinBridge"
+            class="accessory-button"/>
   </hbox>
   <hbox align="center">
-    <label id="torPreferences-addBridge-labelRequestBridge"/>
-    <space flex="1"/>
-    <button id="torPreferences-addBridge-buttonRequestBridge" class="torMarginFix"/>
+    <label id="torPreferences-addBridge-labelRequestBridge" flex="1"/>
+    <button id="torPreferences-addBridge-buttonRequestBridge"
+            class="accessory-button"/>
   </hbox>
   <hbox align="center">
-    <label id="torPreferences-addBridge-labelEnterBridge"/>
-    <space flex="1"/>
-    <button id="torPreferences-addBridge-buttonEnterBridge" class="torMarginFix"/>
+    <label id="torPreferences-addBridge-labelEnterBridge" flex="1"/>
+    <button id="torPreferences-addBridge-buttonEnterBridge"
+            class="accessory-button"/>
   </hbox>
 </groupbox>
 
@@ -162,20 +162,18 @@
 <groupbox id="torPreferences-advanced-group"
           data-category="paneConnection"
           hidden="true">
-  <box id="torPreferences-advanced-grid">
-    <hbox id="torPreferences-advanced-hbox" align="center">
-      <label id="torPreferences-advanced-label"/>
-    </hbox>
-    <hbox align="center">
-      <button id="torPreferences-advanced-button"/>
-    </hbox>
-    <hbox id="torPreferences-torDaemon-hbox" align="center">
-      <label id="torPreferences-torLogs"/>
-    </hbox>
-    <hbox align="center" data-subcategory="viewlogs">
-      <button id="torPreferences-buttonTorLogs"/>
-    </hbox>
-  </box>
+  <hbox align="center">
+    <label id="torPreferences-advanced-label" flex="1"/>
+    <button id="torPreferences-advanced-button"
+            class="accessory-button"/>
+  </hbox>
+  <hbox align="center">
+    <label id="torPreferences-torLogs" flex="1"/>
+    <vbox data-subcategory="viewlogs">
+      <button id="torPreferences-buttonTorLogs"
+              class="accessory-button"/>
+    </vbox>
+  </hbox>
 </groupbox>
 
 <html:div id="bridge-remove-overlay" class="hidden">

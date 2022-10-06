@@ -821,9 +821,8 @@ const gConnectionPane = (function() {
       // Add a new bridge
       prefpane.querySelector(selectors.bridges.addHeader).textContent =
         TorStrings.settings.bridgeAdd;
-      prefpane
-        .querySelector(selectors.bridges.addBuiltinLabel)
-        .setAttribute("value", TorStrings.settings.bridgeSelectBrowserBuiltin);
+      prefpane.querySelector(selectors.bridges.addBuiltinLabel).textContent =
+        TorStrings.settings.bridgeSelectBrowserBuiltin;
       {
         const button = prefpane.querySelector(
           selectors.bridges.addBuiltinButton
@@ -833,9 +832,8 @@ const gConnectionPane = (function() {
           this.onAddBuiltinBridge();
         });
       }
-      prefpane
-        .querySelector(selectors.bridges.requestLabel)
-        .setAttribute("value", TorStrings.settings.bridgeRequestFromTorProject);
+      prefpane.querySelector(selectors.bridges.requestLabel).textContent =
+        TorStrings.settings.bridgeRequestFromTorProject;
       {
         const button = prefpane.querySelector(selectors.bridges.requestButton);
         button.setAttribute("label", TorStrings.settings.bridgeRequest);
@@ -843,9 +841,8 @@ const gConnectionPane = (function() {
           this.onRequestBridge();
         });
       }
-      prefpane
-        .querySelector(selectors.bridges.enterLabel)
-        .setAttribute("value", TorStrings.settings.bridgeEnterKnown);
+      prefpane.querySelector(selectors.bridges.enterLabel).textContent =
+        TorStrings.settings.bridgeEnterKnown;
       {
         const button = prefpane.querySelector(selectors.bridges.enterButton);
         button.setAttribute("label", TorStrings.settings.bridgeAddManually);
@@ -905,9 +902,8 @@ const gConnectionPane = (function() {
       }
 
       // Tor logs
-      prefpane
-        .querySelector(selectors.advanced.torLogsLabel)
-        .setAttribute("value", TorStrings.settings.showTorDaemonLogs);
+      prefpane.querySelector(selectors.advanced.torLogsLabel).textContent =
+        TorStrings.settings.showTorDaemonLogs;
       const torLogsButton = prefpane.querySelector(
         selectors.advanced.torLogsButton
       );

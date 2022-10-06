@@ -434,18 +434,6 @@ input.torPreferences-bridgeCard-addr {
 }
 
 /* Advanced Settings */
-#torPreferences-advanced-grid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-}
-
-#torPreferences-advanced-group button {
-  min-width: 150px;
-}
-
-#torPreferences-advanced-hbox, #torPreferences-torDaemon-hbox {
-  padding-inline-end: 15px;
-}
 
 h3#torPreferences-requestBridge-header {
   margin: 0;
