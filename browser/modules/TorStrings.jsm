@@ -24,23 +24,25 @@ XPCOMUtils.defineLazyGetter(this, "domParser", () => {
 */
 class TorDTDStringBundle {
   constructor(aBundleURLs, aPrefix) {
-    let locations = [];
+    const locations = [];
     for (const [index, url] of aBundleURLs.entries()) {
       locations.push(`<!ENTITY % dtd_${index} SYSTEM "${url}">%dtd_${index};`);
     }
     this._locations = locations;
     this._prefix = aPrefix;
+    const idx = aBundleURLs.lastIndexOf("/");
+    this._filename = idx === -1 ? aBundleURLs : aBundleURLs.substring(idx);
   }
 
   // copied from testing/marionette/l10n.js
   localizeEntity(urls, id) {
     // Use the DOM parser to resolve the entity and extract its real value
-    let header = `<?xml version="1.0"?><!DOCTYPE elem [${this._locations.join(
+    const header = `<?xml version="1.0"?><!DOCTYPE elem [${this._locations.join(
       ""
     )}]>`;
-    let elem = `<elem id="elementID">&${id};</elem>`;
-    let doc = domParser.parseFromString(header + elem, "text/xml");
-    let element = doc.querySelector("elem[id='elementID']");
+    const elem = `<elem id="elementID">&${id};</elem>`;
+    const doc = domParser.parseFromString(header + elem, "text/xml");
+    const element = doc.querySelector("elem[id='elementID']");
 
     if (element === null) {
       throw new Error(`Entity with id='${id}' hasn't been found`);
@@ -53,7 +55,9 @@ class TorDTDStringBundle {
     if (key) {
       try {
         return this.localizeEntity(this._bundleURLs, `${this._prefix}${key}`);
-      } catch (e) {}
+      } catch (e) {
+        console.warn(`[TorStrings] Cannot get ${key} on ${this._filename}`, e);
+      }
     }
 
     // on failure, assign the fallback if it exists
@@ -95,20 +99,18 @@ class TorPropertyStringBundle {
   }
 }
 
-var TorStrings = {
+const Loader = {
   /*
     CryptoSafetyPrompt Strings
   */
-  cryptoSafetyPrompt: (function() {
-    let tsb = new TorPropertyStringBundle(
+  cryptoSafetyPrompt() {
+    const tsb = new TorPropertyStringBundle(
       "chrome://torbutton/locale/torbutton.properties",
       "cryptoSafetyPrompt."
     );
-    let getString = function(key, fallback) {
-      return tsb.getString(key, fallback);
-    };
+    const getString = tsb.getString.bind(tsb);
 
-    let retval = {
+    const retval = {
       cryptoWarning: getString(
         "cryptoWarning",
         "A cryptocurrency address (%S) has been copied from an insecure website. It could have been modified."
@@ -130,21 +132,19 @@ var TorStrings = {
     };
 
     return retval;
-  })() /* CryptoSafetyPrompt Strings */,
+  } /* CryptoSafetyPrompt Strings */,
 
   /*
     Tor about:preferences#connection Strings
   */
-  settings: (function() {
-    let tsb = new TorDTDStringBundle(
+  settings() {
+    const tsb = new TorDTDStringBundle(
       ["chrome://torbutton/locale/network-settings.dtd"],
       ""
     );
-    let getString = function(key, fallback) {
-      return tsb.getString(key, fallback);
-    };
+    const getString = tsb.getString.bind(tsb);
 
-    let retval = {
+    const retval = {
       categoryTitle: getString("torPreferences.categoryTitle", "Connection"),
       // Message box
       torPreferencesDescription: getString(
@@ -431,9 +431,9 @@ var TorStrings = {
     };
 
     return retval;
-  })() /* Tor Network Settings Strings */,
+  } /* Tor Network Settings Strings */,
 
-  torConnect: (() => {
+  torConnect() {
     const tsbNetwork = new TorDTDStringBundle(
       ["chrome://torbutton/locale/network-settings.dtd"],
       ""
@@ -631,24 +631,22 @@ var TorStrings = {
         "No settings available for your location"
       ),
     };
-  })(),
+  },
 
   /*
     Tor Onion Services Strings, e.g., for the authentication prompt.
   */
-  onionServices: (function() {
-    let tsb = new TorPropertyStringBundle(
+  onionServices() {
+    const tsb = new TorPropertyStringBundle(
       "chrome://torbutton/locale/torbutton.properties",
       "onionServices."
     );
-    let getString = function(key, fallback) {
-      return tsb.getString(key, fallback);
-    };
+    const getString = tsb.getString.bind(tsb);
 
     const kProblemLoadingSiteFallback = "Problem Loading Onionsite";
     const kLongDescFallback = "Details: %S";
 
-    let retval = {
+    const retval = {
       learnMore: getString("learnMore", "Learn more"),
       learnMoreURL: `https://support.torproject.org/${getLocale()}/onionservices/client-auth/`,
       errorPage: {
@@ -815,19 +813,17 @@ var TorStrings = {
     };
 
     return retval;
-  })() /* Tor Onion Services Strings */,
+  } /* Tor Onion Services Strings */,
 
   /*
     OnionLocation
   */
-  onionLocation: (function() {
+  onionLocation() {
     const tsb = new TorPropertyStringBundle(
       ["chrome://torbutton/locale/torbutton.properties"],
       "onionLocation."
     );
-    const getString = function(key, fallback) {
-      return tsb.getString(key, fallback);
-    };
+    const getString = tsb.getString.bind(tsb);
 
     const retval = {
       alwaysPrioritize: getString(
@@ -857,17 +853,17 @@ var TorStrings = {
     };
 
     return retval;
-  })() /* OnionLocation */,
+  } /* OnionLocation */,
 
   /*
     Rulesets
   */
-  rulesets: (() => {
+  rulesets() {
     const tsb = new TorPropertyStringBundle(
       ["chrome://torbutton/locale/torbutton.properties"],
       "rulesets."
     );
-    const getString /*(key, fallback)*/ = tsb.getString;
+    const getString = tsb.getString.bind(tsb);
 
     const retval = {
       // Initial warning
@@ -933,5 +929,49 @@ var TorStrings = {
     };
 
     return retval;
-  })() /* Rulesets */,
+  } /* Rulesets */,
+};
+
+const TorStrings = {
+  get cryptoSafetyPrompt() {
+    if (!this._cryptoSafetyPrompt) {
+      this._cryptoSafetyPrompt = Loader.cryptoSafetyPrompt();
+    }
+    return this._cryptoSafetyPrompt;
+  },
+
+  get settings() {
+    if (!this._settings) {
+      this._settings = Loader.settings();
+    }
+    return this._settings;
+  },
+
+  get torConnect() {
+    if (!this._torConnect) {
+      this._torConnect = Loader.torConnect();
+    }
+    return this._torConnect;
+  },
+
+  get onionServices() {
+    if (!this._onionServices) {
+      this._onionServices = Loader.onionServices();
+    }
+    return this._onionServices;
+  },
+
+  get onionLocation() {
+    if (!this._onionLocation) {
+      this._onionLocation = Loader.onionLocation();
+    }
+    return this._onionLocation;
+  },
+
+  get rulesets() {
+    if (!this._rulesets) {
+      this._rulesets = Loader.rulesets();
+    }
+    return this._rulesets;
+  },
 };
