@@ -18,7 +18,7 @@ const OnionAuthPrompt = (function() {
     this._browser = aBrowser;
     this._failedURI = aFailedURI;
     this._reasonForPrompt = aReason;
-    this._onionName = aOnionName;
+    this._onionHostname = aOnionName;
   }
 
   OnionServicesAuthPrompt.prototype = {
@@ -103,7 +103,7 @@ const OnionAuthPrompt = (function() {
         descElem.appendChild(span);
         span = xulDoc.createElementNS(kHTMLNS, "span");
         span.id = OnionAuthUtil.domid.onionNameSpan;
-        span.textContent = this._onionName;
+        span.textContent = this._onionHostname;
         descElem.appendChild(span);
         span = xulDoc.createElementNS(kHTMLNS, "span");
         span.textContent = suffix;
@@ -196,11 +196,15 @@ const OnionAuthPrompt = (function() {
           console.error(controllerFailureMsg, aError);
           this.show(controllerFailureMsg);
         });
-        let onionAddr = this._onionName.toLowerCase().replace(/\.onion$/, "");
+        // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
+        const onionServiceIdRegExp = /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
+        // match() will return null on bad match, causing throw
+        const onionServiceId = this._onionHostname.match(onionServiceIdRegExp).groups.onionServiceId.toLowerCase();
+
         let checkboxElem = this._getCheckboxElement();
         let isPermanent = checkboxElem && checkboxElem.checked;
         torController
-          .onionAuthAdd(onionAddr, base64key, isPermanent)
+          .onionAuthAdd(onionServiceId, base64key, isPermanent)
           .then(aResponse => {
             // Success! Reload the page.
             this._browser.sendMessageToActor(
