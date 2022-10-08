@@ -226,6 +226,8 @@ pref("dom.textMetrics.emHeight.enabled", false);
 pref("dom.textMetrics.fontBoundingBox.enabled", false);
 pref("pdfjs.enableScripting", false);
 pref("javascript.options.large_arraybuffers", false);
+// Bug 40057: Ensure system colors are not used for CSS4 colors
+pref("browser.display.use_system_colors", false);
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
