@@ -1,0 +1,17 @@
+EXTRA_JS_MODULES += [
+    "TorBootstrapRequest.jsm",
+    "TorLauncherUtil.jsm",
+    "TorMonitorService.jsm",
+    "TorParsers.jsm",
+    "TorProcess.jsm",
+    "TorProtocolService.jsm",
+    "TorStartupService.jsm",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
+]
+
+EXTRA_COMPONENTS += [
+    "tor-launcher.manifest",
+]
