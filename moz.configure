@@ -1107,24 +1107,6 @@ add_old_configure_assignment(
     "TOR_BROWSER_DATA_OUTSIDE_APP_DIR", tor_browser_data_outside_app_dir)
 
 
-option(
-    "--disable-tor-launcher",
-    help="Do not include Tor Launcher"
-)
-
-
-@depends("--disable-tor-launcher")
-def tor_browser_disable_launcher(value):
-    if not value:
-        return True
-
-
-set_config("TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
-set_define("TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
-add_old_configure_assignment(
-    "TOR_BROWSER_DISABLE_TOR_LAUNCHER", tor_browser_disable_launcher)
-
-
 # Please do not add configure checks from here on.
 
 # Fallthrough to autoconf-based configure

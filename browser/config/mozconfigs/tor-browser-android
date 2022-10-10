@@ -2,9 +2,6 @@
 
 mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
 
-# We do not use Tor Launcher on Android:
-ac_add_options --disable-tor-launcher
-
 ac_add_options --disable-tor-browser-update
 ac_add_options --disable-verify-mar
 
