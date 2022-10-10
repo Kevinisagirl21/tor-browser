@@ -6,8 +6,8 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
 
-const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
 );
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
@@ -56,7 +56,7 @@ class TorLogDialog {
       }, RESTORE_TIME);
     });
 
-    this._logTextarea.value = TorProtocolService.getLog();
+    this._logTextarea.value = TorMonitorService.getLog();
   }
 
   init(window, aDialog) {

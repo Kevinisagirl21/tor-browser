@@ -13,8 +13,11 @@ const {
   TorBridgeSource,
 } = ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
+);
 const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+  "resource://gre/modules/TorProtocolService.jsm"
 );
 
 const {
@@ -198,7 +201,7 @@ const gConnectionPane = (function() {
           TorConnect.state === TorConnectState.Configuring
         ) {
           // set messagebox style and text
-          if (TorProtocolService.torBootstrapErrorOccurred()) {
+          if (TorMonitorService.bootstrapErrorOccurred) {
             messageBox.parentNode.style.display = null;
             messageBox.className = "error";
             messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
@@ -396,7 +399,7 @@ const gConnectionPane = (function() {
         this._showAutoconfiguration = () => {
           if (
             !TorConnect.shouldShowTorConnect ||
-            !TorProtocolService.torBootstrapErrorOccurred()
+            !TorMonitorService.bootstrapErrorOccurred
           ) {
             locationGroup.setAttribute("hidden", "true");
             return;
@@ -945,7 +948,7 @@ const gConnectionPane = (function() {
 
     // whether the page should be present in about:preferences
     get enabled() {
-      return TorProtocolService.ownsTorDaemon;
+      return TorMonitorService.ownsTorDaemon;
     },
 
     //
