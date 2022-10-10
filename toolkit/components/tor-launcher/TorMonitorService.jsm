@@ -103,6 +103,10 @@ const TorMonitorService = {
   // control connection is closed. Therefore, as a matter of facts, calling this
   // function also makes the child Tor instance stop.
   uninit() {
+    if (this._torProcess) {
+      this._torProcess.forget();
+      this._torProcess = null;
+    }
     this._shutDownEventMonitor();
   },
 
@@ -179,12 +183,11 @@ const TorMonitorService = {
 
   async _startProcess() {
     this._torProcess = new TorProcess();
-    this._torProcess.onExit = unexpected => {
-      this._shutDownEventMonitor(!unexpected);
+    this._torProcess.onExit = () => {
       Services.obs.notifyObservers(null, TorTopics.ProcessExited);
     };
     this._torProcess.onRestart = async () => {
-      this._shutDownEventMonitor(false);
+      this._shutDownEventMonitor();
       await this._controlTor();
       Services.obs.notifyObservers(null, TorTopics.ProcessRestarted);
     };
@@ -434,13 +437,8 @@ const TorMonitorService = {
     }
   },
 
-  _shutDownEventMonitor(shouldCallStop = true) {
+  _shutDownEventMonitor() {
     if (this._connection) {
-      if (this.ownsTorDaemon && this._torProcess && shouldCallStop) {
-        this._torProcess.stop();
-        this._torProcess = null;
-      }
-
       this._connection.close();
       this._connection = null;
       this._eventMonitorInProgressReply = null;

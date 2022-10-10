@@ -8,6 +8,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { Subprocess } = ChromeUtils.import(
+  "resource://gre/modules/Subprocess.jsm"
+);
+
 ChromeUtils.defineModuleGetter(
   this,
   "TorProtocolService",
@@ -30,11 +34,6 @@ const TorProcessStatus = Object.freeze({
 
 const TorProcessTopics = Object.freeze({
   ProcessDidNotStart: "TorProcessDidNotStart",
-});
-
-const ProcessTopics = Object.freeze({
-  ProcessFailed: "process-failed",
-  ProcessFinished: "process-finished",
 });
 
 // Logger adapted from CustomizableUI.jsm
@@ -73,15 +72,6 @@ class TorProcess {
     );
   }
 
-  observe(aSubject, aTopic, aParam) {
-    if (
-      ProcessTopics.ProcessFailed === aTopic ||
-      ProcessTopics.ProcessFinished === aTopic
-    ) {
-      this._processExited();
-    }
-  }
-
   async start() {
     if (this._torProcess) {
       return;
@@ -112,30 +102,26 @@ class TorProcess {
       // Set an environment variable that points to the Tor data directory.
       // This is used by meek-client-torbrowser to find the location for
       // the meek browser profile.
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      env.set("TOR_BROWSER_TOR_DATA_DIR", this._dataDir.path);
+      const environment = {
+        TOR_BROWSER_TOR_DATA_DIR: this._dataDir.path,
+      };
 
       // On Windows, prepend the Tor program directory to PATH. This is needed
       // so that pluggable transports can find OpenSSL DLLs, etc.
       // See https://trac.torproject.org/projects/tor/ticket/10845
       if (TorLauncherUtil.isWindows) {
         let path = this._exeFile.parent.path;
+        const env = Cc["@mozilla.org/process/environment;1"].getService(
+          Ci.nsIEnvironment
+        );
         if (env.exists("PATH")) {
           path += ";" + env.get("PATH");
         }
-        env.set("PATH", path);
+        environment.PATH = path;
       }
 
       this._status = TorProcessStatus.Starting;
       this._didConnectToTorControlPort = false;
-
-      var p = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
-      p.startHidden = true;
-      p.init(this._exeFile);
-
-      logger.debug(`Starting ${this._exeFile.path}`, this._args);
 
       // useful for simulating slow tor daemon launch
       const kPrefTorDaemonLaunchDelay = "extensions.torlauncher.launch_delay";
@@ -146,46 +132,48 @@ class TorProcess {
       if (launchDelay > 0) {
         await new Promise(resolve => setTimeout(() => resolve(), launchDelay));
       }
-      p.runwAsync(this._args, this._args.length, this, false);
-      // FIXME: This should be okay, unless the observer is called just before
-      // assigning the correct state.
-      // We should check for the control connection status, rather than the
-      // process status.
-      if (this._status === TorProcessStatus.Starting) {
-        this._status = TorProcessStatus.Running;
-      }
 
-      this._torProcess = p;
+      logger.debug(`Starting ${this._exeFile.path}`, this._args);
+      const options = {
+        command: this._exeFile.path,
+        arguments: this._args,
+        environment,
+        environmentAppend: true,
+        stderr: "pipe",
+      };
+      this._torProcess = await Subprocess.call(options);
+      this._watchProcess();
+      this._status = TorProcessStatus.Running;
       this._torProcessStartTime = Date.now();
     } catch (e) {
       this._status = TorProcessStatus.Exited;
-      const s = TorLauncherUtil.getLocalizedString("tor_failed_to_start");
-      TorLauncherUtil.notifyUserOfError(
-        s,
-        null,
-        TorProcessTopics.ProcessDidNotStart
-      );
+      this._torProcess = null;
       logger.error("startTor error:", e);
+      Services.obs.notifyObservers(
+        null,
+        TorProcessTopics.ProcessDidNotStart,
+        null
+      );
     }
   }
 
-  stop() {
-    if (this._torProcess) {
-      // We now rely on the TAKEOWNERSHIP feature to shut down tor when we
-      // close the control port connection.
-      //
-      // Previously, we sent a SIGNAL HALT command to the tor control port,
-      // but that caused hangs upon exit in the Firefox 24.x based browser.
-      // Apparently, Firefox does not like to process socket I/O while
-      // quitting if the browser did not finish starting up (e.g., when
-      // someone presses the Quit button on our Network Settings window
-      // during startup).
-      //
-      // However, we set the Subprocess object to null to distinguish the cases
-      // in which we wanted to explicitly kill the tor process, from the cases
-      // in which it exited for any other reason, e.g., a crash.
-      this._torProcess = null;
-    }
+  // Forget about a process.
+  //
+  // Instead of killing the tor process, we  rely on the TAKEOWNERSHIP feature
+  // to shut down tor when we close the control port connection.
+  //
+  // Previously, we sent a SIGNAL HALT command to the tor control port,
+  // but that caused hangs upon exit in the Firefox 24.x based browser.
+  // Apparently, Firefox does not like to process socket I/O while
+  // quitting if the browser did not finish starting up (e.g., when
+  // someone presses the Quit button on our Network Settings window
+  // during startup).
+  //
+  // Still, before closing the owning connection, this class should forget about
+  // the process, so that future notifications will be ignored.
+  forget() {
+    this._torProcess = null;
+    this._status = TorProcessStatus.Exited;
   }
 
   // The owner of the process can use this function to tell us that they
@@ -195,58 +183,71 @@ class TorProcess {
     this._didConnectToTorControlPort = true;
   }
 
-  _processExited() {
-    // When we stop tor intentionally, we also set _torProcess to null.
-    // So, if this._torProcess is not null, it exited for some other reason.
-    const unexpected = !!this._torProcess;
-    if (unexpected) {
-      logger.warn("The tor process exited unexpectedly.");
-    } else {
-      logger.info("The tor process exited.");
+  async _watchProcess() {
+    const watched = this._torProcess;
+    if (!watched) {
+      return;
+    }
+    try {
+      const { exitCode } = await watched.wait();
+
+      if (watched !== this._torProcess) {
+        logger.debug(`A Tor process exited with code ${exitCode}.`);
+      } else if (exitCode) {
+        logger.warn(`The watched Tor process exited with code ${exitCode}.`);
+      } else {
+        logger.info("The Tor process exited.");
+      }
+    } catch (e) {
+      logger.error("Failed to watch the tor process", e);
     }
 
+    if (watched === this._torProcess) {
+      this._processExitedUnexpectedly();
+    }
+  }
+
+  _processExitedUnexpectedly() {
     this._torProcess = null;
     this._status = TorProcessStatus.Exited;
 
-    let restart = false;
-    if (unexpected) {
-      // TODO: Move this logic somewhere else?
-      let s;
-      if (!this._didConnectToTorControlPort) {
-        // tor might be misconfigured, becauser we could never connect to it
-        const key = "tor_exited_during_startup";
-        s = TorLauncherUtil.getLocalizedString(key);
-      } else {
-        // tor exited suddenly, so configuration should be okay
-        s =
-          TorLauncherUtil.getLocalizedString("tor_exited") +
-          "\n\n" +
-          TorLauncherUtil.getLocalizedString("tor_exited2");
-      }
-      logger.info(s);
-      var defaultBtnLabel = TorLauncherUtil.getLocalizedString("restart_tor");
-      var cancelBtnLabel = "OK";
-      try {
-        const kSysBundleURI = "chrome://global/locale/commonDialogs.properties";
-        var sysBundle = Services.strings.createBundle(kSysBundleURI);
-        cancelBtnLabel = sysBundle.GetStringFromName(cancelBtnLabel);
-      } catch (e) {}
-
-      restart = TorLauncherUtil.showConfirm(
-        null,
-        s,
-        defaultBtnLabel,
-        cancelBtnLabel
-      );
-      if (restart) {
-        this.start().then(() => {
-          if (this.onRestart) {
-            this.onRestart();
-          }
-        });
-      }
+    // TODO: Move this logic somewhere else?
+    let s;
+    if (!this._didConnectToTorControlPort) {
+      // tor might be misconfigured, becauser we could never connect to it
+      const key = "tor_exited_during_startup";
+      s = TorLauncherUtil.getLocalizedString(key);
+    } else {
+      // tor exited suddenly, so configuration should be okay
+      s =
+        TorLauncherUtil.getLocalizedString("tor_exited") +
+        "\n\n" +
+        TorLauncherUtil.getLocalizedString("tor_exited2");
     }
-    if (!restart && this.onExit) {
+    logger.info(s);
+    const defaultBtnLabel = TorLauncherUtil.getLocalizedString("restart_tor");
+    let cancelBtnLabel = "OK";
+    try {
+      const kSysBundleURI = "chrome://global/locale/commonDialogs.properties";
+      const sysBundle = Services.strings.createBundle(kSysBundleURI);
+      cancelBtnLabel = sysBundle.GetStringFromName(cancelBtnLabel);
+    } catch (e) {
+      logger.warn("Could not localize the cancel button", e);
+    }
+
+    const restart = TorLauncherUtil.showConfirm(
+      null,
+      s,
+      defaultBtnLabel,
+      cancelBtnLabel
+    );
+    if (restart) {
+      this.start().then(() => {
+        if (this.onRestart) {
+          this.onRestart();
+        }
+      });
+    } else if (this.onExit) {
       this.onExit(unexpected);
     }
   }
