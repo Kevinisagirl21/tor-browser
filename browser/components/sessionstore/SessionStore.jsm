@@ -234,11 +234,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 
-// FIXME: Is this really necessary?
-const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
-);
-
 const { OnionAuthUtil } = ChromeUtils.import(
   "chrome://browser/content/onionservices/authUtil.jsm"
 );

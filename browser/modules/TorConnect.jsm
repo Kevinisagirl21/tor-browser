@@ -17,14 +17,14 @@ const { BrowserWindowTracker } = ChromeUtils.import(
   "resource:///modules/BrowserWindowTracker.jsm"
 );
 
-const {
-  TorProtocolService,
-  TorTopics,
-  TorBootstrapRequest,
-} = ChromeUtils.import("resource:///modules/TorProtocolService.jsm");
-
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
+);
+const { TorBootstrapRequest } = ChromeUtils.import(
+  "resource://gre/modules/TorBootstrapRequest.jsm"
+);
 const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://torlauncher/modules/tl-util.jsm"
+  "resource://gre/modules/TorLauncherUtil.jsm"
 );
 
 const {
@@ -37,9 +37,9 @@ const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 const { MoatRPC } = ChromeUtils.import("resource:///modules/Moat.jsm");
 
-/* Browser observer topis */
-const BrowserTopics = Object.freeze({
-  ProfileAfterChange: "profile-after-change",
+const TorTopics = Object.freeze({
+  LogHasWarnOrErr: "TorLogHasWarnOrErr",
+  ProcessExited: "TorProcessExited",
 });
 
 /* Relevant prefs used by tor-launcher */
@@ -445,7 +445,7 @@ const TorConnect = (() => {
                   "Error: Censorship simulation",
                   true
                 );
-                TorProtocolService._torBootstrapDebugSetError();
+                TorMonitorService.setBootstrapError();
                 return;
               }
 
@@ -567,7 +567,7 @@ const TorConnect = (() => {
                     );
                     return;
                   }
-                  TorProtocolService._torBootstrapDebugSetError();
+                  TorMonitorService.setBootstrapError();
                 }
               }
 
@@ -817,42 +817,31 @@ const TorConnect = (() => {
       );
     },
 
-    // init should be called on app-startup in MainProcessingSingleton.jsm
+    // init should be called by TorStartupService
     init() {
       console.log("TorConnect: init()");
-
-      // delay remaining init until after profile-after-change
-      Services.obs.addObserver(this, BrowserTopics.ProfileAfterChange);
-
       this._callback(TorConnectState.Initial).begin();
+
+      if (!TorMonitorService.ownsTorDaemon) {
+        // Disabled
+        this._changeState(TorConnectState.Disabled);
+      } else {
+        let observeTopic = addTopic => {
+          Services.obs.addObserver(this, addTopic);
+          console.log(`TorConnect: Observing topic '${addTopic}'`);
+        };
+
+        // register the Tor topics we always care about
+        observeTopic(TorTopics.ProcessExited);
+        observeTopic(TorTopics.LogHasWarnOrErr);
+        observeTopic(TorSettingsTopics.Ready);
+      }
     },
 
     async observe(subject, topic, data) {
       console.log(`TorConnect: Observed ${topic}`);
 
       switch (topic) {
-        /* Determine which state to move to from Initial */
-        case BrowserTopics.ProfileAfterChange: {
-          if (
-            TorLauncherUtil.useLegacyLauncher ||
-            !TorProtocolService.ownsTorDaemon
-          ) {
-            // Disabled
-            this._changeState(TorConnectState.Disabled);
-          } else {
-            let observeTopic = addTopic => {
-              Services.obs.addObserver(this, addTopic);
-              console.log(`TorConnect: Observing topic '${addTopic}'`);
-            };
-
-            // register the Tor topics we always care about
-            observeTopic(TorTopics.ProcessExited);
-            observeTopic(TorTopics.LogHasWarnOrErr);
-            observeTopic(TorSettingsTopics.Ready);
-          }
-          Services.obs.removeObserver(this, topic);
-          break;
-        }
         /* We need to wait until TorSettings have been loaded and applied before we can Quickstart */
         case TorSettingsTopics.Ready: {
           if (this.shouldQuickStart) {
@@ -881,11 +870,9 @@ const TorConnect = (() => {
     get shouldShowTorConnect() {
       // TorBrowser must control the daemon
       return (
-        TorProtocolService.ownsTorDaemon &&
-        // and we're not using the legacy launcher
-        !TorLauncherUtil.useLegacyLauncher &&
+        TorMonitorService.ownsTorDaemon &&
         // if we have succesfully bootstraped, then no need to show TorConnect
-        this.state != TorConnectState.Bootstrapped
+        this.state !== TorConnectState.Bootstrapped
       );
     },
 

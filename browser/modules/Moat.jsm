@@ -9,11 +9,11 @@ const { Subprocess } = ChromeUtils.import(
 );
 
 const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://torlauncher/modules/tl-util.jsm"
+  "resource://gre/modules/TorLauncherUtil.jsm"
 );
 
 const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+  "resource://gre/modules/TorProtocolService.jsm"
 );
 
 const { TorSettings, TorBridgeSource } = ChromeUtils.import(

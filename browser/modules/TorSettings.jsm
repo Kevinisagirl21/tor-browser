@@ -11,14 +11,12 @@ var EXPORTED_SYMBOLS = [
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { TorProtocolService, TorProcessStatus } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
 );
-
-/* Browser observer topics */
-const BrowserTopics = Object.freeze({
-  ProfileAfterChange: "profile-after-change",
-});
+const { TorProtocolService } = ChromeUtils.import(
+  "resource://gre/modules/TorProtocolService.jsm"
+);
 
 /* tor-launcher observer topics */
 const TorTopics = Object.freeze({
@@ -290,7 +288,7 @@ const TorSettings = (() => {
 
     /* load or init our settings, and register observers */
     init() {
-      if (TorProtocolService.ownsTorDaemon) {
+      if (TorMonitorService.ownsTorDaemon) {
         // if the settings branch exists, load settings from prefs
         if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
           this.loadFromPrefs();
@@ -298,8 +296,11 @@ const TorSettings = (() => {
           // otherwise load defaults
           this._settings = this.defaultSettings();
         }
-        Services.obs.addObserver(this, BrowserTopics.ProfileAfterChange);
         Services.obs.addObserver(this, TorTopics.ProcessIsReady);
+
+        if (TorMonitorService.isRunning) {
+          handleProcessReady();
+        }
       }
     },
 
@@ -316,12 +317,6 @@ const TorSettings = (() => {
       };
 
       switch (topic) {
-        case BrowserTopics.ProfileAfterChange:
-          Services.obs.removeObserver(this, BrowserTopics.ProfileAfterChange);
-          if (TorProtocolService.torProcessStatus == TorProcessStatus.Running) {
-            await handleProcessReady();
-          }
-          break;
         case TorTopics.ProcessIsReady:
           Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
           await handleProcessReady();

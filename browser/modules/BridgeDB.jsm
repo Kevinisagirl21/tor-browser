@@ -46,7 +46,7 @@ var BridgeDB = {
       this._image =
         "data:image/jpeg;base64," + encodeURIComponent(response.image);
     } catch (err) {
-      console.log(`error : ${err}`);
+      console.error("Could not request a captcha image", err);
     }
     return this._image;
   },
