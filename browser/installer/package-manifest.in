@@ -236,6 +236,7 @@
 @RESPATH@/browser/chrome/browser.manifest
 @RESPATH@/chrome/pdfjs.manifest
 @RESPATH@/chrome/pdfjs/*
+@RESPATH@/components/tor-launcher.manifest
 @RESPATH@/chrome/toolkit@JAREXT@
 @RESPATH@/chrome/toolkit.manifest
 #ifdef MOZ_GTK
