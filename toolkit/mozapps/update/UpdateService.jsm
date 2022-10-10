@@ -13,15 +13,15 @@ const { AUSTLMY } = ChromeUtils.import(
   "resource://gre/modules/UpdateTelemetry.jsm"
 );
 
-const { TorProtocolService } = ChromeUtils.import(
-  "resource:///modules/TorProtocolService.jsm"
+const { TorMonitorService } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
 );
 
 function _shouldRegisterBootstrapObserver(errorCode) {
   return (
     errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-    !TorProtocolService.isBootstrapDone() &&
-    TorProtocolService.ownsTorDaemon
+    !TorMonitorService.isBootstrapDone() &&
+    TorMonitorService.ownsTorDaemon
   );
 }
 
