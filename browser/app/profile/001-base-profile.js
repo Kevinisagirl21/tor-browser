@@ -253,6 +253,11 @@ pref("network.protocol-handler.warn-external.news", true);
 pref("network.protocol-handler.warn-external.nntp", true);
 pref("network.protocol-handler.warn-external.snews", true);
 pref("network.proxy.allow_bypass", false); // #40682
+// Lock to 'true', which is already the firefox default, to prevent users
+// from making themselves fingerprintable by disabling. This pref
+// alters content load order in a page. See tor-browser#24686
+pref("network.http.tailing.enabled", true, locked);
+
 // Make sure we don't have any GIO supported protocols (defense in depth
 // measure)
 pref("network.gio.supported-protocols", "");
