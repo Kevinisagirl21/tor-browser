@@ -30,6 +30,9 @@ ac_add_options --enable-proxy-bypass-protection
 # could allow proxy bypass, and override a number of other preferences we set
 ac_add_options --disable-system-policies
 
+# See bug #41131
+ac_add_options --disable-backgroundtasks
+
 ac_add_options --enable-base-browser
 
 # Disable telemetry
