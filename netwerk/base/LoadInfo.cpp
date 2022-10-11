@@ -575,7 +575,6 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mForcePreflight(rhs.mForcePreflight),
       mIsPreflight(rhs.mIsPreflight),
       mLoadTriggeredFromExternal(rhs.mLoadTriggeredFromExternal),
-
       mDocumentHasUserInteracted(rhs.mDocumentHasUserInteracted),
       mAllowListFutureDocumentsCreatedFromThisRedirectChain(
           rhs.mAllowListFutureDocumentsCreatedFromThisRedirectChain),
@@ -595,7 +594,8 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mIsMediaInitialRequest(rhs.mIsMediaInitialRequest),
       mIsFromObjectOrEmbed(rhs.mIsFromObjectOrEmbed),
       mLoadingEmbedderPolicy(rhs.mLoadingEmbedderPolicy),
-      mUnstrippedURI(rhs.mUnstrippedURI) {}
+      mUnstrippedURI(rhs.mUnstrippedURI),
+      mInterceptionInfo(rhs.mInterceptionInfo) {}
 
 LoadInfo::LoadInfo(
     nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
@@ -636,7 +636,7 @@ LoadInfo::LoadInfo(
     bool aHasStoragePermission, bool aIsMetaRefresh,
     uint32_t aRequestBlockingReason, nsINode* aLoadingContext,
     nsILoadInfo::CrossOriginEmbedderPolicy aLoadingEmbedderPolicy,
-    nsIURI* aUnstrippedURI)
+    nsIURI* aUnstrippedURI, nsIInterceptionInfo* aInterceptionInfo)
     : mLoadingPrincipal(aLoadingPrincipal),
       mTriggeringPrincipal(aTriggeringPrincipal),
       mPrincipalToInherit(aPrincipalToInherit),
@@ -701,9 +701,9 @@ LoadInfo::LoadInfo(
       mParserCreatedScript(aParserCreatedScript),
       mHasStoragePermission(aHasStoragePermission),
       mIsMetaRefresh(aIsMetaRefresh),
-
       mLoadingEmbedderPolicy(aLoadingEmbedderPolicy),
-      mUnstrippedURI(aUnstrippedURI) {
+      mUnstrippedURI(aUnstrippedURI),
+      mInterceptionInfo(aInterceptionInfo){
   // Only top level TYPE_DOCUMENT loads can have a null loadingPrincipal
   MOZ_ASSERT(mLoadingPrincipal ||
              aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
@@ -1949,6 +1949,12 @@ already_AddRefed<nsIContentSecurityPolicy> LoadInfo::GetPreloadCsp() {
 already_AddRefed<nsIContentSecurityPolicy> LoadInfo::GetCspToInherit() {
   nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = mCspToInherit;
   return cspToInherit.forget();
+}
+
+nsIInterceptionInfo* LoadInfo::InterceptionInfo() { return mInterceptionInfo; }
+
+void LoadInfo::SetInterceptionInfo(nsIInterceptionInfo* aInfo) {
+  mInterceptionInfo = aInfo;
 }
 
 }  // namespace net

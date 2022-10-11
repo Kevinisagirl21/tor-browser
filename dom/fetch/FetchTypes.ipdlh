@@ -7,6 +7,7 @@ include ChannelInfo;
 include PBackgroundSharedTypes;
 
 include protocol PRemoteLazyInputStream;
+include NeckoChannelParams;
 
 include "mozilla/dom/FetchIPCTypes.h";
 
@@ -64,6 +65,10 @@ struct IPCInternalRequest {
   nsString integrity;
   nsCString fragment;
   PrincipalInfo? principalInfo;
+  PrincipalInfo? interceptionTriggeringPrincipalInfo;
+  uint32_t interceptionContentPolicyType;
+  RedirectHistoryEntryInfo[] interceptionRedirectChain;
+  bool interceptionFromThirdParty;
 };
 
 struct IPCInternalResponse {
