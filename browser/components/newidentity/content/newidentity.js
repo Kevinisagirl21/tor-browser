@@ -527,7 +527,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
           const askAgain = { value: false };
           const confirmed =
             Services.prompt.confirmEx(
-              null,
+              window,
               "",
               NewIdentityStrings.new_identity_prompt,
               flags,
