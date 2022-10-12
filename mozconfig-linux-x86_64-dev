@@ -4,6 +4,8 @@
 # It is only intended to be used when doing incremental Linux builds
 # during development.
 
+export MOZILLA_OFFICIAL=
+
 ac_add_options --enable-default-toolkit=cairo-gtk3
 
 ac_add_options --disable-strip
