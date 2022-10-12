@@ -234,10 +234,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 
-const { OnionAuthUtil } = ChromeUtils.import(
-  "chrome://browser/content/onionservices/authUtil.jsm"
-);
-
 XPCOMUtils.defineLazyServiceGetters(this, {
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
 });
@@ -1514,7 +1510,6 @@ var SessionStoreInternal = {
       let listenWhenClosed = CLOSED_MESSAGES.has(msg);
       mm.addMessageListener(msg, this, listenWhenClosed);
     });
-    OnionAuthUtil.addCancelMessageListener(mm, aWindow.docShell);
 
     // Load the frame script after registering listeners.
     if (!Services.appinfo.sessionHistoryInParent) {

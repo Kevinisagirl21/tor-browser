@@ -3902,8 +3902,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     // if the user cancels the Tor client auth prompt, but in that case we
     // will not have a failed channel and therefore we will not prompt again.
     if (isOnionAuthError && aFailedChannel) {
-      // Display about:blank while the Tor client auth prompt is open.
-      errorPage.AssignLiteral("blank");
+      // Display about:neterror with a style emulating about:blank while the
+      // Tor client auth prompt is open. Do not use about:blank directly: it
+      // will mess with the failed channel information persistence!
+      cssClass.AssignLiteral("onionAuthPrompt");
     }
   }
 

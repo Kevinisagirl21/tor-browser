@@ -225,13 +225,17 @@ const OnionAuthPrompt = (function() {
 
     _onCancel() {
       // Arrange for an error page to be displayed.
-      this._browser.messageManager.sendAsyncMessage(
-        OnionAuthUtil.message.authPromptCanceled,
-        {
-          failedURI: this._failedURI.spec,
-          reasonForPrompt: this._reasonForPrompt,
-        }
-      );
+      const failedURI = this._failedURI.spec;
+      const errorCode =
+          this._reasonForPrompt === OnionAuthUtil.topic.clientAuthMissing
+            ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
+            : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
+
+      const io = `ChromeUtils.import("resource://gre/modules/Services.jsm").Services.io`;
+      this._browser.messageManager.loadFrameScript(`data:,${encodeURIComponent(
+        `docShell.displayLoadError(${errorCode}, ${io}.newURI(${JSON.stringify(failedURI)}), undefined, undefined);`
+        )}`,
+        false);
     },
 
     _getKeyElement() {

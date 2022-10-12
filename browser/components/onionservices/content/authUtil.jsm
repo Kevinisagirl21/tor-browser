@@ -24,23 +24,4 @@ const OnionAuthUtil = {
     warningElement: "tor-clientauth-warning",
     checkboxElement: "tor-clientauth-persistkey-checkbox",
   },
-
-  addCancelMessageListener(aMessageManager, aDocShell) {
-    aMessageManager.addMessageListener(this.message.authPromptCanceled, {
-      receiveMessage(aMessage) {
-        // Upon cancellation of the client authentication prompt, display
-        // the appropriate error page. When calling the docShell
-        // displayLoadError() function, we pass undefined for the failed
-        // channel so that displayLoadError() can determine that it should
-        // not display the client authentication prompt a second time.
-        const failedURI = Services.io.newURI(aMessage.data.failedURI);
-        const reasonForPrompt = aMessage.data.reasonForPrompt;
-        const errorCode =
-          reasonForPrompt === this.topic.clientAuthMissing
-            ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
-            : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
-        aDocShell.displayLoadError(errorCode, failedURI, undefined, undefined);
-      },
-    });
-  },
 };
