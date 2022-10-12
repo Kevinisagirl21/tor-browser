@@ -999,8 +999,8 @@ widget::LookAndFeelFont nsXPLookAndFeel::StyleToLookAndFeelFont(
 }
 
 bool nsXPLookAndFeel::GetFontValue(FontID aID, nsString& aName,
-                                   gfxFontStyle& aStyle) {
-  if (nsContentUtils::ShouldResistFingerprinting()) {
+                                   gfxFontStyle& aStyle, bool aRFP) {
+  if (aRFP) {
 #ifdef XP_MACOSX
     aName = u"-apple-system"_ns;
 #else
@@ -1361,8 +1361,9 @@ nsresult LookAndFeel::GetFloat(FloatID aID, float* aResult) {
 }
 
 // static
-bool LookAndFeel::GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle) {
-  return nsLookAndFeel::GetInstance()->GetFontValue(aID, aName, aStyle);
+bool LookAndFeel::GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle,
+                          bool aRFP) {
+  return nsLookAndFeel::GetInstance()->GetFontValue(aID, aName, aStyle, aRFP);
 }
 
 // static
