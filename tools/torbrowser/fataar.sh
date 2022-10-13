@@ -30,5 +30,5 @@ if [ -z "$glue" ]; then
 fi
 export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=${glue:1}
 
-MOZCONFIG=mozconfig-android-all-dev ./mach configure
-MOZCONFIG=mozconfig-android-all-dev ./mach build
+MOZCONFIG=mozconfig-android-all ./mach configure
+MOZCONFIG=mozconfig-android-all ./mach build
