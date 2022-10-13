@@ -15,7 +15,9 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityStrings", () => {
   let strings = {
     new_identity: "New Identity",
     new_identity_sentence_case: "New identity",
+    new_identity_prompt_title: "Reset your identity?",
     new_identity_prompt: `${brandShortName} will close all windows and tabs. All website sessions will be lost. \nRestart ${brandShortName} now to reset your identity?`,
+    new_identity_restart: `${brandShortName}`,
     new_identity_ask_again: "Never ask me again",
     new_identity_menu_accesskey: "I",
   };
@@ -34,6 +36,10 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityStrings", () => {
       } catch (e) {}
     }
     strings.new_identity_prompt = strings.new_identity_prompt.replaceAll(
+      "%S",
+      brandShortName
+    );
+    strings.new_identity_restart = strings.new_identity_restart.replaceAll(
       "%S",
       brandShortName
     );
@@ -523,15 +529,18 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
         const shouldConfirm = Services.prefs.getBoolPref(prefConfirm, true);
         if (shouldConfirm) {
           // Display two buttons, both with string titles.
-          const flags = Services.prompt.STD_YES_NO_BUTTONS;
+          const flags =
+            Services.prompt.BUTTON_TITLE_IS_STRING *
+              Services.prompt.BUTTON_POS_0 +
+            Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
           const askAgain = { value: false };
           const confirmed =
             Services.prompt.confirmEx(
               window,
-              "",
+              NewIdentityStrings.new_identity_prompt_title,
               NewIdentityStrings.new_identity_prompt,
               flags,
-              null,
+              NewIdentityStrings.new_identity_restart,
               null,
               null,
               NewIdentityStrings.new_identity_ask_again,
