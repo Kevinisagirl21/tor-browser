@@ -354,6 +354,10 @@ pref("security.certerrors.mitm.priming.enabled", false);
 // Don't automatically enable enterprise roots, see bug 40166
 pref("security.certerrors.mitm.auto_enable_enterprise_roots", false);
 
+// Don't allow any domain overrides access to offscreen rendering, see tor-browser#41135
+pref("gfx.offscreencanvas.domain-enabled", false);
+pref("gfx.offscreencanvas.domain-allowlist", "");
+
 // Disable the language pack signing check for now on macOS, see #31942
 #ifdef XP_MACOSX
 pref("extensions.langpacks.signatures.required", false);
