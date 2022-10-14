@@ -126,14 +126,24 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 18px;
   height: 18px;
   margin-inline-end: 8px;
+  -moz-context-properties: fill;
+  fill: var(--in-content-text-color);
+}
+
+#torPreferences-status-internet-icon {
+  list-style-image: url("chrome://browser/content/torpreferences/network.svg");
+}
+
+#torPreferences-status-tor-icon {
+  list-style-image: url("chrome://browser/skin/onion.svg");
 }
 
 #torPreferences-status-internet-label, #torPreferences-status-tor-label {
   font-weight: bold;
 }
 
-#torPreferences-status-internet-icon {
-  list-style-image: url("chrome://browser/content/torpreferences/network.svg");
+#torPreferences-status-internet-status {
+  margin-inline-end: 32px;
 }
 
 #torPreferences-status-internet-statusIcon.online,
@@ -143,9 +153,12 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   margin-inline-end: 9px;
 }
 
+#torPreferences-status-internet-statusIcon, #torPreferences-status-tor-statusIcon {
+  -moz-context-properties: fill;
+}
+
 #torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
   list-style-image: url("chrome://browser/content/torpreferences/check.svg");
-  -moz-context-properties: fill;
   fill: var(--purple-60);
 }
 
@@ -155,26 +168,13 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   }
 }
 
-#torPreferences-status-internet-status {
-  margin-inline-end: 32px;
-}
-
-#torPreferences-status-tor-icon {
-  list-style-image: url("chrome://browser/skin/onion.svg");
-}
-
-#torPreferences-status-internet-icon, #torPreferences-status-tor-icon {
-  -moz-context-properties: fill;
-  fill: var(--in-content-text-color);
-}
-
-#torPreferences-status-tor-statusIcon, #torPreferences-status-internet-statusIcon.offline {
-  list-style-image: url("chrome://browser/skin/warning.svg");
+#torPreferences-status-internet-statusIcon.offline, #torPreferences-status-tor-statusIcon:not(.connected) {
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+  fill: var(--torbrowser-warning);
 }
 
 #torPreferences-status-tor-statusIcon.blocked {
-  -moz-context-properties: fill;
-  fill: var(--red-60);
+  fill: var(--in-content-danger-button-background);
 }
 
 /* Bridge settings */
@@ -555,7 +555,9 @@ hbox#torPreferences-requestBridge-incorrectCaptchaHbox {
 }
 
 image#torPreferences-requestBridge-errorIcon {
-  list-style-image: url("chrome://browser/skin/warning.svg");
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+  -moz-context-properties: fill;
+  fill: var(--torbrowser-warning);
 }
 
 groupbox#torPreferences-bridges-group textarea {
