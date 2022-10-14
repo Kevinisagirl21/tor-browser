@@ -310,15 +310,17 @@ body {
 
 .title {
   background-image: url("chrome://browser/content/torconnect/onion.svg");
-  -moz-context-properties: fill, fill-opacity;
+  -moz-context-properties: stroke, fill, fill-opacity;
   fill-opacity: var(--onion-opacity);
   fill: var(--onion-color);
 }
 
 .title.offline, .title.assist, .title.final {
   background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
+  stroke: var(--in-content-danger-button-background);
 }
 
 .title.location {
   background-image: url("chrome://browser/content/torconnect/connection-location.svg");
+  stroke: var(--torbrowser-warning);
 }
