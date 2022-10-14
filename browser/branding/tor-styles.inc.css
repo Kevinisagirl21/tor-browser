@@ -84,4 +84,14 @@
   --ink-90: #0f1126;
 
   --white-100: #ffffff;
+
+  /* TODO: Switch to some Firefox variable, once Mozilla adds one for this
+  color. Matches --warning-icon-bgcolor (but not on the dark theme variant). */
+  --torbrowser-warning: #ffa436;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --torbrowser-warning: #ffbd4f;
+  }
 }
