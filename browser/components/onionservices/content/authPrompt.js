@@ -228,18 +228,27 @@ const OnionAuthPrompt = (function() {
     },
 
     _onCancel() {
-      // Arrange for an error page to be displayed.
+      // Arrange for an error page to be displayed:
+      // we build a short script calling docShell.displayError()
+      // and we pass it as a data: URI to loadFrameScript(),
+      // which runs it in the content frame which triggered
+      // this authentication prompt.
       const failedURI = this._failedURI.spec;
       const errorCode =
-          this._reasonForPrompt === OnionAuthUtil.topic.clientAuthMissing
-            ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
-            : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
+        this._reasonForPrompt === OnionAuthUtil.topic.clientAuthMissing
+          ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
+          : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
+      const io =
+        'ChromeUtils.import("resource://gre/modules/Services.jsm").Services.io';
 
-      const io = `ChromeUtils.import("resource://gre/modules/Services.jsm").Services.io`;
-      this._browser.messageManager.loadFrameScript(`data:,${encodeURIComponent(
-        `docShell.displayLoadError(${errorCode}, ${io}.newURI(${JSON.stringify(failedURI)}), undefined, undefined);`
+      this._browser.messageManager.loadFrameScript(
+        `data:application/javascript,${encodeURIComponent(
+          `docShell.displayLoadError(${errorCode}, ${io}.newURI(${JSON.stringify(
+            failedURI
+          )}), undefined, undefined);`
         )}`,
-        false);
+        false
+      );
     },
 
     _getKeyElement() {
