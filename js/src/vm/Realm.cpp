@@ -62,6 +62,8 @@ Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
       varNames_(zone_),
       randomKeyGenerator_(runtime_->forkRandomKeyGenerator()),
       debuggers_(zone_),
+      allocatedDuringIncrementalGC_(zone_->isGCMarkingOrSweeping() ||
+                                    zone_->isGCFinished()),
       wasm(runtime_) {
   MOZ_ASSERT_IF(creationOptions_.mergeable(),
                 creationOptions_.invisibleToDebugger());
