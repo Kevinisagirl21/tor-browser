@@ -307,7 +307,7 @@ const Loader = {
         "Built-In Bridges"
       ),
       builtinBridgeHeader: getString(
-        "torPreferences.builtinBridgeHeader",
+        "torsettings.useBridges.default",
         "Select a Built-In Bridge"
       ),
       builtinBridgeDescription: getString(
@@ -373,7 +373,7 @@ const Loader = {
         "Enter bridge information from a trusted source"
       ),
       provideBridgePlaceholder: getString(
-        "torsettings.bridgePlaceholder",
+        "torsettings.useBridges.placeholder",
         "type address:port (one per line)"
       ),
       // Connection settings dialog
