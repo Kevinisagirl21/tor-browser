@@ -196,12 +196,15 @@ class TorFile {
         throw new Error("Unknown file type");
     }
     if (TorLauncherUtil.isWindows) {
-      this.path = this.path.replace("/", "\\");
+      this.path = this.path.replaceAll("/", "\\");
     }
     this.isRelativePath = true;
   }
 
   pathToFile() {
+    if (TorLauncherUtil.isWindows) {
+      this.path = this.path.replaceAll("/", "\\");
+    }
     // Turn 'path' into an absolute path when needed.
     if (this.isRelativePath) {
       const isUserData =
