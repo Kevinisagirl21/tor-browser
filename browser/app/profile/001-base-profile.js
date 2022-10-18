@@ -252,7 +252,7 @@ pref("network.protocol-handler.warn-external.mailto", true);
 pref("network.protocol-handler.warn-external.news", true);
 pref("network.protocol-handler.warn-external.nntp", true);
 pref("network.protocol-handler.warn-external.snews", true);
-pref("network.proxy.allow_bypass", false); // #40682
+pref("network.proxy.allow_bypass", false, locked); // #40682
 // Lock to 'true', which is already the firefox default, to prevent users
 // from making themselves fingerprintable by disabling. This pref
 // alters content load order in a page. See tor-browser#24686
