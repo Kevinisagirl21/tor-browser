@@ -220,9 +220,6 @@ var Utils = {
       function fallbackOrReject(err) {
         if (
           // At most one recursive Utils.fetch call (bypassProxy=false to true).
-          // if allowed by network.proxy.allow_bypass
-          AppConstants.MOZ_PROXY_BYPASS_PROTECTION ||
-          !Services.prefs.getBoolPref("network.proxy.allow_bypass", false) ||
           bypassProxy ||
           Services.startup.shuttingDown ||
           Utils.isOffline ||

@@ -475,13 +475,6 @@ this.AppConstants = Object.freeze({
     false,
 #endif
 
-  MOZ_PROXY_BYPASS_PROTECTION:
-#ifdef MOZ_PROXY_BYPASS_PROTECTION
-    true,
-#else
-    false,
-#endif
-
   TOR_BROWSER_UPDATE:
 #ifdef TOR_BROWSER_UPDATE
     true,
