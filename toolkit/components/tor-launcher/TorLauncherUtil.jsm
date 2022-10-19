@@ -340,7 +340,7 @@ class TorFile {
   static get dataDir() {
     if (!this._dataDir) {
       const profDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      this.mDataDir = profDir.parent.parent;
+      this._dataDir = profDir.parent.parent;
     }
     return this._dataDir;
   }
