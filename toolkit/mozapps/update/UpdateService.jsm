@@ -20,7 +20,7 @@ const { TorMonitorService } = ChromeUtils.import(
 function _shouldRegisterBootstrapObserver(errorCode) {
   return (
     errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-    !TorMonitorService.isBootstrapDone() &&
+    !TorMonitorService.isBootstrapDone &&
     TorMonitorService.ownsTorDaemon
   );
 }
