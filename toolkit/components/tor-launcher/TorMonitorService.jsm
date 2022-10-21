@@ -5,7 +5,9 @@
 var EXPORTED_SYMBOLS = ["TorMonitorService"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { clearTimeout, setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -13,7 +15,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { TorParsers, TorStatuses } = ChromeUtils.import(
   "resource://gre/modules/TorParsers.jsm"
 );
-const { TorProcess, TorProcessStatus } = ChromeUtils.import(
+const { TorProcess } = ChromeUtils.import(
   "resource://gre/modules/TorProcess.jsm"
 );
 
@@ -69,6 +71,7 @@ const TorMonitorService = {
   _connection: null,
   _eventsToMonitor: Object.freeze(["STATUS_CLIENT", "NOTICE", "WARN", "ERR"]),
   _torLog: [], // Array of objects with date, type, and msg properties.
+  _startTimeout: null,
 
   _isBootstrapDone: false,
   _bootstrapErrorOccurred: false,
@@ -91,7 +94,7 @@ const TorMonitorService = {
       this._controlTor();
     } else {
       logger.info(
-        "Not starting the event monitor, as e do not own the Tor daemon."
+        "Not starting the event monitor, as we do not own the Tor daemon."
       );
     }
     logger.debug("TorMonitorService initialized");
@@ -104,6 +107,8 @@ const TorMonitorService = {
   uninit() {
     if (this._torProcess) {
       this._torProcess.forget();
+      this._torProcess.onExit = null;
+      this._torProcess.onRestart = null;
       this._torProcess = null;
     }
     this._shutDownEventMonitor();
@@ -181,35 +186,42 @@ const TorMonitorService = {
   // Private methods
 
   async _startProcess() {
-    this._torProcess = new TorProcess();
-    this._torProcess.onExit = () => {
-      Services.obs.notifyObservers(null, TorTopics.ProcessExited);
-    };
-    this._torProcess.onRestart = async () => {
-      this._shutDownEventMonitor();
-      await this._controlTor();
-      Services.obs.notifyObservers(null, TorTopics.ProcessRestarted);
-    };
+    // TorProcess should be instanced once, then always reused and restarted
+    // only through the prompt it exposes when the controlled process dies.
+    if (!this._torProcess) {
+      this._torProcess = new TorProcess();
+      this._torProcess.onExit = () => {
+        this._shutDownEventMonitor();
+        Services.obs.notifyObservers(null, TorTopics.ProcessExited);
+      };
+      this._torProcess.onRestart = async () => {
+        this._shutDownEventMonitor();
+        await this._controlTor();
+        Services.obs.notifyObservers(null, TorTopics.ProcessRestarted);
+      };
+    }
+
+    // Already running, but we did not start it
+    if (this._torProcess.isRunning) {
+      return false;
+    }
+
     try {
       await this._torProcess.start();
-      if (!this._torProcess.isRunning) {
-        this._torProcess = null;
-        return false;
+      if (this._torProcess.isRunning) {
+        logger.info("tor started");
       }
     } catch (e) {
       // TorProcess already logs the error.
       this._bootstrapErrorOccurred = true;
       this._lastWarningPhase = "startup";
       this._lastWarningReason = e.toString();
-      this._torProcess = null;
-      return false;
     }
-    logger.info("tor started");
-    return true;
+    return this._torProcess.isRunning;
   },
 
   async _controlTor() {
-    if (!this._torProcess && !(await this._startProcess())) {
+    if (!this._torProcess?.isRunning && !(await this._startProcess())) {
       logger.error("Tor not running, not starting to monitor it.");
       return;
     }
@@ -217,7 +229,6 @@ const TorMonitorService = {
     let delayMS = ControlConnTimings.initialDelayMS;
     const callback = async () => {
       if (await this._startEventMonitor()) {
-        this._status = TorProcessStatus.Running;
         this.retrieveBootstrapStatus().catch(e => {
           logger.warn("Could not get the initial bootstrap status", e);
         });
@@ -225,6 +236,14 @@ const TorMonitorService = {
         // FIXME: TorProcess is misleading here. We should use a topic related
         // to having a control port connection, instead.
         Services.obs.notifyObservers(null, TorTopics.ProcessIsReady);
+
+        // We reset this here hoping that _shutDownEventMonitor can interrupt
+        // the current monitor, either by calling clearTimeout and preventing it
+        // from starting, or by closing the control port connection.
+        if (this._startTimeout === null) {
+          logger.warn("Someone else reset _startTimeout!");
+        }
+        this._startTimeout = null;
       } else if (
         Date.now() - this._torProcessStartTime >
         ControlConnTimings.timeoutMS
@@ -234,18 +253,28 @@ const TorMonitorService = {
         this._lastWarningPhase = "startup";
         this._lastWarningReason = s;
         logger.info(s);
+        if (this._startTimeout === null) {
+          logger.warn("Someone else reset _startTimeout!");
+        }
+        this._startTimeout = null;
       } else {
         delayMS *= 2;
         if (delayMS > ControlConnTimings.maxRetryMS) {
           delayMS = ControlConnTimings.maxRetryMS;
         }
-        setTimeout(() => {
+        this._startTimeout = setTimeout(() => {
           logger.debug(`Control port not ready, waiting ${delayMS / 1000}s.`);
           callback();
         }, delayMS);
       }
     };
-    setTimeout(callback, delayMS);
+    // Check again, in the unfortunate case in which the execution was alrady
+    // queued, but was waiting network code.
+    if (this._startTimeout === null) {
+      this._startTimeout = setTimeout(callback, delayMS);
+    } else {
+      logger.error("Possible race? Refusing to start the timeout again");
+    }
   },
 
   async _startEventMonitor() {
@@ -259,6 +288,16 @@ const TorMonitorService = {
       conn = await controller(avoidCache);
     } catch (e) {
       logger.error("Cannot open a control port connection", e);
+      if (conn) {
+        try {
+          conn.close();
+        } catch (e) {
+          logger.error(
+            "Also, the connection is not null but cannot be closed",
+            e
+          );
+        }
+      }
       return false;
     }
 
@@ -273,12 +312,19 @@ const TorMonitorService = {
       return false;
     }
 
+    // FIXME: At the moment it is not possible to start the event monitor
+    // when we do start the tor process. So, does it make sense to keep this
+    // control?
     if (this._torProcess) {
       this._torProcess.connectionWorked();
     }
 
     if (!TorLauncherUtil.shouldOnlyConfigureTor) {
-      this._takeTorOwnership(conn);
+      try {
+        await this._takeTorOwnership(conn);
+      } catch (e) {
+        logger.warn("Could not take ownership of the Tor daemon", e);
+      }
     }
 
     this._connection = conn;
@@ -449,12 +495,13 @@ const TorMonitorService = {
   },
 
   _shutDownEventMonitor() {
-    if (this._connection) {
-      this._connection.close();
-      this._connection = null;
-      this._eventMonitorInProgressReply = null;
-      this._isBootstrapDone = false;
-      this.clearBootstrapError();
+    this._connection?.close();
+    this._connection = null;
+    if (this._startTimeout !== null) {
+      clearTimeout(this._startTimeout);
+      this._startTimeout = null;
     }
+    this._isBootstrapDone = false;
+    this.clearBootstrapError();
   },
 };

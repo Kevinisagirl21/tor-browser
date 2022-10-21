@@ -1,6 +1,6 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorProcess", "TorProcessStatus"];
+var EXPORTED_SYMBOLS = ["TorProcess"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
@@ -49,7 +49,7 @@ class TorProcess {
   _exeFile = null;
   _dataDir = null;
   _args = [];
-  _torProcess = null; // nsIProcess
+  _subprocess = null;
   _status = TorProcessStatus.Unknown;
   _torProcessStartTime = null; // JS Date.now()
   _didConnectToTorControlPort = false; // Have we ever made a connection?
@@ -69,7 +69,7 @@ class TorProcess {
   }
 
   async start() {
-    if (this._torProcess) {
+    if (this._subprocess) {
       return;
     }
 
@@ -135,13 +135,13 @@ class TorProcess {
         environmentAppend: true,
         stderr: "pipe",
       };
-      this._torProcess = await Subprocess.call(options);
+      this._subprocess = await Subprocess.call(options);
       this._watchProcess();
       this._status = TorProcessStatus.Running;
       this._torProcessStartTime = Date.now();
     } catch (e) {
       this._status = TorProcessStatus.Exited;
-      this._torProcess = null;
+      this._subprocess = null;
       logger.error("startTor error:", e);
       throw e;
     }
@@ -162,7 +162,7 @@ class TorProcess {
   // Still, before closing the owning connection, this class should forget about
   // the process, so that future notifications will be ignored.
   forget() {
-    this._torProcess = null;
+    this._subprocess = null;
     this._status = TorProcessStatus.Exited;
   }
 
@@ -174,14 +174,14 @@ class TorProcess {
   }
 
   async _watchProcess() {
-    const watched = this._torProcess;
+    const watched = this._subprocess;
     if (!watched) {
       return;
     }
     try {
       const { exitCode } = await watched.wait();
 
-      if (watched !== this._torProcess) {
+      if (watched !== this._subprocess) {
         logger.debug(`A Tor process exited with code ${exitCode}.`);
       } else if (exitCode) {
         logger.warn(`The watched Tor process exited with code ${exitCode}.`);
@@ -192,13 +192,13 @@ class TorProcess {
       logger.error("Failed to watch the tor process", e);
     }
 
-    if (watched === this._torProcess) {
+    if (watched === this._subprocess) {
       this._processExitedUnexpectedly();
     }
   }
 
   _processExitedUnexpectedly() {
-    this._torProcess = null;
+    this._subprocess = null;
     this._status = TorProcessStatus.Exited;
 
     // TODO: Move this logic somewhere else?
@@ -238,7 +238,7 @@ class TorProcess {
         }
       });
     } else if (this.onExit) {
-      this.onExit(unexpected);
+      this.onExit();
     }
   }
 
