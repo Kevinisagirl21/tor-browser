@@ -332,6 +332,10 @@ pref("extensions.htmlaboutaddons.recommendations.enabled", false);
 pref("extensions.webextensions.restrictedDomains", "");
 // Don't give Mozilla-recommended third-party extensions special privileges.
 pref("extensions.postDownloadThirdPartyPrompt", false);
+// We are already providing the languages we support in multi-lingual packages.
+// Therefore, do not allow download of additional language packs. They are not a
+// privacy/security threat, we are disabling them for UX reasons. See bug 41377.
+pref("intl.multilingual.downloadEnabled", false);
 
 // Toolbar layout
 pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-list\":[],\"PersonalToolbar\":[\"personal-bookmarks\"],\"nav-bar\":[\"back-button\",\"forward-button\",\"stop-reload-button\",\"urlbar-container\",\"security-level-button\",\"new-identity-button\",\"downloads-button\"],\"TabsToolbar\":[\"tabbrowser-tabs\",\"new-tab-button\",\"alltabs-button\"],\"toolbar-menubar\":[\"menubar-items\"],\"PanelUI-contents\":[\"home-button\",\"edit-controls\",\"zoom-controls\",\"new-window-button\",\"save-page-button\",\"print-button\",\"bookmarks-menu-button\",\"history-panelmenu\",\"find-button\",\"preferences-button\",\"add-ons-button\",\"developer-button\"],\"addon-bar\":[\"addonbar-closebutton\",\"status-bar\"]},\"seen\":[\"developer-button\"],\"dirtyAreaCache\":[\"PersonalToolbar\",\"nav-bar\",\"TabsToolbar\",\"toolbar-menubar\"],\"currentVersion\":14,\"newElementCount\":1}");
