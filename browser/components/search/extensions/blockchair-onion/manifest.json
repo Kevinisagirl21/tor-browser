@@ -20,7 +20,7 @@
       "name": "BlockchairOnion",
       "search_url": "http://blkchairbknpn73cfjhevhla7rkp4ed5gg2knctvv7it4lioy22defid.onion/search",
       "search_form": "http://blkchairbknpn73cfjhevhla7rkp4ed5gg2knctvv7it4lioy22defid.onion/search/?q={searchTerms}",
-      "search_url_post_params": "q={searchTerms}"
+      "search_url_get_params": "q={searchTerms}"
     }
   }
 }
