@@ -23,9 +23,6 @@ const { TorMonitorService } = ChromeUtils.import(
 const { TorBootstrapRequest } = ChromeUtils.import(
   "resource://gre/modules/TorBootstrapRequest.jsm"
 );
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
 
 const {
   TorSettings,
@@ -49,6 +46,7 @@ const TorLauncherPrefs = Object.freeze({
 
 const TorConnectPrefs = Object.freeze({
   censorship_level: "torbrowser.debug.censorship_level",
+  allow_internet_test: "torbrowser.bootstrap.allow_internet_test",
 });
 
 const TorConnectState = Object.freeze({
@@ -251,30 +249,41 @@ const InternetStatus = Object.freeze({
 
 class InternetTest {
   constructor() {
+    this._enabled = Services.prefs.getBoolPref(
+      TorConnectPrefs.allow_internet_test,
+      true
+    );
+
     this._status = InternetStatus.Unknown;
     this._error = null;
     this._pending = false;
-    this._timeout = setTimeout(() => {
-      this._timeout = null;
-      this.test();
-    }, this.timeoutRand());
+    if (this._enabled) {
+      this._timeout = setTimeout(() => {
+        this._timeout = null;
+        this.test();
+      }, this.timeoutRand());
+    }
     this.onResult = (online, date) => {};
     this.onError = err => {};
   }
 
   test() {
-    if (this._pending) {
+    if (this._pending || !this._enabled) {
       return;
     }
     this.cancel();
     this._pending = true;
 
+    console.log("TorConnect: starting the Internet test");
     this._testAsync()
       .then(status => {
         this._pending = false;
         this._status = status.successful
           ? InternetStatus.Online
           : InternetStatus.Offline;
+        console.log(
+          `TorConnect: performed Internet test, outcome ${this._status}`
+        );
         this.onResult(this.status, status.date);
       })
       .catch(error => {
@@ -320,6 +329,10 @@ class InternetTest {
 
   get error() {
     return this._error;
+  }
+
+  get enabled() {
+    return this._enabled;
   }
 
   // We randomize the Internet test timeout to make fingerprinting it harder, at least a little bit...
@@ -457,7 +470,8 @@ const TorConnect = (() => {
               const maybeTransitionToError = () => {
                 if (
                   internetTest.status === InternetStatus.Unknown &&
-                  internetTest.error === null
+                  internetTest.error === null &&
+                  internetTest.enabled
                 ) {
                   // We have been called by a failed bootstrap, but the internet test has not run yet - force
                   // it to run immediately!
