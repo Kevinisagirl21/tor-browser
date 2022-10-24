@@ -61,6 +61,11 @@
       <toolbarbutton id="appMenu-new-identity"
                      class="subviewbutton"
                      key="new-identity-key"/>
+      <toolbarbutton id="appMenuNewCircuit"
+                     class="subviewbutton"
+                     key="torbutton-new-circuit-key"
+                     label="&torbutton.context_menu.new_circuit_sentence_case;"
+                     oncommand="torbutton_new_circuit();"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenu-bookmarks-button"
                      class="subviewbutton subviewbutton-nav"
@@ -182,11 +187,6 @@
                      class="subviewbutton"
                      command="Browser:RestoreLastSession"
                      hidden="true"/>
-      <toolbarbutton id="appMenuNewCircuit"
-                     class="subviewbutton"
-                     key="torbutton-new-circuit-key"
-                     label="&torbutton.context_menu.new_circuit_sentence_case;"
-                     oncommand="torbutton_new_circuit();"/>
       <toolbarseparator/>
       <toolbarbutton id="appMenuClearRecentHistory"
                      data-l10n-id="appmenu-clear-history"
