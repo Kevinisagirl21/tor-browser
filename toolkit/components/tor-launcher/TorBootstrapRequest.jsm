@@ -39,7 +39,7 @@ class TorBootstrapRequest {
     this._timeoutID = null;
   }
 
-  async observe(subject, topic, data) {
+  observe(subject, topic, data) {
     const obj = subject?.wrappedJSObject;
     switch (topic) {
       case TorTopics.BootstrapStatus: {
@@ -59,17 +59,8 @@ class TorBootstrapRequest {
         break;
       }
       case TorTopics.BootstrapError: {
-        // first stop our bootstrap timeout before handling the error
-        clearTimeout(this._timeoutID);
-
-        await TorProtocolService.stopBootstrap();
-
-        const message = obj.message;
-        const details = obj.details;
-        if (this.onbootstraperror) {
-          this.onbootstraperror(message, details);
-        }
-        this._bootstrapPromiseResolve(false);
+        console.info("TorBootstrapRequest: observerd TorBootstrapError", obj);
+        this._stop(obj?.message, obj?.details);
         break;
       }
     }
@@ -91,40 +82,47 @@ class TorBootstrapRequest {
       // optionally cancel bootstrap after a given timeout
       if (this.timeout > 0) {
         this._timeoutID = setTimeout(async () => {
-          await TorProtocolService.stopBootstrap();
-          if (this.onbootstraperror) {
-            this.onbootstraperror(
-              "Tor Bootstrap process timed out",
-              `Bootstrap attempt abandoned after waiting ${this.timeout} ms`
-            );
-          }
-          this._bootstrapPromiseResolve(false);
+          this._timeoutID = null;
+          // TODO: Translate, if really used
+          await this._stop(
+            "Tor Bootstrap process timed out",
+            `Bootstrap attempt abandoned after waiting ${this.timeout} ms`
+          );
         }, this.timeout);
       }
 
       // wait for bootstrapping to begin and maybe handle error
-      TorProtocolService.connect().catch(async err => {
-        clearTimeout(this._timeoutID);
-        // stopBootstrap never throws, at the moment
-        await TorProtocolService.stopBootstrap();
-        if (this.onbootstraperror) {
-          this.onbootstraperror(err.message, "");
-        }
-        this._bootstrapPromiseResolve(false);
+      TorProtocolService.connect().catch(err => {
+        this._stop(err.message, "");
       });
     }).finally(() => {
       // and remove ourselves once bootstrap is resolved
       Services.obs.removeObserver(this, TorTopics.BootstrapStatus);
       Services.obs.removeObserver(this, TorTopics.BootstrapError);
+      this._bootstrapPromise = null;
     });
 
     return this._bootstrapPromise;
   }
 
   async cancel() {
-    clearTimeout(this._timeoutID);
+    await this._stop();
+  }
 
+  // Internal implementation. Do not use directly, but call cancel, instead.
+  async _stop(message, details) {
+    // first stop our bootstrap timeout before handling the error
+    if (this._timeoutID !== null) {
+      clearTimeout(this._timeoutID);
+      this._timeoutID = null;
+    }
+
+    // stopBootstrap never throws
     await TorProtocolService.stopBootstrap();
+
+    if (this.onbootstraperror && message) {
+      this.onbootstraperror(message, details);
+    }
 
     this._bootstrapPromiseResolve(false);
   }

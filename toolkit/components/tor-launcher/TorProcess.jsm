@@ -32,10 +32,6 @@ const TorProcessStatus = Object.freeze({
   Exited: 3,
 });
 
-const TorProcessTopics = Object.freeze({
-  ProcessDidNotStart: "TorProcessDidNotStart",
-});
-
 // Logger adapted from CustomizableUI.jsm
 XPCOMUtils.defineLazyGetter(this, "logger", () => {
   const { ConsoleAPI } = ChromeUtils.import(
@@ -82,9 +78,7 @@ class TorProcess {
     this._status = TorProcessStatus.Unknown;
 
     try {
-      if (!this._makeArgs()) {
-        return;
-      }
+      this._makeArgs();
       this._addControlPortArg();
       this._addSocksPortArg();
 
@@ -149,11 +143,7 @@ class TorProcess {
       this._status = TorProcessStatus.Exited;
       this._torProcess = null;
       logger.error("startTor error:", e);
-      Services.obs.notifyObservers(
-        null,
-        TorProcessTopics.ProcessDidNotStart,
-        null
-      );
+      throw e;
     }
   }
 
@@ -284,12 +274,7 @@ class TorProcess {
         [details],
         1
       );
-      TorLauncherUtil.notifyUserOfError(
-        err,
-        null,
-        TorProcessTopics.ProcessDidNotStart
-      );
-      return false;
+      throw new Error(err);
     }
 
     const torrcDefaultsFile = TorLauncherUtil.getTorFile(
@@ -319,8 +304,6 @@ class TorProcess {
     this._args.push(geoip6File.path);
     this._args.push("HashedControlPassword");
     this._args.push(hashedPassword);
-
-    return true;
   }
 
   _addControlPortArg() {

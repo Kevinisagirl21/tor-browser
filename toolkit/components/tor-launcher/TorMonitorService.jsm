@@ -47,7 +47,6 @@ const Preferences = Object.freeze({
 const TorTopics = Object.freeze({
   BootstrapError: "TorBootstrapError",
   HasWarnOrErr: "TorLogHasWarnOrErr",
-  ProcessDidNotStart: "TorProcessDidNotStart",
   ProcessExited: "TorProcessExited",
   ProcessIsReady: "TorProcessIsReady",
   ProcessRestarted: "TorProcessRestarted",
@@ -191,8 +190,17 @@ const TorMonitorService = {
       await this._controlTor();
       Services.obs.notifyObservers(null, TorTopics.ProcessRestarted);
     };
-    await this._torProcess.start();
-    if (!this._torProcess.isRunning) {
+    try {
+      await this._torProcess.start();
+      if (!this._torProcess.isRunning) {
+        this._torProcess = null;
+        return false;
+      }
+    } catch (e) {
+      // TorProcess already logs the error.
+      this._bootstrapErrorOccurred = true;
+      this._lastWarningPhase = "startup";
+      this._lastWarningReason = e.toString();
       this._torProcess = null;
       return false;
     }
@@ -222,11 +230,9 @@ const TorMonitorService = {
         ControlConnTimings.timeoutMS
       ) {
         let s = TorLauncherUtil.getLocalizedString("tor_controlconn_failed");
-        TorLauncherUtil.notifyUserOfError(
-          s,
-          null,
-          TorTopics.ProcessDidNotStart
-        );
+        this._bootstrapErrorOccurred = true;
+        this._lastWarningPhase = "startup";
+        this._lastWarningReason = s;
         logger.info(s);
       } else {
         delayMS *= 2;
@@ -432,8 +438,13 @@ const TorMonitorService = {
       this._lastWarningPhase = statusObj.TAG;
       this._lastWarningReason = statusObj.REASON;
 
-      const msg = TorLauncherUtil.getLocalizedString("tor_bootstrap_failed");
-      TorLauncherUtil.notifyUserOfError(msg, details, TorTopics.BootstrapError);
+      const message = TorLauncherUtil.getLocalizedString(
+        "tor_bootstrap_failed"
+      );
+      Services.obs.notifyObservers(
+        { message, details },
+        TorTopics.BootstrapError
+      );
     }
   },
 
