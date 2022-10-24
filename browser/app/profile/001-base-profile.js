@@ -237,7 +237,6 @@ pref("privacy.firstparty.isolate", true); // Always enforce first party isolatio
 pref("privacy.partition.network_state", false); // Disable for now until audit
 pref("network.cookie.cookieBehavior", 1);
 pref("network.cookie.cookieBehavior.pbmode", 1);
-pref("network.http.http2.allow-push", false); // Disabled for now. See https://bugs.torproject.org/27127 and tor-browser#41014
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
 // Bug 40177: Make sure tracker cookie purging is disabled
 pref("privacy.purge_trackers.enabled", false);
@@ -257,6 +256,25 @@ pref("network.proxy.allow_bypass", false, locked); // #40682
 // from making themselves fingerprintable by disabling. This pref
 // alters content load order in a page. See tor-browser#24686
 pref("network.http.tailing.enabled", true, locked);
+
+// Make sure the varoius http2 settings, buffer sizes, timings, etc are locked to firefox defaults to minimize network performance fingerprinting. See https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/27128
+pref("network.http.http2.enabled", true, locked);
+pref("network.http.http2.enabled.deps", true, locked);
+pref("network.http.http2.enforce-tls-profile", true, locked);
+pref("network.http.http2.chunk-size", 16000, locked);
+pref("network.http.http2.timeout", 170, locked);
+pref("network.http.http2.coalesce-hostnames", true, locked);
+pref("network.http.http2.persistent-settings", false, locked);
+pref("network.http.http2.ping-threshold", 58, locked);
+pref("network.http.http2.ping-timeout", 8, locked);
+pref("network.http.http2.send-buffer-size", 131072, locked);
+pref("network.http.http2.allow-push", true, locked);
+pref("network.http.http2.push-allowance", 131072, locked);
+pref("network.http.http2.pull-allowance", 12582912, locked);
+pref("network.http.http2.default-concurrent", 100, locked);
+pref("network.http.http2.default-hpack-buffer", 65536, locked);
+pref("network.http.http2.websockets", false, locked);
+pref("network.http.http2.enable-hpack-dump", false, locked);
 
 // Make sure we don't have any GIO supported protocols (defense in depth
 // measure)
