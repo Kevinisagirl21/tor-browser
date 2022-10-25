@@ -6831,18 +6831,53 @@ void Document::GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const {
 
 static bool IsValidOnionLocation(nsIURI* aDocumentURI,
                                  nsIURI* aOnionLocationURI) {
-  bool isHttpish;
+  if (!aDocumentURI || !aOnionLocationURI) {
+    return false;
+  }
+
+  // Current URI
   nsAutoCString host;
-  return aDocumentURI && aOnionLocationURI &&
-         NS_SUCCEEDED(aDocumentURI->SchemeIs("https", &isHttpish)) &&
-         isHttpish && NS_SUCCEEDED(aDocumentURI->GetAsciiHost(host)) &&
-         !StringEndsWith(host, ".onion"_ns) &&
-         ((NS_SUCCEEDED(aOnionLocationURI->SchemeIs("http", &isHttpish)) &&
-           isHttpish) ||
-          (NS_SUCCEEDED(aOnionLocationURI->SchemeIs("https", &isHttpish)) &&
-           isHttpish)) &&
-         NS_SUCCEEDED(aOnionLocationURI->GetAsciiHost(host)) &&
-         StringEndsWith(host, ".onion"_ns);
+  if (!aDocumentURI->SchemeIs("https")) {
+    return false;
+  }
+  NS_ENSURE_SUCCESS(aDocumentURI->GetAsciiHost(host), false);
+  if (StringEndsWith(host, ".onion"_ns)) {
+    // Already in the .onion site
+    return false;
+  }
+
+  // Target URI
+  if (!aOnionLocationURI->SchemeIs("http") &&
+      !aOnionLocationURI->SchemeIs("https")) {
+    return false;
+  }
+  nsCOMPtr<nsIEffectiveTLDService> eTLDService =
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  if (!eTLDService) {
+    NS_ENSURE_SUCCESS(aOnionLocationURI->GetAsciiHost(host), false);
+    // This should not happen, but in the unlikely case, still check if it is a
+    // .onion and in case allow it.
+    return StringEndsWith(host, ".onion"_ns);
+  }
+  NS_ENSURE_SUCCESS(eTLDService->GetBaseDomain(aOnionLocationURI, 0, host),
+                    false);
+  if (!StringEndsWith(host, ".onion"_ns)) {
+    return false;
+  }
+
+  // Ignore v2
+  if (host.Length() == 22) {
+    const char* cur = host.BeginWriting();
+    // We have already checked that it ends by ".onion"
+    const char* end = host.EndWriting() - 6;
+    bool base32 = true;
+    for (; cur < end && base32; ++cur) {
+      base32 = isalpha(*cur) || ('2' <= *cur && *cur <= '7');
+    }
+    return !base32;
+  }
+
+  return true;
 }
 
 void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
