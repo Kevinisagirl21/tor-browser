@@ -13,8 +13,7 @@
  *        verification.
  * @return Tells whether the input string is an Onion v3 address
  */
-static bool ValidateOnionV3(nsACString &aHostname)
-{
+static bool ValidateOnionV3(nsACString& aHostname) {
   constexpr nsACString::size_type v3Length = 56 + 6;
   if (aHostname.Length() != v3Length) {
     return false;
@@ -24,7 +23,7 @@ static bool ValidateOnionV3(nsACString &aHostname)
     return false;
   }
 
-  char* cur = aHostname.BeginWriting();
+  const char* cur = aHostname.BeginWriting();
   // We have already checked that it ends by ".onion"
   const char* end = aHostname.EndWriting() - 6;
   for (; cur < end; ++cur) {
@@ -55,11 +54,11 @@ already_AddRefed<IOnionAliasService> OnionAliasService::GetSingleton() {
 
 NS_IMETHODIMP
 OnionAliasService::AddOnionAlias(const nsACString& aShortHostname,
-                            const nsACString& aLongHostname) {
+                                 const nsACString& aLongHostname) {
   nsAutoCString shortHostname;
   ToLowerCase(aShortHostname, shortHostname);
   mozilla::UniquePtr<nsAutoCString> longHostname =
-    mozilla::MakeUnique<nsAutoCString>(aLongHostname);
+      mozilla::MakeUnique<nsAutoCString>(aLongHostname);
   if (!longHostname) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -73,8 +72,8 @@ OnionAliasService::AddOnionAlias(const nsACString& aShortHostname,
 }
 
 NS_IMETHODIMP
-OnionAliasService::GetOnionAlias(const nsACString& aShortHostname, nsACString& aLongHostname)
-{
+OnionAliasService::GetOnionAlias(const nsACString& aShortHostname,
+                                 nsACString& aLongHostname) {
   aLongHostname = aShortHostname;
   if (mozilla::StaticPrefs::browser_urlbar_onionRewrites_enabled() &&
       StringEndsWith(aShortHostname, ".tor.onion"_ns)) {
