@@ -199,6 +199,7 @@ pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
 pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
 pref("dom.webaudio.enabled", false); // Bug 13017: Disable Web Audio API
+pref("dom.webmidi.enabled", false); //  Bug 41398: Disable Web MIDI API
 pref("dom.w3c_touch_events.enabled", 0); // Bug 10286: Always disable Touch API
 pref("dom.vr.enabled", false); // Bug 21607: Disable WebVR for now
 pref("security.webauth.webauthn", false); // Bug 26614: Disable Web Authentication API for now
