@@ -380,11 +380,6 @@ pref("security.certerrors.mitm.auto_enable_enterprise_roots", false);
 pref("gfx.offscreencanvas.domain-enabled", false);
 pref("gfx.offscreencanvas.domain-allowlist", "");
 
-// Disable the language pack signing check for now on macOS, see #31942
-#ifdef XP_MACOSX
-pref("extensions.langpacks.signatures.required", false);
-#endif
-
 // Disable special URL bar behaviors
 pref("browser.urlbar.suggest.topsites", false);
 pref("browser.urlbar.update1.interventions", false);
