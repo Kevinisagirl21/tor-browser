@@ -23,7 +23,10 @@ pref("network.proxy.allow_hijacking_localhost", true); // Allow proxies for loca
 pref("network.proxy.type", 1);
 // Bug 40548: Disable proxy-bypass
 pref("network.proxy.failover_direct", false);
-pref("network.security.ports.banned", "9050,9051,9150,9151");
+// localhost is already blocked by setting `network.proxy.allow_hijacking_localhost` to
+// true, allowing users to explicitly block ports makes them fingerprintable; for details, see
+// Bug 41317: Tor Browser leaks banned ports in network.security.ports.banned
+pref("network.security.ports.banned", "", locked);
 pref("network.dns.disabled", true); // This should cover the #5741 patch for DNS leaks
 pref("network.http.max-persistent-connections-per-proxy", 256);
 
