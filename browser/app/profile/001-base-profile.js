@@ -202,7 +202,6 @@ pref("dom.push.enabled", false);
 // Fingerprinting
 pref("webgl.disable-fail-if-major-performance-caveat", true);
 pref("webgl.enable-webgl2", false);
-pref("gfx.downloadable_fonts.fallback_delay", -1);
 pref("browser.startup.homepage_override.buildID", "20100101");
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
 // Set video VP9 to 0 for everyone (bug 22548)
