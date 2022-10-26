@@ -524,7 +524,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
   /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
   /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
-  /* package */ final Pref<Integer> mTorSecurityLevel = new Pref<>("extensions.torbutton.security_slider", 4);
+  /* package */ final Pref<Integer> mTorSecurityLevel =
+      new Pref<>("extensions.torbutton.security_slider", 4);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
