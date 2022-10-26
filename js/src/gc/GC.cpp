@@ -4643,6 +4643,10 @@ void GCRuntime::beginMarkPhase(AutoGCSession& session) {
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     // Incremental marking barriers are enabled at this point.
     zone->changeGCState(Zone::Prepare, Zone::MarkBlackOnly);
+
+    for (RealmsInZoneIter realm(zone); !realm.done(); realm.next()) {
+      realm->clearAllocatedDuringGC();
+    }
   }
 
   if (rt->isBeingDestroyed()) {
@@ -6767,9 +6771,6 @@ void GCRuntime::finishCollection() {
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     zone->changeGCState(Zone::Finished, Zone::NoGC);
     zone->notifyObservingDebuggers();
-    for (RealmsInZoneIter realm(zone); !realm.done(); realm.next()) {
-      realm->clearAllocatedDuringGC();
-    }
   }
 
 #ifdef JS_GC_ZEAL
