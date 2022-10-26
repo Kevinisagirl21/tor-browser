@@ -192,10 +192,7 @@ const OnionAuthPrompt = (function() {
         let { controller } = ChromeUtils.import(
           "resource://torbutton/modules/tor-control-port.js"
         );
-        let torController = await controller(aError => {
-          console.error(controllerFailureMsg, aError);
-          this.show(controllerFailureMsg);
-        });
+        let torController = await controller();
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
         const onionServiceIdRegExp = /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
         // match() will return null on bad match, causing throw

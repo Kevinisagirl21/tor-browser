@@ -49,9 +49,7 @@ var gOnionServicesSavedKeysDialog = {
       const controllerFailureMsg =
         TorStrings.onionServices.authPreferences.failedToRemoveKey;
       try {
-        const torController = controller(aError => {
-          this._showError(controllerFailureMsg);
-        });
+        const torController = await controller();
 
         // Remove in reverse index order to avoid issues caused by index changes.
         for (let i = indexesToDelete.length - 1; i >= 0; --i) {
@@ -129,10 +127,7 @@ var gOnionServicesSavedKeysDialog = {
     try {
       this._tree.view = this;
 
-      const torController = controller(aError => {
-        this._showError(controllerFailureMsg);
-      });
-
+      const torController = await controller();
       const keyInfoList = await torController.onionAuthViewKeys();
       if (keyInfoList) {
         // Filter out temporary keys.
