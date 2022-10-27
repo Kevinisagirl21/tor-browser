@@ -36,11 +36,14 @@ ac_add_options --enable-base-browser
 # Disable telemetry
 ac_add_options MOZ_TELEMETRY_REPORTING=
 
-if test ! -z "$LOCAL_DEV_BUILD"; then
-    ac_add_options --without-wasm-sandboxed-libraries
+if test -n "$LOCAL_DEV_BUILD"; then
     # You must use the "default" bogus channel for dev builds
     ac_add_options --enable-update-channel=default
 else
     # We only use beta GeckoView for now, for official builds
     ac_add_options --enable-update-channel=beta
+fi
+
+if test -z "$WASI_SYSROOT"; then
+    ac_add_options --without-wasm-sandboxed-libraries
 fi
