@@ -303,17 +303,3 @@ label#edit-enable {
   display: flex;
   align-items: center;
 }
-
-/* No rulesets */
-
-#no-rulesets {
-  max-width: 100%;
-  background-image: url(chrome://browser/skin/preferences/no-search-results.svg);
-  background-size: 275px 212px;
-  background-position: center center;
-  background-repeat: no-repeat;
-}
-
-.state-noRulesets #no-rulesets {
-  display: block;
-}
