@@ -82,7 +82,7 @@ class CryptoSafetyPrompt {
 
     let _this = this;
     const options = {
-      popupIconURL: "chrome://browser/skin/cert-error.svg",
+      popupIconURL: "chrome://global/skin/icons/warning.svg",
       eventCallback(aTopic) {
         if (aTopic === "showing") {
           _this._onPromptShowing();
