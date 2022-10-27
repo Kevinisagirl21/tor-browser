@@ -1,5 +1,7 @@
 /* Copyright (c) 2020, The Tor Project, Inc. */
 
+@import url("chrome://branding/content/tor-styles.css");
+
 #torOnionServiceKeys-overview-container {
   margin-right: 30px;
 }
@@ -15,6 +17,8 @@
 
 #onionservices-savedkeys-errorIcon {
   margin-right: 4px;
-  list-style-image: url("chrome://browser/skin/warning.svg");
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+  -moz-context-properties: fill;
+  fill: var(--torbrowser-warning);
   visibility: hidden;
 }
