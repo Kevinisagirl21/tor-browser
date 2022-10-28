@@ -178,9 +178,7 @@ const TorMonitorService = {
   },
 
   get isRunning() {
-    return this.ownsTorDaemon
-      ? !!this._torProcess?.isRunning
-      : !!this._connection;
+    return !!this._connection;
   },
 
   // Private methods
@@ -236,6 +234,7 @@ const TorMonitorService = {
         // FIXME: TorProcess is misleading here. We should use a topic related
         // to having a control port connection, instead.
         Services.obs.notifyObservers(null, TorTopics.ProcessIsReady);
+        logger.info(`Notified ${TorTopics.ProcessIsReady}`);
 
         // We reset this here hoping that _shutDownEventMonitor can interrupt
         // the current monitor, either by calling clearTimeout and preventing it
