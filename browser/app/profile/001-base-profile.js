@@ -217,6 +217,7 @@ pref("privacy.resistFingerprinting.letterboxing", true);
 // not leak that difference if possible.
 pref("dom.netinfo.enabled", false);
 pref("network.http.referer.defaultPolicy", 2); // Bug 32948: Make referer behavior consistent regardless of private browing mode status
+pref("network.http.referer.XOriginTrimmingPolicy", 2); // Bug 17228: Force trim referer to scheme+host+port in cross-origin requests
 pref("media.videocontrols.picture-in-picture.enabled", false); // Bug 40148: disable until audited in #40147
 pref("network.http.referer.hideOnionSource", true);
 // Bug 40463: Disable Windows SSO
