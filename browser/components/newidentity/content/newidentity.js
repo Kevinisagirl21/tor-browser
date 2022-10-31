@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityStrings", () => {
     new_identity_sentence_case: "New identity",
     new_identity_prompt_title: "Reset your identity?",
     new_identity_prompt: `${brandShortName} will close all windows and tabs. All website sessions will be lost. \nRestart ${brandShortName} now to reset your identity?`,
-    new_identity_restart: `${brandShortName}`,
+    new_identity_restart: `Restart ${brandShortName}`,
     new_identity_ask_again: "Never ask me again",
     new_identity_menu_accesskey: "I",
   };
