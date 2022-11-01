@@ -1416,6 +1416,10 @@ BrowserGlue.prototype = {
       Services.prefs.clearUserPref("security.enterprise_roots.auto-enabled");
     }
 
+    if (!Services.prefs.prefHasUserValue("intl.locale.requested")) {
+      Services.prefs.setStringPref("intl.locale.requested", Services.prefs.getStringPref("intl.locale.requested", ""));
+    }
+
     if (!Services.prefs.prefHasUserValue(PREF_PDFJS_ISDEFAULT_CACHE_STATE)) {
       PdfJs.checkIsDefault(this._isNewProfile);
     }
