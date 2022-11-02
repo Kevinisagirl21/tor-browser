@@ -79,6 +79,18 @@ pref("dom.security.https_only_mode.upgrade_onion", false);
 // [4] https://www.ssllabs.com/ssl-pulse/
 pref("security.ssl.require_safe_negotiation", true);
 
+// Bug 40183: Disable TLS ciphersuites using SHA-1
+// https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/40183
+pref("security.ssl3.dhe_rsa_aes_128_sha", false, locked);
+pref("security.ssl3.dhe_rsa_aes_256_sha", false, locked);
+pref("security.ssl3.ecdhe_ecdsa_aes_256_sha", false, locked);
+pref("security.ssl3.ecdhe_ecdsa_aes_128_sha", false, locked);
+pref("security.ssl3.ecdhe_rsa_aes_128_sha", false, locked);
+pref("security.ssl3.ecdhe_rsa_aes_256_sha", false, locked);
+pref("security.ssl3.rsa_aes_128_sha", false, locked);
+pref("security.ssl3.rsa_aes_256_sha", false, locked);
+
+
 // Misc privacy: Remote
 pref("browser.send_pings", false);
 pref("geo.enabled", false);
