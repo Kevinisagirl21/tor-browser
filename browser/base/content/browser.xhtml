@@ -95,6 +95,7 @@
 #ifdef NIGHTLY_BUILD
   <link rel="localization" href="preview/firefoxView.ftl"/>
 #endif
+  <link rel="localization" href="browser/languageNotification.ftl"/>
 
   <title data-l10n-id="browser-main-window-title"></title>
 
@@ -122,6 +123,7 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/places/places-menupopup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/autocomplete-popup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
+  Services.scriptloader.loadSubScript("chrome://browser/content/languageNotification.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/tor-circuit-display.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/torbutton.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/torconnect/torBootstrapUrlbar.js", this);
