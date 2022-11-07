@@ -1077,6 +1077,5 @@ const TorConnect = (() => {
       return redirectUrls;
     },
   };
-  retval.init();
   return retval;
 })(); /* TorConnect */

@@ -778,6 +778,5 @@ const TorSettings = (() => {
       };
     },
   };
-  self.init();
   return self;
 })();
