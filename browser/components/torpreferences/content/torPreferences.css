@@ -284,7 +284,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   color: var(--purple-60);
 }
 
-@media (-moz-toolbar-prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
   .torPreferences-bridgeCard-connectedBadge {
     color: var(--purple-30);
   }
