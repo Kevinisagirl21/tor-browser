@@ -233,11 +233,14 @@ const TorProtocolService = {
               this._returnConnection();
             } else {
               // Connection is bad.
+              logger.warn(
+                "sendCommand returned an empty response, taking the connection as broken and closing it."
+              );
               this._closeConnection();
             }
           }
         } catch (e) {
-          logger.error("Cannot send a command", e);
+          logger.error(`Cannot send the command ${cmd}`, e);
           this._closeConnection();
         }
       } catch (e) {
@@ -299,7 +302,7 @@ const TorProtocolService = {
         if (valType === "boolean") {
           rv += val ? "1" : "0";
         } else if (Array.isArray(val)) {
-          rv += val.map(TorParsers.escapeString).join("\n");
+          rv += val.map(TorParsers.escapeString).join(` ${key}=`);
         } else if (valType === "string") {
           rv += TorParsers.escapeString(val);
         } else {
@@ -666,7 +669,7 @@ const TorProtocolService = {
     const salt = Array.from(crypto.getRandomValues(new Uint8Array(8)));
 
     // Convert hex-encoded password to an array of bytes.
-    const password = new Array();
+    const password = [];
     for (let i = 0; i < aHexPassword.length; i += 2) {
       password.push(parseInt(aHexPassword.substring(i, i + 2), 16));
     }
