@@ -7,7 +7,7 @@ BINARIES_DIR=$1
 wget https://aus1.torproject.org/torbrowser/update_3/alpha/downloads.json
 # get url for latest alpha linux en_US package
 TOR_BROWSER_VERSION=$(grep -Eo "\"version\":\"[0-9.a]+\"" downloads.json | grep -Eo "[0-9.a]+")
-TOR_BROWSER_PACKAGE="tor-browser-linux64-${TOR_BROWSER_VERSION}_en-US.tar.xz"
+TOR_BROWSER_PACKAGE="tor-browser-linux64-${TOR_BROWSER_VERSION}_ALL.tar.xz"
 TOR_BROWSER_PACKAGE_URL="https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/${TOR_BROWSER_PACKAGE}"
 
 # remove download manifest
@@ -24,7 +24,7 @@ mkdir -p "${BINARIES_DIR}"
 
 # and extract
 tar -xf ${TOR_BROWSER_PACKAGE} -C "${BINARIES_DIR}"
-mv "${BINARIES_DIR}/tor-browser_en-US" "${BINARIES_DIR}/dev"
+mv "${BINARIES_DIR}/tor-browser" "${BINARIES_DIR}/dev"
 
 # cleanup
 rm -f "${TOR_BROWSER_PACKAGE}"
