@@ -1042,7 +1042,7 @@ var gMainPane = {
         name =
           Services.intl.getLocaleDisplayNames(undefined, ["ja"], {
             preferNative: true,
-          }) + " (ja)";
+          })[0] + " (ja)";
       } else {
         name += ` (${code})`;
       }
