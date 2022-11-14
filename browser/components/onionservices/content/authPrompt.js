@@ -118,6 +118,9 @@ const OnionAuthPrompt = (function() {
           "href",
           TorStrings.onionServices.learnMoreURL
         );
+        if (TorStrings.onionServices.learnMoreURL.startsWith("about:")) {
+          learnMoreElem.setAttribute("useoriginprincipal", "true");
+        }
       }
 
       this._showWarning(aWarningMessage);
@@ -196,7 +199,9 @@ const OnionAuthPrompt = (function() {
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
         const onionServiceIdRegExp = /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
         // match() will return null on bad match, causing throw
-        const onionServiceId = this._onionHostname.match(onionServiceIdRegExp).groups.onionServiceId.toLowerCase();
+        const onionServiceId = this._onionHostname
+          .match(onionServiceIdRegExp)
+          .groups.onionServiceId.toLowerCase();
 
         let checkboxElem = this._getCheckboxElement();
         let isPermanent = checkboxElem && checkboxElem.checked;

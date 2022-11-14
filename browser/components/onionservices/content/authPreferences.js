@@ -43,6 +43,9 @@ const OnionServicesAuthPreferences = {
     elem = groupbox.querySelector(this.selector.learnMore);
     elem.setAttribute("value", TorStrings.onionServices.learnMore);
     elem.setAttribute("href", TorStrings.onionServices.learnMoreURL);
+    if (TorStrings.onionServices.learnMoreURL.startsWith("about:")) {
+      elem.setAttribute("useoriginprincipal", "true");
+    }
 
     elem = groupbox.querySelector(this.selector.savedKeysButton);
     elem.setAttribute(
