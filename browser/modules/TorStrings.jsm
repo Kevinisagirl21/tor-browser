@@ -648,7 +648,7 @@ const Loader = {
 
     const retval = {
       learnMore: getString("learnMore", "Learn more"),
-      learnMoreURL: `https://support.torproject.org/${getLocale()}/onionservices/client-auth/`,
+      learnMoreURL: "about:manual#onion-services",
       errorPage: {
         browser: getString("errorPage.browser", "Browser"),
         network: getString("errorPage.network", "Network"),
