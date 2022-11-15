@@ -103,15 +103,23 @@ pref("datareporting.policy.dataSubmissionEnabled", false);
 // Make sure Unified Telemetry is really disabled, see: #18738.
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
+pref("toolkit.telemetry.archive.enabled", false);
 pref("toolkit.telemetry.updatePing.enabled", false); // Make sure updater telemetry is disabled; see #25909.
 #ifdef XP_WIN
 // Defense-in-depth: ensure that the Windows default browser agent will
 // not ping Mozilla if it is somehow present (we omit it at build time).
 pref("default-browser-agent.enabled", false);
 #endif
-pref("identity.fxaccounts.enabled", false); // Disable sync by default
-pref("services.sync.engine.prefs", false); // Never sync prefs, addons, or tabs with other browsers
+// Disable sync by default
+pref("identity.fxaccounts.enabled", false);
+// Never sync with other browsers
 pref("services.sync.engine.addons", false);
+pref("services.sync.engine.addresses", false);
+pref("services.sync.engine.bookmarks", false);
+pref("services.sync.engine.creditcards", false);
+pref("services.sync.engine.history", false);
+pref("services.sync.engine.passwords", false);
+pref("services.sync.engine.prefs", false);
 pref("services.sync.engine.tabs", false);
 pref("extensions.getAddons.cache.enabled", false); // https://blog.mozilla.org/addons/how-to-opt-out-of-add-on-metadata-updates/
 pref("browser.newtabpage.enabled", false);
@@ -145,6 +153,7 @@ pref("extensions.webcompat-reporter.enabled", false);
 // Disable use of WiFi location information
 pref("browser.region.network.scan", false);
 pref("browser.region.network.url", "");
+pref("browser.region.local-geocoding", false);
 // Bug 40083: Make sure Region.jsm fetching is disabled
 pref("browser.region.update.enabled", false);
 
@@ -156,6 +165,8 @@ pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 0);
 
 // Disable about:newtab and "first run" experiments
 pref("messaging-system.rsexperimentloader.enabled", false);
+// true means that you are *not* opting out. See its usage in various file.
+pref("app.shield.optoutstudies.enabled", false);
 
 // [SETTING] General>Browsing>Recommend extensions as you browse (Bug #40700)
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false); // disable CFR [FF67+]
@@ -164,7 +175,7 @@ pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false); // disable CFR [FF67+]
 
 // Clear the list of trusted recursive resolver services
-pref("network.trr.resolvers", "");
+pref("network.trr.default_provider_uri", "");
 
 // Disable the /etc/hosts parser
 // If true, entries from /etc/hosts will be excluded **from TRR results**.
@@ -185,6 +196,7 @@ pref("dom.serviceWorkers.enabled", false);
 pref("dom.push.enabled", false);
 
 // Fingerprinting
+pref("privacy.resistFingerprinting", true);
 pref("webgl.disable-fail-if-major-performance-caveat", true);
 pref("webgl.enable-webgl2", false);
 pref("browser.startup.homepage_override.buildID", "20100101");
@@ -192,7 +204,6 @@ pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in 
 // Set video VP9 to 0 for everyone (bug 22548)
 pref("media.benchmark.vp9.threshold", 0);
 pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
-pref("privacy.resistFingerprinting", true);
 pref("privacy.resistFingerprinting.block_mozAddonManager", true); // Bug 26114
 pref("dom.webaudio.enabled", false); // Bug 13017: Disable Web Audio API
 pref("dom.webmidi.enabled", false); //  Bug 41398: Disable Web MIDI API
@@ -210,6 +221,7 @@ pref("privacy.resistFingerprinting.letterboxing", true);
 // Enforce Network Information API as disabled
 pref("dom.netinfo.enabled", false);
 pref("network.http.referer.defaultPolicy", 2); // Bug 32948: Make referer behavior consistent regardless of private browing mode status
+pref("network.http.referer.defaultPolicy.pbmode", 2);
 pref("network.http.referer.XOriginTrimmingPolicy", 2); // Bug 17228: Force trim referer to scheme+host+port in cross-origin requests
 pref("media.videocontrols.picture-in-picture.enabled", false); // Bug 40148: disable until audited in #40147
 // Bug 40463: Disable Windows SSO
@@ -237,6 +249,7 @@ pref("network.predictor.enabled", false); // Temporarily disabled. See https://b
 pref("privacy.purge_trackers.enabled", false);
 
 pref("network.dns.disablePrefetch", true);
+pref("network.dns.disablePrefetchFromHTTPS", true);
 pref("network.protocol-handler.external-default", false);
 pref("network.protocol-handler.external.mailto", false);
 pref("network.protocol-handler.external.news", false);
