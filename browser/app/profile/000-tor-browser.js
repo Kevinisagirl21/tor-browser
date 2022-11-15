@@ -35,9 +35,18 @@ pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-
 // Treat .onions as secure
 pref("dom.securecontext.allowlist_onions", true);
 
+// Disable HTTPS-Only mode for .onion domains (tor-browser#19850)
+pref("dom.security.https_only_mode.upgrade_onion", false);
+
+// tor-browser#22320: Hide referer when comming from a .onion address
+pref("network.http.referer.hideOnionSource", true);
+
 // Bug 40423/41137: Disable http/3
 // We should re-enable it as soon as Tor gets UDP support
 pref("network.http.http3.enabled", false);
+
+// 0 = do not use a second connection, see all.js and #7656
+pref("network.http.connection-retry-timeout", 0);
 
 #expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
 
