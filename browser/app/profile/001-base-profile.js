@@ -83,6 +83,9 @@ pref("security.ssl3.rsa_aes_256_sha", false, locked);
 
 // Misc privacy: Remote
 pref("browser.send_pings", false);
+// Space separated list of URLs that are allowed to send objects (instead of
+// only strings) through webchannels.
+pref("webchannel.allowObject.urlWhitelist", "");
 pref("geo.enabled", false);
 pref("geo.provider.network.url", "");
 pref("geo.provider.ms-windows-location", false);
