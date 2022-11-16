@@ -55,6 +55,7 @@ pref("media.memory_cache_max_size", 16384);
 
 // Enable HTTPS-Only mode (tor-browser#19850)
 pref("dom.security.https_only_mode", true);
+pref("dom.security.https_only_mode_pbm", true);
 
 // Require Safe Negotiation ( https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/27719 )
 // Blocks connections to servers that don't support RFC 5746 [2] as they're potentially vulnerable to a
@@ -84,7 +85,14 @@ pref("security.ssl3.rsa_aes_256_sha", false, locked);
 pref("browser.send_pings", false);
 pref("geo.enabled", false);
 pref("geo.provider.network.url", "");
+pref("geo.provider.ms-windows-location", false);
+pref("geo.provider.use_corelocation", false);
+pref("geo.provider.use_gpsd", false);
+pref("geo.provider.use_geoclue", false);
 pref("browser.search.suggest.enabled", false);
+pref("browser.urlbar.suggest.searches", false);
+pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false);
+pref("browser.urlbar.suggest.quicksuggest.sponsored", false);
 pref("browser.safebrowsing.malware.enabled", false);
 pref("browser.safebrowsing.phishing.enabled", false);
 pref("browser.safebrowsing.downloads.enabled", false);
@@ -103,8 +111,16 @@ pref("datareporting.policy.dataSubmissionEnabled", false);
 // Make sure Unified Telemetry is really disabled, see: #18738.
 pref("toolkit.telemetry.unified", false);
 pref("toolkit.telemetry.enabled", false);
+pref("toolkit.telemetry.server", "data:,");
 pref("toolkit.telemetry.archive.enabled", false);
 pref("toolkit.telemetry.updatePing.enabled", false); // Make sure updater telemetry is disabled; see #25909.
+pref("toolkit.telemetry.bhrPing.enabled", false);
+pref("toolkit.telemetry.coverage.opt-out", true);
+pref("toolkit.coverage.opt-out", true);
+pref("toolkit.coverage.endpoint.base", "");
+pref("browser.ping-centre.telemetry", false);
+pref("browser.tabs.crashReporting.sendReport", false);
+pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 #ifdef XP_WIN
 // Defense-in-depth: ensure that the Windows default browser agent will
 // not ping Mozilla if it is somehow present (we omit it at build time).
@@ -142,6 +158,11 @@ pref("extensions.pocket.enabled", false);
 // Disable activity stream/"Recommended by Pocket" in about:home (Bug #41029)
 pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
+pref("browser.newtabpage.activity-stream.showSponsored", false);
+pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+pref("browser.newtabpage.activity-stream.default.sites", "");
+pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
+pref("browser.newtabpage.activity-stream.telemetry", false);
 
 // Disable moreFromMozilla pane in the preferences/settings (tor-browser#41292).
 pref("browser.preferences.moreFromMozilla", false);
@@ -167,6 +188,9 @@ pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 0);
 pref("messaging-system.rsexperimentloader.enabled", false);
 // true means that you are *not* opting out. See its usage in various file.
 pref("app.shield.optoutstudies.enabled", false);
+// Disable Normandy/Shield
+pref("app.normandy.enabled", false);
+pref("app.normandy.api_url", "");
 
 // [SETTING] General>Browsing>Recommend extensions as you browse (Bug #40700)
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false); // disable CFR [FF67+]
@@ -183,6 +207,7 @@ pref("network.trr.default_provider_uri", "");
 pref("network.trr.exclude-etc-hosts", false);
 
 // Disable crlite
+pref("security.remote_settings.crlite_filters.enabled", false);
 pref("security.pki.crlite_mode", 0);
 
 // Disable website password breach alerts
@@ -201,6 +226,8 @@ pref("webgl.disable-fail-if-major-performance-caveat", true);
 pref("webgl.enable-webgl2", false);
 pref("browser.startup.homepage_override.buildID", "20100101");
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
+// Prevent scripts from moving and resizing open windows
+pref("dom.disable_window_move_resize", true);
 // Set video VP9 to 0 for everyone (bug 22548)
 pref("media.benchmark.vp9.threshold", 0);
 pref("dom.enable_resource_timing", false); // Bug 13024: To hell with this API
@@ -245,8 +272,18 @@ pref("privacy.partition.network_state", false); // Disable for now until audit
 pref("network.cookie.cookieBehavior", 1);
 pref("network.cookie.cookieBehavior.pbmode", 1);
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
+pref("network.predictor.enable-prefetch", false);
+pref("network.http.speculative-parallel-limit", 0);
+pref("browser.places.speculativeConnect.enabled", false);
+pref("network.prefetch-next", false);
+pref("browser.urlbar.speculativeConnect.enabled", false);
 // Bug 40220: Make sure tracker cookie purging is disabled
 pref("privacy.purge_trackers.enabled", false);
+// Do not allow cross-origin sub-resources to open HTTP authentication
+// credentials dialogs. Hardens against potential credentials phishing.
+pref("network.auth.subresource-http-auth-allow", 1);
+// Disable sending additional analytics to web servers
+pref("beacon.enabled", false);
 
 pref("network.dns.disablePrefetch", true);
 pref("network.dns.disablePrefetchFromHTTPS", true);
@@ -335,6 +372,7 @@ pref("network.manage-offline-status", false);
 // No need to leak things to Mozilla, see bug 21790 and tor-browser#40322
 pref("network.captive-portal-service.enabled", false);
 pref("network.connectivity-service.enabled", false);
+pref("captivedetect.canonicalURL", "");
 // As a "defense in depth" measure, configure an empty push server URL (the
 // DOM Push features are disabled by default via other prefs).
 // See tor-browser#18801.
@@ -350,6 +388,9 @@ pref("extensions.pendingOperations", false);
 // about:addons page, see bug 22073, 22900 and 31601.
 pref("extensions.getAddons.showPane", false);
 pref("extensions.htmlaboutaddons.recommendations.enabled", false);
+// Disable personalized Extension Recommendations in about:addons and
+// addons.mozilla.org
+pref("browser.discovery.enabled", false);
 // Bug 26114: Allow NoScript to access addons.mozilla.org etc.
 // TODO: Audit again (tor-browser#41445)
 pref("extensions.webextensions.restrictedDomains", "");
