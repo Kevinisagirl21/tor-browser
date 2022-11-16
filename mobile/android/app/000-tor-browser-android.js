@@ -5,24 +5,20 @@
 
 #include ../../../browser/app/profile/000-tor-browser.js
 
-// Space separated list of URLs that are allowed to send objects (instead of
-// only strings) through webchannels. This list is duplicated in browser/app/profile/firefox.js
-pref("webchannel.allowObject.urlWhitelist", "");
-
 // Disable browser auto updaters
 pref("app.update.auto", false);
 pref("browser.startup.homepage_override.mstone", "ignore");
 
 // Clear data on quit
 pref("privacy.clearOnShutdown.cache", true);
-pref("privacy.clearOnShutdown.cookies",true);
-pref("privacy.clearOnShutdown.downloads",true);
-pref("privacy.clearOnShutdown.formdata",true);
-pref("privacy.clearOnShutdown.history",true);
-pref("privacy.clearOnShutdown.offlineApps",true);
-pref("privacy.clearOnShutdown.passwords",true);
-pref("privacy.clearOnShutdown.sessions",true);
-pref("privacy.clearOnShutdown.siteSettings",true);
+pref("privacy.clearOnShutdown.cookies", true);
+pref("privacy.clearOnShutdown.downloads", true);
+pref("privacy.clearOnShutdown.formdata", true);
+pref("privacy.clearOnShutdown.history", true);
+pref("privacy.clearOnShutdown.offlineApps", true);
+pref("privacy.clearOnShutdown.passwords", true);
+pref("privacy.clearOnShutdown.sessions", true);
+pref("privacy.clearOnShutdown.siteSettings", true);
 
 // controls if we want camera support
 pref("media.realtime_decoder.enabled", false);
@@ -30,14 +26,8 @@ pref("media.realtime_decoder.enabled", false);
 // Enable touch events on Android (highlighting text, etc)
 pref("dom.w3c_touch_events.enabled", 2);
 
-// Ensure that pointer events are disabled
-pref("dom.w3c_pointer_events.multiprocess.android.enabled", false);
-
 // No HLS support for now due to browser freezing, see: #29859.
 pref("media.hls.enabled", false);
-
-// Inherit locale from the OS, used for multi-locale builds
-pref("intl.locale.requested", "");
 
 // Disable WebAuthn. It requires Google Play Services, so it isn't
 // available, but avoid any potential problems.
