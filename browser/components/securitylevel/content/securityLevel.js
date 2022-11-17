@@ -76,8 +76,8 @@ XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
   Getters and Setters for relevant torbutton prefs
 */
 const SecurityLevelPrefs = {
-  security_slider_pref: "extensions.torbutton.security_slider",
-  security_custom_pref: "extensions.torbutton.security_custom",
+  security_slider_pref: "browser.security_level.security_slider",
+  security_custom_pref: "browser.security_level.security_custom",
 
   get securitySlider() {
     try {
@@ -182,7 +182,7 @@ const SecurityLevelButton = {
     this._configUIFromPrefs();
 
     this._securityPrefsBranch = Services.prefs.getBranch(
-      "extensions.torbutton."
+      "browser.security_level."
     );
     this._securityPrefsBranch.addObserver("", this);
 
@@ -340,7 +340,7 @@ const SecurityLevelPanel = {
 
   init() {
     this._securityPrefsBranch = Services.prefs.getBranch(
-      "extensions.torbutton."
+      "browser.security_level."
     );
     this._securityPrefsBranch.addObserver("", this);
   },
@@ -545,7 +545,7 @@ const SecurityLevelPreferences = {
 
     // register for pref chagnes
     this._securityPrefsBranch = Services.prefs.getBranch(
-      "extensions.torbutton."
+      "browser.security_level."
     );
     this._securityPrefsBranch.addObserver("", this);
   },

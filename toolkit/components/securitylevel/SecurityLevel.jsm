@@ -29,9 +29,8 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => {
 });
 
 // The Security Settings prefs in question.
-const kSliderPref = "extensions.torbutton.security_slider";
-const kCustomPref = "extensions.torbutton.security_custom";
-const kSliderMigration = "extensions.torbutton.security_slider_migration";
+const kSliderPref = "browser.security_level.security_slider";
+const kCustomPref = "browser.security_level.security_custom";
 
 // __getPrefValue(prefName)__
 // Returns the current value of a preference, regardless of its type.
@@ -213,7 +212,7 @@ var initializeNoScriptControl = () => {
       sendNoScriptSettings(noscriptSettings(safetyLevel));
 
     // __securitySliderToSafetyLevel(sliderState)__.
-    // Converts the "extensions.torbutton.security_slider" pref value
+    // Converts the "browser.security_level.security_slider" pref value
     // to a "safety level" value: 0 = Standard, 1 = Safer, 2 = Safest
     let securitySliderToSafetyLevel = sliderState =>
       [undefined, 2, 1, 1, 0][sliderState];
@@ -224,11 +223,11 @@ var initializeNoScriptControl = () => {
       try {
         logger.debug("Message received from NoScript:", a);
         let noscriptPersist = Services.prefs.getBoolPref(
-          "extensions.torbutton.noscript_persist",
+          "browser.security_level.noscript_persist",
           false
         );
         let noscriptInited = Services.prefs.getBoolPref(
-          "extensions.torbutton.noscript_inited",
+          "browser.security_level.noscript_inited",
           false
         );
         // Set the noscript safety level once if we have never run noscript
@@ -244,7 +243,7 @@ var initializeNoScriptControl = () => {
         );
         if (!noscriptInited) {
           Services.prefs.setBoolPref(
-            "extensions.torbutton.noscript_inited",
+            "browser.security_level.noscript_inited",
             true
           );
         }
@@ -267,7 +266,7 @@ var initializeNoScriptControl = () => {
 // A table of all prefs bound to the security slider, and the value
 // for each security setting. Note that 2-m and 3-m are identical,
 // corresponding to the old 2-medium-high setting. We also separately
-// bind NoScript settings to the extensions.torbutton.security_slider
+// bind NoScript settings to the browser.security_level.security_slider
 // (see noscript-control.js).
 /* eslint-disable */
 const kSecuritySettings = {
@@ -348,8 +347,8 @@ var watch_security_prefs = function(onSettingChanged) {
 var initializedSecPrefs = false;
 
 // __initialize()__.
-// Defines the behavior of "extensions.torbutton.security_custom",
-// "extensions.torbutton.security_slider", and the security-sensitive
+// Defines the behavior of "browser.security_level.security_custom",
+// "browser.security_level.security_slider", and the security-sensitive
 // prefs declared in kSecuritySettings.
 var initializeSecurityPrefs = function() {
   // Only run once.
@@ -390,25 +389,55 @@ var initializeSecurityPrefs = function() {
     write_setting_to_prefs(2);
   }
 
-  // Revert #33613 fix
-  if (Services.prefs.getIntPref(kSliderMigration, 0) < 2) {
-    // We can't differentiate between users having flipped `javascript.enabled`
-    // to `false` before it got governed by the security settings vs. those who
-    // had it flipped due to #33613. Reset the preference for everyone.
-    if (Services.prefs.getIntPref(kSliderPref) === 1) {
-      Services.prefs.setBoolPref("javascript.enabled", true);
-    }
-    Services.prefs.clearUserPref("media.webaudio.enabled");
-    Services.prefs.setIntPref(kSliderMigration, 2);
-  }
   logger.info("security-prefs.js initialization complete");
 };
+
+// tor-browser#41460: we changed preference names in 12.0.
+// 11.5.8 is an obligated step for desktop users, so this code is helpful only
+// to alpha users, and we could remove it quite soon.
+function migratePreferences() {
+  const kPrefCheck = "extensions.torbutton.noscript_inited";
+  // For 12.0, check for extensions.torbutton.noscript_inited, which was set
+  // as a user preference for sure, if someone used security level in previous
+  // versions.
+  if(!Services.prefs.prefHasUserValue(kPrefCheck)) {
+    return;
+  }
+  const migrate = (oldName, newName, getter, setter) => {
+    oldName = `extensions.torbutton.${oldName}`;
+    newName = `browser.${newName}`;
+    if (Services.prefs.prefHasUserValue(oldName)) {
+      setter(newName, getter(oldName));
+      Services.prefs.clearUserPref(oldName);
+    }
+  };
+  const prefs = {
+    security_custom: "security_level.security_custom",
+    noscript_persist: "security_level.noscript_persist",
+    noscript_inited: "security_level.noscript_inited",
+  }
+  for (const [oldName, newName] of Object.entries(prefs)) {
+    migrate(
+      oldName,
+      newName,
+      Services.prefs.getBoolPref.bind(Services.prefs),
+      Services.prefs.setBoolPref.bind(Services.prefs)
+    );
+  }
+  migrate(
+    "security_slider",
+    "security_level.security_slider",
+    Services.prefs.getIntPref.bind(Services.prefs),
+    Services.prefs.setIntPref.bind(Services.prefs)
+  );
+}
 
 // This class is used to initialize the security level stuff at the startup
 class SecurityLevel {
   QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
 
   init() {
+    migratePreferences();
     initializeNoScriptControl();
     initializeSecurityPrefs();
   }

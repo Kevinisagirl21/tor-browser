@@ -472,7 +472,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      * @return This Builder instance.
      */
     public @NonNull Builder torSecurityLevel(final int level) {
-      getSettings().mTorSecurityLevel.set(level);
+      getSettings().mSecurityLevel.set(level);
       return this;
     }
 
@@ -535,8 +535,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
   /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
   /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
-  /* package */ final Pref<Integer> mTorSecurityLevel =
-      new Pref<>("extensions.torbutton.security_slider", 4);
+  /* package */ final Pref<Integer> mSecurityLevel =
+      new Pref<>("browser.security_level.security_slider", 4);
   /* package */ final Pref<Boolean> mPrioritizeOnions =
       new Pref<>("privacy.prioritizeonions.enabled", false);
 
@@ -1309,17 +1309,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    * @return current security protection level
    */
   public int getTorSecurityLevel() {
-    return mTorSecurityLevel.get();
+    return mSecurityLevel.get();
   }
 
   /**
-   * Sets the Tor Security Level.
+   * Sets the Security Level.
    *
    * @param level security protection level
    * @return This GeckoRuntimeSettings instance.
    */
   public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
-    mTorSecurityLevel.commit(level);
+    mSecurityLevel.commit(level);
     return this;
   }
 
