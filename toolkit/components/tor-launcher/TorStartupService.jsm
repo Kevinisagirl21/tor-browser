@@ -67,12 +67,6 @@ class TorStartupService {
     TorSettings.init();
     TorConnect.init();
 
-    try {
-      TorLauncherUtil.removeMeekAndMoatHelperProfiles();
-    } catch (e) {
-      console.warn("Failed to remove meek and moat profiles", e);
-    }
-
     gInited = true;
   }
 

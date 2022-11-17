@@ -560,40 +560,6 @@ const TorLauncherUtil = Object.freeze({
     }
   },
 
-  removeMeekAndMoatHelperProfiles() {
-    // FIXME: Is this something we can remove?
-    const removeDirectory = (aParentDir, aName) => {
-      try {
-        const dir = aParentDir.clone();
-        dir.appendRelativePath(aName);
-        if (dir.exists()) {
-          dir.remove(true);
-        }
-      } catch (e) {
-        console.error(`Failed to remove ${aName}:`, e);
-      }
-    };
-
-    const kPrefRemoveHelperProfiles =
-      "extensions.torlauncher.should_remove_meek_helper_profiles";
-    if (Services.prefs.getBoolPref(kPrefRemoveHelperProfiles, false)) {
-      try {
-        // Only attempt removal once.
-        Services.prefs.setBoolPref(kPrefRemoveHelperProfiles, false);
-      } catch (e) {
-        console.warn(`Could not set ${kPrefRemoveHelperProfiles}`, e);
-      }
-
-      if (this.isMac) {
-        let ptProfilesDir = this.getTorFile("pt-profiles-dir", true);
-        if (ptProfilesDir) {
-          removeDirectory(ptProfilesDir, "profile.meek-http-helper");
-          removeDirectory(ptProfilesDir, "profile.moat-http-helper");
-        }
-      }
-    }
-  },
-
   get _stringBundle() {
     if (!gStringBundle) {
       gStringBundle = Services.strings.createBundle(kPropBundleURI);
