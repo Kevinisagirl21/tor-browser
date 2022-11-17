@@ -18,6 +18,13 @@ rm -rf $BUILD_OUTPUT/_omni
 # cd $BUILD_OUTPUT/_omni && zip -Xmr $BUILD_OUTPUT/dist/firefox/browser/omni.ja chrome/browser/content/browser/manual
 # rm -rf $BUILD_OUTPUT/_omni
 
+# backup the startup script
+mv $BINARIES/dev/Browser/firefox $BINARIES/dev/Browser/firefox.bak
+
 # copy binaries
 cp -r $BUILD_OUTPUT/dist/firefox/* $BINARIES/dev/Browser
 rm -rf $BINARIES/dev/Browser/TorBrowser/Data/Browser/profile.default/startupCache
+
+# shuffle firefox bin around and restore script to match a real deployment
+mv $BINARIES/dev/Browser/firefox $BINARIES/dev/Browser/firefox.real
+mv $BINARIES/dev/Browser/firefox.bak $BINARIES/dev/Browser/firefox
