@@ -64,8 +64,8 @@ pref("extensions.torbutton.inserted_security_level",false);
 pref("extensions.torbutton.maximize_warnings_remaining", 3);
 
 // Security prefs:
-pref("extensions.torbutton.clear_http_auth",true);
-pref("extensions.torbutton.close_newnym",true);
+pref("browser.new_identity.clear_http_auth",true);
+pref("browser.new_identity.close_newnym",true);
 pref("extensions.torbutton.resize_new_windows",false);
 pref("extensions.torbutton.startup_state", 2); // 0=non-tor, 1=tor, 2=last
 pref("extensions.torbutton.tor_memory_jar",false);
@@ -77,14 +77,14 @@ pref("extensions.torbutton.launch_warning",true);
 pref("extensions.torbutton@torproject.org.getAddons.cache.enabled", false);
 
 // Security Slider
-pref("extensions.torbutton.security_slider", 4);
-pref("extensions.torbutton.security_custom", false);
+pref("browser.security_level.security_slider", 4);
+pref("browser.security_level.security_custom", false);
 
 pref("extensions.torbutton.confirm_plugins", true);
-pref("extensions.torbutton.confirm_newnym", true);
+pref("browser.new_identity.confirm_newnym", true);
 
-pref("extensions.torbutton.noscript_inited", false);
-pref("extensions.torbutton.noscript_persist", false);
+pref("browser.security_level.noscript_inited", false);
+pref("browser.security_level.noscript_persist", false);
 
 // Browser home page:
 pref("browser.startup.homepage", "about:tor");
