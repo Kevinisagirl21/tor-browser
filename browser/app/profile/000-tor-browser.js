@@ -53,20 +53,20 @@ pref("network.http.connection-retry-timeout", 0);
 // Old torbutton prefs
 
 // debug prefs
-pref("extensions.torbutton.loglevel",4);
-pref("extensions.torbutton.logmethod",1); // 0=stdout, 1=errorconsole, 2=debuglog
+pref("extensions.torbutton.loglevel", 4);
+pref("extensions.torbutton.logmethod", 1); // 0=stdout, 1=errorconsole, 2=debuglog
 
 // Display prefs
 pref("extensions.torbutton.display_circuit", true);
 
 // Tor check and proxy prefs
-pref("extensions.torbutton.test_enabled",true);
-pref("extensions.torbutton.test_url","https://check.torproject.org/?TorButton=true");
-pref("extensions.torbutton.local_tor_check",true);
-pref("extensions.torbutton.use_nontor_proxy",false);
+pref("extensions.torbutton.test_enabled", true);
+pref("extensions.torbutton.test_url", "https://check.torproject.org/?TorButton=true");
+pref("extensions.torbutton.local_tor_check", true);
+pref("extensions.torbutton.use_nontor_proxy", false);
 
 // State prefs:
-pref("extensions.torbutton.startup",false);
+pref("extensions.torbutton.startup", false);
 
 // This is only used when letterboxing is disabled.
 // See #7255 for details. We display the warning three times to make sure the
@@ -74,19 +74,8 @@ pref("extensions.torbutton.startup",false);
 pref("extensions.torbutton.maximize_warnings_remaining", 3);
 
 // Security prefs:
-pref("extensions.torbutton.clear_http_auth",true);
-pref("extensions.torbutton.close_newnym",true);
-pref("extensions.torbutton.resize_new_windows",false);
-pref("extensions.torbutton.launch_warning",true);
-
-// Security Slider
-pref("extensions.torbutton.security_slider", 4);
-pref("extensions.torbutton.security_custom", false);
-
-pref("extensions.torbutton.confirm_newnym", true);
-
-pref("extensions.torbutton.noscript_inited", false);
-pref("extensions.torbutton.noscript_persist", false);
+pref("extensions.torbutton.resize_new_windows", false);
+pref("extensions.torbutton.launch_warning", true);
 
 // Browser home page:
 pref("browser.startup.homepage", "about:tor");
@@ -102,13 +91,6 @@ pref("extensions.torlauncher.prompt_for_locale", true);
 pref("extensions.torlauncher.start_tor", true);
 pref("extensions.torlauncher.prompt_at_startup", true);
 pref("extensions.torlauncher.quickstart", false);
-
-// This pref controls whether Tor Launcher will try to remove the old
-// meek and moat http helper browser profiles. This only has an effect
-// on macOS; for Windows and Linux profile removal is handled by the
-// updater (since on those platforms the profiles are embedded within
-// the browser install directory).
-pref("extensions.torlauncher.should_remove_meek_helper_profiles", true);
 
 pref("extensions.torlauncher.loglevel", 4);  // 1=verbose, 2=debug, 3=info, 4=note, 5=warn
 pref("extensions.torlauncher.logmethod", 1);  // 0=stdout, 1=errorconsole, 2=debuglog
