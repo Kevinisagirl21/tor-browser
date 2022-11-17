@@ -162,7 +162,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
     closeTabs() {
       logger.info("Closing tabs");
       if (
-        !Services.prefs.getBoolPref("extensions.torbutton.close_newnym", true)
+        !Services.prefs.getBoolPref("browser.new_identity.close_newnym", true)
       ) {
         logger.info("Not closing tabs");
         return;
@@ -241,7 +241,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
     clearHTTPAuths() {
       if (
         !Services.prefs.getBoolPref(
-          "extensions.torbutton.clear_http_auth",
+          "browser.new_identity.clear_http_auth",
           true
         )
       ) {
@@ -525,7 +525,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
         }
         newIdentityInProgress = true;
 
-        const prefConfirm = "extensions.torbutton.confirm_newnym";
+        const prefConfirm = "browser.new_identity.confirm_newnym";
         const shouldConfirm = Services.prefs.getBoolPref(prefConfirm, true);
         if (shouldConfirm) {
           // Display two buttons, both with string titles.
