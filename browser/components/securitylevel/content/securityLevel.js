@@ -116,7 +116,7 @@ const SecurityLevelButton = {
     this._populateXUL(button);
     this._configUIFromPrefs(button);
 
-    this._securityPrefsBranch = Services.prefs.getBranch("extensions.torbutton.");
+    this._securityPrefsBranch = Services.prefs.getBranch("browser.security_level.");
     this._securityPrefsBranch.addObserver("", this, false);
 
     CustomizableUI.addListener(this);
@@ -287,7 +287,7 @@ const SecurityLevelPanel = {
   },
 
   init : function() {
-    this._securityPrefsBranch = Services.prefs.getBranch("extensions.torbutton.");
+    this._securityPrefsBranch = Services.prefs.getBranch("browser.security_level.");
     this._securityPrefsBranch.addObserver("", this, false);
   },
 
@@ -467,7 +467,7 @@ const SecurityLevelPreferences =
     this._configUIFromPrefs();
 
     // register for pref chagnes
-    this._securityPrefsBranch = Services.prefs.getBranch("extensions.torbutton.");
+    this._securityPrefsBranch = Services.prefs.getBranch("browser.security_level.");
     this._securityPrefsBranch.addObserver("", this, false);
   },
 
