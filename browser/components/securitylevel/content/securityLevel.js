@@ -6,8 +6,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PanelMultiView: "resource:///modules/PanelMultiView.jsm",
 });
 
-var SecurityLevels = Object.freeze(["", "safest", "safer", "", "standard"]);
-
 XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
   let strings = {
     // Generic terms
@@ -72,41 +70,32 @@ XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
   Getters and Setters for relevant torbutton prefs
 */
 var SecurityLevelPrefs = {
+  SecurityLevels: Object.freeze({
+    safest: 1,
+    safer: 2,
+    standard: 4,
+  }),
   security_slider_pref: "browser.security_level.security_slider",
   security_custom_pref: "browser.security_level.security_custom",
 
-  get securitySlider() {
-    try {
-      return Services.prefs.getIntPref(this.security_slider_pref);
-    } catch (e) {
-      // init pref to 4 (standard)
-      const val = 4;
+  get securityLevel() {
+    // Set the default return value to 0, which won't match anything in
+    // SecurityLevels.
+    const val = Services.prefs.getIntPref(this.security_slider_pref, 0);
+    return Object.entries(this.SecurityLevels).find(
+      entry => entry[1] === val
+    )?.[0];
+  },
+
+  set securityLevel(level) {
+    const val = this.SecurityLevels[level];
+    if (val !== undefined) {
       Services.prefs.setIntPref(this.security_slider_pref, val);
-      return val;
     }
-  },
-
-  set securitySlider(val) {
-    Services.prefs.setIntPref(this.security_slider_pref, val);
-  },
-
-  get securitySliderLevel() {
-    const slider = this.securitySlider;
-    if (slider >= 1 && slider <= 4 && SecurityLevels[slider]) {
-      return SecurityLevels[slider];
-    }
-    return null;
   },
 
   get securityCustom() {
-    try {
-      return Services.prefs.getBoolPref(this.security_custom_pref);
-    } catch (e) {
-      // init custom to false
-      const val = false;
-      Services.prefs.setBoolPref(this.security_custom_pref, val);
-      return val;
-    }
+    return Services.prefs.getBoolPref(this.security_custom_pref);
   },
 
   set securityCustom(val) {
@@ -126,7 +115,7 @@ var SecurityLevelButton = {
   _configUIFromPrefs() {
     const securityLevelButton = this.button;
     if (securityLevelButton != null) {
-      const level = SecurityLevelPrefs.securitySliderLevel;
+      const level = SecurityLevelPrefs.securityLevel;
       if (!level) {
         return;
       }
@@ -308,7 +297,7 @@ var SecurityLevelPanel = {
     }
 
     // get security prefs
-    const level = SecurityLevelPrefs.securitySliderLevel;
+    const level = SecurityLevelPrefs.securityLevel;
     const custom = SecurityLevelPrefs.securityCustom;
 
     // only visible when user is using custom settings
@@ -476,7 +465,7 @@ var SecurityLevelPreferences = {
 
   _configUIFromPrefs() {
     // read our prefs
-    const securitySlider = SecurityLevelPrefs.securitySlider;
+    const securityLevel = SecurityLevelPrefs.securityLevel;
     const securityCustom = SecurityLevelPrefs.securityCustom;
 
     // get our elements
@@ -510,22 +499,18 @@ var SecurityLevelPreferences = {
     labelSaferRestoreDefaults.hidden = true;
     labelSafestRestoreDefaults.hidden = true;
 
-    switch (securitySlider) {
-      // standard
-      case 4:
-        radiogroup.value = "standard";
+    radiogroup.value = securityLevel;
+
+    switch (securityLevel) {
+      case "standard":
         labelStandardCustom.hidden = !securityCustom;
         labelStandardRestoreDefaults.hidden = !securityCustom;
         break;
-      // safer
-      case 2:
-        radiogroup.value = "safer";
+      case "safer":
         labelSaferCustom.hidden = !securityCustom;
         labelSaferRestoreDefaults.hidden = !securityCustom;
         break;
-      // safest
-      case 1:
-        radiogroup.value = "safest";
+      case "safest":
         labelSafestCustom.hidden = !securityCustom;
         labelSafestRestoreDefaults.hidden = !securityCustom;
         break;
@@ -568,18 +553,7 @@ var SecurityLevelPreferences = {
     let radiogroup = document.getElementById("securityLevel-radiogroup");
 
     // update pref based on selected radio option
-    switch (radiogroup.value) {
-      case "standard":
-        SecurityLevelPrefs.securitySlider = 4;
-        break;
-      case "safer":
-        SecurityLevelPrefs.securitySlider = 2;
-        break;
-      case "safest":
-        SecurityLevelPrefs.securitySlider = 1;
-        break;
-    }
-
+    SecurityLevelPrefs.securityLevel = radiogroup.value;
     SecurityLevelPreferences.restoreDefaults();
   },
 
