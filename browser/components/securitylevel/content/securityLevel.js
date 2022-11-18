@@ -2,15 +2,11 @@
 
 /* global AppConstants, Services, openPreferences, XPCOMUtils */
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 XPCOMUtils.defineLazyModuleGetters(this, {
-  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   PanelMultiView: "resource:///modules/PanelMultiView.jsm",
 });
 
-const SecurityLevels = Object.freeze(["", "safest", "safer", "", "standard"]);
+var SecurityLevels = Object.freeze(["", "safest", "safer", "", "standard"]);
 
 XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
   let strings = {
@@ -75,7 +71,7 @@ XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
 
   Getters and Setters for relevant torbutton prefs
 */
-const SecurityLevelPrefs = {
+var SecurityLevelPrefs = {
   security_slider_pref: "browser.security_level.security_slider",
   security_custom_pref: "browser.security_level.security_custom",
 
@@ -124,7 +120,7 @@ const SecurityLevelPrefs = {
   Controls init and update of the security level toolbar button
 */
 
-const SecurityLevelButton = {
+var SecurityLevelButton = {
   _securityPrefsBranch: null,
 
   _configUIFromPrefs() {
@@ -231,7 +227,7 @@ const SecurityLevelButton = {
     SecurityLevelPanel.show();
     aEvent.stopPropagation();
   },
-}; /* Security Level Button */
+}; /* SecurityLevelButton */
 
 /*
   Security Level Panel Code
@@ -239,7 +235,7 @@ const SecurityLevelButton = {
   Controls init and update of the panel in the security level hanger
 */
 
-const SecurityLevelPanel = {
+var SecurityLevelPanel = {
   _securityPrefsBranch: null,
   _panel: null,
   _anchor: null,
@@ -405,7 +401,7 @@ const SecurityLevelPanel = {
   onPopupHidden(event) {
     SecurityLevelButton.button.removeAttribute("open");
   },
-}; /* Security Level Panel */
+}; /* SecurityLevelPanel */
 
 /*
   Security Level Preferences Code
@@ -413,7 +409,7 @@ const SecurityLevelPanel = {
   Code to handle init and update of security level section in about:preferences#privacy
 */
 
-const SecurityLevelPreferences = {
+var SecurityLevelPreferences = {
   _securityPrefsBranch: null,
 
   _populateXUL() {
@@ -590,22 +586,4 @@ const SecurityLevelPreferences = {
   restoreDefaults() {
     SecurityLevelPrefs.securityCustom = false;
   },
-}; /* Security Level Prefereces */
-
-Object.defineProperty(this, "SecurityLevelButton", {
-  value: SecurityLevelButton,
-  enumerable: true,
-  writable: false,
-});
-
-Object.defineProperty(this, "SecurityLevelPanel", {
-  value: SecurityLevelPanel,
-  enumerable: true,
-  writable: false,
-});
-
-Object.defineProperty(this, "SecurityLevelPreferences", {
-  value: SecurityLevelPreferences,
-  enumerable: true,
-  writable: false,
-});
+}; /* SecurityLevelPreferences */
