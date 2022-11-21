@@ -1,44 +1,26 @@
 <panel id="securityLevel-panel"
-       role="group"
+       role="dialog"
+       aria-labelledby="securityLevel-header"
+       aria-describedby="securityLevel-subheading securityLevel-summary"
        type="arrow"
        orient="vertical"
        level="top"
-       hidden="true"
        class="panel-no-padding">
-  <panelmultiview mainViewId="securityLevel-panelview">
-    <panelview id="securityLevel-panelview" descriptionheightworkaround="true">
-      <vbox id="securityLevel-vbox">
-        <box class="panel-header">
-          <html:h1 id="securityLevel-header"/>
-        </box>
-        <toolbarseparator></toolbarseparator>
-        <vbox>
-          <hbox>
-            <label id="securityLevel-level"/>
-            <vbox>
-              <spacer flex="1"/>
-              <label id="securityLevel-custom"/>
-              <spacer flex="1"/>
-            </vbox>
-            <spacer flex="1"/>
-          </hbox>
-          <description id="securityLevel-summary"/>
-          <hbox>
-            <label
-              class="learnMore text-link"
-              href="about:manual#security-settings"
-              useoriginprincipal="true"
-              onclick="SecurityLevelPanel.hide();"
-              is="text-link"/>
-            <spacer/>
-          </hbox>
-        </vbox>
-        <hbox class="panel-footer">
-            <button id="securityLevel-restoreDefaults"/>
-            <button id="securityLevel-advancedSecuritySettings"
-                    default="true"/>
-        </hbox>
-      </vbox>
-    </panelview>
-  </panelmultiview>
+  <box class="panel-header">
+    <html:h1 id="securityLevel-header"></html:h1>
+  </box>
+  <toolbarseparator id="securityLevel-separator"></toolbarseparator>
+  <vbox id="securityLevel-background" class="panel-subview-body">
+    <html:p id="securityLevel-subheading">
+      <html:span id="securityLevel-level"></html:span>
+      <html:span id="securityLevel-custom"></html:span>
+    </html:p>
+    <html:p id="securityLevel-summary"></html:p>
+    <html:a id="securityLevel-learnMore" href="about:manual#security-settings">
+    </html:a>
+  </vbox>
+  <hbox class="panel-footer">
+    <button id="securityLevel-settings"/>
+    <button id="securityLevel-restoreDefaults"/>
+  </hbox>
 </panel>

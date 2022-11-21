@@ -2,10 +2,6 @@
 
 /* global AppConstants, Services, openPreferences, XPCOMUtils */
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  PanelMultiView: "resource:///modules/PanelMultiView.jsm",
-});
-
 XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
   let strings = {
     // Generic terms
@@ -111,58 +107,92 @@ var SecurityLevelPrefs = {
 
 var SecurityLevelButton = {
   _securityPrefsBranch: null,
+  /**
+   * Whether we have added popup listeners to the panel.
+   *
+   * @type {boolean}
+   */
+  _panelPopupListenersSetup: false,
+  /**
+   * The toolbar button element.
+   *
+   * @type {Element}
+   */
+  _button: null,
+  /**
+   * The button that the panel should point to. Either the toolbar button or the
+   * overflow button.
+   *
+   * @type {Element}
+   */
+  _anchorButton: null,
 
   _configUIFromPrefs() {
-    const securityLevelButton = this.button;
-    if (securityLevelButton != null) {
-      const level = SecurityLevelPrefs.securityLevel;
-      if (!level) {
-        return;
-      }
-      const customStr = SecurityLevelPrefs.securityCustom ? "_custom" : "";
-      securityLevelButton.setAttribute("level", `${level}${customStr}`);
-      securityLevelButton.setAttribute(
-        "tooltiptext",
-        SecurityLevelStrings[`security_level_tooltip_${level}`]
-      );
+    const level = SecurityLevelPrefs.securityLevel;
+    if (!level) {
+      return;
     }
+    const customStr = SecurityLevelPrefs.securityCustom ? "_custom" : "";
+    this._button.setAttribute("level", `${level}${customStr}`);
+    this._button.setAttribute(
+      "tooltiptext",
+      SecurityLevelStrings[`security_level_tooltip_${level}`]
+    );
   },
 
   /**
-   * The node for this button.
-   *
-   * Note, the returned element may be part of the DOM or may live in the
-   * toolbox palette, where it may be added later to the DOM through
-   * customization.
-   *
-   * @type {MozToolbarbutton}
+   * Open the panel popup for the button.
    */
-  get button() {
+  openPopup() {
+    let anchorNode;
+    const overflowPanel = document.getElementById("widget-overflow");
+    if (overflowPanel.contains(this._button)) {
+      // We are in the overflow panel.
+      // We first close the overflow panel, otherwise focus will not return to
+      // the nav-bar-overflow-button if the security level panel is closed with
+      // "Escape" (the navigation toolbar does not track focus when a panel is
+      // opened whilst another is already open).
+      // NOTE: In principle, using PanelMultiView would allow us to open panels
+      // from within another panel. However, when using panelmultiview for the
+      // security level panel, tab navigation was broken within the security
+      // level panel. PanelMultiView may be set up to work with a menu-like
+      // panel rather than our dialog-like panel.
+      overflowPanel.hidePopup();
+      this._anchorButton = document.getElementById("nav-bar-overflow-button");
+      anchorNode = this._anchorButton.icon;
+    } else {
+      this._anchorButton = this._button;
+      anchorNode = this._button.badgeStack;
+    }
+
+    const panel = SecurityLevelPanel.panel;
+    if (!this._panelPopupListenersSetup) {
+      this._panelPopupListenersSetup = true;
+      // NOTE: We expect the _anchorButton to not change whilst the popup is
+      // open.
+      panel.addEventListener("popupshown", () => {
+        this._anchorButton.setAttribute("open", "true");
+      });
+      panel.addEventListener("popuphidden", () => {
+        this._anchorButton.removeAttribute("open");
+      });
+    }
+
+    panel.openPopup(anchorNode, "bottomcenter topright", 0, 0, false);
+  },
+
+  init() {
     // We first search in the DOM for the security level button. If it does not
     // exist it may be in the toolbox palette. We still want to return the
     // button in the latter case to allow it to be initialized or adjusted in
     // case it is added back through customization.
-    return (
+    this._button =
       document.getElementById("security-level-button") ||
-      window.gNavToolbox.palette.querySelector("#security-level-button")
-    );
-  },
-
-  get anchor() {
-    let button = this.button;
-    let anchor = button?.icon;
-    if (!anchor) {
-      return null;
-    }
-
-    anchor.setAttribute("consumeanchor", button.id);
-    return anchor;
-  },
-
-  init() {
+      window.gNavToolbox.palette.querySelector("#security-level-button");
     // Set a label to be be used as the accessible name, and to be shown in the
     // overflow menu and during customization.
-    this.button?.setAttribute("label", SecurityLevelStrings.security_level);
+    this._button.setAttribute("label", SecurityLevelStrings.security_level);
+    this._button.addEventListener("command", () => this.openPopup());
     // set the initial class based off of the current pref
     this._configUIFromPrefs();
 
@@ -190,32 +220,6 @@ var SecurityLevelButton = {
         break;
     }
   },
-
-  // for when the toolbar button needs to be activated and displays the Security Level panel
-  //
-  // In the toolbarbutton xul you'll notice we register this callback for both onkeypress and
-  // onmousedown. We do this to match the behavior of other panel spawning buttons such as Downloads,
-  // Library, and the Hamburger menus. Using oncommand alone would result in only getting fired
-  // after onclick, which is mousedown followed by mouseup.
-  onCommand(aEvent) {
-    // snippet borrowed from /browser/components/downloads/content/indicator.js DownloadsIndicatorView.onCommand(evt)
-    if (
-      // On Mac, ctrl-click will send a context menu event from the widget, so
-      // we don't want to bring up the panel when ctrl key is pressed.
-      (aEvent.type == "mousedown" &&
-        (aEvent.button != 0 ||
-          (AppConstants.platform == "macosx" && aEvent.ctrlKey))) ||
-      (aEvent.type == "keypress" && aEvent.key != " " && aEvent.key != "Enter")
-    ) {
-      return;
-    }
-
-    // we need to set this attribute for the button to be shaded correctly to look like it is pressed
-    // while the security level panel is open
-    this.button.setAttribute("open", "true");
-    SecurityLevelPanel.show();
-    aEvent.stopPropagation();
-  },
 }; /* SecurityLevelButton */
 
 /*
@@ -226,66 +230,49 @@ var SecurityLevelButton = {
 
 var SecurityLevelPanel = {
   _securityPrefsBranch: null,
-  _panel: null,
-  _anchor: null,
   _populated: false,
 
-  _selectors: Object.freeze({
-    panel: "panel#securityLevel-panel",
-    icon: "vbox#securityLevel-vbox>vbox",
-    labelLevel: "label#securityLevel-level",
-    labelCustom: "label#securityLevel-custom",
-    summary: "description#securityLevel-summary",
-    restoreDefaults: "button#securityLevel-restoreDefaults",
-    advancedSecuritySettings: "button#securityLevel-advancedSecuritySettings",
-    // Selectors used only for l10n - remove them when switching to Fluent
-    header: "#securityLevel-header",
-    learnMore: "#securityLevel-panel .learnMore",
-  }),
-
   _populateXUL() {
-    let selectors = this._selectors;
-
     this._elements = {
-      panel: document.querySelector(selectors.panel),
-      icon: document.querySelector(selectors.icon),
-      labelLevel: document.querySelector(selectors.labelLevel),
-      labelCustom: document.querySelector(selectors.labelCustom),
-      summaryDescription: document.querySelector(selectors.summary),
-      restoreDefaultsButton: document.querySelector(selectors.restoreDefaults),
-      advancedSecuritySettings: document.querySelector(
-        selectors.advancedSecuritySettings
+      panel: document.getElementById("securityLevel-panel"),
+      background: document.getElementById("securityLevel-background"),
+      levelName: document.getElementById("securityLevel-level"),
+      customName: document.getElementById("securityLevel-custom"),
+      summary: document.getElementById("securityLevel-summary"),
+      restoreDefaultsButton: document.getElementById(
+        "securityLevel-restoreDefaults"
       ),
-      header: document.querySelector(selectors.header),
-      learnMore: document.querySelector(selectors.learnMore),
+      settingsButton: document.getElementById("securityLevel-settings"),
     };
 
-    this._elements.header.textContent = SecurityLevelStrings.security_level;
-    this._elements.labelCustom.setAttribute(
-      "value",
-      SecurityLevelStrings.security_level_custom
-    );
-    this._elements.learnMore.setAttribute(
-      "value",
-      SecurityLevelStrings.security_level_learn_more
-    );
+    document.getElementById("securityLevel-header").textContent =
+      SecurityLevelStrings.security_level;
+    this._elements.customName.textContent =
+      SecurityLevelStrings.security_level_custom;
+    const learnMoreEl = document.getElementById("securityLevel-learnMore");
+    learnMoreEl.textContent = SecurityLevelStrings.security_level_learn_more;
+    learnMoreEl.addEventListener("click", event => {
+      window.openTrustedLinkIn(learnMoreEl.href, "tab");
+      this.hide();
+      event.preventDefault();
+    });
     this._elements.restoreDefaultsButton.textContent =
       SecurityLevelStrings.security_level_restore;
-    this._elements.advancedSecuritySettings.textContent =
+    this._elements.settingsButton.textContent =
       SecurityLevelStrings.security_level_change;
 
-    this._elements.panel.addEventListener("onpopupshown", e => {
-      this.onPopupShown(e);
-    });
-    this._elements.panel.addEventListener("onpopuphidden", e => {
-      this.onPopupHidden(e);
-    });
     this._elements.restoreDefaultsButton.addEventListener("command", () => {
       this.restoreDefaults();
     });
-    this._elements.advancedSecuritySettings.addEventListener("command", () => {
-      this.openAdvancedSecuritySettings();
+    this._elements.settingsButton.addEventListener("command", () => {
+      this.openSecuritySettings();
     });
+
+    this._elements.panel.addEventListener("popupshown", () => {
+      // Bring focus into the panel by focusing the default button.
+      this._elements.panel.querySelector('button[default="true"]').focus();
+    });
+
     this._populated = true;
     this._configUIFromPrefs();
   },
@@ -301,26 +288,35 @@ var SecurityLevelPanel = {
     const custom = SecurityLevelPrefs.securityCustom;
 
     // only visible when user is using custom settings
-    let labelCustomWarning = this._elements.labelCustom;
-    labelCustomWarning.hidden = !custom;
-    let buttonRestoreDefaults = this._elements.restoreDefaultsButton;
-    buttonRestoreDefaults.hidden = !custom;
-
-    const summary = this._elements.summaryDescription;
-    // Descriptions change based on security level
-    if (level) {
-      this._elements.icon.setAttribute("level", level);
-      this._elements.labelLevel.setAttribute(
-        "value",
-        SecurityLevelStrings[`security_level_${level}`]
-      );
-      summary.textContent =
-        SecurityLevelStrings[`security_level_${level}_summary`];
-    }
-    // override the summary text with custom warning
+    this._elements.customName.hidden = !custom;
+    this._elements.restoreDefaultsButton.hidden = !custom;
     if (custom) {
-      summary.textContent = SecurityLevelStrings.security_level_custom_summary;
+      this._elements.settingsButton.removeAttribute("default");
+      this._elements.restoreDefaultsButton.setAttribute("default", "true");
+    } else {
+      this._elements.settingsButton.setAttribute("default", "true");
+      this._elements.restoreDefaultsButton.removeAttribute("default");
     }
+
+    // Descriptions change based on security level
+    this._elements.background.setAttribute("level", level);
+    this._elements.levelName.textContent =
+      SecurityLevelStrings[`security_level_${level}`];
+    this._elements.summary.textContent = custom
+      ? SecurityLevelStrings.security_level_custom_summary
+      : SecurityLevelStrings[`security_level_${level}_summary`];
+  },
+
+  /**
+   * The popup element.
+   *
+   * @type {MozPanel}
+   */
+  get panel() {
+    if (!this._populated) {
+      this._populateXUL();
+    }
+    return this._elements.panel;
   },
 
   init() {
@@ -335,37 +331,18 @@ var SecurityLevelPanel = {
     this._securityPrefsBranch = null;
   },
 
-  show() {
-    // we have to defer this until after the browser has finished init'ing
-    // before we can populate the panel
-    if (!this._populated) {
-      this._populateXUL();
-    }
-
-    this._elements.panel.hidden = false;
-    PanelMultiView.openPopup(
-      this._elements.panel,
-      SecurityLevelButton.anchor,
-      "bottomcenter topright",
-      0,
-      0,
-      false,
-      null
-    ).catch(Cu.reportError);
-  },
-
   hide() {
-    PanelMultiView.hidePopup(this._elements.panel);
+    this._elements.panel.hidePopup();
   },
 
   restoreDefaults() {
     SecurityLevelPrefs.securityCustom = false;
-    // hide and reshow so that layout re-renders properly
-    this.hide();
-    this.show(this._anchor);
+    // Move focus to the settings button since restore defaults button will
+    // become hidden.
+    this._elements.settingsButton.focus();
   },
 
-  openAdvancedSecuritySettings() {
+  openSecuritySettings() {
     openPreferences("privacy-securitylevel");
     this.hide();
   },
@@ -379,16 +356,6 @@ var SecurityLevelPanel = {
         }
         break;
     }
-  },
-
-  // callback when the panel is displayed
-  onPopupShown(event) {
-    SecurityLevelButton.button.setAttribute("open", "true");
-  },
-
-  // callback when the panel is hidden
-  onPopupHidden(event) {
-    SecurityLevelButton.button.removeAttribute("open");
   },
 }; /* SecurityLevelPanel */
 
