@@ -528,26 +528,17 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
         const prefConfirm = "browser.new_identity.confirm_newnym";
         const shouldConfirm = Services.prefs.getBoolPref(prefConfirm, true);
         if (shouldConfirm) {
-          // Display two buttons, both with string titles.
-          const flags =
-            Services.prompt.BUTTON_TITLE_IS_STRING *
-              Services.prompt.BUTTON_POS_0 +
-            Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
-          const askAgain = { value: false };
-          const confirmed =
-            Services.prompt.confirmEx(
-              window,
-              NewIdentityStrings.new_identity_prompt_title,
-              NewIdentityStrings.new_identity_prompt,
-              flags,
-              NewIdentityStrings.new_identity_restart,
-              null,
-              null,
-              NewIdentityStrings.new_identity_ask_again,
-              askAgain
-            ) == 0;
-          Services.prefs.setBoolPref(prefConfirm, !askAgain.value);
-          if (!confirmed) {
+          const params = {
+            NewIdentityStrings,
+            confirmed: false,
+            neverAskAgain: false,
+          };
+          await window.gDialogBox.open(
+            "chrome://browser/content/newIdentityDialog.xhtml",
+            params
+          );
+          Services.prefs.setBoolPref(prefConfirm, !params.neverAskAgain);
+          if (!params.confirmed) {
             return;
           }
         }
