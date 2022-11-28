@@ -225,7 +225,13 @@ pref("dom.push.enabled", false);
 
 // Fingerprinting
 pref("privacy.resistFingerprinting", true);
+// tor-browser#18603: failIfMajorPerformanceCaveat is an optional attribute that
+// can be used when creating a WebGL context if the browser detects that the
+// performance would be low. That could be used to fingerpting users with a not
+// good graphics card, so disable it (actually, defense in depth, it is already
+// disabled by default from Firefox).
 pref("webgl.disable-fail-if-major-performance-caveat", true);
+// tor-browser#16404: disable until we investigate it further (#22333)
 pref("webgl.enable-webgl2", false);
 pref("browser.startup.homepage_override.buildID", "20100101");
 pref("browser.link.open_newwindow.restriction", 0); // Bug 9881: Open popups in new tabs (to avoid fullscreen popups)
@@ -271,7 +277,8 @@ pref("browser.display.use_system_colors", false);
 
 // Third party stuff
 pref("privacy.firstparty.isolate", true); // Always enforce first party isolation
-pref("privacy.partition.network_state", false); // Disable for now until audit
+// tor-browser#40123 and #40308: Disable for now until audit
+pref("privacy.partition.network_state", false);
 pref("network.cookie.cookieBehavior", 1);
 pref("network.cookie.cookieBehavior.pbmode", 1);
 pref("network.predictor.enabled", false); // Temporarily disabled. See https://bugs.torproject.org/16633
@@ -280,7 +287,9 @@ pref("network.http.speculative-parallel-limit", 0);
 pref("browser.places.speculativeConnect.enabled", false);
 pref("network.prefetch-next", false);
 pref("browser.urlbar.speculativeConnect.enabled", false);
-// Bug 40220: Make sure tracker cookie purging is disabled
+// Bug 40220: Make sure tracker cookie purging is disabled.
+// It depends on Firefox's tracking protection, which we currently do not enable
+// See also tor-browser#30939.
 pref("privacy.purge_trackers.enabled", false);
 // Do not allow cross-origin sub-resources to open HTTP authentication
 // credentials dialogs. Hardens against potential credentials phishing.
