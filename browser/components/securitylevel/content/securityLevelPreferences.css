@@ -1,51 +1,58 @@
-label.securityLevel-customWarning {
-  border-radius: 4px;
-  background-color: var(--yellow-50);
-  color: black;
-  font-size: 1em;
-  height: 1.6em;
-  padding: 0.4em 0.5em;
+#securityLevel-groupbox {
+  --section-highlight-background-color: color-mix(in srgb, var(--in-content-accent-color) 20%, transparent);
 }
 
-radiogroup#securityLevel-radiogroup description {
-  color: var(--in-content-page-color)!important;
+#securityLevel-customNotification {
+  /* Spacing similar to #fpiIncompatibilityWarning. */
+  margin-block: 16px;
 }
 
-radiogroup#securityLevel-radiogroup radio {
+.info-icon.securityLevel-custom-warning-icon {
+  list-style-image: url("chrome://global/skin/icons/warning.svg");
+}
+
+#securityLevel-customHeading {
   font-weight: bold;
 }
 
-radiogroup#securityLevel-radiogroup > vbox {
+/* Overwrite indent rule from preferences.css */
+#securityLevel-radiogroup description.indent {
+  color: var(--in-content-page-color);
+}
+
+#securityLevel-radiogroup radio {
+  font-weight: bold;
+}
+
+#securityLevel-radiogroup[disabled] {
+  opacity: 0.5;
+}
+
+/* Overwrite the rule in common-shared.css so we don't get 0.25 opacity overall
+ * on the radio text. */
+#securityLevel-radiogroup[disabled] radio[disabled] {
+  opacity: 1.0;
+}
+
+.securityLevel-radio-option {
   border: 1px solid var(--in-content-box-border-color);
   border-radius: 4px;
   margin: 3px 0;
   padding: 9px;
 }
 
-radiogroup#securityLevel-radiogroup[value=standard] > vbox#securityLevel-vbox-standard,
-radiogroup#securityLevel-radiogroup[value=safer] > vbox#securityLevel-vbox-safer,
-radiogroup#securityLevel-radiogroup[value=safest] > vbox#securityLevel-vbox-safest {
-  --section-highlight-background-color: color-mix(in srgb, var(--in-content-accent-color) 20%, transparent);
+.securityLevel-radio-option.securityLevel-radio-option-selected {
   background-color: var(--section-highlight-background-color);
   border: 1px solid var(--in-content-accent-color);
 
 }
 
-vbox.securityLevel-descriptionList {
+.securityLevel-radio-option:not(
+  .securityLevel-radio-option-selected
+) .securityLevel-descriptionList {
   display: none;
 }
 
-radiogroup#securityLevel-radiogroup[value=safer] vbox#securityLevel-vbox-safer vbox.securityLevel-descriptionList,
-radiogroup#securityLevel-radiogroup[value=safest] vbox#securityLevel-vbox-safest vbox.securityLevel-descriptionList {
-  display: inherit;
-}
-
-vbox.securityLevel-descriptionList description {
+.securityLevel-descriptionList description {
   display: list-item;
-}
-
-vbox#securityLevel-vbox-standard,
-vbox#securityLevel-vbox-safer,
-vbox#securityLevel-vbox-safest {
-  margin-top: 0.4em;
 }

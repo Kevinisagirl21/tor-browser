@@ -341,11 +341,9 @@ var gPrivacyPane = {
    */
   _initSecurityLevel() {
     SecurityLevelPreferences.init();
-    let unload = () => {
-      window.removeEventListener("unload", unload);
-      SecurityLevelPreferences.uninit();
-    };
-    window.addEventListener("unload", unload);
+    window.addEventListener("unload", () => SecurityLevelPreferences.uninit(), {
+      once: true,
+    });
   },
 
   /**

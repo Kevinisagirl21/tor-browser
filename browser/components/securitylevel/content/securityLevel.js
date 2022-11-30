@@ -17,13 +17,14 @@ XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
     security_level_restore: "Restore Defaults",
     security_level_learn_more: "Learn more",
     // Panel
-    security_level_change: "Change…",
+    security_level_change_setting: "Change Setting…",
     security_level_standard_summary:
       "All browser and website features are enabled.",
     security_level_safer_summary:
       "Disables website features that are often dangerous, causing some sites to lose functionality.",
     security_level_safest_summary:
       "Only allows website features required for static sites and basic services. These changes affect images, media, and scripts.",
+    security_level_custom_heading: "Warning!",
     security_level_custom_summary:
       "Your custom browser preferences have resulted in unusual security settings. For security and privacy reasons, we recommend you choose one of the default security levels.",
     // Security level section in about:preferences#privacy
@@ -259,7 +260,7 @@ var SecurityLevelPanel = {
     this._elements.restoreDefaultsButton.textContent =
       SecurityLevelStrings.security_level_restore;
     this._elements.settingsButton.textContent =
-      SecurityLevelStrings.security_level_change;
+      SecurityLevelStrings.security_level_change_setting;
 
     this._elements.restoreDefaultsButton.addEventListener("command", () => {
       this.restoreDefaults();
@@ -367,120 +368,112 @@ var SecurityLevelPanel = {
 
 var SecurityLevelPreferences = {
   _securityPrefsBranch: null,
+  /**
+   * The notification box shown when the user has a custom security setting.
+   *
+   * @type {Element}
+   */
+  _customNotification: null,
+  /**
+   * The radiogroup for this preference.
+   *
+   * @type {Element}
+   */
+  _radiogroup: null,
+  /**
+   * A list of radio options and their containers.
+   *
+   * @type {Array<Object>}
+   */
+  _radioOptions: null,
 
   _populateXUL() {
-    const groupbox = document.querySelector("#securityLevel-groupbox");
-    const radiogroup = groupbox.querySelector("#securityLevel-radiogroup");
-    radiogroup.addEventListener(
-      "command",
-      SecurityLevelPreferences.selectSecurityLevel
+    this._customNotification = document.getElementById(
+      "securityLevel-customNotification"
     );
+    this._radiogroup = document.getElementById("securityLevel-radiogroup");
 
-    groupbox.querySelector("h2").textContent =
+    document.querySelector("#securityLevel-groupbox h2").textContent =
       SecurityLevelStrings.security_level;
-    groupbox.querySelector("#securityLevel-overview").textContent =
+    document.getElementById("securityLevel-overview").textContent =
       SecurityLevelStrings.security_level_overview;
-    groupbox
-      .querySelector("#securityLevel-learnMore")
+    document
+      .getElementById("securityLevel-learnMore")
       .setAttribute("value", SecurityLevelStrings.security_level_learn_more);
 
-    const populateRadioElements = (level, descr) => {
-      const vbox = groupbox.querySelector(`#securityLevel-vbox-${level}`);
-      vbox
-        .querySelector("radio")
-        .setAttribute("label", SecurityLevelStrings[`security_level_${level}`]);
-      vbox
-        .querySelector(".securityLevel-customWarning")
-        .setAttribute("value", SecurityLevelStrings.security_level_custom);
-      vbox.querySelector(".summary").textContent =
-        SecurityLevelStrings[`security_level_${level}_summary`];
-      const labelRestoreDefaults = vbox.querySelector(
-        ".securityLevel-restoreDefaults"
-      );
-      labelRestoreDefaults.setAttribute(
-        "value",
-        SecurityLevelStrings.security_level_restore
-      );
-      labelRestoreDefaults.addEventListener(
-        "click",
-        SecurityLevelStrings.restoreDefaults
-      );
-      if (descr) {
-        const descrList = vbox.querySelector(".securityLevel-descriptionList");
-        // TODO: Add the elements in securityLevelPreferences.inc.xhtml again
-        // when we switch to Fluent
-        for (const text of descr) {
-          let elem = document.createXULElement("description");
-          elem.textContent = text;
-          elem.className = "indent";
-          descrList.append(elem);
-        }
+    document.getElementById("securityLevel-customHeading").textContent =
+      SecurityLevelStrings.security_level_custom_heading;
+    document.getElementById("securityLevel-customDescription").textContent =
+      SecurityLevelStrings.security_level_custom_summary;
+    const restoreDefaultsButton = document.getElementById(
+      "securityLevel-restoreDefaults"
+    );
+    restoreDefaultsButton.textContent =
+      SecurityLevelStrings.security_level_restore;
+
+    this._radioOptions = Array.from(
+      this._radiogroup.querySelectorAll(".securityLevel-radio-option"),
+      container => {
+        return { container, radio: container.querySelector("radio") };
       }
+    );
+    const descListItemsMap = {
+      safer: [
+        SecurityLevelStrings.security_level_js_https_only,
+        SecurityLevelStrings.security_level_limit_typography,
+        SecurityLevelStrings.security_level_limit_media,
+      ],
+      safest: [
+        SecurityLevelStrings.security_level_js_disabled,
+        SecurityLevelStrings.security_level_limit_typography_svg,
+        SecurityLevelStrings.security_level_limit_media,
+      ],
     };
-    populateRadioElements("standard");
-    populateRadioElements("safer", [
-      SecurityLevelStrings.security_level_js_https_only,
-      SecurityLevelStrings.security_level_limit_typography,
-      SecurityLevelStrings.security_level_limit_media,
-    ]);
-    populateRadioElements("safest", [
-      SecurityLevelStrings.security_level_js_disabled,
-      SecurityLevelStrings.security_level_limit_typography_svg,
-      SecurityLevelStrings.security_level_limit_media,
-    ]);
+    for (const { container, radio } of this._radioOptions) {
+      const level = radio.value;
+      radio.setAttribute(
+        "label",
+        SecurityLevelStrings[`security_level_${level}`]
+      );
+      container.querySelector(".summary").textContent =
+        SecurityLevelStrings[`security_level_${level}_summary`];
+      const descListItems = descListItemsMap[level];
+      if (!descListItems) {
+        continue;
+      }
+      const descrList = container.querySelector(
+        ".securityLevel-descriptionList"
+      );
+      // TODO: Add the elements in securityLevelPreferences.inc.xhtml again
+      // when we switch to Fluent
+      for (const text of descListItems) {
+        let elem = document.createXULElement("description");
+        elem.textContent = text;
+        elem.className = "indent";
+        descrList.append(elem);
+      }
+    }
+
+    restoreDefaultsButton.addEventListener("command", () => {
+      SecurityLevelPrefs.securityCustom = false;
+    });
+    this._radiogroup.addEventListener("select", () => {
+      SecurityLevelPrefs.securityLevel = this._radiogroup.value;
+    });
   },
 
   _configUIFromPrefs() {
-    // read our prefs
-    const securityLevel = SecurityLevelPrefs.securityLevel;
-    const securityCustom = SecurityLevelPrefs.securityCustom;
-
-    // get our elements
-    const groupbox = document.querySelector("#securityLevel-groupbox");
-    let radiogroup = groupbox.querySelector("#securityLevel-radiogroup");
-    let labelStandardCustom = groupbox.querySelector(
-      "#securityLevel-vbox-standard label.securityLevel-customWarning"
-    );
-    let labelSaferCustom = groupbox.querySelector(
-      "#securityLevel-vbox-safer label.securityLevel-customWarning"
-    );
-    let labelSafestCustom = groupbox.querySelector(
-      "#securityLevel-vbox-safest label.securityLevel-customWarning"
-    );
-    let labelStandardRestoreDefaults = groupbox.querySelector(
-      "#securityLevel-vbox-standard label.securityLevel-restoreDefaults"
-    );
-    let labelSaferRestoreDefaults = groupbox.querySelector(
-      "#securityLevel-vbox-safer label.securityLevel-restoreDefaults"
-    );
-    let labelSafestRestoreDefaults = groupbox.querySelector(
-      "#securityLevel-vbox-safest label.securityLevel-restoreDefaults"
-    );
-
-    // hide custom label by default until we know which level we're at
-    labelStandardCustom.hidden = true;
-    labelSaferCustom.hidden = true;
-    labelSafestCustom.hidden = true;
-
-    labelStandardRestoreDefaults.hidden = true;
-    labelSaferRestoreDefaults.hidden = true;
-    labelSafestRestoreDefaults.hidden = true;
-
-    radiogroup.value = securityLevel;
-
-    switch (securityLevel) {
-      case "standard":
-        labelStandardCustom.hidden = !securityCustom;
-        labelStandardRestoreDefaults.hidden = !securityCustom;
-        break;
-      case "safer":
-        labelSaferCustom.hidden = !securityCustom;
-        labelSaferRestoreDefaults.hidden = !securityCustom;
-        break;
-      case "safest":
-        labelSafestCustom.hidden = !securityCustom;
-        labelSafestRestoreDefaults.hidden = !securityCustom;
-        break;
+    this._radiogroup.value = SecurityLevelPrefs.securityLevel;
+    const isCustom = SecurityLevelPrefs.securityCustom;
+    this._radiogroup.disabled = isCustom;
+    this._customNotification.hidden = !isCustom;
+    // Have the container's selection CSS class match the selection state of the
+    // radio elements.
+    for (const { container, radio } of this._radioOptions) {
+      container.classList.toggle(
+        "securityLevel-radio-option-selected",
+        radio.selected
+      );
     }
   },
 
@@ -513,18 +506,5 @@ var SecurityLevelPreferences = {
         }
         break;
     }
-  },
-
-  selectSecurityLevel() {
-    // radio group elements
-    let radiogroup = document.getElementById("securityLevel-radiogroup");
-
-    // update pref based on selected radio option
-    SecurityLevelPrefs.securityLevel = radiogroup.value;
-    SecurityLevelPreferences.restoreDefaults();
-  },
-
-  restoreDefaults() {
-    SecurityLevelPrefs.securityCustom = false;
   },
 }; /* SecurityLevelPreferences */
