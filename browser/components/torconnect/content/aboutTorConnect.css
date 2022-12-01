@@ -281,25 +281,8 @@ input[type="checkbox"]:not(:disabled):active:checked {
 }
 
 /* mirrors p element spacing */
-#viewLogContainer {
-  margin:  1em 0;
-  height:  1.2em;
-  min-height:  1.2em;
-}
-
-#viewLogLink {
-  position:  relative;
-  display:  inline-block;
-  color:  var(--in-content-link-color);
-}
-
-/* hidden apparently only works if no display is set; who knew? */
-#viewLogLink[hidden="true"] {
-  display:  none;
-}
-
-#viewLogLink:hover {
-  cursor:pointer;
+#viewLogButton {
+  margin: 1em 0;
 }
 
 body {
