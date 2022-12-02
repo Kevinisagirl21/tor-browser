@@ -1456,6 +1456,10 @@ BrowserGlue.prototype = {
     // Base Browser-specific version of _migrateUI.
     this._migrateUIBB();
 
+    // Handle any TBB-specific migration before showing the UI. Keep after
+    // _migrateUI to make sure this._isNewProfile has been defined.
+    this._migrateUITBB();
+
     // Clear possibly auto enabled enterprise_roots prefs (see bug 40166)
     if (
       !Services.prefs.getBoolPref(
@@ -4576,6 +4580,88 @@ BrowserGlue.prototype = {
       );
     }
     Services.prefs.setIntPref(MIGRATION_PREF, MIGRATION_VERSION);
+  },
+
+  // Use this method for any TBB migration that can be run just before showing
+  // the UI.
+  // Anything that critically needs to be migrated earlier should not use this.
+  _migrateUITBB() {
+    // Version 1: Tor Browser 12.0. We use it to remove langpacks, after the
+    //            migration to packaged locales.
+    // Version 2: Tor Browser 13.0/13.0a1: tor-browser#41845. Also, removed some
+    //            torbutton preferences that are not used anymore.
+    // Version 3: Tor Browser 13.0.7/13.5a3: Remove blockchair
+    //            (tor-browser#42283).
+    const TBB_MIGRATION_VERSION = 3;
+    const MIGRATION_PREF = "torbrowser.migration.version";
+
+    // If we decide to force updating users to pass through any version
+    // following 12.0, we can remove this check, and check only whether
+    // MIGRATION_PREF has a user value, like Mozilla does.
+    if (this._isNewProfile) {
+      // Do not migrate fresh profiles
+      Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
+      return;
+    } else if (this._isNewProfile === undefined) {
+      // If this happens, check if upstream updated their function and do not
+      // set this member anymore!
+      console.error("_migrateUITBB: this._isNewProfile is undefined.");
+    }
+
+    const currentVersion = Services.prefs.getIntPref(MIGRATION_PREF, 0);
+    const removeLangpacks = async () => {
+      for (const addon of await AddonManager.getAddonsByTypes(["locale"])) {
+        await addon.uninstall();
+      }
+    };
+    if (currentVersion < 1) {
+      removeLangpacks().catch(err => {
+        console.error("Could not remove langpacks", err);
+      });
+    }
+    if (currentVersion < 2) {
+      const prefToClear = [
+        // tor-browser#41845: We were forcing these value by check the value of
+        // automatic PBM. We decided not to change
+        "browser.cache.disk.enable",
+        "places.history.enabled",
+        "security.nocertdb",
+        "permissions.memory_only",
+        // Old torbutton preferences not used anymore.
+        "extensions.torbutton.loglevel",
+        "extensions.torbutton.logmethod",
+        "extensions.torbutton.pref_fixup_version",
+        "extensions.torbutton.resize_new_windows",
+        "extensions.torbutton.startup",
+        "extensions.torlauncher.prompt_for_locale",
+        "extensions.torlauncher.loglevel",
+        "extensions.torlauncher.logmethod",
+        "extensions.torlauncher.torrc_fixup_version",
+      ];
+      for (const pref of prefToClear) {
+        if (Services.prefs.prefHasUserValue(pref)) {
+          Services.prefs.clearUserPref(pref);
+        }
+      }
+    }
+    if (currentVersion < 3) {
+      (async () => {
+        try {
+          const engine = await lazy.AddonManager.getAddonByID(
+            "blockchair@search.mozilla.org"
+          );
+          await engine?.uninstall();
+        } catch {}
+        try {
+          const engine = await lazy.AddonManager.getAddonByID(
+            "blockchair-onion@search.mozilla.org"
+          );
+          engine?.uninstall();
+        } catch {}
+      })();
+    }
+
+    Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
   },
 
   async _showUpgradeDialog() {
