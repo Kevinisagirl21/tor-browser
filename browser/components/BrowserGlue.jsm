@@ -1253,6 +1253,10 @@ BrowserGlue.prototype = {
     // handle any UI migration
     this._migrateUI();
 
+    // Handle any TBB-specific migration before showing the UI. Keep after
+    // _migrateUI to make sure this._isNewProfile has been defined.
+    this._migrateUITBB();
+
     // Clear possibly auto enabled enterprise_roots prefs (see bug 40166)
     if (
       !Services.prefs.getBoolPref(
@@ -4264,6 +4268,43 @@ BrowserGlue.prototype = {
 
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
+  },
+
+  // Use this method for any TBB migration that can be run just before showing
+  // the UI.
+  // Anything that critically needs to be migrated earlier should not use this.
+  _migrateUITBB() {
+    // Version 1: Tor Browser 12.0. We use it to remove langpacks, after the
+    //            migration to packaged locales.
+    const TBB_MIGRATION_VERSION = 1;
+    const MIGRATION_PREF = "torbrowser.migration.version";
+
+    // If we decide to force updating users to pass through any version
+    // following 12.0, we can remove this check, and check only whether
+    // MIGRATION_PREF has a user value, like Mozilla does.
+    if (this._isNewProfile) {
+      // Do not migrate fresh profiles
+      Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
+      return;
+    } else if (this._isNewProfile === undefined) {
+      // If this happens, check if upstream updated their function and do not
+      // set this member anymore!
+      console.error("_migrateUITBB: this._isNewProfile is undefined.");
+    }
+
+    const currentVersion = Services.prefs.getIntPref(MIGRATION_PREF, 0);
+    const removeLangpacks = async () => {
+      for (const addon of await AddonManager.getAddonsByTypes(["locale"])) {
+        await addon.uninstall();
+      }
+    };
+    if (currentVersion < 1) {
+      removeLangpacks().catch(err => {
+        console.error("Could not remove langpacks", err);
+      });
+    }
+
+    Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
   },
 
   async _showUpgradeDialog() {
