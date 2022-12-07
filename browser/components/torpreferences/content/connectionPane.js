@@ -1,3 +1,8 @@
+// Copyright (c) 2022, The Tor Project, Inc.
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 "use strict";
 
 /* global Services, gSubDialog */
@@ -518,10 +523,10 @@ const gConnectionPane = (function() {
           details && details.transport !== undefined
             ? details.transport
             : "vanilla";
-        for (const piece of idString.split(/(#[12])/)) {
-          if (piece == "#1") {
+        for (const piece of idString.split(/(%[12]\$S)/)) {
+          if (piece == "%1$S") {
             id.append(type);
-          } else if (piece == "#2") {
+          } else if (piece == "%2$S") {
             id.append(...emojis);
           } else {
             id.append(piece);
