@@ -1,4 +1,7 @@
 // Copyright (c) 2021, The Tor Project, Inc.
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /* eslint-env mozilla/frame-script */
 
@@ -608,7 +611,7 @@ class AboutTorConnect {
   }
 
   showConfigureConnectionLink(text) {
-    const pieces = text.split("#1");
+    const pieces = text.split("%S");
     const link = document.createElement("a");
     link.textContent = TorStrings.torConnect.configureConnection;
     link.setAttribute("href", "#");
