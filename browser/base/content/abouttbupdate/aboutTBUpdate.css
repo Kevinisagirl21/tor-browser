@@ -14,61 +14,54 @@ body {
   font-family: Helvetica, Arial, sans-serif;
   color: var(--abouttor-text-color);
   background-color: var(--abouttor-bg-toron-color);
-  background-attachment: fixed;
-  background-size: 100% 100%;
-}
-
-a {
-  color: var(--abouttor-text-color);
-}
-
-.two-column-grid {
-  display: inline-grid;
+  margin-block: 40px;
+  margin-inline: 50px;
+  display: grid;
   grid-template-columns: auto auto;
-  grid-column-gap: 50px;
-  margin: 10px 0px 0px 50px;
+  align-items: baseline;
+  gap: 40px 50px;
 }
 
-.two-column-grid div {
-  margin-top: 40px;
-  align-self: baseline;  /* Align baseline of text across the row. */
+body > *:not([hidden]) {
+  display: contents;
 }
 
 .label-column {
-  font-size: 14px;
-  font-weight: 400;
+  grid-column: 1;
 }
 
-/*
- * Use a reduced top margin to bring the row that contains the
- * "visit our website" link closer to the row that precedes it. This
- * looks better because the "visit our website" row does not have a
- * label in the left column.
- */
-div.more-info-row {
-  margin-top: 5px;
-  font-size: 14px;
-}
-
-#version-content {
-  font-size: 50px;
-  font-weight: 300;
-}
-
-body:not([havereleasedate]) .release-date-cell {
-  display: none;
-}
-
-#releasedate-content {
-  font-size: 17px;
-}
-
-#releasenotes-label {
-  align-self: start;  /* Anchor "Release Notes" label at the top. */
-}
-
-#releasenotes-content {
+.content {
+  grid-column: 2;
   font-family: monospace;
-  font-size: 15px;
-  white-space: pre;
+  line-height: 1.4;
+}
+
+.label-column, .content {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: normal;
+}
+
+a {
+  color: inherit;
+}
+
+.no-line-break {
+  white-space: nowrap;
+}
+
+ul {
+  padding-inline: 1em 0;
+}
+
+h3, h4 {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+h3.build-system-heading {
+  font-size: 1.5rem;
+  font-weight: normal;
+  margin-block-start: 3em;
 }

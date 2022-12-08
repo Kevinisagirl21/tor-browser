@@ -8,7 +8,6 @@
 this.EXPORTED_SYMBOLS = ["AboutTBUpdateParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -74,41 +73,72 @@ class AboutTBUpdateParent extends JSWindowActorParent {
       f.append("Docs");
       f.append("ChangeLog.txt");
 
-      let s = await IOUtils.readUTF8(f.path);
+      // NOTE: We load in the entire file, but only use the first few lines
+      // before the first blank line.
+      const logLines = (await IOUtils.readUTF8(f.path))
+        .replace(/\n\r?\n.*/ms, "")
+        .split(/\n\r?/);
 
-      // Truncate at the first empty line.
-      s = s.replace(/[\r\n][\r\n][\s\S]*$/m, "");
-
-      // Split into first line (version plus releaseDate) and
-      // remainder (releaseNotes).
-      // This first match() uses multiline mode with two capture groups:
-      //   first line: (.*$)
-      //   remaining lines: ([\s\S]+)
-      //     [\s\S] matches all characters including end of line. This trick
-      //     is needed because when using JavaScript regex in multiline mode,
-      //     . does not match an end of line character.
-      let matchArray = s.match(/(.*$)\s*([\s\S]+)/m);
-      if (matchArray && matchArray.length == 3) {
-        info.releaseNotes = matchArray[2];
-        let line1 = matchArray[1];
-        // Extract the version and releaseDate. The first line looks like:
-        //   Tor Browser 8.5 -- May 1 2019
-        // The regex uses two capture groups:
-        //   text that does not include a hyphen: (^[^-]*)
-        //   remaining text: (.*$)
-        // In between we match optional whitespace, one or more hyphens, and
-        // optional whitespace by using: \s*-+\s*
-        matchArray = line1.match(/(^[^-]*)\s*-+\s*(.*$)/);
-        if (matchArray && matchArray.length == 3) {
-          info.version = matchArray[1];
-          info.releaseDate = matchArray[2];
-        } else {
-          info.version = line1; // Match failed: return entire line in version.
-        }
+      // Read the first line to get the version and date.
+      // Assume everything after the last "-" is the date.
+      const firstLine = logLines.shift();
+      const match = firstLine?.match(/(.*)-+(.*)/);
+      if (match) {
+        info.version = match[1].trim();
+        info.releaseDate = match[2].trim();
       } else {
-        info.releaseNotes = s; // Only one line: use as releaseNotes.
+        // No date.
+        info.version = firstLine?.trim();
       }
-    } catch (e) {}
+
+      // We want to read the rest of the release notes as a tree. Each entry
+      // will contain the text for that line.
+      // We choose a negative index for the top node of this tree to ensure no
+      // line will appear less indented.
+      const topEntry = { indent: -1, children: undefined };
+      let prevEntry = topEntry;
+
+      for (let line of logLines) {
+        const indent = line.match(/^ */)[0];
+        line = line.trim();
+        if (line.startsWith("*")) {
+          // Treat as a bullet point.
+          let entry = {
+            text: line.replace(/^\*\s/, ""),
+            indent: indent.length,
+          };
+          let parentEntry;
+          if (entry.indent > prevEntry.indent) {
+            // A sub-list of the previous item.
+            prevEntry.children = [];
+            parentEntry = prevEntry;
+          } else {
+            // Same list or end of sub-list.
+            // Search for the first parent whose indent comes before ours.
+            parentEntry = prevEntry.parent;
+            while (entry.indent <= parentEntry.indent) {
+              parentEntry = parentEntry.parent;
+            }
+          }
+          entry.parent = parentEntry;
+          parentEntry.children.push(entry);
+          prevEntry = entry;
+        } else if (prevEntry === topEntry) {
+          // Unexpected, missing bullet point on first line.
+          // Place as its own bullet point instead, and set as prevEntry for the
+          // next loop.
+          prevEntry = { text: line, indent: indent.length, parent: topEntry };
+          topEntry.children = [prevEntry];
+        } else {
+          // Append to the previous bullet point.
+          prevEntry.text += ` ${line}`;
+        }
+      }
+
+      info.releaseNotes = topEntry.children;
+    } catch (e) {
+      Cu.reportError(e);
+    }
 
     return info;
   }
