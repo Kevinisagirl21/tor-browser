@@ -26,6 +26,7 @@ const { TorProtocolService } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
 });
 
 // Module specific constants
