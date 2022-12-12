@@ -167,6 +167,7 @@ EXTRA_JS_MODULES += [
     "DeferredTask.sys.mjs",
     "Deprecated.sys.mjs",
     "DomainFrontedRequests.sys.mjs",
+    "DragDropFilter.sys.mjs",
     "E10SUtils.sys.mjs",
     "EventEmitter.sys.mjs",
     "FileUtils.sys.mjs",
