@@ -5,6 +5,16 @@
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyGetter(this, "gOpaqueDrag", () => {
+  return Cc["@torproject.org/torbutton-dragDropFilter;1"].getService(
+    Ci.nsISupports
+  ).wrappedJSObject.opaqueDrag;
+});
+
 // This component is used for handling dragover and drop of urls.
 //
 // It checks to see whether a drop of a url is allowed. For instance, a url
@@ -43,10 +53,15 @@ ContentAreaDropListener.prototype = {
       }
     }
 
-    type = "text/x-moz-url";
-    if (types.contains(type)) {
+    for (let type of ["text/x-moz-url", "application/x-torbrowser-opaque"]) {
+      if (!types.contains(type)) {
+        continue;
+      }
       data = dt.mozGetDataAt(type, i);
       if (data) {
+        if (type === "application/x-torbrowser-opaque") {
+          ({ type, value: data = "" } = gOpaqueDrag.get(data));
+        }
         let lines = data.split("\n");
         for (let i = 0, length = lines.length; i < length; i += 2) {
           this._addLink(links, lines[i], lines[i + 1], type);
@@ -250,6 +265,7 @@ ContentAreaDropListener.prototype = {
     if (
       !types.includes("application/x-moz-file") &&
       !types.includes("text/x-moz-url") &&
+      !types.includes("application/x-torbrowser-opaque") &&
       !types.includes("text/uri-list") &&
       !types.includes("text/x-moz-text-internal") &&
       !types.includes("text/plain")
