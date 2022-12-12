@@ -27,6 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DoHController: "resource:///modules/DoHController.sys.mjs",
   DownloadsViewableInternally:
     "resource:///modules/DownloadsViewableInternally.sys.mjs",
+  DragDropFilter: "resource://gre/modules/DragDropFilter.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   FeatureGate: "resource://featuregates/FeatureGate.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
@@ -1821,6 +1822,8 @@ BrowserGlue.prototype = {
     lazy.PageActions.init();
 
     lazy.DoHController.init();
+
+    lazy.DragDropFilter.init();
 
     lazy.TorProviderBuilder.firstWindowLoaded();
 
