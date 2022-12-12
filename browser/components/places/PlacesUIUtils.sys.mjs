@@ -1962,7 +1962,11 @@ XPCOMUtils.defineLazyGetter(PlacesUIUtils, "URI_FLAVORS", () => {
   ];
 });
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "SUPPORTED_FLAVORS", () => {
-  return [...PlacesUIUtils.PLACES_FLAVORS, ...PlacesUIUtils.URI_FLAVORS];
+  return [
+    ...PlacesUIUtils.PLACES_FLAVORS,
+    ...PlacesUIUtils.URI_FLAVORS,
+    "application/x-torbrowser-opaque",
+  ];
 });
 
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "ellipsis", function () {
