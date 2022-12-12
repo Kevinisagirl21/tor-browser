@@ -6,7 +6,6 @@ torbutton.jar:
 
   content/torbutton.js                   (chrome/content/torbutton.js)
 
-  components/    (components/*)
   modules/       (modules/*)
 
 % resource torbutton %
