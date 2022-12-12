@@ -26,6 +26,12 @@ XPCOMUtils.defineLazyGetter(lazy, "gCryptoHash", () => {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
 
+XPCOMUtils.defineLazyGetter(lazy, "gOpaqueDrag", () => {
+  return Cc["@torproject.org/torbutton-dragDropFilter;1"].getService(
+    Ci.nsISupports
+  ).wrappedJSObject.opaqueDrag;
+});
+
 // On Mac OSX, the transferable system converts "\r\n" to "\n\n", where
 // we really just want "\n". On other platforms, the transferable system
 // converts "\r\n" to "\n".
@@ -1103,6 +1109,9 @@ export var PlacesUtils = {
   unwrapNodes: function PU_unwrapNodes(blob, type) {
     // We split on "\n"  because the transferable system converts "\r\n" to "\n"
     var nodes = [];
+    if (type === "application/x-torbrowser-opaque") {
+      ({ value: blob, type } = lazy.gOpaqueDrag.get(blob));
+    }
     switch (type) {
       case this.TYPE_X_MOZ_PLACE:
       case this.TYPE_X_MOZ_PLACE_SEPARATOR:
