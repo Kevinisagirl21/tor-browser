@@ -22,9 +22,9 @@ const kRequestUpdateMessageName = "FetchUpdateData";
  * implementation.
  */
 class AboutTBUpdateParent extends JSWindowActorParent {
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     if (aMessage.name == kRequestUpdateMessageName) {
-      return this.releaseNoteInfo;
+      return this.getReleaseNoteInfo();
     }
     return undefined;
   }
@@ -51,7 +51,7 @@ class AboutTBUpdateParent extends JSWindowActorParent {
   // On Mac OS, when building with --enable-tor-browser-data-outside-app-dir
   // to support Gatekeeper signing, the ChangeLog.txt file is located in
   // TorBrowser.app/Contents/Resources/TorBrowser/Docs/.
-  get releaseNoteInfo() {
+  async getReleaseNoteInfo() {
     let info = { moreInfoURL: this.moreInfoURL };
 
     try {
@@ -74,12 +74,7 @@ class AboutTBUpdateParent extends JSWindowActorParent {
       f.append("Docs");
       f.append("ChangeLog.txt");
 
-      let fs = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
-        Ci.nsIFileInputStream
-      );
-      fs.init(f, -1, 0, 0);
-      let s = NetUtil.readInputStreamToString(fs, fs.available());
-      fs.close();
+      let s = await IOUtils.readUTF8(f.path);
 
       // Truncate at the first empty line.
       s = s.replace(/[\r\n][\r\n][\s\S]*$/m, "");
