@@ -1,8 +1,0 @@
-<!ENTITY aboutTBUpdate.changelogTitle "Regjistër Ndryshimesh Në Shfletuesin Tor">
-<!ENTITY aboutTBUpdate.updated "Shfletuesi Tor është përditësuar.">
-<!ENTITY aboutTBUpdate.linkPrefix "Për një informacion më të përditësuar në lidhje me këtë version,">
-<!ENTITY aboutTBUpdate.linkLabel  "vizitoni sajtin tonë">
-<!ENTITY aboutTBUpdate.linkSuffix ".">
-<!ENTITY aboutTBUpdate.version "Version">
-<!ENTITY aboutTBUpdate.releaseDate "Datë Hedhjeje Në Qarkullim">
-<!ENTITY aboutTBUpdate.releaseNotes "Shënime Hedhjeje Në Qarkullim">

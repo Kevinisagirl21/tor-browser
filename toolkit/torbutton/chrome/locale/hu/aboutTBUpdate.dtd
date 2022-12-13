@@ -1,8 +1,0 @@
-<!ENTITY aboutTBUpdate.changelogTitle "Tor Böngésző Változási napló">
-<!ENTITY aboutTBUpdate.updated "Tor Böngésző frissítve.">
-<!ENTITY aboutTBUpdate.linkPrefix "Az erről a kiadásról szóló legfrissebb információkért">
-<!ENTITY aboutTBUpdate.linkLabel  "látogassa meg weboldalunkat">
-<!ENTITY aboutTBUpdate.linkSuffix ".">
-<!ENTITY aboutTBUpdate.version "Verzió">
-<!ENTITY aboutTBUpdate.releaseDate "Kiadási dátum">
-<!ENTITY aboutTBUpdate.releaseNotes "Verziókövetési jegyzet">
