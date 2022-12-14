@@ -13,30 +13,3 @@
 <!-- Onion services strings. Strings are kept here for ease of translation. -->
 <!ENTITY torbutton.onionServices.authPrompt.tooltip "Open onion service client authentication prompt">
 <!ENTITY torbutton.onionServices.authPrompt.persistCheckboxLabel "Remember this key">
-
-<!ENTITY torbutton.prefs.security_settings "Tor Browser Security Settings">
-<!ENTITY torbutton.prefs.sec_caption "Security Level">
-<!ENTITY torbutton.prefs.sec_caption_tooltip "The Security Slider lets you disable certain browser features that may make your browser more vulnerable to hacking attempts.">
-<!ENTITY torbutton.prefs.sec_standard_label "Standard">
-<!ENTITY torbutton.prefs.sec_standard_description "All Tor Browser and website features are enabled.">
-<!ENTITY torbutton.prefs.sec_safer_label "Safer">
-<!ENTITY torbutton.prefs.sec_safer_description "Disables website features that are often dangerous, causing some sites to lose functionality.">
-<!ENTITY torbutton.prefs.sec_safer_list_label "At the safer setting:">
-<!ENTITY torbutton.prefs.sec_safest_label "Safest">
-<!ENTITY torbutton.prefs.sec_safest_description "Only allows website features required for static sites and basic services. These changes affect images, media, and scripts.">
-<!ENTITY torbutton.prefs.sec_safest_list_label "At the safest setting:">
-<!ENTITY torbutton.prefs.sec_learn_more_label "Learn more">
-<!ENTITY torbutton.prefs.sec_js_on_https_sites_only "JavaScript is disabled on non-HTTPS sites.">
-<!ENTITY torbutton.prefs.sec_js_disabled "JavaScript is disabled by default on all sites.">
-<!ENTITY torbutton.prefs.sec_limit_typography "Some fonts and math symbols are disabled.">
-<!ENTITY torbutton.prefs.sec_limit_graphics_and_typography "Some fonts, icons, math symbols, and images are disabled.">
-<!ENTITY torbutton.prefs.sec_click_to_play_media "Audio and video (HTML5 media), and WebGL are click-to-play.">
-<!ENTITY torbutton.prefs.sec_custom_warning "Custom">
-<!ENTITY torbutton.prefs.sec_overview "Disable certain web features that can be used to attack your security and anonymity.">
-<!ENTITY torbutton.prefs.sec_standard_tooltip "Security Level : Standard">
-<!ENTITY torbutton.prefs.sec_safer_tooltip "Security Level : Safer">
-<!ENTITY torbutton.prefs.sec_safest_tooltip "Security Level : Safest">
-<!ENTITY torbutton.prefs.sec_custom_summary "Your custom browser preferences have resulted in unusual security settings. For security and privacy reasons, we recommend you choose one of the default security levels.">
-<!ENTITY torbutton.prefs.sec_restore_defaults "Restore Defaults">
-<!ENTITY torbutton.prefs.sec_advanced_security_settings "Advanced Security Settings…">
-<!ENTITY torbutton.prefs.sec_change "Change…">
