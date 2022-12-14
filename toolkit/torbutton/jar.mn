@@ -6,11 +6,9 @@ torbutton.jar:
 
   content/torbutton.js                   (chrome/content/torbutton.js)
   content/tor-circuit-display.js         (chrome/content/tor-circuit-display.js)
-  content/preferences.xhtml              (chrome/content/preferences.xhtml)
   content/aboutTor/aboutTor-content.js   (chrome/content/aboutTor/aboutTor-content.js)
 * content/aboutTor/aboutTor.xhtml        (chrome/content/aboutTor/aboutTor.xhtml)
   content/aboutTor/resources/aboutTor.js (chrome/content/aboutTor/resources/aboutTor.js)
-  content/preferences-mobile.js          (chrome/content/preferences-mobile.js)
 
   components/    (components/*)
   modules/       (modules/*)

@@ -20,7 +20,6 @@ var torbutton_new_circuit;
 
   let {
     unescapeTorString,
-    bindPrefAndInit,
     getDomainForBrowser,
     torbutton_log,
     torbutton_get_property_string,
@@ -185,10 +184,6 @@ var torbutton_new_circuit;
     },
   };
 
-  function torbutton_is_mobile() {
-    return Services.appinfo.OS === "Android";
-  }
-
   // Bug 1506 P2-P4: This code sets some version variables that are irrelevant.
   // It does read out some important environment variables, though. It is
   // called once per browser window.. This might belong in a component.
@@ -269,8 +264,6 @@ var torbutton_new_circuit;
       torbutton_abouttor_message_handler
     );
 
-    setupPreferencesForMobile();
-
     torbutton_log(1, "registering Tor check observer");
     torbutton_tor_check_observer.register();
 
@@ -323,7 +316,7 @@ var torbutton_new_circuit;
     // not working.
     async getChromeData(aIsRespondingToPageLoad) {
       let dataObj = {
-        mobile: torbutton_is_mobile(),
+        mobile: Services.appinfo.OS === "Android",
         updateChannel: AppConstants.MOZ_UPDATE_CHANNEL,
         torOn: await torbutton_tor_check_ok(),
       };
@@ -786,53 +779,6 @@ var torbutton_new_circuit;
 
     torbutton_log(2, "Window is normal");
     return true;
-  }
-
-  function showSecurityPreferencesPanel(chromeWindow) {
-    const tabBrowser = chromeWindow.BrowserApp;
-    let settingsTab = null;
-
-    const SECURITY_PREFERENCES_URI =
-      "chrome://torbutton/content/preferences.xhtml";
-
-    tabBrowser.tabs.some(function(tab) {
-      // If the security prefs tab is opened, send the user to it
-      if (tab.browser.currentURI.spec === SECURITY_PREFERENCES_URI) {
-        settingsTab = tab;
-        return true;
-      }
-      return false;
-    });
-
-    if (settingsTab === null) {
-      // Open up the settings panel in a new tab.
-      tabBrowser.addTab(SECURITY_PREFERENCES_URI, {
-        selected: true,
-        parentId: tabBrowser.selectedTab.id,
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-    } else {
-      // Activate an existing settings panel tab.
-      tabBrowser.selectTab(settingsTab);
-    }
-  }
-
-  function setupPreferencesForMobile() {
-    if (!torbutton_is_mobile()) {
-      return;
-    }
-
-    torbutton_log(4, "Setting up settings preferences for Android.");
-
-    const chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
-
-    // Add the extension's chrome menu item to the main browser menu.
-    chromeWindow.NativeWindow.menu.add({
-      name: torbutton_get_property_string(
-        "torbutton.security_settings.menu.title"
-      ),
-      callback: showSecurityPreferencesPanel.bind(this, chromeWindow),
-    });
   }
 
   // Bug 1506 P3: This is needed pretty much only for the window resizing.
