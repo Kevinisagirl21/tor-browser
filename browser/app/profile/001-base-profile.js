@@ -52,6 +52,9 @@ pref("browser.sessionstore.privacy_level", 2);
 // Use the in-memory media cache and increase its maximum size (#29120)
 pref("browser.privatebrowsing.forceMediaMemoryCache", true);
 pref("media.memory_cache_max_size", 16384);
+// Disable restore in case of crash (tor-browser#41503)
+// This should not be needed in PBM, but we added it anyway like other options.
+pref("browser.sessionstore.resume_from_crash", false);
 
 // Enable HTTPS-Only mode (tor-browser#19850)
 pref("dom.security.https_only_mode", true);
@@ -454,8 +457,8 @@ pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-disp
 pref("browser.onboarding.updatetour", "learn-more");
 pref("browser.onboarding.skip-tour-button.hide", true);
 
-// prefs to disable jump-list entries in the taskbar on Windows (see bug #12885)
 #ifdef XP_WIN
+// prefs to disable jump-list entries in the taskbar on Windows (see bug #12885)
 // this pref changes the app's set AUMID to be dependent on the profile path, rather than
 // attempting to read it from the registry; this is necessary so that the file generated
 // by the jumplist system can be properly deleted if it is disabled
@@ -464,6 +467,10 @@ pref("browser.taskbar.lists.enabled", false);
 pref("browser.taskbar.lists.frequent.enabled", false);
 pref("browser.taskbar.lists.tasks.enabled", false);
 pref("browser.taskbar.lists.recent.enabled", false);
+
+// Do not re-open Tor Browser automatically after reboots when "Restart apps" is
+// enabled (tor-browser#41503)
+pref("toolkit.winRegisterApplicationRestart", false);
 #endif
 
 // If we are bundling fonts, whitelist those bundled fonts, and restrict system fonts to a selection.
