@@ -857,11 +857,11 @@ var gIdentityHandler = {
     } else if (this._isAboutNetErrorPage || this._isAboutBlockedPage) {
       // Network errors and blocked pages get a more neutral icon
       this._identityBox.className = "unknownIdentity";
+    } else if (this._uriIsOnionHost) {
+      this._identityBox.className = "onionUnknownIdentity";
     } else if (this._isPotentiallyTrustworthy) {
-      // This is a local resource or an onion site (and shouldn't be marked insecure).
-      this._identityBox.className = this._uriIsOnionHost
-        ? "onionUnknownIdentity"
-        : "localResource";
+      // This is a local resource (and shouldn't be marked insecure).
+      this._identityBox.className = "localResource";
     } else {
       // This is an insecure connection.
       let warnOnInsecure =
