@@ -247,7 +247,7 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   bool exists;
   nsCOMPtr<nsIFile> localDir;
 
-#if defined(RELATIVE_PROFILE_DIRECTORY)
+#if defined(RELATIVE_DATA_DIR)
   nsCOMPtr<nsIProperties> directoryService(
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -260,9 +260,9 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   rv = file->Normalize();
   NS_ENSURE_SUCCESS(rv, rv);
   int levelsToRemove = 1;
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   levelsToRemove += 2;
-#endif
+#  endif
   while (levelsToRemove-- > 0) {
     rv = file->GetParent(getter_AddRefs(appRootDir));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -270,7 +270,7 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   }
 
   localDir = appRootDir;
-  nsAutoCString profileDir(RELATIVE_PROFILE_DIRECTORY);
+  nsAutoCString profileDir(RELATIVE_DATA_DIR);
   rv = localDir->SetRelativePath(localDir.get(), profileDir);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -318,6 +318,12 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 #  error dont_know_how_to_get_product_dir_on_your_platform
 #endif
 
+#if !defined(RELATIVE_DATA_DIR)
+  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+#endif
   rv = localDir->Exists(&exists);
 
   if (NS_SUCCEEDED(rv) && !exists) {
@@ -350,6 +356,23 @@ nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+#if defined(MOZ_WIDGET_COCOA) || defined(XP_WIN)
+  // These 3 platforms share this part of the path - do them as one
+  rv = localDir->AppendRelativeNativePath("Profiles"_ns);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  bool exists;
+  rv = localDir->Exists(&exists);
+  if (NS_SUCCEEDED(rv) && !exists) {
+    rv = localDir->Create(nsIFile::DIRECTORY_TYPE, 0775);
+  }
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+#endif
 
   localDir.forget(aLocalFile);
 
