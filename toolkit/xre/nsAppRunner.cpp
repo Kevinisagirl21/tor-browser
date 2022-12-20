@@ -4158,14 +4158,6 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   if (PR_GetEnv("XRE_MAIN_BREAK")) NS_BREAK();
 #endif
 
-#if defined(XP_MACOSX) && defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
-  bool hideDockIcon = (CheckArg("invisible") == ARG_FOUND);
-  if (hideDockIcon) {
-    ProcessSerialNumber psn = {0, kCurrentProcess};
-    TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
-  }
-#endif
-
   mozilla::startup::IncreaseDescriptorLimits();
 
 #ifdef USE_GLX_TEST
@@ -5222,6 +5214,14 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (CheckArg("test-process-updates")) {
       SaveToEnv("MOZ_TEST_PROCESS_UPDATES=1");
     }
+#  ifndef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
+    nsCOMPtr<nsIFile> exeFile, exeDir;
+    rv = mDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
+                              getter_AddRefs(exeFile));
+    NS_ENSURE_SUCCESS(rv, 1);
+    rv = exeFile->GetParent(getter_AddRefs(exeDir));
+#  endif
+
 #  ifdef TOR_BROWSER_UPDATE
     nsAutoCString compatVersion(TOR_BROWSER_VERSION_QUOTED);
 #  endif
