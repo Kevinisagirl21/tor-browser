@@ -7,136 +7,75 @@
 
 var EXPORTED_SYMBOLS = ["CryptoSafetyParent"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  TorStrings: "resource:///modules/TorStrings.jsm",
+XPCOMUtils.defineLazyGetter(this, "cryptoSafetyBundle", () => {
+  return Services.strings.createBundle(
+    "chrome://torbutton/locale/cryptoSafetyPrompt.properties"
+  );
 });
 
-const kPrefCryptoSafety = "security.cryptoSafety";
+// en-US fallback in case a locale is missing a string.
+XPCOMUtils.defineLazyGetter(this, "fallbackCryptoSafetyBundle", () => {
+  return Services.strings.createBundle(
+    "resource://gre/chrome/torbutton/locale/en-US/cryptoSafetyPrompt.properties"
+  );
+});
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "isCryptoSafetyEnabled",
-  kPrefCryptoSafety,
-  true /* defaults to true */
+  "security.cryptoSafety",
+  true // Defaults to true.
 );
 
+/**
+ * Get a formatted string from the locale's bundle, or the en-US bundle if the
+ * string is missing.
+ *
+ * @param {string} name - The string's name.
+ * @param {string[]} [args] - Positional arguments to pass to the format string,
+ *   or leave empty if none are needed.
+ *
+ * @returns {string} - The formatted string.
+ */
+function getString(name, args = []) {
+  try {
+    return cryptoSafetyBundle.formatStringFromName(name, args);
+  } catch {
+    return fallbackCryptoSafetyBundle.formatStringFromName(name, args);
+  }
+}
+
 class CryptoSafetyParent extends JSWindowActorParent {
-  getBrowser() {
-    return this.browsingContext.top.embedderElement;
-  }
-
   receiveMessage(aMessage) {
-    if (isCryptoSafetyEnabled) {
-      if (aMessage.name == "CryptoSafety:CopiedText") {
-        showPopup(this.getBrowser(), aMessage.data.selection);
-      }
-    }
-  }
-}
-
-function trimAddress(cryptoAddr) {
-  if (cryptoAddr.length <= 32) {
-    return cryptoAddr;
-  }
-  return cryptoAddr.substring(0, 32) + "...";
-}
-
-function showPopup(aBrowser, cryptoAddr) {
-  const chromeDoc = aBrowser.ownerDocument;
-  if (chromeDoc) {
-    const win = chromeDoc.defaultView;
-    const cryptoSafetyPrompt = new CryptoSafetyPrompt(
-      aBrowser,
-      win,
-      cryptoAddr
-    );
-    cryptoSafetyPrompt.show();
-  }
-}
-
-class CryptoSafetyPrompt {
-  constructor(aBrowser, aWin, cryptoAddr) {
-    this._browser = aBrowser;
-    this._win = aWin;
-    this._cryptoAddr = cryptoAddr;
-  }
-
-  show() {
-    const primaryAction = {
-      label: TorStrings.cryptoSafetyPrompt.primaryAction,
-      accessKey: TorStrings.cryptoSafetyPrompt.primaryActionAccessKey,
-      callback: () => {
-        this._win.torbutton_new_circuit();
-      },
-    };
-
-    const secondaryAction = {
-      label: TorStrings.cryptoSafetyPrompt.secondaryAction,
-      accessKey: TorStrings.cryptoSafetyPrompt.secondaryActionAccessKey,
-      callback: () => {},
-    };
-
-    let _this = this;
-    const options = {
-      popupIconURL: "chrome://global/skin/icons/warning.svg",
-      eventCallback(aTopic) {
-        if (aTopic === "showing") {
-          _this._onPromptShowing();
-        }
-      },
-    };
-
-    const cryptoWarningText = TorStrings.cryptoSafetyPrompt.cryptoWarning.replace(
-      "%S",
-      trimAddress(this._cryptoAddr)
-    );
-
-    if (this._win.PopupNotifications) {
-      this._prompt = this._win.PopupNotifications.show(
-        this._browser,
-        "crypto-safety-warning",
-        cryptoWarningText,
-        null /* anchor ID */,
-        primaryAction,
-        [secondaryAction],
-        options
-      );
-    }
-  }
-
-  _onPromptShowing() {
-    let xulDoc = this._browser.ownerDocument;
-
-    let whatCanHeading = xulDoc.getElementById(
-      "crypto-safety-warning-notification-what-can-heading"
-    );
-    if (whatCanHeading) {
-      whatCanHeading.textContent = TorStrings.cryptoSafetyPrompt.whatCanHeading;
+    if (!isCryptoSafetyEnabled || aMessage.name !== "CryptoSafety:CopiedText") {
+      return;
     }
 
-    let whatCanBody = xulDoc.getElementById(
-      "crypto-safety-warning-notification-what-can-body"
-    );
-    if (whatCanBody) {
-      whatCanBody.textContent = TorStrings.cryptoSafetyPrompt.whatCanBody;
+    let address = aMessage.data.selection;
+    if (address.length > 32) {
+      address = `${address.substring(0, 32)}…`;
     }
 
-    let learnMoreElem = xulDoc.getElementById(
-      "crypto-safety-warning-notification-learnmore"
+    const buttonPressed = Services.prompt.confirmEx(
+      this.browsingContext.topChromeWindow,
+      getString("cryptoSafetyPrompt.cryptoTitle"),
+      getString("cryptoSafetyPrompt.cryptoBody", [address, aMessage.data.host]),
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
+        Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_1,
+      getString("cryptoSafetyPrompt.primaryAction"),
+      getString("cryptoSafetyPrompt.secondaryAction"),
+      null,
+      null,
+      {}
     );
-    if (learnMoreElem) {
-      learnMoreElem.setAttribute(
-        "value",
-        TorStrings.cryptoSafetyPrompt.learnMore
-      );
-      learnMoreElem.setAttribute(
-        "href",
-        TorStrings.cryptoSafetyPrompt.learnMoreURL
-      );
+
+    if (buttonPressed === 0) {
+      this.browsingContext.topChromeWindow.torbutton_new_circuit();
     }
   }
 }

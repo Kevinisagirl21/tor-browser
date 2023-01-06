@@ -15,13 +15,11 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-const kPrefCryptoSafety = "security.cryptoSafety";
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "isCryptoSafetyEnabled",
-  kPrefCryptoSafety,
-  true /* defaults to true */
+  "security.cryptoSafety",
+  true // Defaults to true.
 );
 
 function looksLikeCryptoAddress(s) {
@@ -62,26 +60,28 @@ function looksLikeCryptoAddress(s) {
 
 class CryptoSafetyChild extends JSWindowActorChild {
   handleEvent(event) {
-    if (isCryptoSafetyEnabled) {
-      // Ignore non-HTTP addresses
-      if (!this.document.documentURIObject.schemeIs("http")) {
-        return;
-      }
-      // Ignore onion addresses
-      if (this.document.documentURIObject.host.endsWith(".onion")) {
-        return;
-      }
-
-      if (event.type == "copy" || event.type == "cut") {
-        this.contentWindow.navigator.clipboard.readText().then(clipText => {
-          const selection = clipText.replace(/\s+/g, "");
-          if (looksLikeCryptoAddress(selection)) {
-            this.sendAsyncMessage("CryptoSafety:CopiedText", {
-              selection,
-            });
-          }
-        });
-      }
+    if (
+      !isCryptoSafetyEnabled ||
+      // Ignore non-HTTP addresses.
+      // We do this before reading the host property since this is not available
+      // for about: pages.
+      !this.document.documentURIObject.schemeIs("http") ||
+      // Ignore onion addresses.
+      this.document.documentURIObject.host.endsWith(".onion") ||
+      (event.type !== "copy" && event.type !== "cut")
+    ) {
+      return;
     }
+
+    this.contentWindow.navigator.clipboard.readText().then(clipText => {
+      const selection = clipText.replace(/\s+/g, "");
+      if (!looksLikeCryptoAddress(selection)) {
+        return;
+      }
+      this.sendAsyncMessage("CryptoSafety:CopiedText", {
+        selection,
+        host: this.document.documentURIObject.host,
+      });
+    });
   }
 }
