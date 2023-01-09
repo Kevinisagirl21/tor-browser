@@ -137,7 +137,7 @@ const Loader = {
       bridgeCurrent: "Your Current Bridges",
       bridgeCurrentDescription:
         "You can keep one or more bridges saved, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.",
-      bridgeId: "#1 bridge: #2",
+      bridgeId: "%1$S bridge: %2$S",
       remove: "Remove",
       bridgeDisableBuiltIn: "Disable built-in bridges",
       bridgeShare:
@@ -247,16 +247,16 @@ const Loader = {
       couldNotConnect: "Tor Browser could not connect to Tor",
       configureConnection: "configure your connection",
       assistDescription:
-        "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can #1 manually instead.",
+        "If Tor is blocked in your location, trying a bridge may help. Connection assist can choose one for you using your location, or you can %S manually instead.",
       tryingBridge: "Trying a bridge…",
 
       tryingBridgeAgain: "Trying one more time…",
       errorLocation: "Tor Browser couldn’t locate you",
       errorLocationDescription:
-        "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, #1 manually instead.",
+        "Tor Browser needs to know your location in order to choose the right bridge for you. If you’d rather not share your location, %S manually instead.",
       isLocationCorrect: "Are these location settings correct?",
       isLocationCorrectDescription:
-        "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or #1 instead.",
+        "Tor Browser still couldn’t connect to Tor. Please check your location settings are correct and try again, or %S instead.",
       finalError: "Tor Browser still cannot connect",
 
       finalErrorDescription:
