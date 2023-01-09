@@ -58,7 +58,11 @@ let tor = {};
 
 // __tor.noncesForDomains__.
 // A mutable map that records what nonce we are using for each domain.
-tor.noncesForDomains = {};
+tor.noncesForDomains = new Map();
+
+// __tor.noncesForUserContextId__.
+// A mutable map that records what nonce we are using for each tab container.
+tor.noncesForUserContextId = new Map();
 
 // __tor.isolationEabled__.
 // A bool that controls if we use SOCKS auth for isolation or not.
@@ -68,23 +72,37 @@ tor.isolationEnabled = true;
 // Specifies when the current catch-all circuit was first used
 tor.unknownDirtySince = Date.now();
 
-// __tor.socksProxyCredentials(originalProxy, domain)__.
+tor.passwordForDomainAndUserContextId = function(domain, userContextId) {
+  // Check if we already have a nonce. If not, create
+  // one for this domain and userContextId.
+  if (!tor.noncesForDomains.has(domain)) {
+    tor.noncesForDomains.set(domain, tor.nonce());
+  }
+  if (!tor.noncesForUserContextId.has(userContextId)) {
+    tor.noncesForUserContextId.set(userContextId, tor.nonce());
+  }
+  return (
+    tor.noncesForDomains.get(domain) +
+    tor.noncesForUserContextId.get(userContextId)
+  );
+};
+
+// __tor.socksProxyCredentials(originalProxy, domain, userContextId)__.
 // Takes a proxyInfo object (originalProxy) and returns a new proxyInfo
 // object with the same properties, except the username is set to the
-// the domain, and the password is a nonce.
-tor.socksProxyCredentials = function(originalProxy, domain) {
-  // Check if we already have a nonce. If not, create
-  // one for this domain.
-  if (!tor.noncesForDomains.hasOwnProperty(domain)) {
-    tor.noncesForDomains[domain] = tor.nonce();
-  }
+// the domain and userContextId, and the password is a nonce.
+tor.socksProxyCredentials = function(originalProxy, domain, userContextId) {
   let proxy = originalProxy.QueryInterface(Ci.nsIProxyInfo);
+  let proxyPassword = tor.passwordForDomainAndUserContextId(
+    domain,
+    userContextId
+  );
   return mozilla.protocolProxyService.newProxyInfoWithAuth(
     "socks",
     proxy.host,
     proxy.port,
-    domain, // username
-    tor.noncesForDomains[domain], // password
+    `${domain}:${userContextId}`, // username
+    proxyPassword,
     "", // aProxyAuthorizationHeader
     "", // aConnectionIsolationKey
     proxy.flags,
@@ -116,10 +134,21 @@ tor.newCircuitForDomain = function(domain) {
   if (domain === "") {
     domain = "--unknown--";
   }
-  tor.noncesForDomains[domain] = tor.nonce();
+  tor.noncesForDomains.set(domain, tor.nonce());
   logger.eclog(
     3,
-    "New domain isolation for " + domain + ": " + tor.noncesForDomains[domain]
+    `New domain isolation for ${domain}: ${tor.noncesForDomains.get(domain)}`
+  );
+};
+
+tor.newCircuitForUserContextId = function(userContextId) {
+  // Re-generate the nonce for the context.
+  tor.noncesForUserContextId.set(userContextId, tor.nonce());
+  logger.eclog(
+    3,
+    `New container isolation for ${userContextId}: ${tor.noncesForUserContextId.get(
+      userContextId
+    )}`
   );
 };
 
@@ -127,8 +156,9 @@ tor.newCircuitForDomain = function(domain) {
 // Clear the isolation state cache, forcing new circuits to be used for all
 // subsequent requests.
 tor.clearIsolation = function() {
-  // Per-domain nonces are stored in a map, so simply re-initialize the map.
-  tor.noncesForDomains = {};
+  // Per-domain and per contextId nonces are stored in maps, so simply clear them.
+  tor.noncesForDomains.clear();
+  tor.noncesForUserContextId.clear();
 
   // Force a rotation on the next catch-all circuit use by setting the creation
   // time to the epoch.
@@ -137,9 +167,9 @@ tor.clearIsolation = function() {
 
 // __tor.isolateCircuitsByDomain()__.
 // For every HTTPChannel, replaces the default SOCKS proxy with one that authenticates
-// to the SOCKS server (the tor client process) with a username (the first party domain)
-// and a nonce password. Tor provides a separate circuit for each username+password
-// combination.
+// to the SOCKS server (the tor client process) with a username (the first party domain
+// and userContextId) and a nonce password. Tor provides a separate circuit for each
+// username+password combination.
 tor.isolateCircuitsByDomain = function() {
   mozilla.registerProxyChannelFilter(function(aChannel, aProxy) {
     if (!tor.isolationEnabled) {
@@ -147,7 +177,8 @@ tor.isolateCircuitsByDomain = function() {
     }
     try {
       let channel = aChannel.QueryInterface(Ci.nsIChannel),
-        firstPartyDomain = channel.loadInfo.originAttributes.firstPartyDomain;
+        firstPartyDomain = channel.loadInfo.originAttributes.firstPartyDomain,
+        userContextId = channel.loadInfo.originAttributes.userContextId;
       if (firstPartyDomain === "") {
         firstPartyDomain = "--unknown--";
         if (Date.now() - tor.unknownDirtySince > 1000 * 10 * 60) {
@@ -161,7 +192,8 @@ tor.isolateCircuitsByDomain = function() {
       }
       let replacementProxy = tor.socksProxyCredentials(
         aProxy,
-        firstPartyDomain
+        firstPartyDomain,
+        userContextId
       );
       logger.eclog(
         3,
@@ -205,6 +237,9 @@ DomainIsolator.prototype = {
   },
   newCircuitForDomain(domain) {
     tor.newCircuitForDomain(domain);
+  },
+  newCircuitForUserContextId(userContextId) {
+    tor.newCircuitForUserContextId(userContextId);
   },
 
   enableIsolation() {
