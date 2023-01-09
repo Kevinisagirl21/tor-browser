@@ -111,8 +111,8 @@ body {
   outline: initial;
 }
 
-.letterboxing-ready .browserStack:not(.exclude-letterboxing) {
-   place-content: start center;
+:root:not([inDOMFullscreen]) .letterboxing-ready .browserStack:not(.exclude-letterboxing) {
+  place-content: start center;
 }
 
 /* extend down the toolbar's colors when letterboxing is enabled */
