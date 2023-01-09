@@ -871,6 +871,13 @@ var torbutton_new_circuit;
     onLocationChange(aProgress, aRequest, aURI) {},
     onStateChange(aProgress, aRequest, aFlag, aStatus) {
       if (aFlag & Ci.nsIWebProgressListener.STATE_STOP) {
+        window.promiseDocumentFlushed(() => {
+          // Here we're guaranteed to read the "final" (!) initial size, rather than [1, 1].
+          torbutton_resizelistener.originalSize = {
+            width: window.outerWidth,
+            height: window.outerHeight,
+          };
+        });
         m_tb_resize_handler = async function() {
           // Wait for end of execution queue to ensure we have correct windowState.
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -878,17 +885,18 @@ var torbutton_new_circuit;
             window.windowState === window.STATE_MAXIMIZED ||
             window.windowState === window.STATE_FULLSCREEN
           ) {
+            const kRemainingWarnings =
+              "extensions.torbutton.maximize_warnings_remaining";
             if (
-              m_tb_prefs.getBoolPref(
+              Services.prefs.getBoolPref(
                 "extensions.torbutton.resize_new_windows"
               ) &&
-              m_tb_prefs.getIntPref(
-                "extensions.torbutton.maximize_warnings_remaining"
-              ) > 0
+              Services.prefs.getIntPref(kRemainingWarnings) > 0
             ) {
               // Do not add another notification if one is already showing.
               const kNotificationName = "torbutton-maximize-notification";
-              let box = gBrowser.getNotificationBox();
+
+              const box = gNotificationBox;
               if (box.getNotificationWithValue(kNotificationName)) {
                 return;
               }
@@ -908,38 +916,53 @@ var torbutton_new_circuit;
               }
 
               // No need to get "OK" translated again.
-              let sbSvc = Services.strings;
-              let bundle = sbSvc.createBundle(
+              const bundle = Services.strings.createBundle(
                 "chrome://global/locale/commonDialogs.properties"
               );
-              let button_label = bundle.GetStringFromName("OK");
+
+              const decreaseWarningsCount = () => {
+                const currentCount = Services.prefs.getIntPref(
+                  kRemainingWarnings
+                );
+                if (currentCount > 0) {
+                  Services.prefs.setIntPref(
+                    kRemainingWarnings,
+                    currentCount - 1
+                  );
+                }
+              };
 
               let buttons = [
                 {
-                  label: button_label,
+                  label: bundle.GetStringFromName("OK"),
                   accessKey: "O",
                   popup: null,
                   callback() {
-                    m_tb_prefs.setIntPref(
-                      "extensions.torbutton.maximize_warnings_remaining",
-                      m_tb_prefs.getIntPref(
-                        "extensions.torbutton.maximize_warnings_remaining"
-                      ) - 1
-                    );
+                    // reset notification timer to work-around resize race conditions
+                    m_tb_resize_date = Date.now();
+                    // restore the original (rounded) size we had stored on window startup
+                    let { originalSize } = torbutton_resizelistener;
+                    window.resizeTo(originalSize.width, originalSize.height);
                   },
                 },
               ];
 
-              let priority = box.PRIORITY_WARNING_LOW;
-              let message = torbutton_get_property_string(
+              const label = torbutton_get_property_string(
                 "torbutton.maximize_warning"
               );
 
               box.appendNotification(
-                message,
                 kNotificationName,
-                null,
-                priority,
+                {
+                  label,
+                  priority: box.PRIORITY_WARNING_LOW,
+                  eventCallback(event) {
+                    if (event === "dismissed") {
+                      // user manually dismissed the notification
+                      decreaseWarningsCount();
+                    }
+                  },
+                },
                 buttons
               );
             }
