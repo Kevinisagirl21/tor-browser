@@ -133,9 +133,10 @@ class TorProcess {
         arguments: this._args,
         environment,
         environmentAppend: true,
-        stderr: "pipe",
+        stderr: "stdout",
       };
       this._subprocess = await Subprocess.call(options);
+      this._dumpStdout();
       this._watchProcess();
       this._status = TorProcessStatus.Running;
       this._torProcessStartTime = Date.now();
@@ -171,6 +172,16 @@ class TorProcess {
   // only to decide which text to show in the confirmation dialog if tor exits.
   connectionWorked() {
     this._didConnectToTorControlPort = true;
+  }
+
+  async _dumpStdout() {
+    let string;
+    while (
+      this._subprocess &&
+      (string = await this._subprocess.stdout.readString())
+    ) {
+      dump(string);
+    }
   }
 
   async _watchProcess() {
