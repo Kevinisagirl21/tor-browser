@@ -74,7 +74,7 @@ class CryptoSafetyChild extends JSWindowActorChild {
 
       if (event.type == "copy" || event.type == "cut") {
         this.contentWindow.navigator.clipboard.readText().then(clipText => {
-          const selection = clipText.trim();
+          const selection = clipText.replace(/\s+/g, "");
           if (looksLikeCryptoAddress(selection)) {
             this.sendAsyncMessage("CryptoSafety:CopiedText", {
               selection,
