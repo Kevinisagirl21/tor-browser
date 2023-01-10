@@ -541,13 +541,6 @@ const Loader = {
 };
 
 const TorStrings = {
-  get cryptoSafetyPrompt() {
-    if (!this._cryptoSafetyPrompt) {
-      this._cryptoSafetyPrompt = Loader.cryptoSafetyPrompt();
-    }
-    return this._cryptoSafetyPrompt;
-  },
-
   get settings() {
     if (!this._settings) {
       this._settings = Loader.settings();
