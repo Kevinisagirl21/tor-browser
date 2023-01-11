@@ -1903,11 +1903,7 @@ XPCOMUtils.defineLazyGetter(PlacesUIUtils, "URI_FLAVORS", () => {
   return [PlacesUtils.TYPE_X_MOZ_URL, TAB_DROP_TYPE, PlacesUtils.TYPE_UNICODE];
 });
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "SUPPORTED_FLAVORS", () => {
-  return [
-    ...PlacesUIUtils.PLACES_FLAVORS,
-    ...PlacesUIUtils.URI_FLAVORS,
-    "application/x-torbrowser-opaque",
-  ];
+  return [...PlacesUIUtils.PLACES_FLAVORS, ...PlacesUIUtils.URI_FLAVORS];
 });
 
 XPCOMUtils.defineLazyGetter(PlacesUIUtils, "ellipsis", function() {
