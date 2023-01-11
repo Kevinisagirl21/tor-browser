@@ -1,6 +1,5 @@
 . $topsrcdir/browser/config/mozconfigs/base-browser
 
-export MOZ_APP_BASENAME="TorBrowser"
 mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
 
 ac_add_options --with-relative-data-dir=TorBrowser/Data/Browser
