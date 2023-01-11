@@ -22,7 +22,7 @@ DIRS += [
     "mozapps/preferences",
     "profile",
     "themes",
-    "torproject/torbutton",
+    "torbutton",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
