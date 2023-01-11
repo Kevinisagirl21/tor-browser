@@ -83,6 +83,9 @@ pref("security.ssl3.ecdhe_rsa_aes_256_sha", false, locked);
 pref("security.ssl3.rsa_aes_128_sha", false, locked);
 pref("security.ssl3.rsa_aes_256_sha", false, locked);
 
+// Wrapping a static pref to lock it and prevent changing.
+// See tor-browser#40565.
+pref("security.tls.version.enable-deprecated", false, locked);
 
 // Misc privacy: Remote
 pref("browser.send_pings", false);
