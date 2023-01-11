@@ -30,6 +30,5 @@ def FirefoxBranding():
             'default256.png',
             'default32.png',
             'default48.png',
-            'default512.png',
             'default64.png',
         ]
