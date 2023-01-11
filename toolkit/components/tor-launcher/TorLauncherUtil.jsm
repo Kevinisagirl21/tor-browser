@@ -144,9 +144,10 @@ class TorFile {
     // Anyway, that macro is also available in AppConstants.
     if (TorFile.isUserDataOutsideOfAppDir) {
       if (TorLauncherUtil.isMac) {
-        torPath = "Contents/Resources/";
+        torPath = "Contents/MacOS/Tor";
+      } else {
+        torPath = "TorBrowser/Tor";
       }
-      torPath += "TorBrowser/Tor";
     } else {
       torPath = "Tor";
       dataDir = "Data/";
@@ -154,17 +155,16 @@ class TorFile {
 
     switch (this.fileType) {
       case "tor":
-        if (TorLauncherUtil.isMac) {
-          this.path = `${torPath}/tor`;
-        } else {
-          this.path =
-            torPath + "/tor" + (TorLauncherUtil.isWindows ? ".exe" : "");
+        this.path = `${torPath}/tor`;
+        if (TorLauncherUtil.isWindows) {
+          this.path += ".exe";
         }
         break;
       case "torrc-defaults":
-        this.path = TorFile.isUserDataOutsideOfAppDir
-          ? `${torPath}/torrc-defaults`
-          : `${dataDir}Tor/torrc-defaults`;
+        this.path = TorLauncherUtil.isMac
+          ? "Contents/Resources/TorBrowser/Tor"
+          : `${dataDir}Tor`;
+        this.path += "/torrc-defaults";
         break;
       case "torrc":
         this.path = `${dataDir}Tor/torrc`;

@@ -93,27 +93,6 @@ class TorProcess {
         this._args.push("1");
       }
 
-      // Set an environment variable that points to the Tor data directory.
-      // This is used by meek-client-torbrowser to find the location for
-      // the meek browser profile.
-      const environment = {
-        TOR_BROWSER_TOR_DATA_DIR: this._dataDir.path,
-      };
-
-      // On Windows, prepend the Tor program directory to PATH. This is needed
-      // so that pluggable transports can find OpenSSL DLLs, etc.
-      // See https://trac.torproject.org/projects/tor/ticket/10845
-      if (TorLauncherUtil.isWindows) {
-        let path = this._exeFile.parent.path;
-        const env = Cc["@mozilla.org/process/environment;1"].getService(
-          Ci.nsIEnvironment
-        );
-        if (env.exists("PATH")) {
-          path += ";" + env.get("PATH");
-        }
-        environment.PATH = path;
-      }
-
       this._status = TorProcessStatus.Starting;
       this._didConnectToTorControlPort = false;
 
@@ -131,10 +110,13 @@ class TorProcess {
       const options = {
         command: this._exeFile.path,
         arguments: this._args,
-        environment,
-        environmentAppend: true,
         stderr: "stdout",
       };
+      if (TorLauncherUtil.isMac) {
+        // On macOS, we specify pluggable transport relative to the tor
+        // executable.
+        options.workdir = this._exeFile.parent.path;
+      }
       this._subprocess = await Subprocess.call(options);
       this._dumpStdout();
       this._watchProcess();
