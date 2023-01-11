@@ -601,7 +601,7 @@ class _RFPHelper {
   _detachWindow(aWindow) {
     let tabBrowser = aWindow.gBrowser;
     tabBrowser.removeTabsProgressListener(this);
-    aWindow._rfpResizeObserver.disconnect();
+    aWindow._rfpResizeObserver?.disconnect();
     delete aWindow._rfpResizeObserver;
     aWindow.removeEventListener("TabOpen", this);
 
