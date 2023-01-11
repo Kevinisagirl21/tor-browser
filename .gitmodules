@@ -1,3 +1,0 @@
-[submodule "toolkit/torproject/torbutton"]
-	path = toolkit/torproject/torbutton
-	url = https://gitlab.torproject.org/tpo/applications/torbutton.git
