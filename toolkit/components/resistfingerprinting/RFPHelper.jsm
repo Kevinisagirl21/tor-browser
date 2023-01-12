@@ -413,9 +413,10 @@ class _RFPHelper {
       [containerWidth, containerHeight],
     ] = await win.promiseDocumentFlushed(() =>
       // Read layout info only inside this callback and do not write, to avoid additional reflows
-      [aBrowser, browserParent, browserContainer]
-        .map(e => e.getBoundingClientRect())
-        .map(r => [r.width, r.height])
+      [aBrowser, browserParent, browserContainer].map(element => [
+        element.clientWidth,
+        element.clientHeight,
+      ])
     );
 
     log(
