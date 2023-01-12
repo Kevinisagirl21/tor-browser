@@ -306,21 +306,32 @@ let createTorCircuitDisplay = (function() {
   // Obtains the circuit used by the given browser.
   let currentCircuitData = function(browser) {
     if (browser) {
-      let firstPartyDomain = getDomainForBrowser(browser);
-      let domain = firstPartyDomain || "--unknown--";
-      let domainMap = browserToCredentialsMap.get(browser);
-      let credentials = domainMap && domainMap.get(domain);
+      const firstPartyDomain = getDomainForBrowser(browser);
+      const userContextId =
+        browser.contentPrincipal.originAttributes.userContextId;
+      const key = firstPartyDomain
+        ? `${firstPartyDomain}:${userContextId}`
+        : "--unknown--";
+      const credentialMap = browserToCredentialsMap.get(browser);
+      const credentials = credentialMap && credentialMap.get(key);
       if (credentials) {
-        let [SOCKS_username, SOCKS_password] = credentials;
-        let nodeData = credentialsToNodeDataMap.get(
+        const [SOCKS_username, SOCKS_password] = credentials;
+        const nodeData = credentialsToNodeDataMap.get(
           `${SOCKS_username}|${SOCKS_password}`
         );
-        let domain = SOCKS_username;
-        if (browser.documentURI.host.endsWith(".tor.onion")) {
-          const service = Cc[
-            "@torproject.org/onion-alias-service;1"
-          ].getService(Ci.IOnionAliasService);
-          domain = service.getOnionAlias(browser.documentURI.host);
+        let domain = firstPartyDomain;
+        try {
+          if (browser.documentURI.host.endsWith(".tor.onion")) {
+            const service = Cc[
+              "@torproject.org/onion-alias-service;1"
+            ].getService(Ci.IOnionAliasService);
+            domain = service.getOnionAlias(browser.documentURI.host);
+          }
+        } catch (e) {
+          logger.eclog(
+            3,
+            `[circuit display] Cannot verify if we are visiting an onion alias: ${e.message}\n${e.stack}`
+          );
         }
         return { domain, nodeData };
       }
