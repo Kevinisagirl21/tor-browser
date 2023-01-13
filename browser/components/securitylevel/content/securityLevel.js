@@ -17,14 +17,14 @@ XPCOMUtils.defineLazyGetter(this, "SecurityLevelStrings", () => {
     security_level_restore: "Restore Defaults",
     security_level_learn_more: "Learn more",
     // Panel
-    security_level_change_setting: "Change Setting…",
+    security_level_open_settings: "Settings…",
     security_level_standard_summary:
       "All browser and website features are enabled.",
     security_level_safer_summary:
       "Disables website features that are often dangerous, causing some sites to lose functionality.",
     security_level_safest_summary:
       "Only allows website features required for static sites and basic services. These changes affect images, media, and scripts.",
-    security_level_custom_heading: "Warning!",
+    security_level_custom_heading: "Custom security level configured",
     security_level_custom_summary:
       "Your custom browser preferences have resulted in unusual security settings. For security and privacy reasons, we recommend you choose one of the default security levels.",
     // Security level section in about:preferences#privacy
@@ -260,7 +260,7 @@ var SecurityLevelPanel = {
     this._elements.restoreDefaultsButton.textContent =
       SecurityLevelStrings.security_level_restore;
     this._elements.settingsButton.textContent =
-      SecurityLevelStrings.security_level_change_setting;
+      SecurityLevelStrings.security_level_open_settings;
 
     this._elements.restoreDefaultsButton.addEventListener("command", () => {
       this.restoreDefaults();
