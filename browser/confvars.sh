@@ -32,7 +32,8 @@ else
   MAR_CHANNEL_ID=torbrowser-torproject-release
 fi
 
-MOZ_PROFILE_MIGRATOR=1
+# tor-browser#41577: Do not enable profile migration
+# MOZ_PROFILE_MIGRATOR=1
 
 # Include the DevTools client, not just the server (which is the default)
 MOZ_DEVTOOLS=all
