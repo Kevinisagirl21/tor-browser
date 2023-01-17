@@ -151,6 +151,7 @@ pref("browser.newtabpage.enabled", false);
 pref("browser.search.region", "US"); // The next two prefs disable GeoIP search lookups (#16254)
 pref("browser.search.geoip.url", "");
 pref("browser.fixup.alternate.enabled", false); // Bug #16783: Prevent .onion fixups
+pref("privacy.donottrackheader.enabled", false); // (privacy-browser#17)
 // Make sure there is no Tracking Protection active in Tor Browser, see: #17898.
 pref("privacy.trackingprotection.enabled", false);
 pref("privacy.trackingprotection.pbmode.enabled", false);
