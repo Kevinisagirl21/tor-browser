@@ -1,4 +1,4 @@
-. $topsrcdir/browser/config/mozconfigs/tor-browser
+. $topsrcdir/browser/config/mozconfigs/base-browser
 
 export CFLAGS="-fsanitize=address -Dxmalloc=myxmalloc"
 export CXXFLAGS="-fsanitize=address -Dxmalloc=myxmalloc"

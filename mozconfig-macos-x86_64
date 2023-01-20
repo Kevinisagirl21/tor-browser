@@ -1,8 +1,9 @@
-. $topsrcdir/browser/config/mozconfigs/tor-browser
+. $topsrcdir/browser/config/mozconfigs/base-browser
 
 ac_add_options --enable-strip
 
 # See bug #41131
 ac_add_options --disable-update-agent
 
-ac_add_options --enable-tor-browser-data-outside-app-dir
+# For base-browser we do not enable portable mode on macOS.
+ac_add_options --without-relative-data-dir
