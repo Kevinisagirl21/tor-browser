@@ -171,6 +171,9 @@ pref("browser.newtabpage.activity-stream.default.sites", "");
 pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
 pref("browser.newtabpage.activity-stream.telemetry", false);
 
+// Disable fetching asrouter.ftl and related console errors (tor-browser#40763).
+pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", false);
+
 // Disable moreFromMozilla pane in the preferences/settings (tor-browser#41292).
 pref("browser.preferences.moreFromMozilla", false);
 
