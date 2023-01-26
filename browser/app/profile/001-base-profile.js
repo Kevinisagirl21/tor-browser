@@ -178,6 +178,15 @@ pref("browser.newtabpage.activity-stream.default.sites", "");
 pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
 pref("browser.newtabpage.activity-stream.telemetry", false);
 
+// tor-browser#40788: disable AS's calls to home.
+// Notice that null is between quotes because it is a JSON string.
+// Keep checked firefox.js to see if new entries are added.
+pref("browser.newtabpage.activity-stream.asrouter.providers.cfr", "null");
+pref("browser.newtabpage.activity-stream.asrouter.providers.whats-new-panel", "null");
+pref("browser.newtabpage.activity-stream.asrouter.providers.message-groups", "null");
+pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "null");
+pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-experiments", "null");
+
 // Disable fetching asrouter.ftl and related console errors (tor-browser#40763).
 pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", false);
 
