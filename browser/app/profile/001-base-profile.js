@@ -55,6 +55,9 @@ pref("media.memory_cache_max_size", 16384);
 // Disable restore in case of crash (tor-browser#41503)
 // This should not be needed in PBM, but we added it anyway like other options.
 pref("browser.sessionstore.resume_from_crash", false);
+// Disable capturing thumbnails (tor-browser#41595)
+// Also not needed in PBM at the moment.
+pref("browser.pagethumbnails.capturing_disabled", true);
 
 // Enable HTTPS-Only mode (tor-browser#19850)
 pref("dom.security.https_only_mode", true);
