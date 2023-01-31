@@ -5,4 +5,5 @@ ac_add_options --enable-strip
 # See bug #41131
 ac_add_options --disable-update-agent
 
+ac_add_options --with-relative-data-dir=../TorBrowser-Data/Browser
 ac_add_options --enable-tor-browser-data-outside-app-dir
