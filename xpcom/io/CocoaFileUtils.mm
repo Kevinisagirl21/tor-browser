@@ -280,7 +280,11 @@ CFURLRef GetTemporaryFolderCFURLRef() {
 }
 
 CFURLRef GetProductDirectoryCFURLRef(bool aLocal) {
+#if defined(TOR_BROWSER)
+  NSSearchPathDirectory folderType = NSApplicationSupportDirectory;
+#else
   NSSearchPathDirectory folderType = aLocal ? NSCachesDirectory : NSLibraryDirectory;
+#endif
   NSFileManager* manager = [NSFileManager defaultManager];
   return static_cast<CFURLRef>([[manager URLsForDirectory:folderType
                                                 inDomains:NSUserDomainMask] firstObject]);
