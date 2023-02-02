@@ -1207,14 +1207,19 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   }
 #endif
   nsCOMPtr<nsIFile> updRoot;
+  nsCOMPtr<nsIFile> appFile;
+  bool per = false;
+  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+
 #if defined(TOR_BROWSER_UPDATE)
   // For Tor Browser, we store update history, etc. within the UpdateInfo
   // directory under the user data directory.
-  nsresult rv = GetTorBrowserUserDataDir(getter_AddRefs(updRoot));
+  rv = GetTorBrowserUserDataDir(getter_AddRefs(updRoot));
   NS_ENSURE_SUCCESS(rv, rv);
   rv = updRoot->AppendNative("UpdateInfo"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
-#  if defined(XP_MACOSX) && defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
+#  if defined(XP_MACOSX)
   // Since the TorBrowser-Data directory may be shared among different
   // installations of the application, embed the app path in the update dir
   // so that the update history is partitioned. This is much less likely to
@@ -1222,29 +1227,20 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   // those platforms include a "container" folder that provides partitioning
   // by default, and we do not support use of a shared, OS-recommended area
   // for user data on those platforms.
-  nsAutoString appDirPath;
-  nsCOMPtr<nsIFile> appRootDir;
-  rv = GetAppRootDir(getter_AddRefs(appRootDir));
+  nsAutoString appPath;
+  rv = appFile->GetPath(appPath);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = appRootDir->GetPath(appDirPath);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  int32_t dotIndex = appDirPath.RFind(".app");
+  int32_t dotIndex = appPath.RFind(".app");
   if (dotIndex == kNotFound) {
-    dotIndex = appDirPath.Length();
+    dotIndex = appPath.Length();
   }
-  appDirPath = Substring(appDirPath, 1, dotIndex - 1);
-  rv = updRoot->AppendRelativePath(appDirPath);
+  appPath = Substring(appPath, 1, dotIndex - 1);
+  rv = updRoot->AppendRelativePath(appPath);
   NS_ENSURE_SUCCESS(rv, rv);
 #  endif
 #else  // ! TOR_BROWSER_UPDATE
-  nsCOMPtr<nsIFile> appFile;
-  bool per = false;
-  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
-  NS_ENSURE_SUCCESS(rv, rv);
   rv = appFile->GetParent(getter_AddRefs(updRoot));
   NS_ENSURE_SUCCESS(rv, rv);
-
 #  ifdef XP_MACOSX
   nsCOMPtr<nsIFile> appRootDirFile;
   nsCOMPtr<nsIFile> localDir;
@@ -1386,7 +1382,7 @@ nsresult nsXREDirProvider::GetPortableDataDir(nsIFile** aFile,
   rv = exeFile->GetParent(getter_AddRefs(exeDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   nsAutoString exeDirPath;
   rv = exeDir->GetPath(exeDirPath);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1396,7 +1392,7 @@ nsresult nsXREDirProvider::GetPortableDataDir(nsIFile** aFile,
     aIsPortable = false;
     return NS_OK;
   }
-#endif
+#  endif
 
   nsCOMPtr<nsIFile> systemInstallFile;
   rv = exeDir->Clone(getter_AddRefs(systemInstallFile));
@@ -1414,18 +1410,18 @@ nsresult nsXREDirProvider::GetPortableDataDir(nsIFile** aFile,
   }
 
   nsCOMPtr<nsIFile> localDir = exeDir;
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   rv = exeDir->GetParent(getter_AddRefs(localDir));
   NS_ENSURE_SUCCESS(rv, rv);
   exeDir = localDir;
   rv = exeDir->GetParent(getter_AddRefs(localDir));
   NS_ENSURE_SUCCESS(rv, rv);
-#endif
+#  endif
   rv = localDir->SetRelativePath(localDir.get(),
                                  nsLiteralCString(RELATIVE_DATA_DIR));
   NS_ENSURE_SUCCESS(rv, rv);
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   // On macOS we try to create the directory immediately to switch to
   // system-install mode if needed (e.g., when running from the DMG).
   rv = localDir->Exists(&exists);
@@ -1437,7 +1433,7 @@ nsresult nsXREDirProvider::GetPortableDataDir(nsIFile** aFile,
       return NS_OK;
     }
   }
-#endif
+#  endif
 
   gDataDirPortable.emplace(localDir);
   rv = (*gDataDirPortable)->Clone(aFile);
