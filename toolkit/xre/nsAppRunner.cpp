@@ -3099,6 +3099,24 @@ static ReturnAbortOnError ShowProfileManager(
   return LaunchChild(false, true);
 }
 
+#ifdef XP_MACOSX
+static ProfileStatus CheckTorBrowserDataWriteAccess() {
+  // Check whether we can write to the directory that will contain
+  // TorBrowser-Data.
+  RefPtr<nsXREDirProvider> singleton = nsXREDirProvider::GetSingleton();
+  if (!singleton) {
+    return PROFILE_STATUS_OTHER_ERROR;
+  }
+  nsCOMPtr<nsIFile> tbDataDir;
+  nsresult rv = singleton->GetTorBrowserUserDataDir(getter_AddRefs(tbDataDir));
+  NS_ENSURE_SUCCESS(rv, PROFILE_STATUS_OTHER_ERROR);
+  nsCOMPtr<nsIFile> tbDataDirParent;
+  rv = tbDataDir->GetParent(getter_AddRefs(tbDataDirParent));
+  NS_ENSURE_SUCCESS(rv, PROFILE_STATUS_OTHER_ERROR);
+  return nsToolkitProfileService::CheckProfileWriteAccess(tbDataDirParent);
+}
+#endif
+
 static bool gDoMigration = false;
 static bool gDoProfileReset = false;
 static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
@@ -5067,6 +5085,22 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #endif
 
   rv = NS_NewToolkitProfileService(getter_AddRefs(mProfileSvc));
+#ifdef XP_MACOSX
+  if (NS_FAILED(rv)) {
+    // NS_NewToolkitProfileService() returns a generic NS_ERROR_FAILURE error
+    // if creation of the TorBrowser-Data directory fails due to access denied
+    // or because of a read-only disk volume. Do an extra check here to detect
+    // these errors so we can display an informative error message.
+    ProfileStatus status = CheckTorBrowserDataWriteAccess();
+    if ((PROFILE_STATUS_ACCESS_DENIED == status) ||
+        (PROFILE_STATUS_READ_ONLY == status)) {
+      ProfileErrorDialog(nullptr, nullptr, status, nullptr, mNativeApp,
+                         nullptr);
+      return 1;
+    }
+  }
+#endif
+
   if (rv == NS_ERROR_FILE_ACCESS_DENIED) {
     PR_fprintf(PR_STDERR,
                "Error: Access was denied while trying to open files in "
