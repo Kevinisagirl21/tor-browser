@@ -31,11 +31,6 @@
                 <menuseparator/>
                 <menuitem id="menu_newIdentity"
                           key="new-identity-key"/>
-                <menuitem id="menu_newCircuit"
-                          accesskey="&torbutton.context_menu.new_circuit_key;"
-                          key="torbutton-new-circuit-key"
-                          label="&torbutton.context_menu.new_circuit;"
-                          oncommand="torbutton_new_circuit();"/>
                 <menuseparator/>
                 <menuitem id="menu_openLocation"
                           hidden="true"
@@ -461,20 +456,8 @@
               <menupopup id="menu_HelpPopup" onpopupshowing="buildHelpMenu();">
 <!-- Note: Items under here are cloned to the AppMenu Help submenu. The cloned items
      have their strings defined by appmenu-data-l10n-id. -->
-                <!-- dummy elements to avoid 'getElementById' errors -->
-                <box id="feedbackPage"/>
-                <box id="helpSafeMode"/>
-                <box id="menu_HelpPopup_reportPhishingtoolmenu"/>
-                <box id="menu_HelpPopup_reportPhishingErrortoolmenu"/>
-                <!-- Add Tor Browser manual link -->
-                <menuitem id="torBrowserUserManual"
-                          oncommand="gBrowser.selectedTab = gBrowser.addTab('about:manual', {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()});"
-                          label="&aboutTor.torbrowser_user_manual.label;"
-                          accesskey="&aboutTor.torbrowser_user_manual.accesskey;"/>
-                <!-- Bug 18905: Hide unused help menu items -->
                 <menuitem id="menu_openHelp"
                           oncommand="openHelpLink('firefox-help')"
-                          hidden="true"
                           data-l10n-id="menu-get-help"
                           appmenu-data-l10n-id="appmenu-get-help"
 #ifdef XP_MACOSX
@@ -484,17 +467,14 @@
 #endif
                 <menuitem id="feedbackPage"
                           oncommand="openFeedbackPage()"
-                          hidden="true"
-                          data-l10n-id="menu-help-feedback-page"
-                          appmenu-data-l10n-id="appmenu-help-feedback-page"/>
+                          data-l10n-id="menu-help-share-ideas"
+                          appmenu-data-l10n-id="appmenu-help-share-ideas"/>
                 <menuitem id="helpSafeMode"
                           oncommand="safeModeRestart();"
-                          hidden="true"
                           data-l10n-id="menu-help-enter-troubleshoot-mode2"
                           appmenu-data-l10n-id="appmenu-help-enter-troubleshoot-mode2"/>
                 <menuitem id="troubleShooting"
                           oncommand="openTroubleshootingPage()"
-                          hidden="true"
                           data-l10n-id="menu-help-more-troubleshooting-info"
                           appmenu-data-l10n-id="appmenu-help-more-troubleshooting-info"/>
                 <menuitem id="help_reportSiteIssue"
