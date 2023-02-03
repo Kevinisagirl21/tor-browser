@@ -4,6 +4,11 @@
 // Use the OS locale by default (tor-browser#17400)
 pref("intl.locale.requested", "");
 
+// Home page and new tab is blank rather than Firefox Home (Activity Stream).
+// tor-browser#31575 and tor-browser#30662
+pref("browser.startup.homepage", "about:blank");
+pref("browser.newtabpage.enabled", false);
+
 // Disable initial homepage notifications
 pref("browser.search.update", false);
 pref("startup.homepage_welcome_url", "");
@@ -151,7 +156,6 @@ pref("services.sync.engine.passwords", false);
 pref("services.sync.engine.prefs", false);
 pref("services.sync.engine.tabs", false);
 pref("extensions.getAddons.cache.enabled", false); // https://blog.mozilla.org/addons/how-to-opt-out-of-add-on-metadata-updates/
-pref("browser.newtabpage.enabled", false);
 pref("browser.search.region", "US"); // The next two prefs disable GeoIP search lookups (#16254)
 pref("browser.search.geoip.url", "");
 pref("browser.fixup.alternate.enabled", false); // Bug #16783: Prevent .onion fixups
