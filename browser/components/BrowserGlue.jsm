@@ -18,13 +18,9 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
-  ASRouterDefaultConfig:
-    "resource://activity-stream/lib/ASRouterDefaultConfig.jsm",
-  ASRouterNewTabHook: "resource://activity-stream/lib/ASRouterNewTabHook.jsm",
   ASRouter: "resource://activity-stream/lib/ASRouter.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.jsm",
@@ -223,28 +219,6 @@ let JSWINDOWACTORS = {
     },
     matches: ["about:logins", "about:logins?*", "about:loginsimportreport"],
     allFrames: true,
-    remoteTypes: ["privilegedabout"],
-  },
-
-  AboutNewTab: {
-    parent: {
-      moduleURI: "resource:///actors/AboutNewTabParent.jsm",
-    },
-    child: {
-      moduleURI: "resource:///actors/AboutNewTabChild.jsm",
-      events: {
-        DOMContentLoaded: {},
-        pageshow: {},
-        visibilitychange: {},
-      },
-    },
-    // The wildcard on about:newtab is for the ?endpoint query parameter
-    // that is used for snippets debugging. The wildcard for about:home
-    // is similar, and also allows for falling back to loading the
-    // about:home document dynamically if an attempt is made to load
-    // about:home?jscache from the AboutHomeStartupCache as a top-level
-    // load.
-    matches: ["about:home*", "about:welcome", "about:newtab*"],
     remoteTypes: ["privilegedabout"],
   },
 
@@ -715,27 +689,6 @@ let JSWINDOWACTORS = {
       },
     },
     matches: ["about:studies*"],
-  },
-
-  ASRouter: {
-    parent: {
-      moduleURI: "resource:///actors/ASRouterParent.jsm",
-    },
-    child: {
-      moduleURI: "resource:///actors/ASRouterChild.jsm",
-      events: {
-        // This is added so the actor instantiates immediately and makes
-        // methods available to the page js on load.
-        DOMDocElementInserted: {},
-      },
-    },
-    matches: [
-      "about:home*",
-      "about:newtab*",
-      "about:welcome*",
-      "about:privatebrowsing",
-    ],
-    remoteTypes: ["privilegedabout"],
   },
 
   SwitchDocumentDirection: {
@@ -1600,8 +1553,6 @@ BrowserGlue.prototype = {
 
   // the first browser window has finished initializing
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
-    AboutNewTab.init();
-
     TabCrashHandler.init();
 
     ProcessHangMonitor.init();
@@ -2008,7 +1959,6 @@ BrowserGlue.prototype = {
       () => NewTabUtils.uninit(),
       () => Normandy.uninit(),
       () => RFPHelper.uninit(),
-      () => ASRouterNewTabHook.destroy(),
       () => UpdateListener.reset(),
     ];
 
@@ -2714,12 +2664,6 @@ BrowserGlue.prototype = {
           ) {
             await PlacesUIUtils.maybeAddImportButton();
           }
-        },
-      },
-
-      {
-        task: () => {
-          ASRouterNewTabHook.createInstance(ASRouterDefaultConfig());
         },
       },
 
@@ -5816,12 +5760,8 @@ var AboutHomeStartupCache = {
       return { pageInputStream: null, scriptInputStream: null };
     }
 
-    let state = AboutNewTab.activityStream.store.getState();
-    return new Promise(resolve => {
-      this._cacheDeferred = resolve;
-      this.log.trace("Parent is requesting cache streams.");
-      this._procManager.sendAsyncMessage(this.CACHE_REQUEST_MESSAGE, { state });
-    });
+    this.log.error("Activity Stream is disabled.");
+    return { pageInputStream: null, scriptInputStream: null };
   },
 
   /**
