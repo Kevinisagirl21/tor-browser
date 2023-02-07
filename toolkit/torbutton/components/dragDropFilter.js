@@ -113,6 +113,25 @@ DragDropFilter.prototype = {
     for (let i = 0, count = aDataTransfer.mozItemCount; i < count; ++i) {
       this.logger.log(3, `Inspecting the data transfer: ${i}.`);
       const types = aDataTransfer.mozTypesAt(i);
+      const urlType = "text/x-moz-url";
+      // Fallback url type, to be parsed by this browser but not externally
+      const INTERNAL_FALLBACK = "application/x-torbrowser-opaque";
+      if (types.contains(urlType)) {
+        const links = aDataTransfer.mozGetDataAt(urlType, i);
+        // Skip DNS-safe URLs (no hostname, e.g. RFC 3966 tel:)
+        const mayLeakDNS = links.split("\n").some(link => {
+          try {
+            return new URL(link).hostname;
+          } catch (e) {
+            return false;
+          }
+        });
+        if (!mayLeakDNS) {
+          continue;
+        }
+        const opaqueKey = OpaqueDrag.store(links, urlType);
+        aDataTransfer.mozSetDataAt(INTERNAL_FALLBACK, opaqueKey, i);
+      }
       for (const type of types) {
         this.logger.log(3, `Type is: ${type}.`);
         if (URLISH_TYPES.includes(type)) {
@@ -120,14 +139,6 @@ DragDropFilter.prototype = {
             3,
             `Removing transfer data ${aDataTransfer.mozGetDataAt(type, i)}`
           );
-          const urlType = "text/x-moz-url";
-          // Fallback url type, to be parsed by this browser but not externally
-          const INTERNAL_FALLBACK = "application/x-torbrowser-opaque";
-          if (types.contains(urlType)) {
-            const link = aDataTransfer.mozGetDataAt(urlType, i);
-            const opaqueKey = OpaqueDrag.store(link, urlType);
-            aDataTransfer.mozSetDataAt(INTERNAL_FALLBACK, opaqueKey, i);
-          }
           for (const type of types) {
             if (
               type !== INTERNAL_FALLBACK &&
