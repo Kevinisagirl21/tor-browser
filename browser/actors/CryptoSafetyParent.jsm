@@ -14,14 +14,14 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyGetter(this, "cryptoSafetyBundle", () => {
   return Services.strings.createBundle(
-    "chrome://torbutton/locale/cryptoSafetyPrompt.properties"
+    "chrome://browser/locale/cryptoSafetyPrompt.properties"
   );
 });
 
 // en-US fallback in case a locale is missing a string.
 XPCOMUtils.defineLazyGetter(this, "fallbackCryptoSafetyBundle", () => {
   return Services.strings.createBundle(
-    "resource://gre/chrome/torbutton/locale/en-US/cryptoSafetyPrompt.properties"
+    "resource:///chrome/en-US/locale/browser/cryptoSafetyPrompt.properties"
   );
 });
 
