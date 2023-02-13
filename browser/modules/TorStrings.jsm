@@ -253,6 +253,7 @@ const Loader = {
       tryAgainMessage:
         "Tor Browser has failed to establish a connection to the Tor Network",
       yourLocation: "Your Location",
+      unblockInternetIn: "Unblock the Internet in",
 
       tryBridge: "Try a Bridge",
 
