@@ -251,8 +251,6 @@
 @RESPATH@/browser/features/*
 
 ; Base Browser
-@RESPATH@/browser/chrome/newidentity.manifest
-@RESPATH@/browser/chrome/newidentity/
 @RESPATH@/components/SecurityLevel.manifest
 
 ; [DevTools Startup Files]
