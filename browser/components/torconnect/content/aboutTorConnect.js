@@ -764,7 +764,7 @@ class AboutTorConnect {
     });
 
     this.elements.locationDropdownLabel.textContent =
-      TorStrings.torConnect.yourLocation;
+      TorStrings.torConnect.unblockInternetIn;
 
     this.elements.tryBridgeButton.textContent = TorStrings.torConnect.tryBridge;
     this.elements.tryBridgeButton.addEventListener("click", () => {
