@@ -26,7 +26,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 #torPreferences-connectMessageBox.error {
-  background-color: var(--red-60);
+  background-color: var(--purple-50);
   color: white;
 }
 
@@ -93,15 +93,15 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 }
 
 #torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button {
-  background-color: var(--red-70);
+  background-color: var(--purple-70);
 }
 
 #torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:hover {
-  background-color: var(--red-80);
+  background-color: var(--purple-80);
 }
 
 #torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:active {
-  background-color: var(--red-90);
+  background-color: var(--purple-90);
 }
 
 #torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button {
