@@ -142,7 +142,19 @@ button {
 }
 
 #locationDropdownLabel.error {
-  color: var(--in-content-danger-button-background)
+  color: var(--in-content-error-text-color)
+}
+
+#tryBridgeButton.danger-button {
+  background-color: var(--purple-70);
+}
+
+#tryBridgeButton.danger-button:hover {
+  background-color: var(--purple-80);
+}
+
+#tryBridgeButton.danger-button:active {
+  background-color: var(--purple-90);
 }
 
 /* this follows similar css in error-pages.css for buttons */
