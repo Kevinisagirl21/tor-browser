@@ -122,10 +122,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
         "components.conf",
     ]
 
+# tor-browser#41628: Disable Normandy and Nimbus at compile time
 if CONFIG["MOZ_BUILD_APP"] == "browser":
-    DIRS += ["normandy", "messaging-system"]
-
-DIRS += ["nimbus"]
+    DIRS += ["messaging-system"]
 
 if CONFIG["MOZ_BACKGROUNDTASKS"]:
     DIRS += ["backgroundtasks"]
