@@ -156,7 +156,8 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::HIDE_FROM_ABOUTABOUT |
          nsIAboutModule::IS_SECURE_CHROME_UI},
     // The correct URI must be obtained by GetManualChromeURI
-    {"manual", "about:blank", nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+    {"manual", "about:blank",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::IS_SECURE_CHROME_UI},
@@ -176,8 +177,7 @@ static nsAutoCString GetAboutModuleName(nsIURI* aURI) {
   return path;
 }
 
-static nsTHashSet<nsCStringHashKey> GetManualLocales()
-{
+static nsTHashSet<nsCStringHashKey> GetManualLocales() {
   nsTHashSet<nsCStringHashKey> locales;
   RefPtr<nsZipArchive> zip = Omnijar::GetReader(Omnijar::APP);
   UniquePtr<nsZipFind> find;
