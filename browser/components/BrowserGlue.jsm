@@ -2011,7 +2011,13 @@ BrowserGlue.prototype = {
       () => PageDataService.uninit(),
       () => PageThumbs.uninit(),
       () => NewTabUtils.uninit(),
-      () => Normandy.uninit(),
+
+      () => {
+        if (AppConstants.MOZ_NORMANDY) {
+          Normandy.uninit();
+        }
+      },
+
       () => RFPHelper.uninit(),
       () => UpdateListener.reset(),
       () => OnionAliasStore.uninit(),
