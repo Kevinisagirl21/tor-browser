@@ -68,7 +68,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RFPHelper: "resource://gre/modules/RFPHelper.jsm",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
-  SaveToPocket: "chrome://pocket/content/SaveToPocket.jsm",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
@@ -5479,8 +5478,6 @@ var XULBrowserWindow = {
     BrowserPageActions.onLocationChange();
 
     SafeBrowsingNotificationBox.onLocationChange(aLocationURI);
-
-    SaveToPocket.onLocationChange(window);
 
     UrlbarProviderSearchTips.onLocationChange(
       window,
