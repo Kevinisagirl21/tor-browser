@@ -75,7 +75,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RFPHelper: "resource://gre/modules/RFPHelper.jsm",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
-  SaveToPocket: "chrome://pocket/content/SaveToPocket.jsm",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.jsm",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
@@ -1208,8 +1207,6 @@ BrowserGlue.prototype = {
     if (AppConstants.MOZ_NORMANDY) {
       Normandy.init();
     }
-
-    SaveToPocket.init();
 
     AboutHomeStartupCache.init();
 
