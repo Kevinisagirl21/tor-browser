@@ -179,7 +179,17 @@
 @RESPATH@/browser/components/MacTouchBar.manifest
 @RESPATH@/browser/components/MacTouchBar.js
 #endif
+; TODO: Remove this in ESR-115.
+; If everything goes well, this patch will not be necessary in 115, because we
+; have also an upstream bug.
+; I suspect this is somehow incorrect, and that MOZ_SERVICES_SYNC is actually
+; never defined for the makefile (it is not for Firefox 112, which builds
+; correctly with MOZ_SERVICES_SYNC == False, even without this ifdef).
+; But we are interested in disabling it, so using either this, or #if 0 would be
+; fine for us.
+#ifdef MOZ_SERVICES_SYNC
 @RESPATH@/components/SyncComponents.manifest
+#endif
 @RESPATH@/components/servicesComponents.manifest
 @RESPATH@/components/servicesSettings.manifest
 @RESPATH@/components/cryptoComponents.manifest
