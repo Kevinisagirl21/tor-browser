@@ -187,6 +187,12 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   font-weight: 700;
 }
 
+#torPreferences-currentBridges-enableAll-label {
+  /* Block display to work with parent's xul box layout. */
+  display: block;
+  margin-inline: 6px;
+}
+
 /* Bridge cards */
 :root {
   --bridgeCard-animation-time: 0.25s;

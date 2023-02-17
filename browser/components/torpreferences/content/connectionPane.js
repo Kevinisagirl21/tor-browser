@@ -117,9 +117,9 @@ const gConnectionPane = (function() {
       locationEntries: "#torPreferences-bridges-locationEntries",
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
       currentHeader: "#torPreferences-currentBridges-header",
-      currentHeaderText: "#torPreferences-currentBridges-headerText",
       currentDescription: "#torPreferences-currentBridges-description",
       currentDescriptionText: "#torPreferences-currentBridges-descriptionText",
+      switchLabel: "#torPreferences-currentBridges-enableAll-label",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -426,10 +426,9 @@ const gConnectionPane = (function() {
       const bridgeHeader = prefpane.querySelector(
         selectors.bridges.currentHeader
       );
-      bridgeHeader.querySelector(
-        selectors.bridges.currentHeaderText
-      ).textContent = TorStrings.settings.bridgeCurrent;
-      const bridgeSwitch = bridgeHeader.querySelector(selectors.bridges.switch);
+      bridgeHeader.textContent = TorStrings.settings.bridgeCurrent;
+      prefpane.querySelector(selectors.bridges.switchLabel).textContent = TorStrings.settings.allBridgesEnabled;
+      const bridgeSwitch = prefpane.querySelector(selectors.bridges.switch);
       bridgeSwitch.addEventListener("change", () => {
         TorSettings.bridges.enabled = bridgeSwitch.checked;
         TorSettings.saveToPrefs();
@@ -860,35 +859,32 @@ const gConnectionPane = (function() {
       }
 
       {
-        const overlay = prefpane.querySelector(selectors.bridges.removeOverlay);
         this._confirmBridgeRemoval = () => {
-          overlay.classList.remove("hidden");
+          const aParentWindow = Services.wm.getMostRecentWindow("navigator:browser");
+
+          const ps = Services.prompt;
+          const btnFlags =
+            ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING +
+            ps.BUTTON_POS_0_DEFAULT +
+            ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL;
+
+          const notUsed = { value: false };
+          const btnIndex = ps.confirmEx(
+            aParentWindow,
+            TorStrings.settings.bridgeRemoveAllDialogTitle,
+            TorStrings.settings.bridgeRemoveAllDialogDescription,
+            btnFlags,
+            TorStrings.settings.remove,
+            null,
+            null,
+            null,
+            notUsed
+          );
+
+          if (btnIndex === 0) {
+            this.onRemoveAllBridges();
+          }
         };
-        const closeDialog = () => {
-          overlay.classList.add("hidden");
-        };
-        overlay.addEventListener("click", closeDialog);
-        const modal = prefpane.querySelector(selectors.bridges.removeModal);
-        modal.addEventListener("click", e => {
-          e.stopPropagation();
-        });
-        const dismiss = prefpane.querySelector(selectors.bridges.removeDismiss);
-        dismiss.addEventListener("click", closeDialog);
-        const question = prefpane.querySelector(
-          selectors.bridges.removeQuestion
-        );
-        question.textContent = TorStrings.settings.removeBridgesQuestion;
-        const warning = prefpane.querySelector(selectors.bridges.removeWarning);
-        warning.textContent = TorStrings.settings.removeBridgesWarning;
-        const confirm = prefpane.querySelector(selectors.bridges.removeConfirm);
-        confirm.setAttribute("label", TorStrings.settings.remove);
-        confirm.addEventListener("command", () => {
-          this.onRemoveAllBridges();
-          closeDialog();
-        });
-        const cancel = prefpane.querySelector(selectors.bridges.removeCancel);
-        cancel.setAttribute("label", TorStrings.settings.cancel);
-        cancel.addEventListener("command", closeDialog);
       }
 
       // Advanced setup
