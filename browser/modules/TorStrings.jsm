@@ -111,7 +111,10 @@ const Loader = {
       bridgeCopy: "Copy Bridge Address",
       copied: "Copied!",
       bridgeShowAll: "Show All Bridges",
+      allBridgesEnabled: "Use current bridges",
       bridgeRemoveAll: "Remove All Bridges",
+      bridgeRemoveAllDialogTitle: "Remove all bridges?",
+      bridgeRemoveAllDialogDescription: "If these bridges were received from torproject.org or added manually, this action cannot be undone",
       bridgeAdd: "Add a New Bridge",
       bridgeSelectBrowserBuiltin:
         "Choose from one of Tor Browser’s built-in bridges",
