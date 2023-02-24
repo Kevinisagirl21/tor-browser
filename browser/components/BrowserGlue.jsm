@@ -718,10 +718,10 @@ let JSWINDOWACTORS = {
   },
 };
 
-XPCOMUtils.defineLazyGetter(this, "WeaveService", () =>
-  AppConstants.MOZ_SERVICES_SYNC
-    ? Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject
-    : null
+XPCOMUtils.defineLazyGetter(
+  this,
+  "WeaveService",
+  () => Cc["@mozilla.org/weave/service;1"].getService().wrappedJSObject
 );
 
 if (AppConstants.MOZ_CRASHREPORTER) {
@@ -2690,7 +2690,7 @@ BrowserGlue.prototype = {
       // Schedule a sync (if enabled) after we've loaded
       {
         task: async () => {
-          if (WeaveService?.enabled) {
+          if (WeaveService.enabled) {
             await WeaveService.whenLoaded();
             WeaveService.Weave.Service.scheduler.autoConnect();
           }
