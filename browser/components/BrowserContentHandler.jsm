@@ -144,7 +144,7 @@ function needHomepageOverride(prefb) {
 
     prefb.setCharPref("browser.startup.homepage_override.mstone", mstone);
     prefb.setCharPref("browser.startup.homepage_override.buildID", buildID);
-    prefb.setCharPref(kTBSavedVersionPref, AppConstants.TOR_BROWSER_VERSION);
+    prefb.setCharPref(kTBSavedVersionPref, AppConstants.BASE_BROWSER_VERSION);
 
     // After an upgrade from an older release of Tor Browser (<= 5.5a1), the
     // savedmstone will be undefined because those releases included the
@@ -155,9 +155,9 @@ function needHomepageOverride(prefb) {
     return savedmstone || updated ? OVERRIDE_NEW_MSTONE : OVERRIDE_NEW_PROFILE;
   }
 
-  if (AppConstants.TOR_BROWSER_VERSION != savedTBVersion) {
+  if (AppConstants.BASE_BROWSER_VERSION != savedTBVersion) {
     prefb.setCharPref("browser.startup.homepage_override.buildID", buildID);
-    prefb.setCharPref(kTBSavedVersionPref, AppConstants.TOR_BROWSER_VERSION);
+    prefb.setCharPref(kTBSavedVersionPref, AppConstants.BASE_BROWSER_VERSION);
     return OVERRIDE_NEW_MSTONE;
   }
 

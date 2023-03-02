@@ -652,7 +652,7 @@ var AddonManagerInternal = {
       let tbChanged = undefined;
       try {
         tbChanged =
-          AppConstants.TOR_BROWSER_VERSION !==
+          AppConstants.BASE_BROWSER_VERSION !==
           Services.prefs.getCharPref(PREF_EM_LAST_TORBROWSER_VERSION);
       } catch (e) {}
       if (tbChanged !== false) {
@@ -665,7 +665,7 @@ var AddonManagerInternal = {
 
         Services.prefs.setCharPref(
           PREF_EM_LAST_TORBROWSER_VERSION,
-          AppConstants.TOR_BROWSER_VERSION
+          AppConstants.BASE_BROWSER_VERSION
         );
       }
 
