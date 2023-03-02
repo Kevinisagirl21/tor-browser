@@ -568,7 +568,7 @@ var gMainPane = {
         .setAttribute("style", "display: none !important");
     }
     // Initialize the Firefox Updates section.
-    let version = AppConstants.TOR_BROWSER_VERSION;
+    let version = AppConstants.BASE_BROWSER_VERSION;
 
     // Tor Browser: do not include the build ID in our alphas, since they are
     // not actually related to the build date.

@@ -1838,8 +1838,8 @@ function updateIsAtLeastAsOldAs(update, version, buildID) {
  * This returns the current version of the browser to use to check updates.
  */
 function getCompatVersion() {
-  return AppConstants.TOR_BROWSER_VERSION
-    ? AppConstants.TOR_BROWSER_VERSION
+  return AppConstants.BASE_BROWSER_VERSION
+    ? AppConstants.BASE_BROWSER_VERSION
     : Services.appinfo.version;
 }
 
@@ -4600,7 +4600,7 @@ Checker.prototype = {
   _callback: null,
 
   _getCanMigrate: function UC__getCanMigrate() {
-    if (AppConstants.platform != "win" || AppConstants.TOR_BROWSER_VERSION) {
+    if (AppConstants.platform != "win" || AppConstants.TOR_BROWSER_UPDATE) {
       return false;
     }
 

@@ -56,7 +56,7 @@ async function init(aEvent) {
 
   // Adjust version text to show the Tor Browser version
   versionAttributes.version =
-    AppConstants.TOR_BROWSER_VERSION +
+    AppConstants.BASE_BROWSER_VERSION +
     " (based on Mozilla Firefox " +
     AppConstants.MOZ_APP_VERSION_DISPLAY +
     ")";
