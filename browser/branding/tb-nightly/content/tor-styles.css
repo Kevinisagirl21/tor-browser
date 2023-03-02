@@ -1,5 +1,3 @@
-%include ../../tor-styles.inc.css
-
 /* default theme*/
 :root {
   --tor-branding-color: var(--blue-60);
