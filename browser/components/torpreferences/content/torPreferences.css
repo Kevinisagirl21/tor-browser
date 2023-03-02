@@ -1,4 +1,5 @@
-@import url("chrome://branding/content/tor-styles.css");
+@import url("chrome://browser/skin/browser-colors.css");
+
 
 #category-connection > .category-icon {
   list-style-image: url("chrome://browser/content/torpreferences/torPreferencesIcon.svg");
@@ -170,7 +171,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 
 #torPreferences-status-internet-statusIcon.offline, #torPreferences-status-tor-statusIcon:not(.connected) {
   list-style-image: url("chrome://global/skin/icons/warning.svg");
-  fill: var(--torbrowser-warning);
+  fill: var(--warning-color);
 }
 
 #torPreferences-status-tor-statusIcon.blocked {
@@ -563,7 +564,7 @@ hbox#torPreferences-requestBridge-incorrectCaptchaHbox {
 image#torPreferences-requestBridge-errorIcon {
   list-style-image: url("chrome://global/skin/icons/warning.svg");
   -moz-context-properties: fill;
-  fill: var(--torbrowser-warning);
+  fill: var(--warning-color);
 }
 
 groupbox#torPreferences-bridges-group textarea {
