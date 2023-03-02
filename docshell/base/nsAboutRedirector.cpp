@@ -165,7 +165,7 @@ static const RedirEntry kRedirMap[] = {
 #endif
     {"telemetry", "chrome://global/content/aboutTelemetry.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
-#ifndef BASE_BROWSER
+#ifndef BASE_BROWSER_VERSION
     {"url-classifier", "chrome://global/content/aboutUrlClassifier.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
 #endif
