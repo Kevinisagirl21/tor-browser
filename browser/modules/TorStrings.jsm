@@ -34,7 +34,7 @@ class TorPropertyStringBundle {
 
   getString(key, fallback) {
     const reportError =
-      AppConstants.TOR_BROWSER_VERSION === "dev-build" && !!this._bundle;
+      AppConstants.BASE_BROWSER_VERSION === "dev-build" && !!this._bundle;
     if (key) {
       try {
         return this._bundle.GetStringFromName(`${this._prefix}${key}`);
