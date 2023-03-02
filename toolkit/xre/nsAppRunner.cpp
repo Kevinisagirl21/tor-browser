@@ -3657,7 +3657,7 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
 
   nsAutoCString buf;
 
-  nsAutoCString tbVersion(TOR_BROWSER_VERSION_QUOTED);
+  nsAutoCString tbVersion(BASE_BROWSER_VERSION_QUOTED);
   rv = parser.GetString("Compatibility", "LastTorBrowserVersion", buf);
   if (NS_FAILED(rv) || !tbVersion.Equals(buf)) return false;
 
@@ -3746,7 +3746,7 @@ static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
   PR_Write(fd, kHeader, sizeof(kHeader) - 1);
   PR_Write(fd, aVersion.get(), aVersion.Length());
 
-  nsAutoCString tbVersion(TOR_BROWSER_VERSION_QUOTED);
+  nsAutoCString tbVersion(BASE_BROWSER_VERSION_QUOTED);
   static const char kTorBrowserVersionHeader[] =
       NS_LINEBREAK "LastTorBrowserVersion=";
   PR_Write(fd, kTorBrowserVersionHeader, sizeof(kTorBrowserVersionHeader) - 1);
@@ -5216,7 +5216,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     NS_ENSURE_SUCCESS(rv, 1);
 
 #  ifdef TOR_BROWSER_UPDATE
-    nsAutoCString compatVersion(TOR_BROWSER_VERSION_QUOTED);
+    nsAutoCString compatVersion(BASE_BROWSER_VERSION_QUOTED);
 #  endif
     ProcessUpdates(mDirProvider.GetGREDir(), exeDir, updRoot, gRestartArgc,
                    gRestartArgv,
