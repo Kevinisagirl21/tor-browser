@@ -45,7 +45,7 @@ pref("network.http.http3.enabled", false);
 // 0 = do not use a second connection, see all.js and #7656
 pref("network.http.connection-retry-timeout", 0);
 
-#expand pref("torbrowser.version", __TOR_BROWSER_VERSION_QUOTED__);
+#expand pref("torbrowser.version", __BASE_BROWSER_VERSION_QUOTED__);
 
 // Old torbutton prefs
 
