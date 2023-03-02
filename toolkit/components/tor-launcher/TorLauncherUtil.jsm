@@ -21,19 +21,14 @@ class TorFile {
   // The nsIFile to be returned
   file = null;
 
-  // A relative or absolute path that will determine file
-  path = null;
-  pathIsRelative = false;
-  // If true, path is ignored
-  useAppDir = false;
-
   isIPC = false;
+  ipcFileName = "";
   checkIPCPathLen = true;
 
   static _isFirstIPCPathRequest = true;
-  static _isUserDataOutsideOfAppDir = undefined;
   static _dataDir = null;
   static _appDir = null;
+  static _torDir = null;
 
   constructor(aTorFileType, aCreate) {
     this.fileType = aTorFileType;
@@ -41,14 +36,12 @@ class TorFile {
     this.getFromPref();
     this.getIPC();
     // No preference and no pre-determined IPC path: use a default path.
-    if (!this.file && !this.path) {
+    if (!this.file) {
       this.getDefault();
     }
-
-    if (!this.file && this.path) {
-      this.pathToFile();
-    }
-    if (this.file && !this.file.exists() && !this.isIPC && aCreate) {
+    // At this point, this.file must not be null, or previous functions must
+    // have thrown and interrupted this constructor.
+    if (!this.file.exists() && !this.isIPC && aCreate) {
       this.createFile();
     }
     this.normalize();
@@ -60,12 +53,15 @@ class TorFile {
 
   getFromPref() {
     const prefName = `extensions.torlauncher.${this.fileType}_path`;
-    this.path = Services.prefs.getCharPref(prefName, "");
-    if (this.path) {
-      const re = TorLauncherUtil.isWindows ? /^[A-Za-z]:\\/ : /^\//;
-      this.isRelativePath = !re.test(this.path);
+    const path = Services.prefs.getCharPref(prefName, "");
+    if (path) {
+      const isUserData =
+        this.fileType !== "tor" &&
+        this.fileType !== "pt-startup-dir" &&
+        this.fileType !== "torrc-defaults";
       // always try to use path if provided in pref
       this.checkIPCPathLen = false;
+      this.setFileFromPath(path, isUserData);
     }
   }
 
@@ -73,16 +69,19 @@ class TorFile {
     const isControlIPC = this.fileType === "control_ipc";
     const isSOCKSIPC = this.fileType === "socks_ipc";
     this.isIPC = isControlIPC || isSOCKSIPC;
+    if (!this.isIPC) {
+      return;
+    }
 
     const kControlIPCFileName = "control.socket";
     const kSOCKSIPCFileName = "socks.socket";
     this.ipcFileName = isControlIPC ? kControlIPCFileName : kSOCKSIPCFileName;
     this.extraIPCPathLen = this.isSOCKSIPC ? 2 : 0;
 
-    // Do not do anything else if this.path has already been populated with the
+    // Do not do anything else if this.file has already been populated with the
     // _path preference for this file type (or if we are not looking for an IPC
     // file).
-    if (this.path || !this.isIPC) {
+    if (this.file) {
       return;
     }
 
@@ -133,95 +132,73 @@ class TorFile {
     }
   }
 
-  // This block is used for the TorBrowser-Data/ case.
   getDefault() {
-    let torPath = "";
-    let dataDir = "";
-    // FIXME: TOR_BROWSER_DATA_OUTSIDE_APP_DIR is used only on macOS at the
-    // moment. In Linux and Windows it might not work anymore.
-    // We might simplify the code here, if we get rid of this macro.
-    // Also, we allow specifying directly a relative path, for a portable mode.
-    // Anyway, that macro is also available in AppConstants.
-    if (TorFile.isUserDataOutsideOfAppDir) {
-      if (TorLauncherUtil.isMac) {
-        torPath = "Contents/MacOS/Tor";
-      } else {
-        torPath = "TorBrowser/Tor";
-      }
-    } else {
-      torPath = "Tor";
-      dataDir = "Data/";
-    }
-
     switch (this.fileType) {
       case "tor":
-        this.path = `${torPath}/tor`;
-        if (TorLauncherUtil.isWindows) {
-          this.path += ".exe";
-        }
+        this.file = TorFile.torDir;
+        this.file.append(TorLauncherUtil.isWindows ? "tor.exe" : "tor");
         break;
       case "torrc-defaults":
-        this.path = TorLauncherUtil.isMac
-          ? "Contents/Resources/TorBrowser/Tor"
-          : `${dataDir}Tor`;
-        this.path += "/torrc-defaults";
+        if (TorLauncherUtil.isMac) {
+          this.file = TorFile.appDir;
+          this.file.appendRelativePath(
+            "Contents/Resources/TorBrowser/Tor/torrc-defaults"
+          );
+        } else {
+          // FIXME: Should we move this file to the tor directory, in the other
+          // platforms, since it is not user data?
+          this.file = TorFile.torDataDir;
+          this.file.append("torrc-defaults");
+        }
         break;
       case "torrc":
-        this.path = `${dataDir}Tor/torrc`;
+        this.file = TorFile.torDataDir;
+        this.file.append("torrc");
         break;
       case "tordatadir":
-        this.path = `${dataDir}Tor`;
+        this.file = TorFile.torDataDir;
         break;
       case "toronionauthdir":
-        this.path = `${dataDir}Tor/onion-auth`;
-        break;
-      case "pt-profiles-dir":
-        this.path = TorFile.isUserDataOutsideOfAppDir
-          ? "Tor/PluggableTransports"
-          : `${dataDir}Browser`;
+        this.file = TorFile.torDataDir;
+        this.file.append("onion-auth");
         break;
       case "pt-startup-dir":
-        if (TorLauncherUtil.isMac && TorFile.isUserDataOutsideOfAppDir) {
-          this.path = "Contents/MacOS/Tor";
-        } else {
-          this.file = TorFile.appDir.clone();
-          return;
-        }
+        // On macOS we specify different relative paths than on Linux and
+        // Windows
+        this.file = TorLauncherUtil.isMac ? TorFile.torDir : TorFile.appDir;
         break;
       default:
         if (!TorLauncherUtil.isWindows && this.isIPC) {
-          this.path = "Tor/" + this.ipcFileName;
+          this.setFileFromPath(`Tor/${this.ipcFileName}`, true);
           break;
         }
         throw new Error("Unknown file type");
     }
-    if (TorLauncherUtil.isWindows) {
-      this.path = this.path.replaceAll("/", "\\");
-    }
-    this.isRelativePath = true;
   }
 
-  pathToFile() {
+  // This function is used to set this.file from a string that contains a path.
+  // As a matter of fact, it is used only when setting a path from preferences,
+  // or to set the default IPC paths.
+  setFileFromPath(path, isUserData) {
     if (TorLauncherUtil.isWindows) {
-      this.path = this.path.replaceAll("/", "\\");
+      path = path.replaceAll("/", "\\");
     }
     // Turn 'path' into an absolute path when needed.
-    if (this.isRelativePath) {
-      const isUserData =
-        this.fileType !== "tor" &&
-        this.fileType !== "pt-startup-dir" &&
-        this.fileType !== "torrc-defaults";
-      if (TorFile.isUserDataOutsideOfAppDir) {
-        let baseDir = isUserData ? TorFile.dataDir : TorFile.appDir;
-        this.file = baseDir.clone();
+    if (TorLauncherUtil.isPathRelative(path)) {
+      if (TorLauncherUtil.isMac) {
+        // On macOS, files are correctly separated because it was needed for the
+        // gatekeeper signing.
+        this.file = isUserData ? TorFile.dataDir : TorFile.appDir;
       } else {
-        this.file = TorFile.appDir.clone();
+        // Windows and Linux still use the legacy behavior.
+        // To avoid breaking old installations, let's just keep it.
+        this.file = TorFile.appDir;
         this.file.append("TorBrowser");
       }
-      this.file.appendRelativePath(this.path);
+      this.file.appendRelativePath(path);
     } else {
       this.file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-      this.file.initWithPath(this.path);
+      this.file.initWithPath(path);
     }
   }
 
@@ -297,52 +274,55 @@ class TorFile {
     }
   }
 
-  static get isUserDataOutsideOfAppDir() {
-    if (this._isUserDataOutsideOfAppDir === undefined) {
-      // Determine if we are using a "side-by-side" data model by checking
-      // whether the user profile is outside of the app directory.
-      try {
-        const profDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-        this._isUserDataOutsideOfAppDir = !this.appDir.contains(profDir);
-      } catch (e) {
-        this._isUserDataOutsideOfAppDir = false;
-      }
-    }
-    return this._isUserDataOutsideOfAppDir;
-  }
-
-  // Returns an nsIFile that points to the application directory.
+  // Returns an nsIFile that points to the binary directory (on Linux and
+  // Windows), and to the root of the application bundle on macOS.
   static get appDir() {
     if (!this._appDir) {
-      let topDir = Services.dirsvc.get("CurProcD", Ci.nsIFile);
-      // On Linux and Windows, we want to return the Browser/ directory.
-      // Because topDir ("CurProcD") points to Browser/browser on those
-      // platforms, we need to go up one level.
-      // On Mac OS, we want to return the TorBrowser.app/ directory.
-      // Because topDir points to Contents/Resources/browser on Mac OS,
-      // we need to go up 3 levels.
-      let tbbBrowserDepth = TorLauncherUtil.isMac ? 3 : 1;
-      while (tbbBrowserDepth > 0) {
-        let didRemove = topDir.leafName != ".";
-        topDir = topDir.parent;
-        if (didRemove) {
-          tbbBrowserDepth--;
-        }
+      // .../Browser on Windows and Linux, .../TorBrowser.app/Contents/MacOS/ on
+      // macOS.
+      this._appDir = Services.dirsvc.get("XREExeF", Ci.nsIFile).parent;
+      if (TorLauncherUtil.isMac) {
+        this._appDir = this._appDir.parent.parent;
       }
-      this._appDir = topDir;
     }
-    return this._appDir;
+    return this._appDir.clone();
   }
 
-  // Returns an nsIFile that points to the TorBrowser-Data/ directory.
-  // This function is only used when isUserDataOutsideOfAppDir === true.
-  // May throw.
+  // Returns an nsIFile that points to the data directory. This is usually
+  // TorBrowser/Data/ on Linux and Windows, and TorBrowser-Data/ on macOS.
+  // The parent directory of the default profile directory is taken.
   static get dataDir() {
     if (!this._dataDir) {
-      const profDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      this._dataDir = profDir.parent.parent;
+      // Notice that we use `DefProfRt`, because users could create their
+      // profile in a completely unexpected directory: the profiles.ini contains
+      // a IsRelative entry, which I expect could influence ProfD, but not this.
+      this._dataDir = Services.dirsvc.get("DefProfRt", Ci.nsIFile).parent;
     }
-    return this._dataDir;
+    return this._dataDir.clone();
+  }
+
+  // Returns an nsIFile that points to the directory that contains the tor
+  // executable.
+  static get torDir() {
+    if (!this._torDir) {
+      // The directory that contains firefox
+      const torDir = Services.dirsvc.get("XREExeF", Ci.nsIFile).parent;
+      if (!TorLauncherUtil.isMac) {
+        torDir.append("TorBrowser");
+      }
+      torDir.append("Tor");
+      // Save the value only if the XPCOM methods do not throw.
+      this._torDir = torDir;
+    }
+    return this._torDir.clone();
+  }
+
+  // Returns an nsIFile that points to the directory that contains the tor
+  // data. Currently it is ${dataDir}/Tor.
+  static get torDataDir() {
+    const dir = this.dataDir;
+    dir.append("Tor");
+    return dir;
   }
 }
 
@@ -353,6 +333,11 @@ const TorLauncherUtil = Object.freeze({
 
   get isWindows() {
     return Services.appinfo.OS === "WINNT";
+  },
+
+  isPathRelative(path) {
+    const re = this.isWindows ? /^([A-Za-z]:|\\)\\/ : /^\//;
+    return !re.test(path);
   },
 
   // Returns true if user confirms; false if not.
