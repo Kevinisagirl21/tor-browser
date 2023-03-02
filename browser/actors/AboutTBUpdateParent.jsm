@@ -38,38 +38,28 @@ class AboutTBUpdateParent extends JSWindowActorParent {
   }
 
   // Read the text from the beginning of the changelog file that is located
-  // at TorBrowser/Docs/ChangeLog.txt and return an object that contains
-  // the following properties:
+  // at TorBrowser/Docs/ChangeLog.txt (or,
+  // TorBrowser.app/Contents/Resources/TorBrowser/Docs/ on macOS, to support
+  // Gatekeeper signing) and return an object that contains the following
+  // properties:
   //   version        e.g., Tor Browser 8.5
   //   releaseDate    e.g., March 31 2019
   //   releaseNotes   details of changes (lines 2 - end of ChangeLog.txt)
   // We attempt to parse the first line of ChangeLog.txt to extract the
   // version and releaseDate. If parsing fails, we return the entire first
   // line in version and omit releaseDate.
-  //
-  // On Mac OS, when building with --enable-tor-browser-data-outside-app-dir
-  // to support Gatekeeper signing, the ChangeLog.txt file is located in
-  // TorBrowser.app/Contents/Resources/TorBrowser/Docs/.
   async getReleaseNoteInfo() {
     let info = { moreInfoURL: this.moreInfoURL };
 
     try {
-      let f;
-      if (AppConstants.TOR_BROWSER_DATA_OUTSIDE_APP_DIR) {
-        // "XREExeF".parent is the directory that contains firefox, i.e.,
-        // Browser/ or, on Mac OS, TorBrowser.app/Contents/MacOS/.
-        f = Services.dirsvc.get("XREExeF", Ci.nsIFile).parent;
-        if (AppConstants.platform === "macosx") {
-          f = f.parent;
-          f.append("Resources");
-        }
-        f.append("TorBrowser");
-      } else {
-        // "DefProfRt" is .../TorBrowser/Data/Browser
-        f = Services.dirsvc.get("DefProfRt", Ci.nsIFile);
-        f = f.parent.parent; // Remove "Data/Browser"
+      // "XREExeF".parent is the directory that contains firefox, i.e.,
+      // Browser/ or, TorBrowser.app/Contents/MacOS/ on macOS.
+      let f = Services.dirsvc.get("XREExeF", Ci.nsIFile).parent;
+      if (AppConstants.platform === "macosx") {
+        f = f.parent;
+        f.append("Resources");
       }
-
+      f.append("TorBrowser");
       f.append("Docs");
       f.append("ChangeLog.txt");
 
