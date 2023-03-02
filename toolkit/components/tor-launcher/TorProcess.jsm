@@ -111,12 +111,8 @@ class TorProcess {
         command: this._exeFile.path,
         arguments: this._args,
         stderr: "stdout",
+        workdir: TorLauncherUtil.getTorFile("pt-startup-dir", false).path,
       };
-      if (TorLauncherUtil.isMac) {
-        // On macOS, we specify pluggable transport relative to the tor
-        // executable.
-        options.workdir = this._exeFile.parent.path;
-      }
       this._subprocess = await Subprocess.call(options);
       this._dumpStdout();
       this._watchProcess();
