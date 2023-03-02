@@ -88,12 +88,8 @@ class MeekTransport {
       })();
 
       // Convert meek client path to absolute path if necessary
-      let meekWorkDir = await TorLauncherUtil.getTorFile(
-        "pt-startup-dir",
-        false
-      );
-      let re = TorLauncherUtil.isWindows ? /^[A-Za-z]:\\/ : /^\//;
-      if (!re.test(meekClientPath)) {
+      let meekWorkDir = TorLauncherUtil.getTorFile("pt-startup-dir", false);
+      if (TorLauncherUtil.isPathRelative(meekClientPath)) {
         let meekPath = meekWorkDir.clone();
         meekPath.appendRelativePath(meekClientPath);
         meekClientPath = meekPath.path;
@@ -186,7 +182,7 @@ class MeekTransport {
         let endIndex = stdout.lastIndexOf(CMETHODS_DONE);
         if (endIndex != -1) {
           endIndex += CMETHODS_DONE.length;
-          return stdout.substr(0, endIndex).split("\n");
+          return stdout.substring(0, endIndex).split("\n");
         }
         return getInitLines(stdout);
       };
