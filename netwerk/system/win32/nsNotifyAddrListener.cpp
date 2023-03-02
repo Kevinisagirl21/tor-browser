@@ -105,7 +105,7 @@ nsNotifyAddrListener::GetLinkType(uint32_t* aLinkType) {
 
 NS_IMETHODIMP
 nsNotifyAddrListener::GetNetworkID(nsACString& aNetworkID) {
-#ifdef BASE_BROWSER
+#ifdef BASE_BROWSER_VERSION
   aNetworkID.Truncate();
 #else
   MutexAutoLock lock(mMutex);

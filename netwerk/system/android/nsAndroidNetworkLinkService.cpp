@@ -123,7 +123,7 @@ nsAndroidNetworkLinkService::GetLinkType(uint32_t* aLinkType) {
 
 NS_IMETHODIMP
 nsAndroidNetworkLinkService::GetNetworkID(nsACString& aNetworkID) {
-#ifdef BASE_BROWSER
+#ifdef BASE_BROWSER_VERSION
   aNetworkID.Truncate();
 #else
   if (!mNetlinkSvc) {
