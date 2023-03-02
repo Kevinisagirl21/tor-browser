@@ -469,6 +469,13 @@ this.AppConstants = Object.freeze({
     false,
 #endif
 
+  TOR_BROWSER_UPDATE:
+#ifdef TOR_BROWSER_UPDATE
+    true,
+#else
+    false,
+#endif
+
   // Returns true for CN region build when distibution id set as 'MozillaOnline'
   isChinaRepack() {
     return (
