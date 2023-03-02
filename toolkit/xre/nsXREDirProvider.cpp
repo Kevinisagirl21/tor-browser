@@ -240,7 +240,7 @@ nsresult nsXREDirProvider::GetUserProfilesRootDir(nsIFile** aResult) {
   if (NS_SUCCEEDED(rv)) {
     // For some reason, we have decided not to append "Profiles" in Tor Browser.
     // So, let's keep removing it, or we should somehow migrate the profile.
-#if !defined(TOR_BROWSER_VERSION) && (!defined(XP_UNIX) || defined(XP_MACOSX))
+#if !defined(TOR_BROWSER) && (!defined(XP_UNIX) || defined(XP_MACOSX))
     rv = file->AppendNative("Profiles"_ns);
 #endif
     // We must create the profile directory here if it does not exist.
@@ -258,7 +258,7 @@ nsresult nsXREDirProvider::GetUserProfilesLocalDir(nsIFile** aResult) {
   nsresult rv = GetUserDataDirectory(getter_AddRefs(file), true);
 
   if (NS_SUCCEEDED(rv)) {
-#if !defined(TOR_BROWSER_VERSION) && (!defined(XP_UNIX) || defined(XP_MACOSX))
+#if !defined(TOR_BROWSER) && (!defined(XP_UNIX) || defined(XP_MACOSX))
     rv = file->AppendNative("Profiles"_ns);
 #endif
     // We must create the profile directory here if it does not exist.
@@ -1477,7 +1477,7 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
 
 #if defined(XP_MACOSX)
   FSRef fsRef;
-#  if defined(TOR_BROWSER_VERSION)
+#  if defined(TOR_BROWSER)
   OSType folderType = kApplicationSupportFolderType;
 #  else
   OSType folderType;
@@ -1503,7 +1503,7 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
   rv = dirFileMac->InitWithFSRef(&fsRef);
   NS_ENSURE_SUCCESS(rv, rv);
 
-#  if defined(TOR_BROWSER_VERSION)
+#  if defined(TOR_BROWSER)
   rv = dirFileMac->AppendNative("TorBrowser-Data"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = dirFileMac->AppendNative("Browser"_ns);
@@ -1703,7 +1703,7 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
   nsresult rv = NS_OK;
 
 #if defined(XP_MACOSX)
-#  ifndef TOR_BROWSER_VERSION
+#  ifndef TOR_BROWSER
   // For Tor Browser we already prepare the data directory as we need it, even
   // when we are running a system install.
   if (!profile.IsEmpty()) {
