@@ -342,31 +342,6 @@ static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
   return mozilla::Version(appVersion) > buf;
 }
 
-#ifndef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
-#  if defined(TOR_BROWSER_UPDATE) && defined(XP_MACOSX)
-static nsresult GetUpdateDirFromAppDir(nsIFile* aAppDir, nsIFile** aResult) {
-  // On Mac OSX, we stage the update to an Updated.app directory that is
-  // directly below the main Tor Browser.app directory (two levels up from
-  // the appDir).
-  NS_ENSURE_ARG_POINTER(aAppDir);
-  NS_ENSURE_ARG_POINTER(aResult);
-  nsCOMPtr<nsIFile> parentDir1, parentDir2;
-  nsresult rv = aAppDir->GetParent(getter_AddRefs(parentDir1));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = parentDir1->GetParent(getter_AddRefs(parentDir2));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIFile> updatedDir;
-  if (!GetFile(parentDir2, "Updated.app"_ns, updatedDir)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  updatedDir.forget(aResult);
-  return NS_OK;
-}
-#  endif
-#endif
-
 #if defined(TOR_BROWSER_UPDATE) && defined(MOZ_VERIFY_MAR_SIGNATURE) && \
     defined(MAR_NSS) && defined(XP_MACOSX)
 /**
@@ -587,12 +562,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
   } else {
     // Get the directory where the update is staged or will be staged.
 #if defined(XP_MACOSX)
-#  if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
-    rv = GetUpdateDirFromAppDir(appDir, getter_AddRefs(updatedDir));
-    if (NS_FAILED(rv)) {
-#  else
     if (!GetFile(updateDir, "Updated.app"_ns, updatedDir)) {
-#  endif
 #else
     if (!GetFile(appDir, "updated"_ns, updatedDir)) {
 #endif
@@ -940,7 +910,7 @@ nsUpdateProcessor::ProcessUpdate() {
 
   nsAutoCString appVersion;
 #ifdef TOR_BROWSER_UPDATE
-  appVersion = TOR_BROWSER_VERSION_QUOTED;
+  appVersion = BASE_BROWSER_VERSION_QUOTED;
 #else
   nsCOMPtr<nsIXULAppInfo> appInfo =
       do_GetService("@mozilla.org/xre/app-info;1", &rv);

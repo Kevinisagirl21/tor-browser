@@ -2555,28 +2555,14 @@ static bool IsServiceSpecificErrorCode(int errorCode) {
  */
 static int CopyInstallDirToDestDir() {
   // These files should not be copied over to the updated app
-#if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
-#  ifdef XP_WIN
-#    define SKIPLIST_COUNT 6
-#  else
-#    define SKIPLIST_COUNT 5
-#  endif
+#ifdef XP_WIN
+#  define SKIPLIST_COUNT 5
+#elif XP_MACOSX
+#  define SKIPLIST_COUNT 0
 #else
-#  ifdef XP_WIN
-#    define SKIPLIST_COUNT 3
-#  elif XP_MACOSX
-#    define SKIPLIST_COUNT 0
-#  else
-#    define SKIPLIST_COUNT 2
-#  endif
+#  define SKIPLIST_COUNT 4
 #endif
   copy_recursive_skiplist<SKIPLIST_COUNT> skiplist;
-#if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
-#  ifdef XP_MACOSX
-  skiplist.append(0, gInstallDirPath, NS_T("Updated.app"));
-  skiplist.append(1, gInstallDirPath, NS_T("TorBrowser/UpdateInfo/updates/0"));
-#  endif
-#endif
 
 #ifndef XP_MACOSX
   skiplist.append(0, gInstallDirPath, NS_T("updated"));
@@ -2586,12 +2572,14 @@ static int CopyInstallDirToDestDir() {
 #  endif
 #endif
 
-#if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
+  // Remove the following block if we move the profile outside the Browser
+  // directory.
+#if defined(TOR_BROWSER_UPDATE) && !defined(XP_MACOSX)
 #  ifdef XP_WIN
-  skiplist.append(SKIPLIST_COUNT - 3, gInstallDirPath,
+  skiplist.append(SKIPLIST_COUNT - 2, gInstallDirPath,
                   NS_T("TorBrowser/Data/Browser/profile.default/parent.lock"));
 #  else
-  skiplist.append(SKIPLIST_COUNT - 3, gInstallDirPath,
+  skiplist.append(SKIPLIST_COUNT - 2, gInstallDirPath,
                   NS_T("TorBrowser/Data/Browser/profile.default/.parentlock"));
 #  endif
 
@@ -2746,45 +2734,8 @@ static int ProcessReplaceRequest() {
   // On OS X, we we need to remove the staging directory after its Contents
   // directory has been moved.
   NS_tchar updatedAppDir[MAXPATHLEN];
-#  if defined(TOR_BROWSER_UPDATE) && !defined(TOR_BROWSER_DATA_OUTSIDE_APP_DIR)
-  NS_tsnprintf(updatedAppDir, sizeof(updatedAppDir) / sizeof(updatedAppDir[0]),
-               NS_T("%s/Updated.app"), gInstallDirPath);
-  // For Tor Browser on OS X, we also need to copy everything else that is
-  // inside Updated.app.
-  NS_tDIR* dir = NS_topendir(updatedAppDir);
-  if (dir) {
-    NS_tdirent* entry;
-    while ((entry = NS_treaddir(dir)) != 0) {
-      if (NS_tstrcmp(entry->d_name, NS_T(".")) &&
-          NS_tstrcmp(entry->d_name, NS_T(".."))) {
-        NS_tchar childSrcPath[MAXPATHLEN];
-        NS_tsnprintf(childSrcPath,
-                     sizeof(childSrcPath) / sizeof(childSrcPath[0]),
-                     NS_T("%s/%s"), updatedAppDir, entry->d_name);
-        NS_tchar childDstPath[MAXPATHLEN];
-        NS_tsnprintf(childDstPath,
-                     sizeof(childDstPath) / sizeof(childDstPath[0]),
-                     NS_T("%s/%s"), gInstallDirPath, entry->d_name);
-        ensure_remove_recursive(childDstPath);
-        rv = rename_file(childSrcPath, childDstPath, true);
-        if (rv) {
-          LOG(("Moving " LOG_S " to " LOG_S " failed, err: %d", childSrcPath,
-               childDstPath, errno));
-        }
-      }
-    }
-
-    NS_tclosedir(dir);
-  } else {
-    LOG(("Updated.app dir can't be found: " LOG_S ", err: %d", updatedAppDir,
-         errno));
-  }
-#  else
   NS_tsnprintf(updatedAppDir, sizeof(updatedAppDir) / sizeof(updatedAppDir[0]),
                NS_T("%s/Updated.app"), gPatchDirPath);
-#  endif
-
-  // Remove the Updated.app directory.
   ensure_remove_recursive(updatedAppDir);
 #endif
 
@@ -2859,7 +2810,7 @@ static void UpdateThreadFunc(void* param) {
           rv = UPDATE_SETTINGS_FILE_CHANNEL;
         } else {
 #  ifdef TOR_BROWSER_UPDATE
-          const char* appVersion = TOR_BROWSER_VERSION_QUOTED;
+          const char* appVersion = BASE_BROWSER_VERSION_QUOTED;
 #  else
           const char* appVersion = MOZ_APP_VERSION;
 #  endif
@@ -3842,24 +3793,11 @@ int NS_main(int argc, NS_tchar** argv) {
             (updateLockFileHandle == INVALID_HANDLE_VALUE ||
              forceServiceFallback)) {
 #  ifdef TOR_BROWSER_UPDATE
-#    ifdef TOR_BROWSER_DATA_OUTSIDE_APP_DIR
-        // Because the TorBrowser-Data directory that contains the user's
-        // profile is a sibling of the Tor Browser installation directory,
-        // the user probably has permission to apply updates. Therefore, to
-        // avoid potential security issues such as CVE-2015-0833, do not
-        // attempt to elevate privileges. Instead, write a "failed" message
-        // to the update status file (this function will return immediately
-        // after the CloseHandle(elevatedFileHandle) call below).
-#    else
-        // Because the user profile is contained within the Tor Browser
-        // installation directory, the user almost certainly has permission to
-        // apply updates. Therefore, to avoid potential security issues such
-        // as CVE-2015-0833, do not attempt to elevate privileges. Instead,
-        // write a "failed" message to the update status file (this function
-        // will return immediately after the CloseHandle(elevatedFileHandle)
-        // call below).
-#    endif
-        WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
+          // To avoid potential security issues such as CVE-2015-0833, do not
+          // attempt to elevate privileges. Instead, write a "failed" message to
+          // the update status file (this function will return immediately after
+          // the CloseHandle(elevatedFileHandle) call below).
+          WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
 #  else
           // Get the secure ID before trying to update so it is possible to
           // determine if the updater has created a new one.
