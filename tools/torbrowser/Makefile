@@ -34,7 +34,7 @@ fat-aar:
 all: build deploy
 
 run:
-	$(BINARIES)/dev/Browser/start-tor-browser -v
+	$(BINARIES)/dev/Browser/start-tor-browser -v $(ARGS)
 
 jslint:
 	./jslint.sh $(DEV_ROOT) $(JS)
