@@ -35,8 +35,7 @@
 <?xml-stylesheet href="chrome://browser/skin/searchbar.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/places/tree-icons.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/skin/places/editBookmark.css" type="text/css"?>
-<?xml-stylesheet href="chrome://torbutton/skin/tor-circuit-display.css" type="text/css"?>
-<?xml-stylesheet href="chrome://torbutton/skin/torbutton.css" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/content/onionservices/onionservices.css" type="text/css"?>
 
 <!DOCTYPE window [
 #include browser-doctype.inc
@@ -122,7 +121,6 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/search/autocomplete-popup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/languageNotification.js", this);
-  Services.scriptloader.loadSubScript("chrome://torbutton/content/tor-circuit-display.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/torbutton.js", this);
 
   window.onload = gBrowserInit.onLoad.bind(gBrowserInit);

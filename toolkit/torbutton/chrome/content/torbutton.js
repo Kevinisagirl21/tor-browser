@@ -12,11 +12,7 @@ var torbutton_new_circuit;
   // TODO: Double-check there are no strange exploits to defeat:
   //       http://kb.mozillazine.org/Links_to_local_pages_don%27t_work
 
-  /* global gBrowser, CustomizableUI,
-   createTorCircuitDisplay, gFindBarInitialized,
-   gFindBar, OpenBrowserWindow, PrivateBrowsingUtils,
-   Services, AppConstants
- */
+  /* global gBrowser, Services, AppConstants */
 
   let {
     unescapeTorString,
@@ -255,16 +251,6 @@ var torbutton_new_circuit;
 
     torbutton_log(1, "registering Tor check observer");
     torbutton_tor_check_observer.register();
-
-    // Create the circuit display even though the control port might not be
-    // ready yet, as the circuit display will wait for the controller to be
-    // available anyway.
-    try {
-      createTorCircuitDisplay("extensions.torbutton.display_circuit");
-      circuitDisplayCreated = true;
-    } catch (e) {
-      torbutton_log(4, "Error creating the tor circuit display " + e);
-    }
 
     // Arrange for our about:tor content script to be loaded in each frame.
     window.messageManager.loadFrameScript(
