@@ -53,9 +53,6 @@ pref("network.http.connection-retry-timeout", 0);
 pref("extensions.torbutton.loglevel", 4);
 pref("extensions.torbutton.logmethod", 1); // 0=stdout, 1=errorconsole, 2=debuglog
 
-// Display prefs
-pref("extensions.torbutton.display_circuit", true);
-
 // Tor check and proxy prefs
 pref("extensions.torbutton.test_enabled", true);
 pref("extensions.torbutton.test_url", "https://check.torproject.org/?TorButton=true");
