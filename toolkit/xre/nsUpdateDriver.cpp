@@ -293,8 +293,7 @@ static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
   return mozilla::Version(appVersion) > buf;
 }
 
-#if defined(TOR_BROWSER_UPDATE) && defined(MOZ_VERIFY_MAR_SIGNATURE) && \
-    defined(MAR_NSS) && defined(XP_MACOSX)
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && defined(MAR_NSS) && defined(XP_MACOSX)
 /**
  * Ideally we would save and restore the original library path value after
  * the updater finishes its work (and before firefox is re-launched).
@@ -605,8 +604,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     PR_SetEnv("MOZ_SAFE_MODE_RESTART=1");
   }
 
-#if defined(TOR_BROWSER_UPDATE) && defined(MOZ_VERIFY_MAR_SIGNATURE) && \
-    defined(MAR_NSS) && defined(XP_MACOSX)
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && defined(MAR_NSS) && defined(XP_MACOSX)
   // On macOS, append the app directory to the shared library search path
   // so the system can locate the shared libraries that are needed by the
   // updater, e.g., libnss3.dylib).
