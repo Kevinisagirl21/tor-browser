@@ -108,11 +108,9 @@ struct UpdateServerThreadArgs {
 #  define stat64 stat
 #endif
 
-#if defined(MOZ_VERIFY_MAR_SIGNATURE)
-#  if defined(MAR_NSS) || (!defined(XP_WIN) && !defined(XP_MACOSX))
-#    include "nss.h"
-#    include "prerror.h"
-#  endif
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
+#  include "nss.h"
+#  include "prerror.h"
 #endif
 
 #include "crctable.h"
@@ -2809,13 +2807,8 @@ static void UpdateThreadFunc(void* param) {
         if (ReadMARChannelIDs(updateSettingsPath, &MARStrings) != OK) {
           rv = UPDATE_SETTINGS_FILE_CHANNEL;
         } else {
-#  ifdef TOR_BROWSER_UPDATE
-          const char* appVersion = BASE_BROWSER_VERSION_QUOTED;
-#  else
-          const char* appVersion = MOZ_APP_VERSION;
-#  endif
           rv = gArchiveReader.VerifyProductInformation(
-              MARStrings.MARChannelID.get(), appVersion);
+              MARStrings.MARChannelID.get(), MOZ_APP_VERSION);
         }
       }
     }
@@ -3075,17 +3068,17 @@ int NS_main(int argc, NS_tchar** argv) {
   if (!isDMGInstall) {
     // Skip update-related code path for DMG installs.
 
-#if defined(MOZ_VERIFY_MAR_SIGNATURE)
-#  if defined(MAR_NSS) || (!defined(XP_WIN) && !defined(XP_MACOSX))
-    // If using NSS for signature verification, initialize NSS but minimize
-    // the portion we depend on by avoiding all of the NSS databases.
+#if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
+    // On Windows and Mac we rely on native APIs to do verifications so we don't
+    // need to initialize NSS at all there.
+    // Otherwise, minimize the amount of NSS we depend on by avoiding all the
+    // NSS databases.
     if (NSS_NoDB_Init(nullptr) != SECSuccess) {
       PRErrorCode error = PR_GetError();
       fprintf(stderr, "Could not initialize NSS: %s (%d)",
               PR_ErrorToName(error), (int)error);
       _exit(1);
     }
-#  endif
 #endif
 
     // To process an update the updater command line must at a minimum have the
