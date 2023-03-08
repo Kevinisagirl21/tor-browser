@@ -4,9 +4,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DEFINES["MAR_NSS"] = True
-
-link_with_nss = DEFINES["MAR_NSS"] or (CONFIG["OS_ARCH"] == "Linux" and CONFIG["MOZ_VERIFY_MAR_SIGNATURE"])
+link_with_nss = CONFIG["MOZ_USE_NSS_FOR_MAR"] or (
+    CONFIG["OS_ARCH"] == "Linux" and CONFIG["MOZ_VERIFY_MAR_SIGNATURE"]
+)
+if link_with_nss:
+    DEFINES["MAR_NSS"] = True
 
 srcs = [
     "archivereader.cpp",
