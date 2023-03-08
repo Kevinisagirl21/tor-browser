@@ -3,6 +3,7 @@
 pull locale emoji descriptions form Unicode CLDR.
 """
 
+import re
 import json
 import datetime
 from pathlib import Path
@@ -83,6 +84,43 @@ def copy_emoji_svgs(emoji_codepoints, from_dir, to_dir):
 
     with open(to_dir / "README.txt", "w", encoding="utf8") as file:
         file.write(generated_message())
+
+
+def get_flag_codepoints(file):
+    """Get the codepoint hex strings for all the region flags in the given
+    `file`.
+    """
+
+    flag_line_regex = re.compile(
+        r"^([0-9A-F]+) ([0-9A-F]+) +; RGI_Emoji_Flag_Sequence +;"
+    )
+
+    codepoints = []
+
+    for line in file:
+        match = flag_line_regex.match(line)
+        if not match:
+            continue
+        # The emoji name includes a dash "-" between the codepoints.
+        codepoints.append(f"{match.group(1).lower()}-{match.group(2).lower()}")
+
+    return codepoints
+
+
+def copy_flag_svgs(from_dir):
+    """Copy the flag svgs from `from_dir`."""
+    with open(
+        FIREFOX_ROOT / "intl/icu/source/data/unidata/emoji-sequences.txt",
+        "r",
+        encoding="utf8",
+    ) as file:
+        flag_codepoints = get_flag_codepoints(file)
+
+    flag_dest_dir = (
+        FIREFOX_ROOT / "browser/components/torcircuit/content/tor-circuit-flags"
+    )
+
+    copy_emoji_svgs(flag_codepoints, from_dir, flag_dest_dir)
 
 
 BRIDGE_DIR = FIREFOX_ROOT / "browser/components/torpreferences/content/bridgemoji"
@@ -176,7 +214,13 @@ parser = argparse.ArgumentParser(
     "https://github.com/unicode-org/cldr.git"
 )
 parser.add_argument(
+    "--flag-svgs", metavar="<dir>", help="location of the flag emoji SVGs directory"
+)
+parser.add_argument(
     "--bridge-svgs", metavar="<dir>", help="location of the bridge emoji SVGs directory"
+)
+parser.add_argument(
+    "--svgs", metavar="<dir>", help="defines both --bridge-svgs and --flag-svgs"
 )
 parser.add_argument(
     "--cldr", metavar="<dir>", help="location of the unicode CLDR repository"
@@ -184,11 +228,15 @@ parser.add_argument(
 
 parsed_args = parser.parse_args()
 
-bridge_svg_dir = parsed_args.bridge_svgs
+flag_svg_dir = parsed_args.flag_svgs or parsed_args.svgs
+bridge_svg_dir = parsed_args.bridge_svgs or parsed_args.svgs
 cldr_dir = parsed_args.cldr
 
-if not bridge_svg_dir and not cldr_dir:
+if not flag_svg_dir and not bridge_svg_dir and not cldr_dir:
     print("No arguments")
+
+if flag_svg_dir:
+    copy_flag_svgs(Path(flag_svg_dir))
 
 if bridge_svg_dir:
     copy_bridge_svgs(Path(bridge_svg_dir))
