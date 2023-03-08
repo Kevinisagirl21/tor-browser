@@ -2809,7 +2809,8 @@ static void UpdateThreadFunc(void* param) {
         if (ReadMARChannelIDs(updateSettingsPath, &MARStrings) != OK) {
           rv = UPDATE_SETTINGS_FILE_CHANNEL;
         } else {
-#  ifdef TOR_BROWSER_UPDATE
+#  ifdef BASE_BROWSER_VERSION_QUOTED
+          // Use the base browser version to prevent downgrade attacks.
           const char* appVersion = BASE_BROWSER_VERSION_QUOTED;
 #  else
           const char* appVersion = MOZ_APP_VERSION;
