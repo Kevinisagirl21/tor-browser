@@ -997,21 +997,6 @@ function LOG(string) {
 }
 
 /**
- * Convert a string containing binary values to hex.
- */
-function binaryToHex(input) {
-  var result = "";
-  for (var i = 0; i < input.length; ++i) {
-    var hex = input.charCodeAt(i).toString(16);
-    if (hex.length == 1) {
-      hex = "0" + hex;
-    }
-    result += hex;
-  }
-  return result;
-}
-
-/**
  * Gets the specified directory at the specified hierarchy under the
  * update root directory and creates it if it doesn't exist.
  * @param   pathArray
@@ -5204,7 +5189,13 @@ Downloader.prototype = {
       // encoded binary (such as what is typically output by programs like
       // sha1sum).  In the future, this may change to base64 depending on how
       // we choose to compute these hashes.
-      digest = binaryToHex(hash.finish(false));
+      hash = hash.finish(false);
+      digest = Array.from(hash, (c, i) =>
+        hash
+          .charCodeAt(i)
+          .toString(16)
+          .padStart(2, "0")
+      ).join("");
     } catch (e) {
       LOG(
         "Downloader:_verifyDownload - failed to compute hash of the downloaded update archive"
