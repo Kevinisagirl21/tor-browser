@@ -125,6 +125,7 @@ const gConnectionPane = (function() {
       cardTemplate: "#torPreferences-bridgeCard-template",
       card: ".torPreferences-bridgeCard",
       cardId: ".torPreferences-bridgeCard-id",
+      cardHeadingManualLink: ".torPreferences-bridgeCard-manualLink",
       cardHeadingAddr: ".torPreferences-bridgeCard-headingAddr",
       cardConnectedLabel: ".torPreferences-bridgeCard-connectedLabel",
       cardOptions: ".torPreferences-bridgeCard-options",
@@ -456,6 +457,19 @@ const gConnectionPane = (function() {
         );
         if (TorStrings.settings.learnMoreBridgesCardURL.startsWith("about:")) {
           learnMore.setAttribute("useoriginprincipal", "true");
+        }
+      }
+      {
+        const manualLink = bridgeTemplate.querySelector(
+          selectors.bridges.cardHeadingManualLink
+        );
+        manualLink.setAttribute("value", TorStrings.settings.whatAreThese);
+        manualLink.setAttribute(
+          "href",
+          TorStrings.settings.learnMoreBridgesCardURL
+        );
+        if (TorStrings.settings.learnMoreBridgesCardURL.startsWith("about:")) {
+          manualLink.setAttribute("useoriginprincipal", "true");
         }
       }
       bridgeTemplate.querySelector(

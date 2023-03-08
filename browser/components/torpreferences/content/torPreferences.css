@@ -260,6 +260,18 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   background: var(--in-content-box-background-odd);
 }
 
+.torPreferences-bridgeCard-manualLink {
+  display: none;
+}
+
+.expanded .torPreferences-bridgeCard-manualLink {
+  display: inline;
+  flex: 1;
+  margin: 0 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .torPreferences-bridgeCard-headingAddr {
   /* flex extends the element when needed, but without setting a width (any) the
   overflow + ellipses does not work. */
