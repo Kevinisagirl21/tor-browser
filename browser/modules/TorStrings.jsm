@@ -86,6 +86,7 @@ const Loader = {
       statusTorNotConnected: "Not Connected",
       statusTorBlocked: "Potentially Blocked",
       learnMore: "Learn more",
+      whatAreThese: "What are these?",
       // Quickstart
       quickstartHeading: "Quickstart",
       quickstartDescription:
