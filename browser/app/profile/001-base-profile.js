@@ -24,6 +24,12 @@ pref("browser.aboutwelcome.enabled", false);
 //   openURL="https://blog.torproject.org/tor-browser-55a2-released"
 pref("startup.homepage_override_url", "https://blog.torproject.org/category/applications");
 
+// Bug 41668: allow users to apply updates. This is set also in firefox.js for
+// all platforms, except for Windows. As explained on firefox.js, Firefox uses a
+// per-installation preference on Windows. However, we patch this behavior, and
+// we set this preference also for Windows.
+pref("app.update.auto", true);
+
 // Try to nag a bit more about updates: Pop up a restart dialog an hour after the initial dialog
 pref("app.update.promptWaitTime", 3600);
 
