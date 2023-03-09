@@ -5066,12 +5066,12 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     rv = exeFile->GetParent(getter_AddRefs(exeDir));
     NS_ENSURE_SUCCESS(rv, 1);
 
-#  ifdef TOR_BROWSER_UPDATE
+#  ifdef BASE_BROWSER_VERSION_QUOTED
     nsAutoCString compatVersion(BASE_BROWSER_VERSION_QUOTED);
 #  endif
     ProcessUpdates(mDirProvider.GetGREDir(), exeDir, updRoot, gRestartArgc,
                    gRestartArgv,
-#  ifdef TOR_BROWSER_UPDATE
+#  ifdef BASE_BROWSER_VERSION_QUOTED
                    compatVersion.get()
 #  else
                    mAppData->version

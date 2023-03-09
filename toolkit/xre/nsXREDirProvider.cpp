@@ -1210,7 +1210,7 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
   NS_ENSURE_SUCCESS(rv, rv);
 
-#if defined(TOR_BROWSER_UPDATE)
+#if defined(BASE_BROWSER_UPDATE)
   // For Tor Browser, we store update history, etc. within the UpdateInfo
   // directory under the user data directory.
   rv = GetTorBrowserUserDataDir(getter_AddRefs(updRoot));
@@ -1236,7 +1236,7 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   rv = updRoot->AppendRelativePath(appPath);
   NS_ENSURE_SUCCESS(rv, rv);
 #  endif
-#else  // ! TOR_BROWSER_UPDATE
+#else  // ! BASE_BROWSER_UPDATE
   rv = appFile->GetParent(getter_AddRefs(updRoot));
   NS_ENSURE_SUCCESS(rv, rv);
 #  ifdef XP_MACOSX
@@ -1294,7 +1294,7 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   updatePathStr.Assign(updatePath.get());
   updRoot->InitWithPath(updatePathStr);
 #  endif  // XP_WIN
-#endif    // ! TOR_BROWSER_UPDATE
+#endif    // ! BASE_BROWSER_UPDATE
   updRoot.forget(aResult);
   return NS_OK;
 }
