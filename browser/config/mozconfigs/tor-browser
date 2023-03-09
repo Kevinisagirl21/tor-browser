@@ -10,6 +10,4 @@ ac_add_options --with-relative-data-dir=TorBrowser/Data/Browser
 # ac_add_options --with-user-appdir=TorProject
 # ac_add_options --with-user-appdir=.torproject
 
-ac_add_options --enable-tor-browser-update
-
 ac_add_options --with-distribution-id=org.torproject
