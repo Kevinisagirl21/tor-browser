@@ -556,8 +556,8 @@ var gMainPane = {
     // Initialize the Firefox Updates section.
     let version = AppConstants.BASE_BROWSER_VERSION;
 
-    // Tor Browser: do not include the build ID in our alphas, since they are
-    // not actually related to the build date.
+    // Base Browser and derivatives: do not include the build ID in our alphas,
+    // since they are not actually related to the build date.
 
     // Append "(32-bit)" or "(64-bit)" build architecture to the version number:
     let bundle = Services.strings.createBundle(

@@ -523,7 +523,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     gfxPlatformMac::WaitForFontRegistration();
   }
 
-#  ifndef TOR_BROWSER_UPDATE
+#  ifndef BASE_BROWSER_UPDATE
   // We need to detect whether elevation is required for this update. This can
   // occur when an admin user installs the application, but another admin
   // user attempts to update (see bug 394984).
@@ -713,7 +713,7 @@ UpdateDriverSetupMacCommandLine(argc, argv, restart);
 #  ifdef DEBUG
 dump_argv("ApplyUpdate after SetupMacCommandLine", argv, argc);
 #  endif
-#  ifndef TOR_BROWSER_UPDATE
+#  ifndef BASE_BROWSER_UPDATE
 // We need to detect whether elevation is required for this update. This can
 // occur when an admin user installs the application, but another admin
 // user attempts to update (see bug 394984).
@@ -799,7 +799,7 @@ nsresult ProcessUpdates(nsIFile* greDir, nsIFile* appDir, nsIFile* updRootDir,
                         bool restart, ProcessType* pid) {
   nsresult rv;
 
-#if defined(XP_WIN) && defined(TOR_BROWSER_UPDATE)
+#if defined(XP_WIN) && defined(BASE_BROWSER_UPDATE)
   // Try to remove the "tobedeleted" directory which, if present, contains
   // files that could not be removed during a previous update (e.g., DLLs
   // that were in use and therefore locked by Windows).
@@ -907,7 +907,7 @@ nsUpdateProcessor::ProcessUpdate() {
   }
 
   nsAutoCString appVersion;
-#ifdef TOR_BROWSER_UPDATE
+#ifdef BASE_BROWSER_VERSION_QUOTED
   appVersion = BASE_BROWSER_VERSION_QUOTED;
 #else
   nsCOMPtr<nsIXULAppInfo> appInfo =

@@ -40,7 +40,7 @@ void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid) {
   }
 }
 
-#ifndef TOR_BROWSER_UPDATE
+#ifndef BASE_BROWSER_UPDATE
 BOOL InstallPrivilegedHelper() {
   AuthorizationRef authRef = NULL;
   OSStatus status = AuthorizationCreate(
