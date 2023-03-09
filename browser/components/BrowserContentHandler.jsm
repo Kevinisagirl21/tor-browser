@@ -743,20 +743,14 @@ nsBrowserContentHandler.prototype = {
               "%OLD_TOR_BROWSER_VERSION%",
               old_tbversion
             );
-#ifdef TOR_BROWSER_UPDATE
-            if (overridePage)
-            {
+            if (overridePage && AppConstants.BASE_BROWSER_UPDATE) {
               prefb.setCharPref("torbrowser.post_update.url", overridePage);
               prefb.setBoolPref("torbrowser.post_update.shouldNotify", true);
               // If the user's homepage is about:tor, we will inform them
               // about the update on that page; otherwise, we arrange to
               // open about:tor in a secondary tab.
-              if (startPage === "about:tor")
-                overridePage = "";
-              else
-                overridePage = "about:tor";
+              overridePage = startPage === "about:tor" ? "" : "about:tor";
             }
-#endif
             break;
           case OVERRIDE_NEW_BUILD_ID:
             if (UpdateManager.readyUpdate) {

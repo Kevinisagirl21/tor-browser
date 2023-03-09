@@ -21,7 +21,7 @@
 @AB_CD@.jar:
 % locale browser @AB_CD@ %locale/browser/
     locale/browser/accounts.properties             (%chrome/browser/accounts.properties)
-#ifdef TOR_BROWSER_UPDATE
+#ifdef BASE_BROWSER_UPDATE
     locale/browser/aboutTBUpdate.dtd               (%chrome/browser/aboutTBUpdate.dtd)
 #endif
     locale/browser/browser.properties              (%chrome/browser/browser.properties)

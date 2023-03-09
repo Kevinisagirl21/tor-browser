@@ -663,7 +663,7 @@ var gInitialPages = [
   "about:welcomeback",
 ];
 
-if (AppConstants.TOR_BROWSER_UPDATE) {
+if (AppConstants.BASE_BROWSER_UPDATE) {
   gInitialPages.push("about:tbupdate");
 }
 

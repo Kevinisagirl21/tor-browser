@@ -776,7 +776,7 @@ let JSWINDOWACTORS = {
   },
 };
 
-if (AppConstants.TOR_BROWSER_UPDATE) {
+if (AppConstants.BASE_BROWSER_UPDATE) {
   JSWINDOWACTORS.AboutTBUpdate = {
     parent: {
       moduleURI: "resource:///actors/AboutTBUpdateParent.jsm",
