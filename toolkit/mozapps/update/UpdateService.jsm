@@ -676,7 +676,7 @@ function areDirectoryEntriesWriteable(aDir) {
  * @return true if elevation is required, false otherwise
  */
 function getElevationRequired() {
-  if (AppConstants.TOR_BROWSER_UPDATE) {
+  if (AppConstants.BASE_BROWSER_UPDATE) {
     // To avoid potential security holes associated with running the updater
     // process with elevated privileges, Tor Browser does not support elevation.
     return false;
@@ -760,7 +760,7 @@ function getCanApplyUpdates() {
     return false;
   }
 
-  if (!AppConstants.TOR_BROWSER_UPDATE) {
+  if (!AppConstants.BASE_BROWSER_UPDATE) {
     if (AppConstants.platform == "macosx") {
       LOG(
         "getCanApplyUpdates - bypass the write since elevation can be used " +
@@ -1588,7 +1588,7 @@ function handleUpdateFailure(update, errorCode) {
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
     if (AppConstants.platform == "macosx") {
-      if (AppConstants.TOR_BROWSER_UPDATE) {
+      if (AppConstants.BASE_BROWSER_UPDATE) {
         cleanupActiveUpdates();
       } else {
         let osxCancelations = Services.prefs.getIntPref(
@@ -4600,7 +4600,7 @@ Checker.prototype = {
   _callback: null,
 
   _getCanMigrate: function UC__getCanMigrate() {
-    if (AppConstants.platform != "win" || AppConstants.TOR_BROWSER_UPDATE) {
+    if (AppConstants.platform != "win" || AppConstants.BASE_BROWSER_UPDATE) {
       return false;
     }
 

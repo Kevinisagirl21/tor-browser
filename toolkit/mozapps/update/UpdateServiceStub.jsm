@@ -85,7 +85,7 @@ function UpdateServiceStub() {
   // For more info, see https://bugzilla.mozilla.org/show_bug.cgi?id=1458314
   if (
     AppConstants.platform == "win" &&
-    !AppConstants.TOR_BROWSER_UPDATE &&
+    !AppConstants.BASE_BROWSER_UPDATE &&
     !Services.prefs.getBoolPref(prefUpdateDirMigrated, false)
   ) {
     Services.prefs.setBoolPref(prefUpdateDirMigrated, true);
