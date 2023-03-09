@@ -260,16 +260,17 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   background: var(--in-content-box-background-odd);
 }
 
-.torPreferences-bridgeCard-manualLink {
+#torPreferences-currentBridges-cards:not(
+  .single-card
+) .torPreferences-bridgeCard:not(
+  .expanded,
+  .currently-connected
+) .torPreferences-bridgeCard-manualLink {
   display: none;
 }
 
-.expanded .torPreferences-bridgeCard-manualLink {
-  display: inline;
-  flex: 1;
+.torPreferences-bridgeCard-manualLink {
   margin: 0 8px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .torPreferences-bridgeCard-headingAddr {
