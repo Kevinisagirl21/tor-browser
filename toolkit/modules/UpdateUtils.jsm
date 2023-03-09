@@ -258,7 +258,7 @@ var UpdateUtils = {
     // the expected observers still get notified, even if a user manually
     // changes the pref value.
     if (
-      AppConstants.TOR_BROWSER_UPDATE ||
+      AppConstants.BASE_BROWSER_UPDATE ||
       !UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED
     ) {
       let initialConfig = {};
@@ -330,7 +330,7 @@ var UpdateUtils = {
     }
 
     if (
-      AppConstants.TOR_BROWSER_UPDATE ||
+      AppConstants.BASE_BROWSER_UPDATE ||
       !this.PER_INSTALLATION_PREFS_SUPPORTED
     ) {
       // If we don't have per-installation prefs, we use regular preferences.
@@ -428,7 +428,7 @@ var UpdateUtils = {
     }
 
     if (
-      AppConstants.TOR_BROWSER_UPDATE ||
+      AppConstants.BASE_BROWSER_UPDATE ||
       !this.PER_INSTALLATION_PREFS_SUPPORTED
     ) {
       // If we don't have per-installation prefs, we use regular preferences.
