@@ -1074,23 +1074,6 @@ set_define("BASE_BROWSER_VERSION_QUOTED", base_browser_version_quoted)
 set_define("TOR_BROWSER", True)
 
 
-option(
-    "--enable-tor-browser-update",
-    help="Enable Tor Browser update"
-)
-
-
-@depends("--enable-tor-browser-update")
-def tor_browser_update(value):
-    if value:
-        return True
-
-
-set_config("TOR_BROWSER_UPDATE", tor_browser_update)
-set_define("TOR_BROWSER_UPDATE", tor_browser_update)
-add_old_configure_assignment("TOR_BROWSER_UPDATE", tor_browser_update)
-
-
 # Please do not add configure checks from here on.
 
 # Fallthrough to autoconf-based configure
