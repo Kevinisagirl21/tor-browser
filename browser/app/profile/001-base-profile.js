@@ -370,6 +370,10 @@ pref("network.http.http2.enable-hpack-dump", false, locked);
 // (defense in depth measure)
 pref("network.gio.supported-protocols", "");
 pref("media.peerconnection.enabled", false); // Disable WebRTC interfaces
+// tor-browser#41667 - Defense in depth: use mDNS to avoid local IP leaks on Android too if user enables WebRTC
+pref("media.peerconnection.ice.obfuscate_host_addresses", true);
+// tor-browser#41671 - Defense in depth: connect using TURN only, to avoid IP leaks if user enables WebRTC
+pref("media.peerconnection.ice.relay_only", true);
 // Disables media devices but only if `media.peerconnection.enabled` is set to
 // `false` as well. (see bug 16328 for this defense-in-depth measure)
 pref("media.navigator.enabled", false);
