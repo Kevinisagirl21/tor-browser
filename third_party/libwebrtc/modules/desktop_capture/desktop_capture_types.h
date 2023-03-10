@@ -16,9 +16,16 @@
 #endif
 #include <stdint.h>
 
-#ifdef XP_WIN      // Moving this into the global namespace
-typedef int pid_t; // matching what used to be in
-#endif             // video_capture_defines.h
+// Use int on all clang-cl builds and x86 mingw builds.
+// Use long long on Windows x64 building under MinGW
+// Must be consistent with the same typedefs in video_capture_defines.h
+#if defined(XP_WIN)
+#if defined(_MSC_VER) || !defined(_WIN64)
+typedef int pid_t;
+#else
+typedef long long pid_t;
+#endif
+#endif
 
 namespace webrtc {
 
