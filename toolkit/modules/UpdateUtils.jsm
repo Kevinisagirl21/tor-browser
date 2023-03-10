@@ -167,8 +167,8 @@ var UpdateUtils = {
    * downloads and installs updates. This corresponds to whether or not the user
    * has selected "Automatically install updates" in about:preferences.
    *
-   * On Windows (except in Tor Browser), this setting is shared across all profiles
-   * for the installation
+   * On Windows (except in Base Browser and derivatives), this setting is shared
+   * across all profiles for the installation
    * and is read asynchronously from the file. On other operating systems, this
    * setting is stored in a pref and is thus a per-profile setting.
    *
@@ -184,8 +184,8 @@ var UpdateUtils = {
    * updates" and "Check for updates but let you choose to install them" options
    * in about:preferences.
    *
-   * On Windows (except in Tor Browser), this setting is shared across all profiles
-   * for the installation
+   * On Windows (except in Base Browser and derivatives), this setting is shared
+   * across all profiles for the installation
    * and is written asynchronously to the file. On other operating systems, this
    * setting is stored in a pref and is thus a per-profile setting.
    *
