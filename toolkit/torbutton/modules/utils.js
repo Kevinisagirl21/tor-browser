@@ -232,7 +232,11 @@ var getDomainForBrowser = browser => {
   let fpd = browser.contentPrincipal.originAttributes.firstPartyDomain;
   // Bug 31562: For neterror or certerror, get the original URL from
   // browser.currentURI and use it to calculate the firstPartyDomain.
-  let knownErrors = ["about:neterror", "about:certerror"];
+  let knownErrors = [
+    "about:neterror",
+    "about:certerror",
+    "about:httpsonlyerror",
+  ];
   let documentURI = browser.documentURI;
   if (
     documentURI &&

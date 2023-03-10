@@ -840,7 +840,7 @@ event.messageToData = function(type, message) {
 // stops watching the event. Note: we only observe `"650" SP...` events
 // currently (no `650+...` or `650-...` events).
 event.watchEvent = function(controlSocket, type, filter, onData, raw = false) {
-  return controlSocket.addNotificationCallback(
+  controlSocket.addNotificationCallback(
     new RegExp("^650 " + type),
     function(message) {
       let data = event.messageToData(type, message);
@@ -876,8 +876,9 @@ tor.controller = async function(ipcFile, host, port, password) {
     onionAuthAdd: (hsAddress, b64PrivateKey, isPermanent) =>
       onionAuth.add(socket, hsAddress, b64PrivateKey, isPermanent),
     onionAuthRemove: hsAddress => onionAuth.remove(socket, hsAddress),
-    watchEvent: (type, filter, onData, raw = false) =>
-      event.watchEvent(socket, type, filter, onData, raw),
+    watchEvent: (type, filter, onData, raw = false) => {
+      event.watchEvent(socket, type, filter, onData, raw);
+    },
     isOpen: () => socket.isOpen(),
     close: () => {
       socket.close();

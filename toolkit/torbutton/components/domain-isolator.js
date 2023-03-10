@@ -72,13 +72,23 @@ tor.isolationEnabled = true;
 // Specifies when the current catch-all circuit was first used
 tor.unknownDirtySince = Date.now();
 
-tor.passwordForDomainAndUserContextId = function(domain, userContextId) {
-  // Check if we already have a nonce. If not, create
-  // one for this domain and userContextId.
+tor.passwordForDomainAndUserContextId = function(
+  domain,
+  userContextId,
+  create
+) {
+  // Check if we already have a nonce. If not, possibly create one for this
+  // domain and userContextId.
   if (!tor.noncesForDomains.has(domain)) {
+    if (!create) {
+      return null;
+    }
     tor.noncesForDomains.set(domain, tor.nonce());
   }
   if (!tor.noncesForUserContextId.has(userContextId)) {
+    if (!create) {
+      return null;
+    }
     tor.noncesForUserContextId.set(userContextId, tor.nonce());
   }
   return (
@@ -87,21 +97,30 @@ tor.passwordForDomainAndUserContextId = function(domain, userContextId) {
   );
 };
 
+tor.usernameForDomainAndUserContextId = function(domain, userContextId) {
+  return `${domain}:${userContextId}`;
+};
+
 // __tor.socksProxyCredentials(originalProxy, domain, userContextId)__.
 // Takes a proxyInfo object (originalProxy) and returns a new proxyInfo
 // object with the same properties, except the username is set to the
 // the domain and userContextId, and the password is a nonce.
 tor.socksProxyCredentials = function(originalProxy, domain, userContextId) {
   let proxy = originalProxy.QueryInterface(Ci.nsIProxyInfo);
-  let proxyPassword = tor.passwordForDomainAndUserContextId(
+  let proxyUsername = tor.usernameForDomainAndUserContextId(
     domain,
     userContextId
+  );
+  let proxyPassword = tor.passwordForDomainAndUserContextId(
+    domain,
+    userContextId,
+    true
   );
   return mozilla.protocolProxyService.newProxyInfoWithAuth(
     "socks",
     proxy.host,
     proxy.port,
-    `${domain}:${userContextId}`, // username
+    proxyUsername,
     proxyPassword,
     "", // aProxyAuthorizationHeader
     "", // aConnectionIsolationKey
@@ -235,11 +254,41 @@ DomainIsolator.prototype = {
       tor.isolateCircuitsByDomain();
     }
   },
+
   newCircuitForDomain(domain) {
     tor.newCircuitForDomain(domain);
   },
-  newCircuitForUserContextId(userContextId) {
-    tor.newCircuitForUserContextId(userContextId);
+
+  /**
+   * Return the stored SOCKS proxy username and password for the given domain
+   * and user context ID.
+   *
+   * @param {string} firstPartyDomain - The domain to lookup credentials for.
+   * @param {integer} userContextId - The ID for the user context.
+   *
+   * @return {{ username: string, password: string }?} - The SOCKS credentials,
+   *   or null if none are found.
+   */
+  getSocksProxyCredentials(firstPartyDomain, userContextId) {
+    if (firstPartyDomain == "") {
+      firstPartyDomain = "--unknown--";
+    }
+    let proxyPassword = tor.passwordForDomainAndUserContextId(
+      firstPartyDomain,
+      userContextId,
+      // Do not create a new entry if it does not exist.
+      false
+    );
+    if (!proxyPassword) {
+      return null;
+    }
+    return {
+      username: tor.usernameForDomainAndUserContextId(
+        firstPartyDomain,
+        userContextId
+      ),
+      password: proxyPassword,
+    };
   },
 
   enableIsolation() {
