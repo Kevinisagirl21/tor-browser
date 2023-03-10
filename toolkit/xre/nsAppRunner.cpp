@@ -3657,9 +3657,9 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
 
   nsAutoCString buf;
 
-  nsAutoCString tbVersion(BASE_BROWSER_VERSION_QUOTED);
+  nsAutoCString forkVersion(BASE_BROWSER_VERSION_QUOTED);
   rv = parser.GetString("Compatibility", "LastTorBrowserVersion", buf);
-  if (NS_FAILED(rv) || !tbVersion.Equals(buf)) return false;
+  if (NS_FAILED(rv) || !forkVersion.Equals(buf)) return false;
 
   rv = parser.GetString("Compatibility", "LastOSABI", buf);
   if (NS_FAILED(rv) || !aOSABI.Equals(buf)) return false;
@@ -3746,11 +3746,11 @@ static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
   PR_Write(fd, kHeader, sizeof(kHeader) - 1);
   PR_Write(fd, aVersion.get(), aVersion.Length());
 
-  nsAutoCString tbVersion(BASE_BROWSER_VERSION_QUOTED);
-  static const char kTorBrowserVersionHeader[] =
+  nsAutoCString forkVersion(BASE_BROWSER_VERSION_QUOTED);
+  static const char kForkVersionHeader[] =
       NS_LINEBREAK "LastTorBrowserVersion=";
-  PR_Write(fd, kTorBrowserVersionHeader, sizeof(kTorBrowserVersionHeader) - 1);
-  PR_Write(fd, tbVersion.get(), tbVersion.Length());
+  PR_Write(fd, kForkVersionHeader, sizeof(kForkVersionHeader) - 1);
+  PR_Write(fd, forkVersion.get(), forkVersion.Length());
 
   static const char kOSABIHeader[] = NS_LINEBREAK "LastOSABI=";
   PR_Write(fd, kOSABIHeader, sizeof(kOSABIHeader) - 1);

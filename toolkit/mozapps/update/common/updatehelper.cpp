@@ -68,8 +68,8 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
 BOOL GetSecureOutputDirectoryPath(LPWSTR outBuf) {
 #ifdef BASE_BROWSER_UPDATE
   // This function is used to support the maintenance service and elevated
-  // updates and is therefore not called by Tor Browser's updater. We stub
-  // it out to avoid any chance that the Tor Browser updater will create
+  // updates and is therefore not called by Base Browser's updater. We stub
+  // it out to avoid any chance that the Base Browser updater will create
   // files under C:\Program Files (x86)\ or a similar location.
   return FALSE;
 #else

@@ -1213,20 +1213,27 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   NS_ENSURE_SUCCESS(rv, rv);
 
 #if defined(BASE_BROWSER_UPDATE)
-  // For Tor Browser, we store update history, etc. within the UpdateInfo
-  // directory under the user data directory.
-  rv = GetTorBrowserUserDataDir(getter_AddRefs(updRoot));
+  nsCOMPtr<nsIFile> dataDir;
+  // For Base Browser and derivatives, we store update history, etc. within the
+  // UpdateInfo directory under the user data directory.
+#  if defined(ANDROID)
+#    error "The Base Browser updater is not supported on Android."
+#  else
+  rv = GetUserDataDirectoryHome(getter_AddRefs(dataDir), false);
   NS_ENSURE_SUCCESS(rv, rv);
+  rv = dataDir->GetParent(getter_AddRefs(updRoot));
+  NS_ENSURE_SUCCESS(rv, rv);
+#  endif
   rv = updRoot->AppendNative("UpdateInfo"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
+
 #  if defined(XP_MACOSX)
-  // Since the TorBrowser-Data directory may be shared among different
-  // installations of the application, embed the app path in the update dir
-  // so that the update history is partitioned. This is much less likely to
-  // be an issue on Linux or Windows because the Tor Browser packages for
-  // those platforms include a "container" folder that provides partitioning
-  // by default, and we do not support use of a shared, OS-recommended area
-  // for user data on those platforms.
+  // Since the data directory may be shared among different installations of the
+  // application, embed the app path in the update dir so that the update
+  // history is partitioned. This is much less likely to be an issue on Linux or
+  // Windows, because our packages for those platforms include a "container"
+  // folder that provides partitioning by default, and we do not support use of
+  // a shared, OS-recommended area for user data on those platforms.
   nsAutoString appPath;
   rv = appFile->GetPath(appPath);
   NS_ENSURE_SUCCESS(rv, rv);
