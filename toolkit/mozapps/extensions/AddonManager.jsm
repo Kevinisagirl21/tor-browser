@@ -40,7 +40,7 @@ const PREF_EM_STRICT_COMPATIBILITY = "extensions.strictCompatibility";
 const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
 const PREF_SYS_ADDON_UPDATE_ENABLED = "extensions.systemAddon.update.enabled";
 const PREF_REMOTESETTINGS_DISABLED = "extensions.remoteSettings.disabled";
-const PREF_EM_LAST_TORBROWSER_VERSION = "extensions.lastTorBrowserVersion";
+const PREF_EM_LAST_FORK_VERSION = "extensions.lastTorBrowserVersion";
 
 const PREF_MIN_WEBEXT_PLATFORM_VERSION =
   "extensions.webExtensionsMinPlatformVersion";
@@ -645,26 +645,19 @@ var AddonManagerInternal = {
         );
       }
 
-      // To ensure that extension and plugin code gets a chance to run
-      // after each browser update, set appChanged = true when the
-      // Tor Browser version has changed even if the Mozilla app
-      // version has not changed.
-      let tbChanged = undefined;
-      try {
-        tbChanged =
-          AppConstants.BASE_BROWSER_VERSION !==
-          Services.prefs.getCharPref(PREF_EM_LAST_TORBROWSER_VERSION);
-      } catch (e) {}
-      if (tbChanged !== false) {
-        // Because PREF_EM_LAST_TORBROWSER_VERSION was not present in older
-        // versions of Tor Browser, an app change is indicated when tbChanged
-        // is undefined or true.
+      // To ensure that extension and plugin code gets a chance to run after
+      // each browser update, set appChanged = true when BASE_BROWSER_VERSION
+      // has changed even if the Mozilla app version has not changed.
+      const forkChanged = AppConstants.BASE_BROWSER_VERSION !==
+        Services.prefs.getCharPref(PREF_EM_LAST_FORK_VERSION, "");
+      if (forkChanged) {
+        // appChanged could be undefined (in case of a new profile)
         if (appChanged === false) {
           appChanged = true;
         }
 
         Services.prefs.setCharPref(
-          PREF_EM_LAST_TORBROWSER_VERSION,
+          PREF_EM_LAST_FORK_VERSION,
           AppConstants.BASE_BROWSER_VERSION
         );
       }

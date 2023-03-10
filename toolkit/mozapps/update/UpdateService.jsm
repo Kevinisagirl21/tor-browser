@@ -1587,33 +1587,32 @@ function handleUpdateFailure(update, errorCode) {
     );
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
-    if (AppConstants.platform == "macosx") {
-      if (AppConstants.BASE_BROWSER_UPDATE) {
-        cleanupActiveUpdates();
+    if (AppConstants.platform == "macosx" && AppConstants.BASE_BROWSER_UPDATE) {
+      cleanupActiveUpdates();
+      update.statusText = gUpdateBundle.GetStringFromName("elevationFailure");
+    } else if (AppConstants.platform == "macosx") {
+      let osxCancelations = Services.prefs.getIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX,
+        0
+      );
+      osxCancelations++;
+      Services.prefs.setIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX,
+        osxCancelations
+      );
+      let maxCancels = Services.prefs.getIntPref(
+        PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
+        DEFAULT_CANCELATIONS_OSX_MAX
+      );
+      // Prevent the preference from setting a value greater than 5.
+      maxCancels = Math.min(maxCancels, 5);
+      if (osxCancelations >= maxCancels) {
+        cleanupReadyUpdate();
       } else {
-        let osxCancelations = Services.prefs.getIntPref(
-          PREF_APP_UPDATE_CANCELATIONS_OSX,
-          0
+        writeStatusFile(
+          getReadyUpdateDir(),
+          (update.state = STATE_PENDING_ELEVATE)
         );
-        osxCancelations++;
-        Services.prefs.setIntPref(
-          PREF_APP_UPDATE_CANCELATIONS_OSX,
-          osxCancelations
-        );
-        let maxCancels = Services.prefs.getIntPref(
-          PREF_APP_UPDATE_CANCELATIONS_OSX_MAX,
-          DEFAULT_CANCELATIONS_OSX_MAX
-        );
-        // Prevent the preference from setting a value greater than 5.
-        maxCancels = Math.min(maxCancels, 5);
-        if (osxCancelations >= maxCancels) {
-          cleanupReadyUpdate();
-        } else {
-          writeStatusFile(
-            getReadyUpdateDir(),
-            (update.state = STATE_PENDING_ELEVATE)
-          );
-        }
       }
       update.statusText = gUpdateBundle.GetStringFromName("elevationFailure");
     } else {
