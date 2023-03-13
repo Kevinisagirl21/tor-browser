@@ -14,17 +14,6 @@
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 
-// Use int on all clang-cl builds and x86 mingw builds.
-// Use long long on Windows x64 building under MinGW
-// Must be consistent with the same typedefs in desktop_capture_types.h
-#if defined(XP_WIN)
-#if defined(_MSC_VER) || !defined(_WIN64)
-typedef int pid_t;
-#else
-typedef long long pid_t;
-#endif
-#endif
-
 namespace webrtc {
 
 enum {
