@@ -8,10 +8,6 @@
 # Author: Darin Fisher
 #
 
-# TODO When TOR_BROWSER_DATA_OUTSIDE_APP_DIR is used on all platforms,
-# we should remove all lines in this file that contain:
-#      TorBrowser/Data
-
 # -----------------------------------------------------------------------------
 QUIET=0
 
@@ -108,15 +104,6 @@ make_add_if_not_instruction() {
   echo "add-if-not \"$f\" \"$f\"" >> "$filev3"
 }
 
-make_addsymlink_instruction() {
-  link="$1"
-  target="$2"
-  filev3="$3"
-
-  verbose_notice "        addsymlink: $link -> $target"
-  echo "addsymlink \"$link\" \"$target\"" >> "$filev3"
-}
-
 make_patch_instruction() {
   f="$1"
   filev3="$2"
@@ -167,10 +154,6 @@ append_remove_instructions() {
 
 # List all files in the current directory, stripping leading "./"
 # Pass a variable name and it will be filled as an array.
-# To support Tor Browser updates, skip the following files:
-#    TorBrowser/Data/Browser/profiles.ini
-#    TorBrowser/Data/Browser/profile.default/bookmarks.html
-#    TorBrowser/Data/Tor/torrc
 list_files() {
   count=0
   temp_filelist=$(mktemp)
@@ -181,11 +164,6 @@ list_files() {
     | sed 's/\.\/\(.*\)/\1/' \
     | sort -r > "${temp_filelist}"
   while read file; do
-    if [ "$file" = "TorBrowser/Data/Browser/profiles.ini" -o                   \
-         "$file" = "TorBrowser/Data/Browser/profile.default/bookmarks.html" -o \
-         "$file" = "TorBrowser/Data/Tor/torrc" ]; then
-      continue;
-    fi
     eval "${1}[$count]=\"$file\""
     (( count++ ))
   done < "${temp_filelist}"
@@ -206,20 +184,4 @@ list_dirs() {
     (( count++ ))
   done < "${temp_dirlist}"
   rm "${temp_dirlist}"
-}
-
-# List all symbolic links in the current directory, stripping leading "./"
-list_symlinks() {
-  count=0
-
-  find . -type l \
-    | sed 's/\.\/\(.*\)/\1/' \
-    | sort -r > "temp-symlinklist"
-  while read symlink; do
-    target=$(readlink "$symlink")
-    eval "${1}[$count]=\"$symlink\""
-    eval "${2}[$count]=\"$target\""
-    (( count++ ))
-  done < "temp-symlinklist"
-  rm "temp-symlinklist"
 }
