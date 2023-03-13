@@ -13,18 +13,6 @@ const { AUSTLMY } = ChromeUtils.import(
   "resource://gre/modules/UpdateTelemetry.jsm"
 );
 
-const { TorMonitorService } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
-);
-
-function _shouldRegisterBootstrapObserver(errorCode) {
-  return (
-    errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-    !TorMonitorService.isBootstrapDone &&
-    TorMonitorService.ownsTorDaemon
-  );
-}
-
 const {
   Bits,
   BitsRequest,
@@ -258,7 +246,6 @@ const SERVICE_ERRORS = [
 // Custom update error codes
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
 const NETWORK_ERROR_OFFLINE = 111;
-const PROXY_SERVER_CONNECTION_REFUSED = 2152398920;
 
 // Error codes should be < 1000. Errors above 1000 represent http status codes
 const HTTP_ERROR_OFFSET = 1000;
@@ -2590,9 +2577,6 @@ UpdateService.prototype = {
       case "network:offline-status-changed":
         this._offlineStatusChanged(data);
         break;
-      case "torconnect:bootstrap-complete":
-        this._bootstrapComplete();
-        break;
       case "nsPref:changed":
         if (data == PREF_APP_UPDATE_LOG || data == PREF_APP_UPDATE_LOG_FILE) {
           gLogEnabled; // Assigning this before it is lazy-loaded is an error.
@@ -3049,35 +3033,6 @@ UpdateService.prototype = {
     this._attemptResume();
   },
 
-  _registerBootstrapObserver: function AUS__registerBootstrapObserver() {
-    if (this._registeredBootstrapObserver) {
-      LOG(
-        "UpdateService:_registerBootstrapObserver - observer already registered"
-      );
-      return;
-    }
-
-    LOG(
-      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap to " +
-        "be complete, then forcing another check"
-    );
-
-    Services.obs.addObserver(this, "torconnect:bootstrap-complete");
-    this._registeredBootstrapObserver = true;
-  },
-
-  _bootstrapComplete: function AUS__bootstrapComplete() {
-    Services.obs.removeObserver(this, "torconnect:bootstrap-complete");
-    this._registeredBootstrapObserver = false;
-
-    LOG(
-      "UpdateService:_bootstrapComplete - bootstrapping complete, forcing " +
-        "another background check"
-    );
-
-    this._attemptResume();
-  },
-
   onCheckComplete: async function AUS_onCheckComplete(request, updates) {
     await this._selectAndInstallUpdate(updates);
   },
@@ -3096,11 +3051,6 @@ UpdateService.prototype = {
       if (this._pingSuffix) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
-      return;
-    } else if (_shouldRegisterBootstrapObserver(update.errorCode)) {
-      // Register boostrap observer to try again, but only when we own the
-      // tor process.
-      this._registerBootstrapObserver();
       return;
     }
 
@@ -5925,7 +5875,6 @@ Downloader.prototype = {
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
-    var shouldRegisterBootstrapObserver = false;
     var shouldRetrySoon = false;
     var deleteActiveUpdate = false;
     let migratedToReadyUpdate = false;
@@ -6037,20 +5986,7 @@ Downloader.prototype = {
       );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
-    } else if (_shouldRegisterBootstrapObserver(status)) {
-      // Register a bootstrap observer to try again.
-      // The bootstrap observer will continue the incremental download by
-      // calling downloadUpdate on the active update which continues
-      // downloading the file from where it was.
-      LOG(
-        "Downloader:onStopRequest - not bootstrapped, register bootstrap observer: true"
-      );
-      AUSTLMY.pingDownloadCode(
-        this.isCompleteUpdate,
-        AUSTLMY.DWNLD_RETRY_OFFLINE
-      );
-      shouldRegisterBootstrapObserver = true;
-      deleteActiveUpdate = false;
+
       // Each of NS_ERROR_NET_TIMEOUT, ERROR_CONNECTION_REFUSED,
       // NS_ERROR_NET_RESET and NS_ERROR_DOCUMENT_NOT_CACHED can be returned
       // when disconnecting the internet while a download of a MAR is in
@@ -6164,11 +6100,7 @@ Downloader.prototype = {
 
     // Only notify listeners about the stopped state if we
     // aren't handling an internal retry.
-    if (
-      !shouldRetrySoon &&
-      !shouldRegisterOnlineObserver &&
-      !shouldRegisterBootstrapObserver
-    ) {
+    if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
       this.updateService.forEachDownloadListener(listener => {
         listener.onStopRequest(request, status);
       });
@@ -6353,9 +6285,6 @@ Downloader.prototype = {
     if (shouldRegisterOnlineObserver) {
       LOG("Downloader:onStopRequest - Registering online observer");
       this.updateService._registerOnlineObserver();
-    } else if (shouldRegisterBootstrapObserver) {
-      LOG("Downloader:onStopRequest - Registering bootstrap observer");
-      this.updateService._registerBootstrapObserver();
     } else if (shouldRetrySoon) {
       LOG("Downloader:onStopRequest - Retrying soon");
       this.updateService._consecutiveSocketErrors++;
