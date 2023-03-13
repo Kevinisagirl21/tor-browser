@@ -11,21 +11,14 @@
 #ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_TYPES_H_
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_TYPES_H_
 
-#ifndef XP_WIN
-#include <sys/types.h> // pid_t
-#endif
-#include <stdint.h>
-
-// Use int on all clang-cl builds and x86 mingw builds.
-// Use long long on Windows x64 building under MinGW
-// Must be consistent with the same typedefs in video_capture_defines.h
-#if defined(XP_WIN)
-#if defined(_MSC_VER) || !defined(_WIN64)
-typedef int pid_t;
+// pid_t
+#if !defined(XP_WIN) || defined(__MINGW32__)
+#include <sys/types.h>
 #else
-typedef long long pid_t;
+typedef int pid_t;
 #endif
-#endif
+
+#include <stdint.h>
 
 namespace webrtc {
 
