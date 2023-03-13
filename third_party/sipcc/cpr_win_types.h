@@ -50,14 +50,10 @@ typedef int64_t ssize_t;
 #endif
 
 /*
- * Define pid_t.
+ * Define pid_t for MSVC builds
  */
-#if defined(_WIN32)
-#if defined(_MSC_VER) || !defined(_WIN64)
+#if defined(_WIN32) && defined (_MSC_VER)
 typedef int pid_t;
-#else
-typedef long long pid_t;
-#endif
 #endif
 
 /*
