@@ -48,6 +48,7 @@ typedef int32_t ssize_t;
 #else
 typedef int64_t ssize_t;
 #endif
+#endif
 
 /*
  * Define pid_t for MSVC builds
