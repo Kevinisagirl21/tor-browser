@@ -517,9 +517,6 @@ class AboutTorConnect {
       this.hide(this.elements.viewLogButton);
     }
     this.show(this.elements.cancelButton, true);
-    if (state.StateChanged) {
-      this.elements.cancelButton.focus();
-    }
   }
 
   showOffline(error) {
