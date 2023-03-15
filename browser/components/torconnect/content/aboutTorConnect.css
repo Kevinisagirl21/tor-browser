@@ -136,6 +136,13 @@ button {
   fill: white;
 }
 
+#cancelButton {
+  color: var(--in-content-button-text-color);
+  border: 1px solid var(--in-content-button-border-color);
+  border-radius: 4px;
+  background-color: var(--in-content-button-background);
+}
+
 #locationDropdownLabel {
   margin-block: auto;
   margin-inline: 4px;
