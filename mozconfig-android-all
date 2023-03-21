@@ -10,6 +10,7 @@ if test -n "$LOCAL_DEV_BUILD"; then
     # You must use the "default" bogus channel for dev builds
     ac_add_options --enable-update-channel=default
     ac_add_options --without-wasm-sandboxed-libraries
+    ac_add_options --with-base-browser-version=dev-build
 else
     # We want to have a similar fat .aar versioning as Mozilla and make it clear
     # we are on the beta channel for GeckoView
