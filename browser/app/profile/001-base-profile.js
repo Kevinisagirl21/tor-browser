@@ -17,13 +17,6 @@ pref("startup.homepage_welcome_url.additional", "");
 // Disable Firefox Welcome Dialog
 pref("browser.aboutwelcome.enabled", false);
 
-// Set a generic, default URL that will be opened in a tab after an update.
-// Typically, this will not be used; instead, the <update> element within
-// each update manifest should contain attributes similar to:
-//   actions="showURL"
-//   openURL="https://blog.torproject.org/tor-browser-55a2-released"
-pref("startup.homepage_override_url", "https://blog.torproject.org/category/applications");
-
 // Bug 41668: allow users to apply updates. This is set also in firefox.js for
 // all platforms, except for Windows. As explained on firefox.js, Firefox uses a
 // per-installation preference on Windows. However, we patch this behavior, and
