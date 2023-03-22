@@ -4,11 +4,16 @@
 
 // This file contains branding-specific prefs.
 
-pref("startup.homepage_override_url", "https://www.mozilla.org/projects/firefox/%VERSION%/whatsnew/?oldversion=%OLD_VERSION%");
-pref("startup.homepage_welcome_url", "https://www.mozilla.org/projects/firefox/%VERSION%/firstrun/");
+// Set a generic, default URL that will be opened in a tab after an update.
+// Typically, this will not be used; instead, the <update> element within
+// each update manifest should contain attributes similar to:
+//   actions="showURL"
+//   openURL="https://blog.torproject.org/tor-browser-55a2-released"
+pref("startup.homepage_override_url", "https://blog.torproject.org/category/applications");
+pref("startup.homepage_welcome_url", "about:welcome");
 pref("startup.homepage_welcome_url.additional", "");
 // The time interval between checks for a new version (in seconds)
-pref("app.update.interval", 7200); // 2 hours
+pref("app.update.interval", 14400); // 4 hours
 // Give the user x seconds to react before showing the big UI. default=12 hours
 pref("app.update.promptWaitTime", 43200);
 // URL user can browse to manually if for some reason all update installation
