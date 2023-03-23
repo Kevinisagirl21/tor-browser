@@ -851,13 +851,11 @@ static int ensure_copy_recursive(const NS_tchar* path, const NS_tchar* dest,
     return READ_ERROR;
   }
 
-#ifdef XP_WIN
+#ifdef XP_UNIX
   if (S_ISLNK(sInfo.st_mode)) {
     return ensure_copy_symlink(path, dest);
   }
-#endif
 
-#ifdef XP_UNIX
   // Ignore Unix domain sockets. See #20691.
   if (S_ISSOCK(sInfo.st_mode)) {
     return 0;
