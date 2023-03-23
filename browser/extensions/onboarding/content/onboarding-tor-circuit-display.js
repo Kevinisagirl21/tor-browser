@@ -39,7 +39,7 @@ function beginCircuitDisplayOnboarding() {
 
 function showCircuitDiagram() {
   // 2 of 3: Open the control center and show the circuit diagram info panel.
-  Mozilla.UITour.showMenu("controlCenter", function() {
+  Mozilla.UITour.showMenu("torCircuitPanel", function() {
     let target = "torBrowser-circuitDisplay-diagram";
     let title = getStringFromName("diagram.title");
     let msg = getStringFromName("diagram.msg");
@@ -88,7 +88,7 @@ function showNewCircuitButton() {
 }
 
 function cleanUp() {
-  Mozilla.UITour.hideMenu("controlCenter");
+  Mozilla.UITour.hideMenu("torCircuitPanel");
   Mozilla.UITour.closeTab();
 }
 
@@ -98,6 +98,9 @@ function getStringFromName(aName) {
   const PREFIX = "onboarding.tor-circuit-display.";
 
   if (!gStringBundle) {
+    const { Services } = ChromeUtils.import(
+      "resource://gre/modules/Services.jsm"
+    );
     gStringBundle = Services.strings.createBundle(TORBUTTON_BUNDLE_URI);
   }
 

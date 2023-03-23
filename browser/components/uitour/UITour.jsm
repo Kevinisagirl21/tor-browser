@@ -49,7 +49,7 @@ const TOR_BROWSER_TARGETS_ALLOWED = new Set([
   "torBrowser-circuitDisplay-newCircuitButton",
 ]);
 
-const TOR_BROWSER_MENUS_ALLOWED = new Set(["controlCenter"]);
+const TOR_BROWSER_MENUS_ALLOWED = new Set(["torCircuitPanel"]);
 
 const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
   "forceShowReaderIcon",
@@ -104,16 +104,17 @@ var UITour = {
     [
       "torBrowser-circuitDisplay",
       {
-        query: "#identity-icon",
+        query: aDocument =>
+          aDocument.defaultView.gTorCircuitPanel.toolbarButton,
       },
     ],
     [
       "torBrowser-circuitDisplay-diagram",
-      torBrowserCircuitDisplayTarget("circuit-display-nodes"),
+      torBrowserCircuitDisplayTarget("tor-circuit-panel-body"),
     ],
     [
       "torBrowser-circuitDisplay-newCircuitButton",
-      torBrowserCircuitDisplayTarget("circuit-reload-button"),
+      torBrowserCircuitDisplayTarget("tor-circuit-new-circuit"),
     ],
     [
       "torBrowser-newIdentityButton",
@@ -877,6 +878,14 @@ var UITour = {
           ["ViewShowing", this.onAppMenuSubviewShowing],
         ],
       },
+      {
+        name: "torCircuitPanel",
+        node: aWindow.gTorCircuitPanel.panel,
+        events: [
+          ["popuphidden", this.onPanelHidden],
+          ["popuphiding", this.onTorCircuitPanelHiding],
+        ],
+      },
     ];
     for (let panel of panels) {
       // Ensure the menu panel is hidden and clean up panel listeners after calling hideMenu.
@@ -1498,6 +1507,27 @@ var UITour = {
         searchString: SEARCH_STRING,
         allowAutofill: false,
       });
+    } else if (aMenuName == "torCircuitPanel") {
+      const panel = aWindow.gTorCircuitPanel.panel;
+
+      // Add the listener even if the panel is already open since it will still
+      // only get registered once even if it was UITour that opened it.
+      panel.addEventListener("popuphiding", this.onTorCircuitPanelHiding);
+      panel.addEventListener("popuphidden", this.onPanelHidden);
+
+      panel.setAttribute("noautohide", "true");
+
+      if (panel.state == "open") {
+        aOpenCallback?.();
+        return;
+      }
+
+      this.recreatePopup(panel);
+
+      if (aOpenCallback) {
+        panel.addEventListener("popupshown", aOpenCallback, { once: true });
+      }
+      aWindow.gTorCircuitPanel.toolbarButton.click();
     }
   },
 
@@ -1520,6 +1550,8 @@ var UITour = {
       closeMenuButton(menuBtn);
     } else if (aMenuName == "urlbar") {
       aWindow.gURLBar.view.close();
+    } else if (aMenuName == "torCircuitPanel") {
+      aWindow.gTorCircuitPanel.hide();
     }
   },
 
@@ -1594,6 +1626,12 @@ var UITour = {
 
   onAppMenuSubviewShowing(aEvent) {
     UITour._hideAnnotationsForPanel(aEvent, false, UITour.targetIsInAppMenu);
+  },
+
+  onTorCircuitPanelHiding(aEvent) {
+    UITour._hideAnnotationsForPanel(aEvent, true, aTarget => {
+      return aTarget.targetName.startsWith("torCircuitPanel-");
+    });
   },
 
   onPanelHidden(aEvent) {
@@ -2045,7 +2083,7 @@ function torBrowserCircuitDisplayTarget(aElemID) {
   return {
     infoPanelPosition: "rightcenter topleft",
     query(aDocument) {
-      let popup = aDocument.defaultView.gIdentityHandler._identityPopup;
+      let popup = aDocument.defaultView.gTorCircuitPanel.panel;
       if (popup.state != "open") {
         return null;
       }
