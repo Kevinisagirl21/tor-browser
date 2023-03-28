@@ -65,11 +65,6 @@ pref("extensions.torbutton.use_nontor_proxy", false);
 // State prefs:
 pref("extensions.torbutton.startup", false);
 
-// This is only used when letterboxing is disabled.
-// See #7255 for details. We display the warning three times to make sure the
-// user did not click on it by accident.
-pref("extensions.torbutton.maximize_warnings_remaining", 3);
-
 // Security prefs:
 pref("extensions.torbutton.resize_new_windows", false);
 pref("extensions.torbutton.launch_warning", true);
