@@ -183,7 +183,7 @@ class Channel {
   }
 
   _makeMappings(rules) {
-    const toTest = /http[s]?:\/\/[a-zA-Z0-9\.]{56}.onion/;
+    const toTest = /^https?:\/\/[a-zA-Z0-9\.]{56}\.onion$/;
     const mappings = [];
     rules.rulesets.forEach(rule => {
       if (rule.rule.length != 1) {
