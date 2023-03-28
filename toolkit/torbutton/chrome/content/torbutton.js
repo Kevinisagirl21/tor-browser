@@ -54,19 +54,12 @@ var torbutton_new_circuit;
       m_tb_prefs.addObserver("extensions.torbutton", this);
       m_tb_prefs.addObserver("browser.privatebrowsing.autostart", this);
       m_tb_prefs.addObserver("javascript", this);
-      m_tb_prefs.addObserver("privacy.resistFingerprinting", this);
-      m_tb_prefs.addObserver("privacy.resistFingerprinting.letterboxing", this);
     },
 
     unregister() {
       m_tb_prefs.removeObserver("extensions.torbutton", this);
       m_tb_prefs.removeObserver("browser.privatebrowsing.autostart", this);
       m_tb_prefs.removeObserver("javascript", this);
-      m_tb_prefs.removeObserver("privacy.resistFingerprinting", this);
-      m_tb_prefs.removeObserver(
-        "privacy.resistFingerprinting.letterboxing",
-        this
-      );
     },
 
     // topic:   what event occurred
@@ -82,10 +75,6 @@ var torbutton_new_circuit;
           break;
         case "extensions.torbutton.use_nontor_proxy":
           torbutton_use_nontor_proxy();
-          break;
-        case "privacy.resistFingerprinting":
-        case "privacy.resistFingerprinting.letterboxing":
-          torbutton_update_fingerprinting_prefs();
           break;
       }
     },
@@ -666,21 +655,6 @@ var torbutton_new_circuit;
     Services.prefs.savePrefFile(null);
   }
 
-  function torbutton_update_fingerprinting_prefs() {
-    var mode = m_tb_prefs.getBoolPref("privacy.resistFingerprinting");
-    var letterboxing = m_tb_prefs.getBoolPref(
-      "privacy.resistFingerprinting.letterboxing",
-      false
-    );
-    m_tb_prefs.setBoolPref(
-      "extensions.torbutton.resize_new_windows",
-      mode && !letterboxing
-    );
-
-    // Force prefs to be synced to disk
-    Services.prefs.savePrefFile(null);
-  }
-
   // Bug 1506 P1: This function just cleans up prefs that got set badly in previous releases
   function torbutton_fixup_old_prefs() {
     if (m_tb_prefs.getIntPref("extensions.torbutton.pref_fixup_version") < 1) {
@@ -728,9 +702,6 @@ var torbutton_new_circuit;
       // Bug 1506: Should probably be moved to an XPCOM component
       torbutton_do_main_window_startup();
 
-      // For charsets
-      torbutton_update_fingerprinting_prefs();
-
       // Bug 30565: sync browser.privatebrowsing.autostart with security.nocertdb
       torbutton_update_disk_prefs();
 
@@ -739,46 +710,6 @@ var torbutton_new_circuit;
 
       m_tb_prefs.setBoolPref("extensions.torbutton.startup", false);
     }
-  }
-
-  // Bug 1506 P3: Used to decide if we should resize the window.
-  //
-  // Returns true if the window wind is neither maximized, full screen,
-  // ratpoisioned/evilwmed, nor minimized.
-  function torbutton_is_windowed(wind) {
-    torbutton_log(
-      3,
-      "Window: (" +
-        wind.outerWidth +
-        "," +
-        wind.outerHeight +
-        ") ?= (" +
-        wind.screen.availWidth +
-        "," +
-        wind.screen.availHeight +
-        ")"
-    );
-    if (
-      wind.windowState == Ci.nsIDOMChromeWindow.STATE_MINIMIZED ||
-      wind.windowState == Ci.nsIDOMChromeWindow.STATE_MAXIMIZED
-    ) {
-      torbutton_log(2, "Window is minimized/maximized");
-      return false;
-    }
-    if ("fullScreen" in wind && wind.fullScreen) {
-      torbutton_log(2, "Window is fullScreen");
-      return false;
-    }
-    if (
-      wind.outerHeight == wind.screen.availHeight &&
-      wind.outerWidth == wind.screen.availWidth
-    ) {
-      torbutton_log(3, "Window is ratpoisoned/evilwm'ed");
-      return false;
-    }
-
-    torbutton_log(2, "Window is normal");
-    return true;
   }
 
   // Bug 1506 P3: This is needed pretty much only for the window resizing.
@@ -797,25 +728,12 @@ var torbutton_new_circuit;
     }
 
     torbutton_do_startup();
-
-    let progress = Cc["@mozilla.org/docloaderservice;1"].getService(
-      Ci.nsIWebProgress
-    );
-
-    if (torbutton_is_windowed(window)) {
-      progress.addProgressListener(
-        torbutton_resizelistener,
-        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
-      );
-    }
   }
 
   // Bug 1506 P2: This is only needed because we have observers
   // in XUL that should be in an XPCOM component
   function torbutton_close_window(event) {
     torbutton_tor_check_observer.unregister();
-
-    window.removeEventListener("sizemodechange", m_tb_resize_handler);
 
     // TODO: This is a real ghetto hack.. When the original window
     // closes, we need to find another window to handle observing
@@ -856,158 +774,4 @@ var torbutton_new_circuit;
 
   window.addEventListener("load", torbutton_new_window);
   window.addEventListener("unload", torbutton_close_window);
-
-  var m_tb_resize_handler = null;
-  var m_tb_resize_date = null;
-
-  // Bug 1506 P1/P3: Setting a fixed window size is important, but
-  // probably not for android.
-  var torbutton_resizelistener = {
-    QueryInterface: ChromeUtils.generateQI([
-      "nsIWebProgressListener",
-      "nsISupportsWeakReference",
-    ]),
-
-    onLocationChange(aProgress, aRequest, aURI) {},
-    onStateChange(aProgress, aRequest, aFlag, aStatus) {
-      if (aFlag & Ci.nsIWebProgressListener.STATE_STOP) {
-        window.promiseDocumentFlushed(() => {
-          // Here we're guaranteed to read the "final" (!) initial size, rather than [1, 1].
-          torbutton_resizelistener.originalSize = {
-            width: window.outerWidth,
-            height: window.outerHeight,
-          };
-        });
-        m_tb_resize_handler = async function() {
-          // Wait for end of execution queue to ensure we have correct windowState.
-          await new Promise(resolve => setTimeout(resolve, 0));
-          if (
-            window.windowState === window.STATE_MAXIMIZED ||
-            window.windowState === window.STATE_FULLSCREEN
-          ) {
-            const kRemainingWarnings =
-              "extensions.torbutton.maximize_warnings_remaining";
-            if (
-              Services.prefs.getBoolPref(
-                "extensions.torbutton.resize_new_windows"
-              ) &&
-              Services.prefs.getIntPref(kRemainingWarnings) > 0
-            ) {
-              // Do not add another notification if one is already showing.
-              const kNotificationName = "torbutton-maximize-notification";
-
-              const box = gNotificationBox;
-              if (box.getNotificationWithValue(kNotificationName)) {
-                return;
-              }
-
-              // Rate-limit showing our notification if needed.
-              if (m_tb_resize_date === null) {
-                m_tb_resize_date = Date.now();
-              } else {
-                // We wait at least another second before we show a new
-                // notification. Should be enough to rule out OSes that call our
-                // handler rapidly due to internal workings.
-                if (Date.now() - m_tb_resize_date < 1000) {
-                  return;
-                }
-                // Resizing but we need to reset |m_tb_resize_date| now.
-                m_tb_resize_date = Date.now();
-              }
-
-              // No need to get "OK" translated again.
-              const bundle = Services.strings.createBundle(
-                "chrome://global/locale/commonDialogs.properties"
-              );
-
-              const decreaseWarningsCount = () => {
-                const currentCount = Services.prefs.getIntPref(
-                  kRemainingWarnings
-                );
-                if (currentCount > 0) {
-                  Services.prefs.setIntPref(
-                    kRemainingWarnings,
-                    currentCount - 1
-                  );
-                }
-              };
-
-              let buttons = [
-                {
-                  label: bundle.GetStringFromName("OK"),
-                  accessKey: "O",
-                  popup: null,
-                  callback() {
-                    // reset notification timer to work-around resize race conditions
-                    m_tb_resize_date = Date.now();
-                    // restore the original (rounded) size we had stored on window startup
-                    let { originalSize } = torbutton_resizelistener;
-                    window.resizeTo(originalSize.width, originalSize.height);
-                  },
-                },
-              ];
-
-              const label = torbutton_get_property_string(
-                "torbutton.maximize_warning"
-              );
-
-              box.appendNotification(
-                kNotificationName,
-                {
-                  label,
-                  priority: box.PRIORITY_WARNING_LOW,
-                  eventCallback(event) {
-                    if (event === "dismissed") {
-                      // user manually dismissed the notification
-                      decreaseWarningsCount();
-                    }
-                  },
-                },
-                buttons
-              );
-            }
-          }
-        }; // m_tb_resize_handler
-
-        // We need to handle OSes that auto-maximize windows depending on user
-        // settings and/or screen resolution in the start-up phase and users that
-        // try to shoot themselves in the foot by maximizing the window manually.
-        // We add a listener which is triggerred as soon as the window gets
-        // maximized (windowState = 1). We are resizing during start-up but not
-        // later as the user should see only a warning there as a stopgap before
-        // #14229 lands.
-        // Alas, the Firefox window code is handling the event not itself:
-        // "// Note the current implementation of SetSizeMode just stores
-        //  // the new state; it doesn't actually resize. So here we store
-        //  // the state and pass the event on to the OS."
-        // (See: https://mxr.mozilla.org/mozilla-esr31/source/xpfe/appshell/src/
-        // nsWebShellWindow.cpp#348)
-        // This means we have to cope with race conditions and resizing in the
-        // sizemodechange listener is likely to fail. Thus, we add a specific
-        // resize listener that is doing the work for us. It seems (at least on
-        // Ubuntu) to be the case that maximizing (and then again normalizing) of
-        // the window triggers more than one resize event the first being not the
-        // one we need. Thus we can't remove the listener after the first resize
-        // event got fired. Thus, we have the rather klunky setTimeout() call.
-        window.addEventListener("sizemodechange", m_tb_resize_handler);
-
-        let progress = Cc["@mozilla.org/docloaderservice;1"].getService(
-          Ci.nsIWebProgress
-        );
-        progress.removeProgressListener(this);
-      }
-    }, // onStateChange
-
-    onProgressChange(
-      aProgress,
-      aRequest,
-      curSelfProgress,
-      maxSelfProgress,
-      curTotalProgress,
-      maxTotalProgress
-    ) {},
-    onStatusChange(aProgress, aRequest, stat, message) {},
-    onSecurityChange() {},
-  };
 })();
-//vim:set ts=4
