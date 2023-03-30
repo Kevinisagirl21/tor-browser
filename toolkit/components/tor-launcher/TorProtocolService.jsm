@@ -45,8 +45,7 @@ const TorTopics = Object.freeze({
 });
 
 const logger = new ConsoleAPI({
-  // maxLogLevel: "warn",
-  maxLogLevel: "all",
+  maxLogLevel: "warn",
   prefix: "TorProtocolService",
 });
 
@@ -183,6 +182,10 @@ const TorProtocolService = {
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
     lazy.TorMonitorService.retrieveBootstrapStatus();
+  },
+
+  async newnym() {
+    return this.sendCommand("SIGNAL NEWNYM");
   },
 
   // TODO: transform the following 4 functions in getters. At the moment they
