@@ -1,258 +1,285 @@
-// # domain-isolator.js
-// A component for TorBrowser that puts requests from different
-// first party domains on separate tor circuits.
+// A component for Tor Browser that puts requests from different
+// first party domains on separate Tor circuits.
 
-// This file is written in call stack order (later functions
-// call earlier functions). The code file can be processed
-// with docco.js to provide clear documentation.
-
-var EXPORTED_SYMBOLS = ["DomainIsolator"];
+var EXPORTED_SYMBOLS = ["DomainIsolator", "TorDomainIsolator"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
+const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetters(lazy, {
+  ProtocolProxyService: [
+    "@mozilla.org/network/protocol-proxy-service;1",
+    "nsIProtocolProxyService",
+  ],
 });
 
-// Make the logger available.
-let logger = Cc["@torproject.org/torbutton-logger;1"].getService(Ci.nsISupports)
-  .wrappedJSObject;
+const logger = new ConsoleAPI({
+  prefix: "TorDomainIsolator",
+  maxLogLevel: "warn",
+  maxLogLevelPref: "browser.tordomainisolator.loglevel",
+});
 
-// Import crypto object (FF 37+).
-Cu.importGlobalProperties(["crypto"]);
+// The string to use instead of the domain when it is not known.
+const CATCHALL_DOMAIN = "--unknown--";
 
-// ## mozilla namespace.
-// Useful functionality for interacting with Mozilla services.
-let mozilla = {};
+// The preference to observe, to know whether isolation should be enabled or
+// disabled.
+const NON_TOR_PROXY_PREF = "extensions.torbutton.use_nontor_proxy";
 
-// __mozilla.protocolProxyService__.
-// Mozilla's protocol proxy service, useful for managing proxy connections made
-// by the browser.
-mozilla.protocolProxyService = Cc[
-  "@mozilla.org/network/protocol-proxy-service;1"
-].getService(Ci.nsIProtocolProxyService);
+class TorDomainIsolatorImpl {
+  // A mutable map that records what nonce we are using for each domain.
+  #noncesForDomains = new Map();
 
-// __mozilla.registerProxyChannelFilter(filterFunction, positionIndex)__.
-// Registers a proxy channel filter with the Mozilla Protocol Proxy Service,
-// which will help to decide the proxy to be used for a given channel.
-// The filterFunction should expect two arguments, (aChannel, aProxy),
-// where aProxy is the proxy or list of proxies that would be used by default
-// for the given channel, and should return a new Proxy or list of Proxies.
-mozilla.registerProxyChannelFilter = function(filterFunction, positionIndex) {
-  let proxyFilter = {
-    applyFilter(aChannel, aProxy, aCallback) {
-      aCallback.onProxyFilterResult(filterFunction(aChannel, aProxy));
-    },
-  };
-  mozilla.protocolProxyService.registerChannelFilter(
-    proxyFilter,
-    positionIndex
-  );
-};
+  // A mutable map that records what nonce we are using for each tab container.
+  #noncesForUserContextId = new Map();
 
-// ## tor functionality.
-let tor = {};
+  // A bool that controls if we use SOCKS auth for isolation or not.
+  #isolationEnabled = true;
 
-// __tor.noncesForDomains__.
-// A mutable map that records what nonce we are using for each domain.
-tor.noncesForDomains = new Map();
+  // Specifies when the current catch-all circuit was first used
+  #catchallDirtySince = Date.now();
 
-// __tor.noncesForUserContextId__.
-// A mutable map that records what nonce we are using for each tab container.
-tor.noncesForUserContextId = new Map();
+  /**
+   * Initialize the domain isolator.
+   * This function will setup the proxy filter that injects the credentials and
+   * register some observers.
+   */
+  init() {
+    logger.info("Setup circuit isolation by domain and user context");
 
-// __tor.isolationEabled__.
-// A bool that controls if we use SOCKS auth for isolation or not.
-tor.isolationEnabled = true;
-
-// __tor.unknownDirtySince__.
-// Specifies when the current catch-all circuit was first used
-tor.unknownDirtySince = Date.now();
-
-tor.passwordForDomainAndUserContextId = function(domain, userContextId) {
-  // Check if we already have a nonce. If not, create
-  // one for this domain and userContextId.
-  if (!tor.noncesForDomains.has(domain)) {
-    tor.noncesForDomains.set(domain, tor.nonce());
-  }
-  if (!tor.noncesForUserContextId.has(userContextId)) {
-    tor.noncesForUserContextId.set(userContextId, tor.nonce());
-  }
-  return (
-    tor.noncesForDomains.get(domain) +
-    tor.noncesForUserContextId.get(userContextId)
-  );
-};
-
-// __tor.socksProxyCredentials(originalProxy, domain, userContextId)__.
-// Takes a proxyInfo object (originalProxy) and returns a new proxyInfo
-// object with the same properties, except the username is set to the
-// the domain and userContextId, and the password is a nonce.
-tor.socksProxyCredentials = function(originalProxy, domain, userContextId) {
-  let proxy = originalProxy.QueryInterface(Ci.nsIProxyInfo);
-  let proxyPassword = tor.passwordForDomainAndUserContextId(
-    domain,
-    userContextId
-  );
-  return mozilla.protocolProxyService.newProxyInfoWithAuth(
-    "socks",
-    proxy.host,
-    proxy.port,
-    `${domain}:${userContextId}`, // username
-    proxyPassword,
-    "", // aProxyAuthorizationHeader
-    "", // aConnectionIsolationKey
-    proxy.flags,
-    proxy.failoverTimeout,
-    proxy.failoverProxy
-  );
-};
-
-tor.nonce = function() {
-  // Generate a new 128 bit random tag.  Strictly speaking both using a
-  // cryptographic entropy source and using 128 bits of entropy for the
-  // tag are likely overkill, as correct behavior only depends on how
-  // unlikely it is for there to be a collision.
-  let tag = new Uint8Array(16);
-  crypto.getRandomValues(tag);
-
-  // Convert the tag to a hex string.
-  let tagStr = "";
-  for (let i = 0; i < tag.length; i++) {
-    tagStr += (tag[i] >>> 4).toString(16);
-    tagStr += (tag[i] & 0x0f).toString(16);
-  }
-
-  return tagStr;
-};
-
-tor.newCircuitForDomain = function(domain) {
-  // Re-generate the nonce for the domain.
-  if (domain === "") {
-    domain = "--unknown--";
-  }
-  tor.noncesForDomains.set(domain, tor.nonce());
-  logger.eclog(
-    3,
-    `New domain isolation for ${domain}: ${tor.noncesForDomains.get(domain)}`
-  );
-};
-
-tor.newCircuitForUserContextId = function(userContextId) {
-  // Re-generate the nonce for the context.
-  tor.noncesForUserContextId.set(userContextId, tor.nonce());
-  logger.eclog(
-    3,
-    `New container isolation for ${userContextId}: ${tor.noncesForUserContextId.get(
-      userContextId
-    )}`
-  );
-};
-
-// __tor.clearIsolation()_.
-// Clear the isolation state cache, forcing new circuits to be used for all
-// subsequent requests.
-tor.clearIsolation = function() {
-  // Per-domain and per contextId nonces are stored in maps, so simply clear them.
-  tor.noncesForDomains.clear();
-  tor.noncesForUserContextId.clear();
-
-  // Force a rotation on the next catch-all circuit use by setting the creation
-  // time to the epoch.
-  tor.unknownDirtySince = 0;
-};
-
-// __tor.isolateCircuitsByDomain()__.
-// For every HTTPChannel, replaces the default SOCKS proxy with one that authenticates
-// to the SOCKS server (the tor client process) with a username (the first party domain
-// and userContextId) and a nonce password. Tor provides a separate circuit for each
-// username+password combination.
-tor.isolateCircuitsByDomain = function() {
-  mozilla.registerProxyChannelFilter(function(aChannel, aProxy) {
-    if (!tor.isolationEnabled) {
-      return aProxy;
+    if (Services.prefs.getBoolPref(NON_TOR_PROXY_PREF)) {
+      this.#isolationEnabled = false;
     }
-    try {
-      let channel = aChannel.QueryInterface(Ci.nsIChannel),
-        firstPartyDomain = channel.loadInfo.originAttributes.firstPartyDomain,
-        userContextId = channel.loadInfo.originAttributes.userContextId;
-      if (firstPartyDomain === "") {
-        firstPartyDomain = "--unknown--";
-        if (Date.now() - tor.unknownDirtySince > 1000 * 10 * 60) {
-          logger.eclog(
-            3,
-            "tor catchall circuit has been dirty for over 10 minutes. Rotating."
-          );
-          tor.newCircuitForDomain("--unknown--");
-          tor.unknownDirtySince = Date.now();
-        }
+    this.#setupProxyFilter();
+
+    Services.prefs.addObserver(NON_TOR_PROXY_PREF, this);
+  }
+
+  /**
+   * Removes the observers added in the initialization.
+   */
+  uninit() {
+    Services.prefs.removeObserver(NON_TOR_PROXY_PREF, this);
+  }
+
+  enable() {
+    logger.trace("Domain isolation enabled");
+    this.#isolationEnabled = true;
+  }
+
+  disable() {
+    logger.trace("Domain isolation disabled");
+    this.#isolationEnabled = false;
+  }
+
+  /**
+   * Return the credentials to use as username and password for the SOCKS proxy,
+   * given a certain domain and userContextId. Optionally, create them.
+   *
+   * @param {string} firstPartyDomain The first party domain associated to the requests
+   * @param {string} userContextId The context ID associated to the request
+   * @param {bool} create Whether to create the nonce, if it is not available
+   * @returns {object|null} Either the credential, or null if we do not have them and create is
+   * false.
+   */
+  getSocksProxyCredentials(firstPartyDomain, userContextId, create = false) {
+    if (!this.#noncesForDomains.has(firstPartyDomain)) {
+      if (!create) {
+        return null;
       }
-      let replacementProxy = tor.socksProxyCredentials(
-        aProxy,
-        firstPartyDomain,
-        userContextId
-      );
-      logger.eclog(
-        3,
-        `tor SOCKS: ${channel.URI.spec} via
-                       ${replacementProxy.username}:${replacementProxy.password}`
-      );
-      return replacementProxy;
-    } catch (e) {
-      logger.eclog(4, `tor domain isolator error: ${e.message}`);
-      return null;
+      const nonce = this.#nonce();
+      logger.info(`New nonce for first party ${firstPartyDomain}: ${nonce}`);
+      this.#noncesForDomains.set(firstPartyDomain, nonce);
     }
-  }, 0);
-};
+    if (!this.#noncesForUserContextId.has(userContextId)) {
+      if (!create) {
+        return null;
+      }
+      const nonce = this.#nonce();
+      logger.info(`New nonce for userContextId ${userContextId}: ${nonce}`);
+      this.#noncesForUserContextId.set(userContextId, nonce);
+    }
+    return {
+      username: `${firstPartyDomain}:${userContextId}`,
+      password:
+        this.#noncesForDomains.get(firstPartyDomain) +
+        this.#noncesForUserContextId.get(userContextId),
+    };
+  }
 
-// ## XPCOM component construction.
-// Module specific constants
-const kMODULE_NAME = "TorBrowser Domain Isolator";
-const kMODULE_CONTRACTID = "@torproject.org/domain-isolator;1";
-const kMODULE_CID = Components.ID("e33fd6d4-270f-475f-a96f-ff3140279f68");
+  // Re-generate the nonce for a certain domain.
+  newCircuitForDomain(domain) {
+    if (!domain) {
+      domain = CATCHALL_DOMAIN;
+    }
+    this.#noncesForDomains.set(domain, this.#nonce());
+    logger.info(
+      `New domain isolation for ${domain}: ${this.#noncesForDomains.get(
+        domain
+      )}`
+    );
+  }
 
-// DomainIsolator object.
-function DomainIsolator() {
-  this.wrappedJSObject = this;
+  // Re-generate the nonce for a userContextId.
+  newCircuitForUserContextId(userContextId) {
+    this.#noncesForUserContextId.set(userContextId, this.#nonce());
+    logger.info(
+      `New container isolation for ${userContextId}: ${this.#noncesForUserContextId.get(
+        userContextId
+      )}`
+    );
+  }
+
+  /**
+   * Clear the isolation state cache, forcing new circuits to be used for all
+   * subsequent requests.
+   */
+  clearIsolation() {
+    logger.trace("Clearing isolation nonces.");
+
+    // Per-domain and per contextId nonces are stored in maps, so simply clear
+    // them.
+    this.#noncesForDomains.clear();
+    this.#noncesForUserContextId.clear();
+
+    // Force a rotation on the next catch-all circuit use by setting the
+    // creation time to the epoch.
+    this.#catchallDirtySince = 0;
+  }
+
+  observe(subject, topic, data) {
+    if (topic === "nsPref:changed" && data === NON_TOR_PROXY_PREF) {
+      if (Services.prefs.getBoolPref(NON_TOR_PROXY_PREF)) {
+        this.disable();
+      } else {
+        this.enable();
+      }
+    }
+  }
+
+  /**
+   * Setup a filter that for every HTTPChannel, replaces the default SOCKS proxy
+   * with one that authenticates to the SOCKS server (the tor client process)
+   * with a username (the first party domain and userContextId) and a nonce
+   * password.
+   * Tor provides a separate circuit for each username+password combination.
+   */
+  #setupProxyFilter() {
+    const filterFunction = (aChannel, aProxy) => {
+      if (!this.#isolationEnabled) {
+        return aProxy;
+      }
+      try {
+        const channel = aChannel.QueryInterface(Ci.nsIChannel);
+        let firstPartyDomain =
+          channel.loadInfo.originAttributes.firstPartyDomain;
+        const userContextId = channel.loadInfo.originAttributes.userContextId;
+        if (firstPartyDomain === "") {
+          firstPartyDomain = CATCHALL_DOMAIN;
+          if (Date.now() - this.#catchallDirtySince > 1000 * 10 * 60) {
+            logger.info(
+              "tor catchall circuit has been dirty for over 10 minutes. Rotating."
+            );
+            this.newCircuitForDomain(CATCHALL_DOMAIN);
+            this.#catchallDirtySince = Date.now();
+          }
+        }
+        const replacementProxy = this.#applySocksProxyCredentials(
+          aProxy,
+          firstPartyDomain,
+          userContextId
+        );
+        logger.debug(
+          `Requested ${channel.URI.spec} via ${replacementProxy.username}:${replacementProxy.password}`
+        );
+        return replacementProxy;
+      } catch (e) {
+        logger.error("Error while setting a new proxy", e);
+        return null;
+      }
+    };
+
+    lazy.ProtocolProxyService.registerChannelFilter(
+      {
+        applyFilter(aChannel, aProxy, aCallback) {
+          aCallback.onProxyFilterResult(filterFunction(aChannel, aProxy));
+        },
+      },
+      0
+    );
+  }
+
+  /**
+   * Takes a proxyInfo object (originalProxy) and returns a new proxyInfo
+   * object with the same properties, except the username is set to the
+   * the domain and userContextId, and the password is a nonce.
+   */
+  #applySocksProxyCredentials(originalProxy, domain, userContextId) {
+    const proxy = originalProxy.QueryInterface(Ci.nsIProxyInfo);
+    const { username, password } = this.getSocksProxyCredentials(
+      domain,
+      userContextId,
+      true
+    );
+    return lazy.ProtocolProxyService.newProxyInfoWithAuth(
+      "socks",
+      proxy.host,
+      proxy.port,
+      username,
+      password,
+      "", // aProxyAuthorizationHeader
+      "", // aConnectionIsolationKey
+      proxy.flags,
+      proxy.failoverTimeout,
+      proxy.failoverProxy
+    );
+  }
+
+  /**
+   * Generate a new 128 bit random tag.
+   *
+   * Strictly speaking both using a cryptographic entropy source and using 128
+   * bits of entropy for the tag are likely overkill, as correct behavior only
+   * depends on how unlikely it is for there to be a collision.
+   */
+  #nonce() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte =>
+      byte.toString(16).padStart(2, "0")
+    ).join("");
+  }
 }
 
-// Firefox component requirements
-DomainIsolator.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
-  classDescription: kMODULE_NAME,
-  classID: kMODULE_CID,
-  contractID: kMODULE_CONTRACTID,
-  observe(subject, topic, data) {
-    if (topic === "profile-after-change") {
-      logger.eclog(3, "domain isolator: set up isolating circuits by domain");
+const TorDomainIsolator = new TorDomainIsolatorImpl();
 
-      if (Services.prefs.getBoolPref("extensions.torbutton.use_nontor_proxy")) {
-        tor.isolationEnabled = false;
-      }
-      tor.isolateCircuitsByDomain();
-    }
-  },
+// The DomainIsolator object, used only to access this feature through XPCOM.
+// TODO: Remove this, and directly use the module, instead.
+class DomainIsolator {
+  constructor() {
+    this.wrappedJSObject = this;
+  }
+
   newCircuitForDomain(domain) {
-    tor.newCircuitForDomain(domain);
-  },
+    TorDomainIsolator.newCircuitForDomain(domain);
+  }
+
   newCircuitForUserContextId(userContextId) {
-    tor.newCircuitForUserContextId(userContextId);
-  },
+    TorDomainIsolator.newCircuitForUserContextId(userContextId);
+  }
 
   enableIsolation() {
-    tor.isolationEnabled = true;
-  },
+    TorDomainIsolator.enable();
+  }
 
   disableIsolation() {
-    tor.isolationEnabled = false;
-  },
+    TorDomainIsolator.disable();
+  }
 
   clearIsolation() {
-    tor.clearIsolation();
-  },
-
-  wrappedJSObject: null,
-};
+    TorDomainIsolator.clearIsolation();
+  }
+}
