@@ -4,15 +4,13 @@
 
 var EXPORTED_SYMBOLS = ["TorProtocolService"];
 
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
-);
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 Cu.importGlobalProperties(["crypto"]);
@@ -45,18 +43,9 @@ const TorTopics = Object.freeze({
   ProcessRestarted: "TorProcessRestarted",
 });
 
-// Logger adapted from CustomizableUI.jsm
-XPCOMUtils.defineLazyGetter(this, "logger", () => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
-  );
-  // TODO: Use a preference to set the log level.
-  const consoleOptions = {
-    // maxLogLevel: "warn",
-    maxLogLevel: "all",
-    prefix: "TorProtocolService",
-  };
-  return new ConsoleAPI(consoleOptions);
+const logger = new ConsoleAPI({
+  maxLogLevel: "warn",
+  prefix: "TorProtocolService",
 });
 
 // Manage the connection to tor's control port, to update its settings and query
@@ -192,6 +181,10 @@ const TorProtocolService = {
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
     TorMonitorService.retrieveBootstrapStatus();
+  },
+
+  async newnym() {
+    return this.sendCommand("SIGNAL NEWNYM");
   },
 
   // TODO: transform the following 4 functions in getters. At the moment they
