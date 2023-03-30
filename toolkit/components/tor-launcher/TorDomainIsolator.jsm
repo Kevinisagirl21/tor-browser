@@ -18,6 +18,12 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   ],
 });
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorProtocolService",
+  "resource://gre/modules/TorProtocolService.jsm"
+);
+
 const logger = new ConsoleAPI({
   prefix: "TorDomainIsolator",
   maxLogLevel: "warn",
@@ -30,6 +36,9 @@ const CATCHALL_DOMAIN = "--unknown--";
 // The preference to observe, to know whether isolation should be enabled or
 // disabled.
 const NON_TOR_PROXY_PREF = "extensions.torbutton.use_nontor_proxy";
+
+// The topic of new identity, to observe to cleanup all the nonces.
+const NEW_IDENTITY_TOPIC = "new-identity-requested";
 
 class TorDomainIsolatorImpl {
   // A mutable map that records what nonce we are using for each domain.
@@ -58,6 +67,7 @@ class TorDomainIsolatorImpl {
     this.#setupProxyFilter();
 
     Services.prefs.addObserver(NON_TOR_PROXY_PREF, this);
+    Services.obs.addObserver(this, NEW_IDENTITY_TOPIC);
   }
 
   /**
@@ -65,6 +75,7 @@ class TorDomainIsolatorImpl {
    */
   uninit() {
     Services.prefs.removeObserver(NON_TOR_PROXY_PREF, this);
+    Services.obs.removeObserver(this, NEW_IDENTITY_TOPIC);
   }
 
   enable() {
@@ -152,12 +163,23 @@ class TorDomainIsolatorImpl {
     this.#catchallDirtySince = 0;
   }
 
-  observe(subject, topic, data) {
+  async observe(subject, topic, data) {
     if (topic === "nsPref:changed" && data === NON_TOR_PROXY_PREF) {
       if (Services.prefs.getBoolPref(NON_TOR_PROXY_PREF)) {
         this.disable();
       } else {
         this.enable();
+      }
+    } else if (topic === NEW_IDENTITY_TOPIC) {
+      logger.info(
+        "New identity has been requested, clearing isolation tokens."
+      );
+      this.clearIsolation();
+      try {
+        await lazy.TorProtocolService.newnym();
+      } catch (e) {
+        logger.error("Could not send the newnym command", e);
+        // TODO: What UX to use here? See tor-browser#41708
       }
     }
   }
