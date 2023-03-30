@@ -33,6 +33,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/TorSettings.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "TorDomainIsolator",
+  "resource://gre/modules/TorDomainIsolator.jsm"
+);
+
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
   ProfileAfterChange: "profile-after-change",
@@ -67,11 +73,15 @@ class TorStartupService {
     TorSettings.init();
     TorConnect.init();
 
+    TorDomainIsolator.init();
+
     gInited = true;
   }
 
   _uninit() {
     Services.obs.removeObserver(this, BrowserTopics.QuitApplicationGranted);
+
+    TorDomainIsolator.uninit();
 
     // Close any helper connection first...
     TorProtocolService.uninit();
