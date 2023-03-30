@@ -46,32 +46,22 @@ var torbutton_new_circuit;
   // in a component, not the XUL overlay.
   var torbutton_unique_pref_observer = {
     register() {
-      this.forced_ua = false;
-      m_tb_prefs.addObserver("extensions.torbutton", this);
-      m_tb_prefs.addObserver("browser.privatebrowsing.autostart", this);
-      m_tb_prefs.addObserver("javascript", this);
+      Services.prefs.addObserver("browser.privatebrowsing.autostart", this);
     },
 
     unregister() {
-      m_tb_prefs.removeObserver("extensions.torbutton", this);
-      m_tb_prefs.removeObserver("browser.privatebrowsing.autostart", this);
-      m_tb_prefs.removeObserver("javascript", this);
+      Services.prefs.removeObserver("browser.privatebrowsing.autostart", this);
     },
 
     // topic:   what event occurred
     // subject: what nsIPrefBranch we're observing
     // data:    which pref has been changed (relative to subject)
     observe(subject, topic, data) {
-      if (topic !== "nsPref:changed") {
-        return;
-      }
-      switch (data) {
-        case "browser.privatebrowsing.autostart":
-          torbutton_update_disk_prefs();
-          break;
-        case "extensions.torbutton.use_nontor_proxy":
-          torbutton_use_nontor_proxy();
-          break;
+      if (
+        topic === "nsPref:changed" &&
+        data === "browser.privatebrowsing.autostart"
+      ) {
+        torbutton_update_disk_prefs();
       }
     },
   };
@@ -109,62 +99,6 @@ var torbutton_new_circuit;
             gBrowser.selectedTab = gBrowser.addTrustedTab("about:tor");
           }
         }
-      }
-    },
-  };
-
-  var torbutton_new_identity_observers = {
-    register() {
-      Services.obs.addObserver(this, "new-identity-requested");
-    },
-
-    observe(aSubject, aTopic, aData) {
-      if (aTopic !== "new-identity-requested") {
-        return;
-      }
-
-      // Clear the domain isolation state.
-      torbutton_log(3, "Clearing domain isolator");
-      const domainIsolator = Cc["@torproject.org/domain-isolator;1"].getService(
-        Ci.nsISupports
-      ).wrappedJSObject;
-      domainIsolator.clearIsolation();
-
-      torbutton_log(3, "New Identity: Sending NEWNYM");
-      // We only support TBB for newnym.
-      if (
-        !m_tb_control_pass ||
-        (!m_tb_control_ipc_file && !m_tb_control_port)
-      ) {
-        const warning = torbutton_get_property_string(
-          "torbutton.popup.no_newnym"
-        );
-        torbutton_log(
-          5,
-          "Torbutton cannot safely newnym. It does not have access to the Tor Control Port."
-        );
-        window.alert(warning);
-      } else {
-        const warning = torbutton_get_property_string(
-          "torbutton.popup.no_newnym"
-        );
-        torbutton_send_ctrl_cmd("SIGNAL NEWNYM")
-          .then(res => {
-            if (!res) {
-              torbutton_log(
-                5,
-                "Torbutton was unable to request a new circuit from Tor"
-              );
-              window.alert(warning);
-            }
-          })
-          .catch(e => {
-            torbutton_log(
-              5,
-              "Torbutton was unable to request a new circuit from Tor " + e
-            );
-            window.alert(warning);
-          });
       }
     },
   };
@@ -253,8 +187,6 @@ var torbutton_new_circuit;
       "chrome://torbutton/content/aboutTor/aboutTor-content.js",
       true
     );
-
-    torbutton_new_identity_observers.register();
 
     torbutton_log(3, "init completed");
   };
@@ -382,23 +314,6 @@ var torbutton_new_circuit;
 
     gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
   };
-
-  /* Called when we switch the use_nontor_proxy pref in either direction.
-   *
-   * Enables/disables domain isolation and then does new identity
-   */
-  function torbutton_use_nontor_proxy() {
-    let domainIsolator = Cc["@torproject.org/domain-isolator;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-
-    if (m_tb_prefs.getBoolPref("extensions.torbutton.use_nontor_proxy")) {
-      // Disable domain isolation
-      domainIsolator.disableIsolation();
-    } else {
-      domainIsolator.enableIsolation();
-    }
-  }
 
   async function torbutton_do_tor_check() {
     let checkSvc = Cc["@torproject.org/torbutton-torCheckService;1"].getService(
