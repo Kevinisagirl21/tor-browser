@@ -1,4 +1,1 @@
 category profile-after-change TorStartupService @torproject.org/tor-startup-service;1
-
-# TODO: Remove and make TorStartupService initialize also the domain isolator, instead
-category profile-after-change DomainIsolator @torproject.org/domain-isolator;1
