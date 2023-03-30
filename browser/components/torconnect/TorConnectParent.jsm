@@ -88,10 +88,6 @@ class TorConnectParent extends JSWindowActorParent {
             self.state.ShowViewLog = true;
             break;
           }
-          case TorConnectTopics.FatalError: {
-            // TODO: handle
-            break;
-          }
           case TorSettingsTopics.SettingChanged: {
             if (aData === TorSettingsData.QuickStartEnabled) {
               self.state.QuickStartEnabled = obj.value;
