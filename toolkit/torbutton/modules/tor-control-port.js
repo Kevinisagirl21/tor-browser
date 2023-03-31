@@ -135,6 +135,18 @@ class AsyncSocket {
       this.inputQueue.push({
         onInputStreamReady: stream => {
           try {
+            if (!this.scriptableInputStream.available()) {
+              // This means EOF, but not closed yet. However, arriving at EOF
+              // should be an error condition for us, since we are in a socket,
+              // and EOF should mean peer disconnected.
+              // If the stream has been closed, this function itself should
+              // throw.
+              reject(
+                new Error("onInputStreamReady called without available bytes.")
+              );
+              return;
+            }
+
             // read our string from input stream
             let str = this.scriptableInputStream.read(
               this.scriptableInputStream.available()
