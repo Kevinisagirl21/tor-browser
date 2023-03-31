@@ -233,8 +233,8 @@ const TorMonitorService = {
 
         // FIXME: TorProcess is misleading here. We should use a topic related
         // to having a control port connection, instead.
+        logger.info(`Notifying ${TorTopics.ProcessIsReady}`);
         Services.obs.notifyObservers(null, TorTopics.ProcessIsReady);
-        logger.info(`Notified ${TorTopics.ProcessIsReady}`);
 
         // We reset this here hoping that _shutDownEventMonitor can interrupt
         // the current monitor, either by calling clearTimeout and preventing it
