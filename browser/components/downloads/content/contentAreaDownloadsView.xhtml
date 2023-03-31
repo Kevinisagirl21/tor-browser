@@ -36,6 +36,23 @@
   </keyset>
 #endif
 
+  <html:message-bar id="aboutDownloadsTorWarning"
+                    class="downloads-tor-warning-message-bar"
+                    role="alert"
+                    aria-labelledby="aboutDownloadsTorWarningTitle"
+                    aria-describedby="aboutDownloadsTorWarningDescription">
+    <html:div class="downloads-tor-warning-grid">
+      <html:p id="aboutDownloadsTorWarningTitle"
+              class="downloads-tor-warning-title">
+      </html:p>
+      <html:p id="aboutDownloadsTorWarningDescription"
+              class="downloads-tor-warning-description">
+      </html:p>
+      <html:button class="downloads-tor-warning-dismiss-button">
+      </html:button>
+    </html:div>
+  </html:message-bar>
+
   <richlistbox flex="1"
                seltype="multiple"
                id="downloadsListBox"
