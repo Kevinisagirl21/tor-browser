@@ -31,6 +31,10 @@
 
 "use strict";
 
+const PREF_SHOW_DOWNLOAD_WARNING = "browser.download.showTorWarning";
+
+const TAILS_URI = "https://tails.boum.org/";
+
 var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -93,6 +97,13 @@ var DownloadsPanel = {
    */
   _state: 0,
 
+  /**
+   * State of tor's download warning. It should only be initialized once (text assigned,
+   * button commands assigned). This tracks if that has been performed and prevents
+   * repeats.
+   */
+  _torWarningInitialized: false,
+
   /** The panel is not linked to downloads data yet. */
   get kStateUninitialized() {
     return 0;
@@ -132,6 +143,15 @@ var DownloadsPanel = {
       );
     }
 
+    let showDownloadWarning = Services.prefs.getBoolPref(
+      PREF_SHOW_DOWNLOAD_WARNING
+    );
+    if (!showDownloadWarning) {
+      document.getElementById("downloadsWarning").hidden = true;
+    } else {
+      document.getElementById("downloadsWarning").hidden = false;
+    }
+
     if (this._state != this.kStateUninitialized) {
       DownloadsCommon.log("DownloadsPanel is already initialized.");
       return;
@@ -154,6 +174,44 @@ var DownloadsPanel = {
     DownloadsCommon.getSummary(window, DownloadsView.kItemCountLimit).addView(
       DownloadsSummary
     );
+
+    if (this._torWarningInitialized == 0) {
+      document.getElementById(
+        "downloadsWarningHeaderTitle"
+      ).textContent = this._getString("torbutton.download.warning.title");
+      let tailsBrandName = this._getString(
+        "torbutton.download.warning.tails_brand_name"
+      );
+
+      let warningDescriptionText = this._getString(
+        "torbutton.download.warning.description"
+      );
+      let [head, rest] = warningDescriptionText.split("%S");
+      const tailsLink = document.createElement("a");
+      tailsLink.setAttribute("href", TAILS_URI);
+      tailsLink.textContent = tailsBrandName.trim();
+      tailsLink.addEventListener("click", event => {
+        event.preventDefault();
+        this.hidePanel();
+        openWebLinkIn(TAILS_URI, "tab");
+      });
+
+      let downloadsWarningDescription = document.getElementById(
+        "downloadsWarningDescription"
+      );
+      downloadsWarningDescription.append(head, tailsLink, rest);
+
+      let dismissBtn = document.getElementById(
+        "downloadWarningDismiss"
+      );
+      dismissBtn.textContent = this._getString("torbutton.download.warning.dismiss");
+      dismissBtn.addEventListener("click", event => {
+        Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
+        document.getElementById("downloadsWarning").hidden = true;
+        this._focusPanel(true);
+      });
+      this._torWarningInitialized = 1;
+    }
 
     DownloadsCommon.log(
       "DownloadsView attached - the panel for this window",
@@ -530,16 +588,21 @@ var DownloadsPanel = {
   /**
    * Move focus to the main element in the downloads panel, unless another
    * element in the panel is already focused.
+   *
+   * @param {bool} [forceFocus=false] - Whether to force move the focus.
    */
-  _focusPanel() {
-    // We may be invoked while the panel is still waiting to be shown.
-    if (this._state != this.kStateShown) {
-      return;
+  _focusPanel(forceFocus=false) {
+    if (!forceFocus) {
+      // We may be invoked while the panel is still waiting to be shown.
+      if (this._state != this.kStateShown) {
+        return;
+      }
+
+      if (document.activeElement && this.panel.contains(document.activeElement)) {
+        return;
+      }
     }
 
-    if (document.activeElement && this.panel.contains(document.activeElement)) {
-      return;
-    }
     let focusOptions = { preventFocusRing: !!this._preventFocusRing };
     if (DownloadsView.richListBox.itemCount > 0) {
       DownloadsView.richListBox.selectedIndex = 0;
@@ -657,6 +720,30 @@ var DownloadsPanel = {
         this._delayPopupItems();
       }
     }, 0);
+  },
+
+  /**
+   * Get a string from the properties bundle.
+   *
+   * @param {string} name - The string name.
+   *
+   * @return {string} The string.
+   */
+  _getString(name) {
+    if (!this._stringBundle) {
+      this._stringBundle = Services.strings.createBundle(
+        "chrome://torbutton/locale/torbutton.properties"
+      );
+    }
+    try {
+      return this._stringBundle.GetStringFromName(name);
+    } catch {}
+    if (!this._fallbackStringBundle) {
+      this._fallbackStringBundle = Services.strings.createBundle(
+        "resource://torbutton/locale/en-US/torbutton.properties"
+      );
+    }
+    return this._fallbackStringBundle.GetStringFromName(name);
   },
 };
 
