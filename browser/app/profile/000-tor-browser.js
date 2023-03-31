@@ -64,10 +64,14 @@ pref("extensions.torbutton.startup", false);
 
 // Security prefs:
 pref("extensions.torbutton.resize_new_windows", false);
-pref("extensions.torbutton.launch_warning", true);
 
 // Browser home page:
 pref("browser.startup.homepage", "about:tor");
+
+// tor-browser#40701: Add new download warning and flipping prefs to match Firefox
+pref("browser.download.useDownloadDir", true);
+pref("browser.download.always_ask_before_handling_new_types", false);
+pref("browser.download.showTorWarning", true);
 
 // This pref specifies an ad-hoc "version" for various pref update hacks we need to do
 pref("extensions.torbutton.pref_fixup_version", 0);
