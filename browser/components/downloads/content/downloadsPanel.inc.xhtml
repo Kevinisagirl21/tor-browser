@@ -124,6 +124,21 @@
                   disablekeynav="true">
 
     <panelview id="downloadsPanel-mainView">
+      <vbox id="downloadsWarning">
+        <vbox role="alert"
+              aria-labelledby="downloadsWarningHeaderTitle"
+              aria-describedby="downloadsWarningDescription">
+          <html:p id="downloadsWarningHeaderTitle"></html:p>
+          <html:p id="downloadsWarningDescription">
+          </html:p>
+
+          <html:div class="panel-footer">
+            <html:button id="downloadWarningDismiss">
+            </html:button>
+          </html:div>
+        </vbox>
+        <toolbarseparator />
+      </vbox>
       <vbox class="panel-view-body-unscrollable">
         <richlistbox id="downloadsListBox"
                      data-l10n-id="downloads-panel-items"
