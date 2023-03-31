@@ -216,6 +216,7 @@ var DownloadsView = {
  */
 function DownloadsPlacesView(
   aRichListBox,
+  torWarningMessageBar,
   aActive = true,
   aSuppressionFlag = DownloadsCommon.SUPPRESS_ALL_DOWNLOADS_OPEN
 ) {
@@ -243,6 +244,46 @@ function DownloadsPlacesView(
     DownloadsCommon.getIndicatorData(window).attentionSuppressed |=
       aSuppressionFlag;
   }
+
+  // Tor browser warning message/alert shown above the list.
+
+  const PREF_SHOW_DOWNLOAD_WARNING = "browser.download.showTorWarning";
+  // Observe changes to the tor warning pref.
+  const torWarningPrefObserver = () => {
+    if (Services.prefs.getBoolPref(PREF_SHOW_DOWNLOAD_WARNING)) {
+      torWarningMessageBar.hidden = false;
+    } else {
+      // Re-assign focus if it is about to be lost.
+      if (torWarningMessageBar.contains(document.activeElement)) {
+        // Try and focus the downloads list.
+        // NOTE: If #downloadsListBox is still hidden, this will do nothing.
+        // But in this case there are no other focusable targets within the
+        // view, so we just leave it up to the focus handler.
+        this._richlistbox.focus({ preventFocusRing: true });
+      }
+      torWarningMessageBar.hidden = true;
+    }
+  };
+
+  Services.prefs.addObserver(
+    PREF_SHOW_DOWNLOAD_WARNING,
+    torWarningPrefObserver
+  );
+  // Initialize.
+  torWarningPrefObserver();
+
+  window.addEventListener("unload", () => {
+    Services.prefs.removeObserver(
+      PREF_SHOW_DOWNLOAD_WARNING,
+      torWarningPrefObserver
+    );
+  });
+
+  torWarningMessageBar
+    .querySelector(".downloads-tor-warning-dismiss-button")
+    .addEventListener("click", event => {
+      Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
+    });
 
   // Make sure to unregister the view if the window is closed.
   window.addEventListener(
