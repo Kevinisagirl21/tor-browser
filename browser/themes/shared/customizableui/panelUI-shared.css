@@ -1309,6 +1309,7 @@ panelview .toolbarbutton-1 {
 }
 
 /* TODO: Check if we can/should merge with the above rule */
+#downloadsPanelTorWarning toolbarseparator,
 #securityLevel-panel toolbarseparator {
   appearance: none;
   min-height: 0;
