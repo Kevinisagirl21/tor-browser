@@ -6,6 +6,7 @@
 /* import-globals-from editBookmark.js */
 /* import-globals-from /toolkit/content/contentAreaUtils.js */
 /* import-globals-from /browser/components/downloads/content/allDownloadsView.js */
+/* import-globals-from /browser/base/content/utilityOverlay.js */
 
 /* Shared Places Import - change other consumers if you change this: */
 var { XPCOMUtils } = ChromeUtils.importESModule(
@@ -157,11 +158,15 @@ var PlacesOrganizer = {
       "&sort=" +
       Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
 
+    const torWarningMessage = document.getElementById(
+      "placesDownloadsTorWarning"
+    );
     ContentArea.setContentViewForQueryString(
       DOWNLOADS_QUERY,
       () =>
         new DownloadsPlacesView(
           document.getElementById("downloadsListBox"),
+          torWarningMessage,
           false
         ),
       {
@@ -170,6 +175,23 @@ var PlacesOrganizer = {
           "back-button, forward-button, organizeButton, clearDownloadsButton, libraryToolbarSpacer, searchFilter",
       }
     );
+
+    // Intercept clicks on the tor warning tails link.
+    // NOTE: We listen for clicks on the parent instead of the
+    // <a data-l10n-name="tails-link"> element because the latter may be
+    // swapped for a new instance by Fluent when refreshing the parent.
+    document
+      .querySelector(".downloads-tor-warning-description")
+      .addEventListener("click", event => {
+        const tailsLink = event.target.closest(
+          ".downloads-tor-warning-tails-link"
+        );
+        if (!tailsLink) {
+          return;
+        }
+        event.preventDefault();
+        openWebLinkIn(tailsLink.href, "tab");
+      });
 
     ContentArea.init();
 
@@ -1418,9 +1440,20 @@ var ContentArea = {
       oldView.associatedElement.hidden = true;
       aNewView.associatedElement.hidden = false;
 
+      const isDownloads = aNewView.associatedElement.id === "downloadsListBox";
+      const torWarningMessage = document.getElementById(
+        "placesDownloadsTorWarning"
+      );
+      const torWarningLoosingFocus =
+        torWarningMessage.contains(document.activeElement) && !isDownloads;
+      torWarningMessage.classList.toggle("downloads-visible", isDownloads);
+
       // If the content area inactivated view was focused, move focus
       // to the new view.
-      if (document.activeElement == oldView.associatedElement) {
+      if (
+        document.activeElement == oldView.associatedElement ||
+        torWarningLoosingFocus
+      ) {
         aNewView.associatedElement.focus();
       }
     }
