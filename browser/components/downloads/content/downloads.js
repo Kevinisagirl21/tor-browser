@@ -31,6 +31,8 @@
 
 "use strict";
 
+const PREF_SHOW_DOWNLOAD_WARNING = "browser.download.showTorWarning";
+
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -77,6 +79,13 @@ var DownloadsPanel = {
    */
   _state: 0,
 
+  /**
+   * State of tor's download warning. It should only be initialized once (text assigned,
+   * button commands assigned). This tracks if that has been performed and prevents
+   * repeats.
+   */
+  _torWarningInitialized: false,
+
   /** The panel is not linked to downloads data yet. */
   get kStateUninitialized() {
     return 0;
@@ -110,6 +119,30 @@ var DownloadsPanel = {
       );
     }
 
+    const torWarningMessage = document.getElementById(
+      "downloadsPanelTorWarning"
+    );
+    if (!this._torWarningPrefObserver) {
+      // Observe changes to the tor warning pref.
+      this._torWarningPrefObserver = () => {
+        if (Services.prefs.getBoolPref(PREF_SHOW_DOWNLOAD_WARNING)) {
+          torWarningMessage.hidden = false;
+        } else {
+          // Re-assign focus if it is about to be lost.
+          if (torWarningMessage.contains(document.activeElement)) {
+            this._focusPanel(true);
+          }
+          torWarningMessage.hidden = true;
+        }
+      };
+      Services.prefs.addObserver(
+        PREF_SHOW_DOWNLOAD_WARNING,
+        this._torWarningPrefObserver
+      );
+      // Initialize
+      this._torWarningPrefObserver();
+    }
+
     if (this._state != this.kStateUninitialized) {
       DownloadsCommon.log("DownloadsPanel is already initialized.");
       return;
@@ -132,6 +165,42 @@ var DownloadsPanel = {
     DownloadsCommon.getSummary(window, DownloadsView.kItemCountLimit).addView(
       DownloadsSummary
     );
+
+    if (!this._torWarningInitialized) {
+      torWarningMessage.querySelector(
+        ".downloads-tor-warning-title"
+      ).textContent = this._getTorString("torbutton.download.warning.title");
+
+      const tailsLink = document.createElement("a");
+      tailsLink.href = "https://tails.net";
+      tailsLink.textContent = this._getTorString(
+        "torbutton.download.warning.tails_brand_name"
+      );
+      tailsLink.addEventListener("click", event => {
+        event.preventDefault();
+        this.hidePanel();
+        openWebLinkIn(tailsLink.href, "tab");
+      });
+
+      const [beforeLink, afterLink] = this._getTorString(
+        "torbutton.download.warning.description"
+      ).split("%S");
+
+      torWarningMessage
+        .querySelector(".downloads-tor-warning-description")
+        .append(beforeLink, tailsLink, afterLink);
+
+      let dismissButton = torWarningMessage.querySelector(
+        ".downloads-tor-warning-dismiss-button"
+      );
+      dismissButton.textContent = this._getTorString(
+        "torbutton.download.warning.dismiss"
+      );
+      dismissButton.addEventListener("click", event => {
+        Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
+      });
+      this._torWarningInitialized = true;
+    }
 
     DownloadsCommon.log(
       "DownloadsView attached - the panel for this window",
@@ -170,6 +239,14 @@ var DownloadsPanel = {
 
     if (DownloadIntegration.downloadSpamProtection) {
       DownloadIntegration.downloadSpamProtection.unregister(window);
+    }
+
+    if (this._torWarningPrefObserver) {
+      Services.prefs.removeObserver(
+        PREF_SHOW_DOWNLOAD_WARNING,
+        this._torWarningPrefObserver
+      );
+      delete this._torWarningPrefObserver;
     }
 
     this._state = this.kStateUninitialized;
@@ -506,20 +583,25 @@ var DownloadsPanel = {
   /**
    * Move focus to the main element in the downloads panel, unless another
    * element in the panel is already focused.
+   *
+   * @param {bool} [forceFocus=false] - Whether to force move the focus.
    */
-  _focusPanel() {
-    // We may be invoked while the panel is still waiting to be shown.
-    if (this._state != this.kStateShown) {
-      return;
+  _focusPanel(forceFocus = false) {
+    if (!forceFocus) {
+      // We may be invoked while the panel is still waiting to be shown.
+      if (this._state != this.kStateShown) {
+        return;
+      }
+
+      if (
+        document.activeElement &&
+        (this.panel.contains(document.activeElement) ||
+          this.panel.shadowRoot.contains(document.activeElement))
+      ) {
+        return;
+      }
     }
 
-    if (
-      document.activeElement &&
-      (this.panel.contains(document.activeElement) ||
-        this.panel.shadowRoot.contains(document.activeElement))
-    ) {
-      return;
-    }
     let focusOptions = {};
     if (this._preventFocusRing) {
       focusOptions.focusVisible = false;
@@ -642,6 +724,30 @@ var DownloadsPanel = {
         this._delayPopupItems();
       }
     }, 0);
+  },
+
+  /**
+   * Get a string from the properties bundle.
+   *
+   * @param {string} name - The string name.
+   *
+   * @return {string} The string.
+   */
+  _getTorString(name) {
+    if (!this._stringBundle) {
+      this._stringBundle = Services.strings.createBundle(
+        "chrome://torbutton/locale/torbutton.properties"
+      );
+    }
+    try {
+      return this._stringBundle.GetStringFromName(name);
+    } catch {}
+    if (!this._fallbackStringBundle) {
+      this._fallbackStringBundle = Services.strings.createBundle(
+        "resource://torbutton/locale/en-US/torbutton.properties"
+      );
+    }
+    return this._fallbackStringBundle.GetStringFromName(name);
   },
 };
 
