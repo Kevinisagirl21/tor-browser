@@ -261,6 +261,7 @@
 }
 
 /*** Toolbarseparator ***/
+#downloadsWarning toolbarseparator,
 #downloadsFooterButtons > toolbarseparator {
   margin-inline: 0;
 }

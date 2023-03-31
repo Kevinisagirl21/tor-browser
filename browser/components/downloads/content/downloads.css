@@ -93,6 +93,63 @@
   font: caption;
   min-width: 37em;
   padding: 0.62em;
+  /* If we don't set a width, #downloadsPanelTorWarningDescription will request
+   * its max-content width. */
+  width: 37em;
+}
+
+#downloadsPanel-mainView {
+  /* Fix the layout to ensure the #downloadsWarningDescription is given enough
+   * vertical space. For tor-browser#40701.
+   * TODO: May no longer be necessary after esr 115 due to bugzilla bug 1816455.
+   */
+  display: flex;
+  flex-direction: column;
+}
+
+.downloads-tor-warning-grid {
+  display: grid;
+  grid-template:
+    "title button" min-content
+    "description button" auto
+    / 1fr max-content;
+  gap: 8px;
+  margin-block: 8px;
+  /* Some extra space between the text and the icon. */
+  margin-inline-start: 8px;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-title {
+  grid-area: title;
+  margin: 0;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-description {
+  grid-area: description;
+  margin: 0;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-dismiss-button {
+  grid-area: button;
+  align-self: center;
+}
+
+.downloads-tor-warning-description,
+.downloads-tor-warning-title {
+  line-height: 1.4;
+}
+
+.downloads-tor-warning-title {
+  font-weight: bold;
+}
+
+#downloadsPanelTorWarning :is(
+  .downloads-tor-warning-description,
+  .downloads-tor-warning-title
+) {
+  padding-inline: 8px;
+  margin-block-start: 8px;
+  margin-block-end: 0;
 }
 
 #downloadsHistory,
