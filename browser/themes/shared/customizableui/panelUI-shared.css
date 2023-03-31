@@ -1324,6 +1324,7 @@ panelview .toolbarbutton-1 {
 #downloadsFooterButtons > toolbarseparator,
 .cui-widget-panelview menuseparator,
 .cui-widget-panel toolbarseparator,
+#downloadsPanelTorWarning toolbarseparator,
 #securityLevel-panel toolbarseparator {
   appearance: none;
   min-height: 0;

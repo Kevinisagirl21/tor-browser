@@ -6,6 +6,7 @@
 /* import-globals-from instantEditBookmark.js */
 /* import-globals-from /toolkit/content/contentAreaUtils.js */
 /* import-globals-from /browser/components/downloads/content/allDownloadsView.js */
+/* import-globals-from /browser/base/content/utilityOverlay.js */
 
 /* Shared Places Import - change other consumers if you change this: */
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -164,11 +165,15 @@ var PlacesOrganizer = {
       "&sort=" +
       Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
 
+    const torWarningMessage = document.getElementById(
+      "placesDownloadsTorWarning"
+    );
     ContentArea.setContentViewForQueryString(
       DOWNLOADS_QUERY,
       () =>
         new DownloadsPlacesView(
           document.getElementById("downloadsListBox"),
+          torWarningMessage,
           false
         ),
       {
@@ -177,6 +182,33 @@ var PlacesOrganizer = {
           "back-button, forward-button, organizeButton, clearDownloadsButton, libraryToolbarSpacer, searchFilter",
       }
     );
+
+    // Initialize tor warning text content.
+    torWarningMessage.querySelector(
+      ".downloads-tor-warning-title"
+    ).textContent = this._getTorString("torbutton.download.warning.title");
+
+    const tailsLink = document.createElement("a");
+    tailsLink.href = "https://tails.boum.org/";
+    tailsLink.textContent = this._getTorString(
+      "torbutton.download.warning.tails_brand_name"
+    );
+    tailsLink.addEventListener("click", event => {
+      event.preventDefault();
+      openWebLinkIn(tailsLink.href, "tab");
+    });
+
+    const [beforeLink, afterLink] = this._getTorString(
+      "torbutton.download.warning.description"
+    ).split("%S");
+
+    torWarningMessage
+      .querySelector(".downloads-tor-warning-description")
+      .append(beforeLink, tailsLink, afterLink);
+
+    torWarningMessage.querySelector(
+      ".downloads-tor-warning-dismiss-button"
+    ).textContent = this._getTorString("torbutton.download.warning.dismiss");
 
     ContentArea.init();
 
@@ -244,6 +276,30 @@ var PlacesOrganizer = {
     }
 
     ContentArea.focus();
+  },
+
+  /**
+   * Get a string from the properties bundle.
+   *
+   * @param {string} name - The string name.
+   *
+   * @returns {string} The string.
+   */
+  _getTorString(name) {
+    if (!this._stringBundle) {
+      this._stringBundle = Services.strings.createBundle(
+        "chrome://torbutton/locale/torbutton.properties"
+      );
+    }
+    try {
+      return this._stringBundle.GetStringFromName(name);
+    } catch {}
+    if (!this._fallbackStringBundle) {
+      this._fallbackStringBundle = Services.strings.createBundle(
+        "resource://torbutton/locale/en-US/torbutton.properties"
+      );
+    }
+    return this._fallbackStringBundle.GetStringFromName(name);
   },
 
   QueryInterface: ChromeUtils.generateQI([]),
@@ -1386,9 +1442,20 @@ var ContentArea = {
       oldView.associatedElement.hidden = true;
       aNewView.associatedElement.hidden = false;
 
+      const isDownloads = aNewView.associatedElement.id === "downloadsListBox";
+      const torWarningMessage = document.getElementById(
+        "placesDownloadsTorWarning"
+      );
+      const torWarningLoosingFocus =
+        torWarningMessage.contains(document.activeElement) && !isDownloads;
+      torWarningMessage.classList.toggle("downloads-visible", isDownloads);
+
       // If the content area inactivated view was focused, move focus
       // to the new view.
-      if (document.activeElement == oldView.associatedElement) {
+      if (
+        document.activeElement == oldView.associatedElement ||
+        torWarningLoosingFocus
+      ) {
         aNewView.associatedElement.focus();
       }
     }
