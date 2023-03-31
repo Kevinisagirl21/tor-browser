@@ -220,49 +220,29 @@ const TorProtocolService = {
   // Executes a command on the control port.
   // Return a reply object or null if a fatal error occurs.
   async sendCommand(cmd, args) {
-    let conn, reply;
-    const maxAttempts = 2;
-    for (let attempt = 0; !reply && attempt < maxAttempts; attempt++) {
-      try {
-        conn = await this._getConnection();
-        try {
-          if (conn) {
-            reply = await conn.sendCommand(cmd + (args ? " " + args : ""));
-            if (reply) {
-              // Return for reuse.
-              this._returnConnection();
-            } else {
-              // Connection is bad.
-              logger.warn(
-                "sendCommand returned an empty response, taking the connection as broken and closing it."
-              );
-              this._closeConnection();
-            }
-          }
-        } catch (e) {
-          logger.error(`Cannot send the command ${cmd}`, e);
-          this._closeConnection();
-        }
-      } catch (e) {
-        logger.error("Cannot get a connection to the control port", e);
+    const maxTimeout = 1000;
+    let leftConnAttempts = 5;
+    let timeout = 250;
+    let reply;
+    while (leftConnAttempts-- > 0) {
+      const response = await this._trySend(cmd, args, leftConnAttempts == 0);
+      if (response.connected) {
+        reply = response.reply;
+        break;
       }
-    }
-
-    // We failed to acquire the controller after multiple attempts.
-    // Try again after some time.
-    if (!conn) {
-      logger.info(
-        "sendCommand: Acquiring control connection failed",
+      // We failed to acquire the controller after multiple attempts.
+      // Try again after some time.
+      logger.warn(
+        "sendCommand: Acquiring control connection failed, trying again later.",
         cmd,
         args
       );
-      return new Promise(resolve =>
-        setTimeout(() => {
-          resolve(this.sendCommand(cmd, args));
-        }, 250)
-      );
+      await new Promise(resolve => setTimeout(() => resolve(), timeout));
+      timeout = Math.min(2 * timeout, maxTimeout);
     }
 
+    // We sent the command, but we still got an empty response.
+    // Something must be busted elsewhere.
     if (!reply) {
       throw new Error(`${cmd} sent an empty response`);
     }
@@ -588,6 +568,48 @@ const TorProtocolService = {
       default:
         throw new Error(`Expected boolean (1 or 0) but received '${value}'`);
     }
+  },
+
+  async _trySend(cmd, args, rethrow) {
+    let connected = false;
+    let reply;
+    let leftAttempts = 2;
+    while (leftAttempts-- > 0) {
+      let conn;
+      try {
+        conn = await this._getConnection();
+      } catch (e) {
+        logger.error("Cannot get a connection to the control port", e);
+        if (leftAttempts == 0 && rethrow) {
+          throw e;
+        }
+      }
+      if (!conn) {
+        continue;
+      }
+      // If we _ever_ got a connection, the caller should not try again
+      connected = true;
+      try {
+        reply = await conn.sendCommand(cmd + (args ? " " + args : ""));
+        if (reply) {
+          // Return for reuse.
+          this._returnConnection();
+        } else {
+          // Connection is bad.
+          logger.warn(
+            "sendCommand returned an empty response, taking the connection as broken and closing it."
+          );
+          this._closeConnection();
+        }
+      } catch (e) {
+        logger.error(`Cannot send the command ${cmd}`, e);
+        this._closeConnection();
+        if (leftAttempts == 0 && rethrow) {
+          throw e;
+        }
+      }
+    }
+    return { connected, reply };
   },
 
   // Opens an authenticated connection, sets it to this._controlConnection, and
