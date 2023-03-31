@@ -57,6 +57,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
     );
     const consoleOptions = {
       maxLogLevel: "info",
+      maxLogLevelPref: "browser.new_identity.log_level",
       prefix: "NewIdentity",
     };
     return new ConsoleAPI(consoleOptions);
@@ -68,12 +69,11 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
 
   class NewIdentityImpl {
     async run() {
-      logger.debug("Disabling JS");
       this.disableAllJS();
       await this.clearState();
-      this.broadcast();
-      this.openNewWindow();
+      await this.openNewWindow();
       this.closeOldWindow();
+      this.broadcast();
     }
 
     // Disable JS (as a defense-in-depth measure)
@@ -389,7 +389,7 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
       logger.info("Calling the clearDataService");
       const flags =
         Services.clearData.CLEAR_ALL ^ Services.clearData.CLEAR_PASSWORDS;
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         Services.clearData.deleteData(flags, {
           onDataDeleted(code) {
             if (code !== Cr.NS_OK) {
@@ -425,11 +425,16 @@ XPCOMUtils.defineLazyGetter(this, "NewIdentityButton", () => {
 
     openNewWindow() {
       logger.info("Opening a new window");
-      // Open a new window with the default homepage
-      // We could pass {private: true} but we do not because we enforce
-      // browser.privatebrowsing.autostart = true.
-      // What about users that change settings?
-      OpenBrowserWindow();
+      return new Promise(resolve => {
+        // Open a new window with the default homepage
+        // We could pass {private: true} but we do not because we enforce
+        // browser.privatebrowsing.autostart = true.
+        // What about users that change settings?
+        const win = OpenBrowserWindow();
+        // This mechanism to know when the new window is ready is used by
+        // OpenBrowserWindow itself (see its definition in browser.js).
+        win.addEventListener("MozAfterPaint", () => resolve(), { once: true });
+      });
     }
 
     closeOldWindow() {
