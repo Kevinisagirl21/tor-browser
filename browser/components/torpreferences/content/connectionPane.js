@@ -484,6 +484,9 @@ const gConnectionPane = (function() {
       const bridgeMenu = prefpane.querySelector(selectors.bridges.cardMenu);
 
       let emojiAnnotations;
+      const emojiListPromise = fetch(
+        "chrome://browser/content/torpreferences/bridgemoji/bridge-emojis.json"
+      ).then(response => response.json());
       this._addBridgeCard = bridgeString => {
         const card = bridgeTemplate.cloneNode(true);
         card.removeAttribute("id");
@@ -513,16 +516,19 @@ const gConnectionPane = (function() {
             }
           }
         });
-        const emojis = makeBridgeId(bridgeString).map(e => {
+        const emojis = makeBridgeId(bridgeString).map(emojiIndex => {
           const img = document.createElement("img");
-          const cp = e.codePointAt(0).toString(16);
-          img.setAttribute(
-            "src",
-            `chrome://browser/content/torpreferences/bridgemoji/${cp}.svg`
-          );
-          img.setAttribute("alt", e);
-          img.setAttribute("title", emojiAnnotations[e]);
-          img.className = "emoji";
+          img.classList.add("emoji");
+          emojiListPromise.then(emojiList => {
+            const emoji = emojiList[emojiIndex];
+            const cp = emoji.codePointAt(0).toString(16);
+            img.setAttribute(
+              "src",
+              `chrome://browser/content/torpreferences/bridgemoji/svgs/${cp}.svg`
+            );
+            img.setAttribute("alt", emoji);
+            img.setAttribute("title", emojiAnnotations[cp]);
+          });
           return img;
         });
         const idString = TorStrings.settings.bridgeId;
@@ -749,7 +755,7 @@ const gConnectionPane = (function() {
       // Use a promise to avoid blocking the population of the page
       // FIXME: Stop using a JSON file, and switch to properties
       fetch(
-        "chrome://browser/content/torpreferences/bridgemoji-annotations.json"
+        "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
       ).then(async res => {
         const annotations = await res.json();
         const bcp47 = Services.locale.appLocaleAsBCP47;
@@ -1109,31 +1115,18 @@ const gConnectionPane = (function() {
   return retval;
 })(); /* gConnectionPane */
 
+/**
+ * Convert the given bridgeString into an array of emoji indices between 0 and
+ * 255.
+ *
+ * @param {string} bridgeString - The bridge string.
+ *
+ * @return {integer[]} - A list of emoji indices between 0 and 255.
+ */
 function makeBridgeId(bridgeString) {
   // JS uses UTF-16. While most of these emojis are surrogate pairs, a few
   // ones fit one UTF-16 character. So we could not use neither indices,
   // nor substr, nor some function to split the string.
-  /* eslint-disable */
-  const emojis = [
-    "👽️", "🤖", "🧠", "👁️", "🧙", "🧚", "🧜", "🐵", "🦧", "🐶", "🐺", "🦊", "🦝", "🐱", "🦁", "🐯",
-    "🐴", "🦄", "🦓", "🦌", "🐮", "🐷", "🐗", "🐪", "🦙", "🦒", "🐘", "🦣", "🦏", "🐭", "🐰", "🐿️",
-    "🦔", "🦇", "🐻", "🐨", "🦥", "🦦", "🦘", "🐥", "🐦️", "🕊️", "🦆", "🦉", "🦤", "🪶", "🦩", "🦚",
-    "🦜", "🐊", "🐢", "🦎", "🐍", "🐲", "🦕", "🐳", "🐬", "🦭", "🐟️", "🐠", "🦈", "🐙", "🐚", "🐌",
-    "🦋", "🐛", "🐝", "🐞", "💐", "🌹", "🌺", "🌻", "🌷", "🌲", "🌳", "🌴", "🌵", "🌿", "🍁", "🍇",
-    "🍈", "🍉", "🍊", "🍋", "🍌", "🍍", "🥭", "🍏", "🍐", "🍑", "🍒", "🍓", "🫐", "🥝", "🍅", "🫒",
-    "🥥", "🥑", "🍆", "🥕", "🌽", "🌶️", "🥬", "🥦", "🧅", "🍄", "🥜", "🥐", "🥖", "🥨", "🥯", "🥞",
-    "🧇", "🍔", "🍕", "🌭", "🌮", "🍿", "🦀", "🦞", "🍨", "🍩", "🍪", "🎂", "🧁", "🍫", "🍬", "🍭",
-    "🫖", "🧃", "🧉", "🧭", "🏔️", "🌋", "🏕️", "🏝️", "🏡", "⛲️", "🎠", "🎡", "🎢", "💈", "🚆", "🚋",
-    "🚍️", "🚕", "🚗", "🚚", "🚜", "🛵", "🛺", "🛴", "🛹", "🛼", "⚓️", "⛵️", "🛶", "🚤", "🚢", "✈️",
-    "🚁", "🚠", "🛰️", "🚀", "🛸", "⏰", "🌙", "🌡️", "☀️", "🪐", "🌟", "🌀", "🌈", "☂️", "❄️", "☄️",
-    "🔥", "💧", "🌊", "🎃", "✨", "🎈", "🎉", "🎏", "🎀", "🎁", "🎟️", "🏆️", "⚽️", "🏀", "🏈", "🎾",
-    "🥏", "🏓", "🏸", "🤿", "🥌", "🎯", "🪀", "🪁", "🔮", "🎲", "🧩", "🎨", "🧵", "👕", "🧦", "👗",
-    "🩳", "🎒", "👟", "👑", "🧢", "💄", "💍", "💎", "📢", "🎶", "🎙️", "📻️", "🎷", "🪗", "🎸", "🎺",
-    "🎻", "🪕", "🥁", "☎️", "🔋", "💿️", "🧮", "🎬️", "💡", "🔦", "🏮", "📕", "🏷️", "💳️", "✏️", "🖌️",
-    "🖍️", "📌", "📎", "🔑", "🪃", "🏹", "⚖️", "🧲", "🧪", "🧬", "🔬", "🔭", "📡", "🪑", "🧹", "🗿",
-  ];
-  /* eslint-enable */
-
   // FNV-1a implementation that is compatible with other languages
   const prime = 0x01000193;
   const offset = 0x811c9dc5;
@@ -1143,13 +1136,12 @@ function makeBridgeId(bridgeString) {
     hash = Math.imul(hash ^ byte, prime);
   }
 
-  const hashBytes = [
+  return [
     ((hash & 0x7f000000) >> 24) | (hash < 0 ? 0x80 : 0),
     (hash & 0x00ff0000) >> 16,
     (hash & 0x0000ff00) >> 8,
     hash & 0x000000ff,
   ];
-  return hashBytes.map(b => emojis[b]);
 }
 
 function parseBridgeLine(line) {
