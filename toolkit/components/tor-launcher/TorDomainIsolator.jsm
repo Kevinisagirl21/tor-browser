@@ -1,7 +1,7 @@
 // A component for Tor Browser that puts requests from different
 // first party domains on separate Tor circuits.
 
-var EXPORTED_SYMBOLS = ["DomainIsolator", "TorDomainIsolator"];
+var EXPORTED_SYMBOLS = ["TorDomainIsolator"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -277,31 +277,3 @@ class TorDomainIsolatorImpl {
 }
 
 const TorDomainIsolator = new TorDomainIsolatorImpl();
-
-// The DomainIsolator object, used only to access this feature through XPCOM.
-// TODO: Remove this, and directly use the module, instead.
-class DomainIsolator {
-  constructor() {
-    this.wrappedJSObject = this;
-  }
-
-  newCircuitForDomain(domain) {
-    TorDomainIsolator.newCircuitForDomain(domain);
-  }
-
-  newCircuitForUserContextId(userContextId) {
-    TorDomainIsolator.newCircuitForUserContextId(userContextId);
-  }
-
-  enableIsolation() {
-    TorDomainIsolator.enable();
-  }
-
-  disableIsolation() {
-    TorDomainIsolator.disable();
-  }
-
-  clearIsolation() {
-    TorDomainIsolator.clearIsolation();
-  }
-}
