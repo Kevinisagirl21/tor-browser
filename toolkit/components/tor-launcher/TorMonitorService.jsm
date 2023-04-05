@@ -74,7 +74,6 @@ const TorMonitorService = {
   _startTimeout: null,
 
   _isBootstrapDone: false,
-  _bootstrapErrorOccurred: false,
   _lastWarningPhase: null,
   _lastWarningReason: null,
 
@@ -162,19 +161,9 @@ const TorMonitorService = {
     return this._isBootstrapDone;
   },
 
-  get bootstrapErrorOccurred() {
-    return this._bootstrapErrorOccurred;
-  },
-
   clearBootstrapError() {
-    this._bootstrapErrorOccurred = false;
     this._lastWarningPhase = null;
     this._lastWarningReason = null;
-  },
-
-  // This should be used for debug only
-  setBootstrapError() {
-    this._bootstrapErrorOccurred = true;
   },
 
   get isRunning() {
@@ -211,7 +200,6 @@ const TorMonitorService = {
       }
     } catch (e) {
       // TorProcess already logs the error.
-      this._bootstrapErrorOccurred = true;
       this._lastWarningPhase = "startup";
       this._lastWarningReason = e.toString();
     }
@@ -248,7 +236,6 @@ const TorMonitorService = {
         ControlConnTimings.timeoutMS
       ) {
         let s = TorLauncherUtil.getLocalizedString("tor_controlconn_failed");
-        this._bootstrapErrorOccurred = true;
         this._lastWarningPhase = "startup";
         this._lastWarningReason = s;
         logger.info(s);
@@ -435,7 +422,6 @@ const TorMonitorService = {
 
     if (statusObj.PROGRESS === 100) {
       this._isBootstrapDone = true;
-      this._bootstrapErrorOccurred = false;
       try {
         Services.prefs.setBoolPref(Preferences.PromptAtStartup, false);
       } catch (e) {
@@ -456,7 +442,6 @@ const TorMonitorService = {
   },
 
   _notifyBootstrapError(statusObj) {
-    this._bootstrapErrorOccurred = true;
     try {
       Services.prefs.setBoolPref(Preferences.PromptAtStartup, true);
     } catch (e) {
