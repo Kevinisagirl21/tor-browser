@@ -18,9 +18,6 @@ const {
   TorBridgeSource,
 } = ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
-const { TorMonitorService } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
-);
 const { TorProtocolService } = ChromeUtils.import(
   "resource://gre/modules/TorProtocolService.jsm"
 );
@@ -207,7 +204,7 @@ const gConnectionPane = (function() {
           TorConnect.state === TorConnectState.Configuring
         ) {
           // set messagebox style and text
-          if (TorMonitorService.bootstrapErrorOccurred) {
+          if (TorConnect.hasEverFailed) {
             messageBox.parentNode.style.display = null;
             messageBox.className = "error";
             messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
@@ -291,10 +288,11 @@ const gConnectionPane = (function() {
               TorStrings.settings.statusInternetOffline;
             break;
         }
+        // FIXME: What about the TorConnectState.Disabled state?
         if (TorConnect.state === TorConnectState.Bootstrapped) {
           torIcon.className = "connected";
           torStatus.textContent = TorStrings.settings.statusTorConnected;
-        } else if (TorConnect.hasBootstrapEverFailed) {
+        } else if (TorConnect.potentiallyBlocked) {
           torIcon.className = "blocked";
           torStatus.textContent = TorStrings.settings.statusTorBlocked;
         } else {
@@ -405,7 +403,7 @@ const gConnectionPane = (function() {
         this._showAutoconfiguration = () => {
           if (
             !TorConnect.shouldShowTorConnect ||
-            !TorMonitorService.bootstrapErrorOccurred
+            !TorConnect.potentiallyBlocked
           ) {
             locationGroup.setAttribute("hidden", "true");
             return;
@@ -969,7 +967,7 @@ const gConnectionPane = (function() {
 
     // whether the page should be present in about:preferences
     get enabled() {
-      return TorMonitorService.ownsTorDaemon;
+      return TorConnect.enabled;
     },
 
     //
