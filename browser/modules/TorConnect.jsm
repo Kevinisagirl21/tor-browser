@@ -366,6 +366,7 @@ const TorConnect = (() => {
     _errorMessage: null,
     _errorDetails: null,
     _logHasWarningOrError: false,
+    _hasEverFailed: false,
     _hasBootstrapEverFailed: false,
     _transitionPromise: null,
 
@@ -793,6 +794,9 @@ const TorConnect = (() => {
     },
 
     _changeState(newState, ...args) {
+      if (newState === TorConnectState.Error) {
+        this._hasEverFailed = true;
+      }
       const prevState = this._state;
 
       // ensure this is a valid state transition
@@ -836,7 +840,7 @@ const TorConnect = (() => {
       console.log("TorConnect: init()");
       this._callback(TorConnectState.Initial).begin();
 
-      if (!TorMonitorService.ownsTorDaemon) {
+      if (!this.enabled) {
         // Disabled
         this._changeState(TorConnectState.Disabled);
       } else {
@@ -881,10 +885,19 @@ const TorConnect = (() => {
         Various getters
         */
 
+    /**
+     * Whether TorConnect is enabled.
+     *
+     * @type {boolean}
+     */
+    get enabled() {
+      return TorMonitorService.ownsTorDaemon;
+    },
+
     get shouldShowTorConnect() {
       // TorBrowser must control the daemon
       return (
-        TorMonitorService.ownsTorDaemon &&
+        this.enabled &&
         // if we have succesfully bootstraped, then no need to show TorConnect
         this.state !== TorConnectState.Bootstrapped
       );
@@ -939,7 +952,24 @@ const TorConnect = (() => {
       return this._logHasWarningOrError;
     },
 
-    get hasBootstrapEverFailed() {
+    /**
+     * Whether we have ever entered the Error state.
+     *
+     * @type {boolean}
+     */
+    get hasEverFailed() {
+      return this._hasEverFailed;
+    },
+
+    /**
+     * Whether the Bootstrapping process has ever failed, not including when it
+     * failed due to not being connected to the internet.
+     *
+     * This does not include a failure in AutoBootstrapping.
+     *
+     * @type {boolean}
+     */
+    get potentiallyBlocked() {
       return this._hasBootstrapEverFailed;
     },
 
