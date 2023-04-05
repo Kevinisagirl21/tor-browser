@@ -459,7 +459,6 @@ const TorConnect = (() => {
                   "Error: Censorship simulation",
                   true
                 );
-                TorMonitorService.setBootstrapError();
                 return;
               }
 
@@ -582,7 +581,6 @@ const TorConnect = (() => {
                     );
                     return;
                   }
-                  TorMonitorService.setBootstrapError();
                 }
               }
 
