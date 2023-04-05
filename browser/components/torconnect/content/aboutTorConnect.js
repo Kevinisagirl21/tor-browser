@@ -142,7 +142,6 @@ class AboutTorConnect {
 
   uiState = {
     currentState: UIStates.ConnectToTor,
-    connectIsTryAgain: false,
     allowAutomaticLocation: true,
     selectedLocation: "automatic",
     bootstrapCause: UIStates.ConnectToTor,
@@ -389,12 +388,6 @@ class AboutTorConnect {
   }
 
   update_Error(state) {
-    if (!this.uiState.connectIsTryAgain) {
-      // TorConnect.hasBootstrapEverFailed remains false in case of Internet
-      // offline
-      this.uiState.connectIsTryAgain = true;
-      this.saveUIState();
-    }
     if (!state.StateChanged) {
       return;
     }
@@ -457,7 +450,7 @@ class AboutTorConnect {
     if (state?.StateChanged) {
       this.elements.connectButton.focus();
     }
-    if (this.uiState.connectIsTryAgain) {
+    if (state.HasEverFailed) {
       this.setBreadcrumbsStatus(
         BreadcrumbStatus.Active,
         BreadcrumbStatus.Default,
@@ -481,7 +474,7 @@ class AboutTorConnect {
     switch (this.uiState.bootstrapCause) {
       case UIStates.ConnectToTor:
         breadcrumbs[0] = BreadcrumbStatus.Active;
-        title = this.uiState.connectIsTryAgain
+        title = state.HasEverFailed
           ? TorStrings.torConnect.tryAgain
           : TorStrings.torConnect.torConnecting;
         description = TorStrings.settings.torPreferencesDescription;
@@ -505,7 +498,7 @@ class AboutTorConnect {
     this.setTitle(title, "");
     this.showConfigureConnectionLink(description);
     this.setProgress("", showProgressbar, state.BootstrapProgress);
-    if (state.HasBootsrapEverFailed) {
+    if (state.HasEverFailed) {
       this.setBreadcrumbsStatus(...breadcrumbs);
     } else {
       this.hideBreadcrumbs();
