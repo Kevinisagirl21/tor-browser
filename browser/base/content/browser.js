@@ -80,6 +80,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   TorConnect: "resource:///modules/TorConnect.jsm",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
