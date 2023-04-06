@@ -267,10 +267,6 @@ toolbar {
   list-style-image: url("chrome://browser/skin/new_identity.svg");
 }
 
-#new-circuit-button {
-  list-style-image: url("chrome://browser/skin/new_circuit.svg");
-}
-
 #privatebrowsing-button {
   list-style-image: url("chrome://browser/skin/privateBrowsing.svg");
 }
