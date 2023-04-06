@@ -901,6 +901,32 @@ const TorConnect = (() => {
       );
     },
 
+    /**
+     * Whether bootstrapping can currently begin.
+     *
+     * The value may change with TorConnectTopics.StateChanged.
+     *
+     * @param {boolean}
+     */
+    get canBeginBootstrap() {
+      return TorConnectStateTransitions.get(this.state).includes(
+        TorConnectState.Bootstrapping
+      );
+    },
+
+    /**
+     * Whether auto-bootstrapping can currently begin.
+     *
+     * The value may change with TorConnectTopics.StateChanged.
+     *
+     * @param {boolean}
+     */
+    get canBeginAutoBootstrap() {
+      return TorConnectStateTransitions.get(this.state).includes(
+        TorConnectState.AutoBootstrapping
+      );
+    },
+
     get shouldQuickStart() {
       // quickstart must be enabled
       return (
@@ -1010,11 +1036,40 @@ const TorConnect = (() => {
       win.switchToTabHavingURI("about:preferences#connection", true);
     },
 
-    openTorConnect() {
+    /**
+     * Open the "about:torconnect" tab.
+     *
+     * Bootstrapping or AutoBootstrapping can also be automatically triggered at
+     * the same time, if the current state allows for it.
+     *
+     * Bootstrapping will not be triggered if the connection is
+     * potentially blocked.
+     *
+     * @param {object} [options] - extra options.
+     * @property {boolean} [options.beginBootstrap=false] - Whether to try and
+     *   begin Bootstrapping.
+     * @property {string} [options.beginAutoBootstrap] - The location to use to
+     *   begin AutoBootstrapping, if possible.
+     */
+    openTorConnect(options) {
       const win = BrowserWindowTracker.getTopWindow();
       win.switchToTabHavingURI("about:torconnect", true, {
         ignoreQueryString: true,
       });
+      if (
+        options?.beginBootstrap &&
+        this.canBeginBootstrap &&
+        !this.potentiallyBlocked
+      ) {
+        this.beginBootstrap();
+      }
+      // options.beginAutoBootstrap can be an empty string.
+      if (
+        options?.beginAutoBootstrap !== undefined &&
+        this.canBeginAutoBootstrap
+      ) {
+        this.beginAutoBootstrap(options.beginAutoBootstrap);
+      }
     },
 
     viewTorLogs() {
