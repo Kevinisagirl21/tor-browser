@@ -1,6 +1,5 @@
 // window globals
 var torbutton_init;
-var torbutton_new_circuit;
 
 (() => {
   // Bug 1506 P1-P5: This is the main Torbutton overlay file. Much needs to be
@@ -14,12 +13,9 @@ var torbutton_new_circuit;
 
   /* global gBrowser, Services, AppConstants */
 
-  let {
-    unescapeTorString,
-    getDomainForBrowser,
-    torbutton_log,
-    torbutton_get_property_string,
-  } = ChromeUtils.import("resource://torbutton/modules/utils.js");
+  let { unescapeTorString, torbutton_log } = ChromeUtils.import(
+    "resource://torbutton/modules/utils.js"
+  );
   let { configureControlPortModule, wait_for_controller } = ChromeUtils.import(
     "resource://torbutton/modules/tor-control-port.js"
   );
@@ -301,19 +297,6 @@ var torbutton_new_circuit;
     }
     return response;
   }
-
-  // Bug 1506 P4: Needed for New IP Address
-  torbutton_new_circuit = function () {
-    let firstPartyDomain = getDomainForBrowser(gBrowser.selectedBrowser);
-
-    let domainIsolator = Cc["@torproject.org/domain-isolator;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-
-    domainIsolator.newCircuitForDomain(firstPartyDomain);
-
-    gBrowser.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
-  };
 
   async function torbutton_do_tor_check() {
     let checkSvc = Cc["@torproject.org/torbutton-torCheckService;1"].getService(
