@@ -192,7 +192,7 @@ var gTorCircuitPanel = {
     document
       .getElementById("tor-circuit-new-circuit")
       .addEventListener("command", () => {
-        torbutton_new_circuit();
+        TorDomainIsolator.newCircuitForBrowser(gBrowser);
         // And hide.
         // NOTE: focus should return to the toolbar button, which we expect to
         // remain visible during reload.
@@ -414,20 +414,14 @@ var gTorCircuitPanel = {
    */
   _updateCurrentBrowser(matchingCredentials = null) {
     const browser = gBrowser.selectedBrowser;
-    const { getDomainForBrowser } = ChromeUtils.import(
-      "resource://torbutton/modules/utils.js"
-    );
-    const domain = getDomainForBrowser(browser);
+    const domain = TorDomainIsolator.getDomainForBrowser(browser);
     // We choose the currentURI, which matches what is shown in the URL bar and
     // will match up with the domain.
     // In contrast, documentURI corresponds to the shown page. E.g. it could
     // point to "about:certerror".
     const scheme = browser.currentURI?.scheme;
 
-    const domainIsolator = Cc["@torproject.org/domain-isolator;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-    let credentials = domainIsolator.getSocksProxyCredentials(
+    let credentials = TorDomainIsolator.getSocksProxyCredentials(
       domain,
       browser.contentPrincipal.originAttributes.userContextId
     );
