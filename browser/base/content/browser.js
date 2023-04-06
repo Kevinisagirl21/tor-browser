@@ -100,6 +100,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TorConnect: "resource:///modules/TorConnect.jsm",
   TorConnectState: "resource:///modules/TorConnect.jsm",
   TorConnectTopics: "resource:///modules/TorConnect.jsm",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   webrtcUI: "resource:///modules/webrtcUI.jsm",
   ZoomUI: "resource:///modules/ZoomUI.jsm",
