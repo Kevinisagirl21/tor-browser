@@ -207,45 +207,6 @@ var unescapeTorString = function (str) {
   return _torControl._strUnescape(str);
 };
 
-var getFPDFromHost = hostname => {
-  try {
-    return Services.eTLD.getBaseDomainFromHost(hostname);
-  } catch (e) {
-    if (
-      e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
-      e.result == Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
-    ) {
-      return hostname;
-    }
-  }
-  return null;
-};
-
-// Assuming this is called with gBrowser.selectedBrowser
-var getDomainForBrowser = browser => {
-  let fpd = browser.contentPrincipal.originAttributes.firstPartyDomain;
-  // Bug 31562: For neterror or certerror, get the original URL from
-  // browser.currentURI and use it to calculate the firstPartyDomain.
-  let knownErrors = [
-    "about:neterror",
-    "about:certerror",
-    "about:httpsonlyerror",
-  ];
-  let documentURI = browser.documentURI;
-  if (
-    documentURI &&
-    documentURI.schemeIs("about") &&
-    knownErrors.some(x => documentURI.spec.startsWith(x))
-  ) {
-    let knownSchemes = ["http", "https", "ftp"];
-    let currentURI = browser.currentURI;
-    if (currentURI && knownSchemes.some(x => currentURI.schemeIs(x))) {
-      fpd = getFPDFromHost(currentURI.host) || fpd;
-    }
-  }
-  return fpd;
-};
-
 var m_tb_torlog = Cc["@torproject.org/torbutton-logger;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
@@ -304,7 +265,6 @@ let EXPORTED_SYMBOLS = [
   "bindPrefAndInit",
   "getEnv",
   "getLocale",
-  "getDomainForBrowser",
   "getPrefValue",
   "observe",
   "showDialog",
