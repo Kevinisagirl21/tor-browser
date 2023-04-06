@@ -194,15 +194,11 @@ const gConnectionPane = (function() {
       );
       // wire up connect button
       messageBoxButton.addEventListener("click", () => {
-        TorConnect.beginBootstrap();
-        TorConnect.openTorConnect();
+        TorConnect.openTorConnect({ beginBootstrap: true });
       });
 
       this._populateMessagebox = () => {
-        if (
-          TorConnect.shouldShowTorConnect &&
-          TorConnect.state === TorConnectState.Configuring
-        ) {
+        if (TorConnect.canBeginBootstrap) {
           // set messagebox style and text
           if (TorConnect.hasEverFailed) {
             messageBox.parentNode.style.display = null;
@@ -356,7 +352,9 @@ const gConnectionPane = (function() {
           TorStrings.settings.bridgeChooseForMe
         );
         chooseForMe.addEventListener("command", e => {
-          TorConnect.beginAutoBootstrap(location.value);
+          TorConnect.openTorConnect({
+            beginAutoBootstrap: location.value,
+          });
         });
         this._populateLocations = () => {
           const currentValue = location.value;
@@ -402,7 +400,7 @@ const gConnectionPane = (function() {
         };
         this._showAutoconfiguration = () => {
           if (
-            !TorConnect.shouldShowTorConnect ||
+            !TorConnect.canBeginAutoBootstrap ||
             !TorConnect.potentiallyBlocked
           ) {
             locationGroup.setAttribute("hidden", "true");
