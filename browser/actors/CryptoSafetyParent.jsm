@@ -14,6 +14,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 const lazy = {};
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "TorDomainIsolator",
+  "resource://gre/modules/TorDomainIsolator.jsm"
+);
+
 XPCOMUtils.defineLazyGetter(lazy, "cryptoSafetyBundle", () => {
   return Services.strings.createBundle(
     "chrome://browser/locale/cryptoSafetyPrompt.properties"
@@ -80,7 +86,13 @@ class CryptoSafetyParent extends JSWindowActorParent {
     );
 
     if (buttonPressed === 0) {
-      this.browsingContext.topChromeWindow.torbutton_new_circuit();
+      const { browsingContext } = this.manager;
+      const browser = browsingContext.embedderElement;
+      if (browser) {
+        lazy.TorDomainIsolator.newCircuitForBrowser(
+          browser.ownerGlobal.gBrowser
+        );
+      }
     }
   }
 }
