@@ -25,6 +25,17 @@
 
 - [ ] Link this issue to the appropriate [Release Prep](https://gitlab.torproject.org/tpo/applications/tor-browser-build/-/issues/?sort=updated_desc&state=opened&label_name%5B%5D=Release%20Prep) issue.
 
+### Update Branch Protection Rules
+
+- [ ] In [Repository Settings](https://gitlab.torproject.org/tpo/applications/tor-browser/-/settings/repository):
+  - [ ] Remove previous stable `base-browser` and `tor-browser` branch protection rules (this will prevent pushing new changes to the branches being rebased)
+  - [ ] Create new `base-browser` and `tor-browser` branch protection rule:
+    - **Branch**: `*-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1*`
+      - example: `*-102.8.0esr-12.0-1*`
+    - **Allowed to merge**: `Maintainers`
+    - **Allowed to push and merge**: `Maintainers`
+    - **Allowed to force push**: `false`
+
 ### **Identify the Firefox Tagged Commit and Create New Branches**
 
 - [ ] Find the Firefox mercurial tag here : https://hg.mozilla.org/releases/mozilla-esr102/tags
@@ -48,7 +59,7 @@
 
 ### **Rebase base-browser**
 
-- [ ] Checkout a new branch for the `base-browser` rebase
+- [ ] Checkout a new local branch for the `base-browser` rebase
   - example: `git branch base-browser-rebase FIREFOX_102_8_0esr_BUILD1`
 - [ ] Cherry-pick the previous `base-browser` commits up to `base-browser`'s `build1` tag onto new `base-browser` rebase branch
   - example: `git cherry-pick FIREFOX_102_7_0esr_BUILD1..base-browser-102.7.0esr-12.0-1-build1`
@@ -72,6 +83,7 @@
   - Message : `Tagging build1 for $(ESR_VERSION)esr-based stable`
 - [ ] Push tag to `origin`
 
+
 ### **Rebase tor-browser**
 
 - [ ] Checkout a new branch for the `tor-browser` rebase starting from the `base-browser` `build1` tag
@@ -88,7 +100,7 @@
     - `git diff $(ESR_TAG_PREV)..$(BROWSER_BRANCH_PREV) > current_patchset.diff`
     - `git diff $(ESR_TAG)..$(BROWSER_BRANCH) > rebased_patchset.diff`
     - diff `current_patchset.diff` and `rebased_patchset.diff`
-      - If everything went correctly, the only lines which should differ should be the lines starting with `index abc123...def456`
+      - If everything went correctly, the only lines which should differ should be the lines starting with `index abc123...def456` (unless the previous `base-browser` branch includes changes not included in the previous `tor-browser` branch)
   - [ ] rangediff: `git range-diff $(ESR_TAG_PREV)..$(TOR_BROWSER_BRANCH_PREV) $(ESR_TAG)..HEAD`
     - example: `git range-dif FIREFOX_102_7_0esr_BUILD1..origin/tor-browser-102.7.0esr-12.0-1 FIREFOX_102_8_0esr_BUILD1..HEAD`
 - [ ] Open MR for the `tor-browser` rebase
@@ -97,4 +109,3 @@
   - Tag : `tor-browser-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1-build1`
   - Message : `Tagging build1 for $(ESR_VERSION)esr-based stable`
 - [ ] Push tag to `origin`
-
