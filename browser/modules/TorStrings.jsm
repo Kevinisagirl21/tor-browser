@@ -207,10 +207,6 @@ const Loader = {
 
       torConnecting: "Establishing a Connection",
 
-      torNotConnectedConcise: "Not Connected",
-
-      torConnectingConcise: "Connecting…",
-
       tryingAgain: "Trying again…",
 
       noInternet: "Tor Browser couldn’t reach the Internet",
@@ -250,8 +246,6 @@ const Loader = {
 
       torConnected: "Connected to the Tor network",
 
-      torConnectedConcise: "Connected",
-
       tryAgain: "Try Again",
 
       // tor connect strings for message box in about:preferences#connection
@@ -275,6 +269,13 @@ const Loader = {
       autoBootstrappingAllFailed: "None of the configurations we tried worked",
       cannotDetermineCountry: "Unable to determine user country",
       noSettingsForCountry: "No settings available for your location",
+
+      // Titlebar status.
+      titlebarStatusName: "Tor connection",
+      titlebarStatusNotConnected: "Not connected",
+      titlebarStatusConnecting: "Connecting…",
+      titlebarStatusPotentiallyBlocked: "Potentially blocked",
+      titlebarStatusConnected: "Connected",
     };
 
     const tsb = new TorPropertyStringBundle(
