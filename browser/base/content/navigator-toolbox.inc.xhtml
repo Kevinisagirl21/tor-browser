@@ -93,6 +93,11 @@
               aria-live="polite"/>
       <hbox class="private-browsing-indicator"/>
 
+      <html:div id="tor-connect-titlebar-status" role="status">
+        <html:img alt="" id="tor-connect-titlebar-status-icon" />
+        <html:span id="tor-connect-titlebar-status-label"></html:span>
+      </html:div>
+
 #include titlebar-items.inc.xhtml
 
     </toolbar>
@@ -335,7 +340,6 @@
                    data-l10n-id="urlbar-go-button"/>
             <hbox id="page-action-buttons" context="pageActionContextMenu">
               <toolbartabstop/>
-#include ../../components/torconnect/content/torconnect-urlbar.inc.xhtml
               <hbox id="contextual-feature-recommendation" role="button" hidden="true">
                 <hbox id="cfr-label-container">
                   <label id="cfr-label"/>
@@ -379,6 +383,13 @@
                 <image id="star-button"
                        class="urlbar-icon"/>
               </hbox>
+            </hbox>
+
+            <hbox id="tor-connect-urlbar-button"
+                  role="button"
+                  class="tor-urlbar-button"
+                  hidden="true">
+              <label id="tor-connect-urlbar-button-label"/>
             </hbox>
 
 #include ../../components/onionservices/content/onionlocation-urlbar.inc.xhtml
