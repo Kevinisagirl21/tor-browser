@@ -80,6 +80,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   TorConnect: "resource:///modules/TorConnect.jsm",
+  TorConnectState: "resource:///modules/TorConnect.jsm",
+  TorConnectTopics: "resource:///modules/TorConnect.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
@@ -268,6 +270,16 @@ XPCOMUtils.defineLazyScriptGetter(
   this,
   "gSharedTabWarning",
   "chrome://browser/content/browser-webrtc.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectUrlbarButton"],
+  "chrome://browser/content/torconnect/torConnectUrlbarButton.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectTitlebarStatus"],
+  "chrome://browser/content/torconnect/torConnectTitlebarStatus.js"
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
@@ -1808,6 +1820,9 @@ var gBrowserInit = {
     // Init the OnionAuthPrompt
     OnionAuthPrompt.init();
 
+    gTorConnectUrlbarButton.init();
+    gTorConnectTitlebarStatus.init();
+
     gTorCircuitPanel.init();
 
     // Certain kinds of automigration rely on this notification to complete
@@ -1895,8 +1910,6 @@ var gBrowserInit = {
     }
 
     this._loadHandled = true;
-
-    TorBootstrapUrlbar.init();
   },
 
   _cancelDelayedStartup() {
@@ -2554,9 +2567,10 @@ var gBrowserInit = {
 
     OnionAuthPrompt.uninit();
 
-    gTorCircuitPanel.uninit();
+    gTorConnectUrlbarButton.uninit();
+    gTorConnectTitlebarStatus.uninit();
 
-    TorBootstrapUrlbar.uninit();
+    gTorCircuitPanel.uninit();
 
     gAccessibilityServiceIndicator.uninit();
 
