@@ -58,7 +58,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 
 #torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-icon
 {
-  mask: url("chrome://browser/skin/onion-slash.svg");
+  mask: url("chrome://browser/content/torconnect/onion-slash-fillable.svg");
   background-color: white;
 }
 
