@@ -659,8 +659,11 @@ const gConnectionPane = (function() {
       const showAll = prefpane.querySelector(selectors.bridges.showAll);
       showAll.setAttribute("label", TorStrings.settings.bridgeShowAll);
       showAll.addEventListener("command", () => {
-        this._currentBridgesExpanded = true;
+        this._currentBridgesExpanded = !this._currentBridgesExpanded;
         this._populateBridgeCards();
+        if (!this._currentBridgesExpanded) {
+          bridgeSwitch.scrollIntoView({ behavior: "smooth" });
+        }
       });
       const removeAll = prefpane.querySelector(selectors.bridges.removeAll);
       removeAll.setAttribute("label", TorStrings.settings.bridgeRemoveAll);
@@ -673,17 +676,17 @@ const gConnectionPane = (function() {
         const newStrings = new Set(TorSettings.bridges.bridge_strings);
         const numBridges = newStrings.size;
         if (!newStrings.size) {
-          bridgeHeader.setAttribute("hidden", "true");
-          bridgeDescription.setAttribute("hidden", "true");
-          bridgeCards.setAttribute("hidden", "true");
-          showAll.setAttribute("hidden", "true");
-          removeAll.setAttribute("hidden", "true");
+          bridgeHeader.hidden = true;
+          bridgeDescription.hidden = true;
+          bridgeCards.hidden = true;
+          showAll.hidden = true;
+          removeAll.hidden = true;
           bridgeCards.textContent = "";
           return;
         }
-        bridgeHeader.removeAttribute("hidden");
-        bridgeDescription.removeAttribute("hidden");
-        bridgeCards.removeAttribute("hidden");
+        bridgeHeader.hidden = false;
+        bridgeDescription.hidden = false;
+        bridgeCards.hidden = false;
         bridgeSwitch.checked = TorSettings.bridges.enabled;
         bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
         bridgeCards.classList.toggle("single-card", numBridges === 1);
@@ -729,22 +732,32 @@ const gConnectionPane = (function() {
         }
 
         // And finally update the buttons
-        if (numBridges > collapseThreshold && !this._currentBridgesExpanded) {
-          showAll.removeAttribute("hidden");
-          if (TorSettings.bridges.enabled) {
-            showAll.classList.add("primary");
-          } else {
-            showAll.classList.remove("primary");
-          }
-          removeAll.setAttribute("hidden", "true");
-          if (TorSettings.bridges.enabled) {
-            // We do not want both collapsed and disabled at the same time,
-            // because we use collapsed only to display a gradient on the list.
-            bridgeCards.classList.add("list-collapsed");
-          }
+        removeAll.hidden = false;
+        showAll.classList.toggle("primary", TorSettings.bridges.enabled);
+        if (numBridges > collapseThreshold) {
+          showAll.hidden = false;
+          showAll.setAttribute(
+            "aria-expanded",
+            // Boolean value gets converted to string "true" or "false".
+            this._currentBridgesExpanded
+          );
+          showAll.setAttribute(
+            "label",
+            this._currentBridgesExpanded
+              ? TorStrings.settings.bridgeShowFewer
+              : TorStrings.settings.bridgeShowAll
+          );
+          // We do not want both collapsed and disabled at the same time,
+          // because we use collapsed only to display a gradient on the list.
+          bridgeCards.classList.toggle(
+            "list-collapsed",
+            !this._currentBridgesExpanded && TorSettings.bridges.enabled
+          );
         } else {
-          showAll.setAttribute("hidden", "true");
-          removeAll.removeAttribute("hidden");
+          // NOTE: We do not expect the showAll button to have focus when we
+          // hide it since we do not expect `numBridges` to decrease whilst
+          // this button is focused.
+          showAll.hidden = true;
           bridgeCards.classList.remove("list-collapsed");
         }
       };
