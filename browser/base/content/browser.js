@@ -97,6 +97,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SiteDataManager: "resource:///modules/SiteDataManager.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TorConnect: "resource:///modules/TorConnect.jsm",
+  TorConnectState: "resource:///modules/TorConnect.jsm",
+  TorConnectTopics: "resource:///modules/TorConnect.jsm",
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   webrtcUI: "resource:///modules/webrtcUI.jsm",
@@ -282,6 +284,16 @@ XPCOMUtils.defineLazyScriptGetter(
   this,
   "gPageStyleMenu",
   "chrome://browser/content/browser-pagestyle.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectUrlbarButton"],
+  "chrome://browser/content/torconnect/torConnectUrlbarButton.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectTitlebarStatus"],
+  "chrome://browser/content/torconnect/torConnectTitlebarStatus.js"
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
@@ -1705,6 +1717,9 @@ var gBrowserInit = {
     // Init the NewIdentityButton
     NewIdentityButton.init();
 
+    gTorConnectUrlbarButton.init();
+    gTorConnectTitlebarStatus.init();
+
     gTorCircuitPanel.init();
 
     // Certain kinds of automigration rely on this notification to complete
@@ -1791,8 +1806,6 @@ var gBrowserInit = {
     }
 
     this._loadHandled = true;
-
-    TorBootstrapUrlbar.init();
   },
 
   _cancelDelayedStartup() {
@@ -2498,9 +2511,10 @@ var gBrowserInit = {
 
     NewIdentityButton.uninit();
 
-    gTorCircuitPanel.uninit();
+    gTorConnectUrlbarButton.uninit();
+    gTorConnectTitlebarStatus.uninit();
 
-    TorBootstrapUrlbar.uninit();
+    gTorCircuitPanel.uninit();
 
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.uninit();
