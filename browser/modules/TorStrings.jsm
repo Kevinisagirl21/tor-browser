@@ -112,6 +112,7 @@ const Loader = {
       bridgeCopy: "Copy Bridge Address",
       copied: "Copied!",
       bridgeShowAll: "Show All Bridges",
+      bridgeShowFewer: "Show Fewer Bridges",
       allBridgesEnabled: "Use current bridges",
       bridgeRemoveAll: "Remove All Bridges",
       bridgeRemoveAllDialogTitle: "Remove all bridges?",
