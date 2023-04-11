@@ -38,6 +38,7 @@
 <?xml-stylesheet href="chrome://browser/skin/places/editBookmark.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/content/onionservices/onionservices.css" type="text/css"?>
 <?xml-stylesheet href="chrome://browser/content/torCircuitPanel.css" type="text/css"?>
+<?xml-stylesheet href="chrome://browser/content/torconnect/torConnectTitlebarStatus.css" type="text/css"?>
 
 <!DOCTYPE window [
 #include browser-doctype.inc
@@ -130,7 +131,6 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/languageNotification.js", this);
   Services.scriptloader.loadSubScript("chrome://torbutton/content/torbutton.js", this);
-  Services.scriptloader.loadSubScript("chrome://browser/content/torconnect/torBootstrapUrlbar.js", this);
 
   window.onload = gBrowserInit.onLoad.bind(gBrowserInit);
   window.onunload = gBrowserInit.onUnload.bind(gBrowserInit);

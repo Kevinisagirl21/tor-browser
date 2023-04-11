@@ -1,0 +1,38 @@
+#tor-connect-titlebar-status:not([hidden]) {
+  display: flex;
+  align-items: center;
+  /* Want same as #private-browsing-indicator-with-label */
+  margin-inline: 7px;
+}
+
+#tor-connect-titlebar-status-label {
+  margin-inline: 6px;
+  white-space: nowrap;
+}
+
+#tor-connect-titlebar-status-icon {
+  -moz-context-properties: fill;
+  fill: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
+#tor-connect-titlebar-status-icon.tor-connect-status-connected {
+  fill: var(--purple-60);
+}
+
+@media (prefers-color-scheme: dark) {
+  #tor-connect-titlebar-status-icon.tor-connect-status-connected {
+    fill: var(--purple-30);
+  }
+}
+
+#tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked {
+  fill: #c50042;
+}
+
+@media (prefers-color-scheme: dark) {
+  #tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked {
+    fill: #ff9aa2;
+  }
+}
