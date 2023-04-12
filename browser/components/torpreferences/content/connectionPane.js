@@ -1071,6 +1071,11 @@ const gConnectionPane = (function() {
         TorSettings.applySettings().then(result => {
           this._populateBridgeCards();
         });
+        // The bridge dialog button is "connect" when Tor is not bootstrapped,
+        // so do the connect
+        if (TorConnect.state == TorConnectState.Configuring) {
+          TorConnect.openTorConnect({ beginBootstrap: true })
+        }
       });
       builtinBridgeDialog.openDialog(gSubDialog);
     },

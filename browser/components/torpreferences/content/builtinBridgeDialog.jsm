@@ -1,19 +1,30 @@
 "use strict";
 
+const obs = Components.classes["@mozilla.org/observer-service;1"].getService(Components.interfaces.nsIObserverService);
+
 var EXPORTED_SYMBOLS = ["BuiltinBridgeDialog"];
 
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 const {
   TorSettings,
+  TorSettingsTopics,
   TorBridgeSource,
   TorBuiltinBridgeTypes,
 } = ChromeUtils.import("resource:///modules/TorSettings.jsm");
+
+const {
+  TorConnect,
+  TorConnectTopics,
+  TorConnectState,
+} = ChromeUtils.import("resource:///modules/TorConnect.jsm");
 
 class BuiltinBridgeDialog {
   constructor(onSubmit) {
     this.onSubmit = onSubmit;
     this._dialog = null;
+    this._window = null;
+    this._acceptButton = null;
   }
 
   static get selectors() {
@@ -27,27 +38,31 @@ class BuiltinBridgeDialog {
       snowflakeDescr: "#torPreferences-builtinBridges-descrSnowflake",
       meekAzureRadio: "#torPreferences-builtinBridges-radioMeekAzure",
       meekAzureDescr: "#torPreferences-builtinBridges-descrMeekAzure",
+      acceptButton: "accept" /* not really a selector but a key for dialog's getButton */,
     };
   }
 
   _populateXUL(window, aDialog) {
     const selectors = BuiltinBridgeDialog.selectors;
 
+    this._window = window;
     this._dialog = aDialog;
     const dialogWin = this._dialog.parentElement;
-    dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeTitle);
+    dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeHeader);
 
-    this._dialog.querySelector(selectors.header).textContent =
-      TorStrings.settings.builtinBridgeHeader;
     this._dialog.querySelector(selectors.description).textContent =
       TorStrings.settings.builtinBridgeDescription;
+
+    this._acceptButton = this._dialog.getButton(selectors.acceptButton);
+    this.onTorStateChange();
+
     let radioGroup = this._dialog.querySelector(selectors.radiogroup);
 
     let types = {
       obfs4: {
         elemRadio: this._dialog.querySelector(selectors.obfsRadio),
         elemDescr: this._dialog.querySelector(selectors.obfsDescr),
-        label: TorStrings.settings.builtinBridgeObfs4,
+        label: TorStrings.settings.builtinBridgeObfs4Title,
         descr: TorStrings.settings.builtinBridgeObfs4Description,
       },
       snowflake: {
@@ -94,6 +109,16 @@ class BuiltinBridgeDialog {
     // Hack: see the CSS
     this._dialog.style.minWidth = "0";
     this._dialog.style.minHeight = "0";
+
+    obs.addObserver(this, TorConnectTopics.StateChange);
+  }
+
+  onTorStateChange() {
+    if (TorConnect.state === TorConnectState.Configuring) {
+      this._acceptButton.setAttribute("label", TorStrings.settings.bridgeButtonConnect);
+    } else {
+      this._acceptButton.setAttribute("label", TorStrings.settings.bridgeButtonAccept);
+    }
   }
 
   init(window, aDialog) {
@@ -103,10 +128,27 @@ class BuiltinBridgeDialog {
     }, 0);
   }
 
+  observe(subject, topic, data) {
+    switch (topic) {
+      case TorConnectTopics.StateChange: {
+        this.onTorStateChange();
+        break;
+      }
+    }
+  }
+
+  close() {
+    // unregister our observer topics
+    obs.removeObserver(this, TorConnectTopics.StateChange);
+  }
+
   openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
-      { features: "resizable=yes" },
+      { features: "resizable=yes",
+        closingCallback: () => {
+          this.close();
+        },},
       this
     );
   }
