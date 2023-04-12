@@ -95,7 +95,7 @@ const Loader = {
       // Bridge settings
       bridgesHeading: "Bridges",
       bridgesDescription:
-        "Bridges help you access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another.",
+        "Bridges help you securely access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another.",
       bridgeLocation: "Your location",
       bridgeLocationAutomatic: "Automatic",
       bridgeLocationFrequent: "Frequently selected locations",
@@ -141,16 +141,19 @@ const Loader = {
       builtinBridgeTitle: "Built-In Bridges",
       builtinBridgeHeader: "Select a Built-In Bridge",
       builtinBridgeDescription:
-        "Tor Browser includes some specific types of bridges known as “pluggable transports”.",
+        "Tor Browser includes some specific types of bridges known as “pluggable transports”, which can help conceal the fact you’re using Tor.",
       builtinBridgeObfs4: "obfs4",
+      builtinBridgeObfs4Title: "obfs4 (Built-in)",
       builtinBridgeObfs4Description:
-        "obfs4 is a type of built-in bridge that makes your Tor traffic look random. They are also less likely to be blocked than their predecessors, obfs3 bridges.",
+        "Makes your Tor traffic look like random data. May not work in heavily censored regions.",
       builtinBridgeSnowflake: "Snowflake",
       builtinBridgeSnowflakeDescription:
-        "Snowflake is a built-in bridge that defeats censorship by routing your connection through Snowflake proxies, ran by volunteers.",
+        "Routes your connection through Snowflake proxies to make it look like you’re placing a video call, for example.",
       builtinBridgeMeekAzure: "meek-azure",
       builtinBridgeMeekAzureDescription:
-        "meek-azure is a built-in bridge that makes it look like you are using a Microsoft web site instead of using Tor.",
+        "Makes it look like you’re connected to a Microsoft web site, instead of using Tor. May work in heavily censored regions, but is usually very slow.",
+      bridgeButtonConnect: "Connect",
+      bridgeButtonAccept: "OK",
       // Request bridges dialog
       requestBridgeDialogTitle: "Request Bridge",
       submitCaptcha: "Submit",
