@@ -323,7 +323,7 @@ const gConnectionPane = (function() {
       prefpane.querySelector(selectors.bridges.header).innerText =
         TorStrings.settings.bridgesHeading;
       prefpane.querySelector(selectors.bridges.description).textContent =
-        TorStrings.settings.bridgesDescription;
+        TorStrings.settings.bridgesDescription2;
       {
         const learnMore = prefpane.querySelector(selectors.bridges.learnMore);
         learnMore.setAttribute("value", TorStrings.settings.learnMore);
@@ -424,7 +424,8 @@ const gConnectionPane = (function() {
         selectors.bridges.currentHeader
       );
       bridgeHeader.textContent = TorStrings.settings.bridgeCurrent;
-      prefpane.querySelector(selectors.bridges.switchLabel).textContent = TorStrings.settings.allBridgesEnabled;
+      prefpane.querySelector(selectors.bridges.switchLabel).textContent =
+        TorStrings.settings.allBridgesEnabled;
       const bridgeSwitch = prefpane.querySelector(selectors.bridges.switch);
       bridgeSwitch.addEventListener("change", () => {
         TorSettings.bridges.enabled = bridgeSwitch.checked;
@@ -887,34 +888,34 @@ const gConnectionPane = (function() {
         });
       }
 
-      {
-        this._confirmBridgeRemoval = () => {
-          const aParentWindow = Services.wm.getMostRecentWindow("navigator:browser");
+      this._confirmBridgeRemoval = () => {
+        const aParentWindow = Services.wm.getMostRecentWindow(
+          "navigator:browser"
+        );
 
-          const ps = Services.prompt;
-          const btnFlags =
-            ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING +
-            ps.BUTTON_POS_0_DEFAULT +
-            ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL;
+        const ps = Services.prompt;
+        const btnFlags =
+          ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING +
+          ps.BUTTON_POS_0_DEFAULT +
+          ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL;
 
-          const notUsed = { value: false };
-          const btnIndex = ps.confirmEx(
-            aParentWindow,
-            TorStrings.settings.bridgeRemoveAllDialogTitle,
-            TorStrings.settings.bridgeRemoveAllDialogDescription,
-            btnFlags,
-            TorStrings.settings.remove,
-            null,
-            null,
-            null,
-            notUsed
-          );
+        const notUsed = { value: false };
+        const btnIndex = ps.confirmEx(
+          aParentWindow,
+          TorStrings.settings.bridgeRemoveAllDialogTitle,
+          TorStrings.settings.bridgeRemoveAllDialogDescription,
+          btnFlags,
+          TorStrings.settings.remove,
+          null,
+          null,
+          null,
+          notUsed
+        );
 
-          if (btnIndex === 0) {
-            this.onRemoveAllBridges();
-          }
-        };
-      }
+        if (btnIndex === 0) {
+          this.onRemoveAllBridges();
+        }
+      };
 
       // Advanced setup
       prefpane.querySelector(selectors.advanced.header).innerText =
@@ -1058,25 +1059,41 @@ const gConnectionPane = (function() {
     },
 
     onAddBuiltinBridge() {
-      const builtinBridgeDialog = new BuiltinBridgeDialog(aBridgeType => {
-        if (!aBridgeType) {
-          TorSettings.bridges.enabled = false;
-          TorSettings.bridges.builtin_type = "";
-        } else {
-          TorSettings.bridges.enabled = true;
-          TorSettings.bridges.source = TorBridgeSource.BuiltIn;
-          TorSettings.bridges.builtin_type = aBridgeType;
-        }
-        TorSettings.saveToPrefs();
-        TorSettings.applySettings().then(result => {
+      const builtinBridgeDialog = new BuiltinBridgeDialog(
+        async (bridgeType, connect) => {
+          if (!bridgeType) {
+            TorSettings.bridges.enabled = false;
+            TorSettings.bridges.builtin_type = "";
+          } else {
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.BuiltIn;
+            TorSettings.bridges.builtin_type = bridgeType;
+          }
+          TorSettings.saveToPrefs();
+          await TorSettings.applySettings();
+
           this._populateBridgeCards();
-        });
-        // The bridge dialog button is "connect" when Tor is not bootstrapped,
-        // so do the connect
-        if (TorConnect.state == TorConnectState.Configuring) {
-          TorConnect.openTorConnect({ beginBootstrap: true })
+
+          // The bridge dialog button is "connect" when Tor is not bootstrapped,
+          // so do the connect.
+          if (connect) {
+            // Start Bootstrapping, which should use the configured bridges.
+            // NOTE: We do this regardless of any previous TorConnect Error.
+            if (TorConnect.canBeginBootstrap) {
+              TorConnect.beginBootstrap();
+            }
+            // Open "about:torconnect".
+            // FIXME: If there has been a previous bootstrapping error then
+            // "about:torconnect" will be trying to get the user to use
+            // AutoBootstrapping. It is not set up to handle a forced direct
+            // entry to plain Bootstrapping from this dialog so the UI will not
+            // be aligned. In particular the
+            // AboutTorConnect.uiState.bootstrapCause will be aligned to
+            // whatever was shown previously in "about:torconnect" instead.
+            TorConnect.openTorConnect();
+          }
         }
-      });
+      );
       builtinBridgeDialog.openDialog(gSubDialog);
     },
 

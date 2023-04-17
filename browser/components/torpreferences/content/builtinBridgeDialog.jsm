@@ -1,35 +1,30 @@
 "use strict";
 
-const obs = Components.classes["@mozilla.org/observer-service;1"].getService(Components.interfaces.nsIObserverService);
-
 var EXPORTED_SYMBOLS = ["BuiltinBridgeDialog"];
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 const {
   TorSettings,
-  TorSettingsTopics,
   TorBridgeSource,
   TorBuiltinBridgeTypes,
 } = ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
-const {
-  TorConnect,
-  TorConnectTopics,
-  TorConnectState,
-} = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
 
 class BuiltinBridgeDialog {
   constructor(onSubmit) {
     this.onSubmit = onSubmit;
     this._dialog = null;
-    this._window = null;
     this._acceptButton = null;
   }
 
   static get selectors() {
     return {
-      header: "#torPreferences-builtinBridge-header",
       description: "#torPreferences-builtinBridge-description",
       radiogroup: "#torPreferences-builtinBridge-typeSelection",
       obfsRadio: "#torPreferences-builtinBridges-radioObfs",
@@ -38,22 +33,20 @@ class BuiltinBridgeDialog {
       snowflakeDescr: "#torPreferences-builtinBridges-descrSnowflake",
       meekAzureRadio: "#torPreferences-builtinBridges-radioMeekAzure",
       meekAzureDescr: "#torPreferences-builtinBridges-descrMeekAzure",
-      acceptButton: "accept" /* not really a selector but a key for dialog's getButton */,
     };
   }
 
   _populateXUL(window, aDialog) {
     const selectors = BuiltinBridgeDialog.selectors;
 
-    this._window = window;
     this._dialog = aDialog;
     const dialogWin = this._dialog.parentElement;
     dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeHeader);
 
     this._dialog.querySelector(selectors.description).textContent =
-      TorStrings.settings.builtinBridgeDescription;
+      TorStrings.settings.builtinBridgeDescription2;
 
-    this._acceptButton = this._dialog.getButton(selectors.acceptButton);
+    this._acceptButton = this._dialog.getButton("accept");
     this.onTorStateChange();
 
     let radioGroup = this._dialog.querySelector(selectors.radiogroup);
@@ -63,19 +56,19 @@ class BuiltinBridgeDialog {
         elemRadio: this._dialog.querySelector(selectors.obfsRadio),
         elemDescr: this._dialog.querySelector(selectors.obfsDescr),
         label: TorStrings.settings.builtinBridgeObfs4Title,
-        descr: TorStrings.settings.builtinBridgeObfs4Description,
+        descr: TorStrings.settings.builtinBridgeObfs4Description2,
       },
       snowflake: {
         elemRadio: this._dialog.querySelector(selectors.snowflakeRadio),
         elemDescr: this._dialog.querySelector(selectors.snowflakeDescr),
         label: TorStrings.settings.builtinBridgeSnowflake,
-        descr: TorStrings.settings.builtinBridgeSnowflakeDescription,
+        descr: TorStrings.settings.builtinBridgeSnowflakeDescription2,
       },
       "meek-azure": {
         elemRadio: this._dialog.querySelector(selectors.meekAzureRadio),
         elemDescr: this._dialog.querySelector(selectors.meekAzureDescr),
         label: TorStrings.settings.builtinBridgeMeekAzure,
-        descr: TorStrings.settings.builtinBridgeMeekAzureDescription,
+        descr: TorStrings.settings.builtinBridgeMeekAzureDescription2,
       },
     };
 
@@ -96,8 +89,8 @@ class BuiltinBridgeDialog {
       radioGroup.selectedItem = null;
     }
 
-    this._dialog.addEventListener("dialogaccept", e => {
-      this.onSubmit(radioGroup.value);
+    this._dialog.addEventListener("dialogaccept", () => {
+      this.onSubmit(radioGroup.value, TorConnect.canBeginBootstrap);
     });
     this._dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
@@ -110,14 +103,20 @@ class BuiltinBridgeDialog {
     this._dialog.style.minWidth = "0";
     this._dialog.style.minHeight = "0";
 
-    obs.addObserver(this, TorConnectTopics.StateChange);
+    Services.obs.addObserver(this, TorConnectTopics.StateChange);
   }
 
   onTorStateChange() {
-    if (TorConnect.state === TorConnectState.Configuring) {
-      this._acceptButton.setAttribute("label", TorStrings.settings.bridgeButtonConnect);
+    if (TorConnect.canBeginBootstrap) {
+      this._acceptButton.setAttribute(
+        "label",
+        TorStrings.settings.bridgeButtonConnect
+      );
     } else {
-      this._acceptButton.setAttribute("label", TorStrings.settings.bridgeButtonAccept);
+      this._acceptButton.setAttribute(
+        "label",
+        TorStrings.settings.bridgeButtonAccept
+      );
     }
   }
 
@@ -130,25 +129,26 @@ class BuiltinBridgeDialog {
 
   observe(subject, topic, data) {
     switch (topic) {
-      case TorConnectTopics.StateChange: {
+      case TorConnectTopics.StateChange:
         this.onTorStateChange();
         break;
-      }
     }
   }
 
   close() {
     // unregister our observer topics
-    obs.removeObserver(this, TorConnectTopics.StateChange);
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
   }
 
   openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
-      { features: "resizable=yes",
+      {
+        features: "resizable=yes",
         closingCallback: () => {
           this.close();
-        },},
+        },
+      },
       this
     );
   }
