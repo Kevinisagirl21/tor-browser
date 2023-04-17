@@ -94,7 +94,7 @@ const Loader = {
       quickstartCheckbox: "Always connect automatically",
       // Bridge settings
       bridgesHeading: "Bridges",
-      bridgesDescription:
+      bridgesDescription2:
         "Bridges help you securely access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another.",
       bridgeLocation: "Your location",
       bridgeLocationAutomatic: "Automatic",
@@ -116,7 +116,8 @@ const Loader = {
       allBridgesEnabled: "Use current bridges",
       bridgeRemoveAll: "Remove All Bridges",
       bridgeRemoveAllDialogTitle: "Remove all bridges?",
-      bridgeRemoveAllDialogDescription: "If these bridges were received from torproject.org or added manually, this action cannot be undone",
+      bridgeRemoveAllDialogDescription:
+        "If these bridges were received from torproject.org or added manually, this action cannot be undone",
       bridgeAdd: "Add a New Bridge",
       bridgeSelectBrowserBuiltin:
         "Choose from one of Tor Browser’s built-in bridges",
@@ -138,20 +139,18 @@ const Loader = {
       // Scan bridge QR dialog
       scanQrTitle: "Scan the QR code",
       // Builtin bridges dialog
-      builtinBridgeTitle: "Built-In Bridges",
       builtinBridgeHeader: "Select a Built-In Bridge",
-      builtinBridgeDescription:
+      builtinBridgeDescription2:
         "Tor Browser includes some specific types of bridges known as “pluggable transports”, which can help conceal the fact you’re using Tor.",
-      builtinBridgeObfs4: "obfs4",
       builtinBridgeObfs4Title: "obfs4 (Built-in)",
-      builtinBridgeObfs4Description:
+      builtinBridgeObfs4Description2:
         "Makes your Tor traffic look like random data. May not work in heavily censored regions.",
       builtinBridgeSnowflake: "Snowflake",
-      builtinBridgeSnowflakeDescription:
+      builtinBridgeSnowflakeDescription2:
         "Routes your connection through Snowflake proxies to make it look like you’re placing a video call, for example.",
       builtinBridgeMeekAzure: "meek-azure",
-      builtinBridgeMeekAzureDescription:
-        "Makes it look like you’re connected to a Microsoft web site, instead of using Tor. May work in heavily censored regions, but is usually very slow.",
+      builtinBridgeMeekAzureDescription2:
+        "Makes it look like you’re connected to a Microsoft website, instead of using Tor. May work in heavily censored regions, but is usually very slow.",
       bridgeButtonConnect: "Connect",
       bridgeButtonAccept: "OK",
       // Request bridges dialog
