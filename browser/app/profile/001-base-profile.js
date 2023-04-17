@@ -696,8 +696,6 @@ pref("font.name-list.monospace.x-unicode", "Consolas, Noto Sans Balinese, Noto S
 #endif
 
 #ifdef XP_LINUX
-pref("layout.css.font-visibility.resistFingerprinting", 3); // work around bug 41163
-
 // Arabic
 pref("font.name-list.serif.ar", "Noto Naskh Arabic, Tinos");
 pref("font.name-list.sans-serif.ar", "Noto Naskh Arabic, Arimo");
