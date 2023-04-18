@@ -335,6 +335,14 @@ static const StaticFingerprints kPinset_tor = {
   kPinset_tor_Data
 };
 
+static const char* const kPinset_tor_browser_Data[] = {
+  kISRG_Root_X1Fingerprint,
+};
+static const StaticFingerprints kPinset_tor_browser = {
+  sizeof(kPinset_tor_browser_Data) / sizeof(const char*),
+  kPinset_tor_browser_Data
+};
+
 static const char* const kPinset_facebook_Data[] = {
   kCOMODO_ECC_Certification_AuthorityFingerprint,
   kISRG_Root_X1Fingerprint,
@@ -413,6 +421,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "blogger.com", true, false, false, -1, &kPinset_google_root_pems },
   { "blogspot.com", true, false, false, -1, &kPinset_google_root_pems },
   { "br.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
+  { "bridges.torproject.org", false, false, false, -1, &kPinset_tor_browser },
   { "bugs.chromium.org", true, false, false, -1, &kPinset_google_root_pems },
   { "build.chromium.org", true, false, false, -1, &kPinset_google_root_pems },
   { "business.facebook.com", true, false, false, -1, &kPinset_facebook },
