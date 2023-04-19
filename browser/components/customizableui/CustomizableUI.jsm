@@ -71,6 +71,11 @@ var kVersion = 17;
 var kVersionBaseBrowser = 1;
 
 /**
+ * The current version for tor browser.
+ */
+var kVersionTorBrowser = 1;
+
+/**
  * Buttons removed from built-ins by version they were removed. kVersion must be
  * bumped any time a new id is added to this. Use the button id as key, and
  * version the button is removed in as the value.  e.g. "pocket-button": 5
@@ -224,6 +229,7 @@ var CustomizableUIInternal = {
     this._updateForNewProtonVersion();
     this._markObsoleteBuiltinButtonsSeen();
     this._updateForBaseBrowser();
+    this._updateForTorBrowser();
 
     this.registerArea(
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
@@ -249,6 +255,8 @@ var CustomizableUIInternal = {
       // Base-browser additions tor-browser#41736. If you want to add to, remove
       // from, or rearrange this list, then bump the kVersionBaseBrowser and
       // update existing saved states in _updateForBaseBrowser.
+      // Or if the change is only meant for tor-browser, bump kVersionTorBrowser
+      // instead and update the existing saved states in _updateForTorBrowser.
       "security-level-button",
       "new-identity-button",
       "downloads-button",
@@ -797,6 +805,25 @@ var CustomizableUIInternal = {
       // "browser.uiCustomization.state".
       delete gSavedState.placements["PanelUI-contents"];
       delete gSavedState.placements["addon-bar"];
+    }
+  },
+
+  _updateForTorBrowser() {
+    if (!gSavedState) {
+      // Use the defaults.
+      return;
+    }
+
+    const currentVersion = gSavedState.currentVersionTorBrowser;
+
+    if (currentVersion < 1) {
+      // Remove torbutton-button, which no longer exists.
+      for (const placements of Object.values(gSavedState.placements)) {
+        let buttonIndex = placements.indexOf("torbutton-button");
+        if (buttonIndex != -1) {
+          placements.splice(buttonIndex, 1);
+        }
+      }
     }
   },
 
@@ -2618,6 +2645,10 @@ var CustomizableUIInternal = {
       gSavedState.currentVersionBaseBrowser = 0;
     }
 
+    if (!("currentVersionTorBrowser" in gSavedState)) {
+      gSavedState.currentVersionTorBrowser = 0;
+    }
+
     gSeenWidgets = new Set(gSavedState.seen || []);
     gDirtyAreaCache = new Set(gSavedState.dirtyAreaCache || []);
     gNewElementCount = gSavedState.newElementCount || 0;
@@ -2697,6 +2728,7 @@ var CustomizableUIInternal = {
       dirtyAreaCache: gDirtyAreaCache,
       currentVersion: kVersion,
       currentVersionBaseBrowser: kVersionBaseBrowser,
+      currentVersionTorBrowser: kVersionTorBrowser,
       newElementCount: gNewElementCount,
     };
 
