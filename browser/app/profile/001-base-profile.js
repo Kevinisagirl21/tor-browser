@@ -499,6 +499,10 @@ pref("browser.urlbar.suggest.topsites", false);
 // is only reported via telemetry (which is disabled). See tor-browser#40048.
 pref("corroborator.enabled", false);
 
+// tor-browser#41417: do not allow live reload until we switch to Fluent and
+// stop using .textContent.
+pref("intl.multilingual.liveReload", false);
+
 // Onboarding.
 pref("browser.onboarding.tourset-version", 5);
 pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
