@@ -33,8 +33,6 @@
 
 const PREF_SHOW_DOWNLOAD_WARNING = "browser.download.showTorWarning";
 
-const TAILS_URI = "https://tails.boum.org/";
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -121,13 +119,28 @@ var DownloadsPanel = {
       );
     }
 
-    let showDownloadWarning = Services.prefs.getBoolPref(
-      PREF_SHOW_DOWNLOAD_WARNING
+    const torWarningMessage = document.getElementById(
+      "downloadsPanelTorWarning"
     );
-    if (!showDownloadWarning) {
-      document.getElementById("downloadsWarning").hidden = true;
-    } else {
-      document.getElementById("downloadsWarning").hidden = false;
+    if (!this._torWarningPrefObserver) {
+      // Observe changes to the tor warning pref.
+      this._torWarningPrefObserver = () => {
+        if (Services.prefs.getBoolPref(PREF_SHOW_DOWNLOAD_WARNING)) {
+          torWarningMessage.hidden = false;
+        } else {
+          // Re-assign focus if it is about to be lost.
+          if (torWarningMessage.contains(document.activeElement)) {
+            this._focusPanel(true);
+          }
+          torWarningMessage.hidden = true;
+        }
+      };
+      Services.prefs.addObserver(
+        PREF_SHOW_DOWNLOAD_WARNING,
+        this._torWarningPrefObserver
+      );
+      // Initialize
+      this._torWarningPrefObserver();
     }
 
     if (this._state != this.kStateUninitialized) {
@@ -154,35 +167,36 @@ var DownloadsPanel = {
     );
 
     if (!this._torWarningInitialized) {
-      document.getElementById("downloadsWarningHeaderTitle").textContent =
-        this._getString("torbutton.download.warning.title");
-      let tailsBrandName = this._getString(
+      torWarningMessage.querySelector(
+        ".downloads-tor-warning-title"
+      ).textContent = this._getTorString("torbutton.download.warning.title");
+
+      const tailsLink = document.createElement("a");
+      tailsLink.href = "https://tails.boum.org/";
+      tailsLink.textContent = this._getTorString(
         "torbutton.download.warning.tails_brand_name"
       );
-
-      let warningDescriptionText = this._getString(
-        "torbutton.download.warning.description"
-      );
-      let [head, rest] = warningDescriptionText.split("%S");
-      const tailsLink = document.createElement("a");
-      tailsLink.setAttribute("href", TAILS_URI);
-      tailsLink.textContent = tailsBrandName.trim();
       tailsLink.addEventListener("click", event => {
         event.preventDefault();
         this.hidePanel();
-        openWebLinkIn(TAILS_URI, "tab");
+        openWebLinkIn(tailsLink.href, "tab");
       });
 
-      let downloadsWarningDescription = document.getElementById(
-        "downloadsWarningDescription"
-      );
-      downloadsWarningDescription.append(head, tailsLink, rest);
+      const [beforeLink, afterLink] = this._getTorString(
+        "torbutton.download.warning.description"
+      ).split("%S");
 
-      let dismissBtn = document.getElementById("downloadWarningDismiss");
-      dismissBtn.textContent = this._getString(
+      torWarningMessage
+        .querySelector(".downloads-tor-warning-description")
+        .append(beforeLink, tailsLink, afterLink);
+
+      let dismissButton = torWarningMessage.querySelector(
+        ".downloads-tor-warning-dismiss-button"
+      );
+      dismissButton.textContent = this._getTorString(
         "torbutton.download.warning.dismiss"
       );
-      dismissBtn.addEventListener("click", event => {
+      dismissButton.addEventListener("click", event => {
         Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
         document.getElementById("downloadsWarning").hidden = true;
         this._focusPanel(true);
@@ -227,6 +241,14 @@ var DownloadsPanel = {
 
     if (DownloadIntegration.downloadSpamProtection) {
       DownloadIntegration.downloadSpamProtection.unregister(window);
+    }
+
+    if (this._torWarningPrefObserver) {
+      Services.prefs.removeObserver(
+        PREF_SHOW_DOWNLOAD_WARNING,
+        this._torWarningPrefObserver
+      );
+      delete this._torWarningPrefObserver;
     }
 
     this._state = this.kStateUninitialized;
@@ -713,7 +735,7 @@ var DownloadsPanel = {
    *
    * @return {string} The string.
    */
-  _getString(name) {
+  _getTorString(name) {
     if (!this._stringBundle) {
       this._stringBundle = Services.strings.createBundle(
         "chrome://torbutton/locale/torbutton.properties"

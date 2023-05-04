@@ -338,6 +338,21 @@
     </tree>
     <splitter collapse="none" persist="state"></splitter>
     <vbox id="contentView">
+      <html:message-bar id="placesDownloadsTorWarning"
+                        role="alert"
+                        aria-labelledby="placesDownloadsTorWarningTitle"
+                        aria-describedby="placesDownloadsTorWarningDescription">
+        <html:div class="downloads-tor-warning-grid">
+          <html:p id="placesDownloadsTorWarningTitle"
+                  class="downloads-tor-warning-title">
+          </html:p>
+          <html:p id="placesDownloadsTorWarningDescription"
+                  class="downloads-tor-warning-description">
+          </html:p>
+          <html:button class="downloads-tor-warning-dismiss-button">
+          </html:button>
+        </html:div>
+      </html:message-bar>
       <vbox id="placesViewsBox" flex="1">
         <tree id="placeContent"
               class="plain placesTree"
