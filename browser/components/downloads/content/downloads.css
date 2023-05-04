@@ -104,18 +104,52 @@
   flex-direction: column;
 }
 
-#downloadsWarning p {
-  padding-inline: 8px;
-  margin-block-start: 8px;
-  margin-block-end: 0;
+.downloads-tor-warning-grid {
+  display: grid;
+  grid-template:
+    "title button" min-content
+    "description button" auto
+    / 1fr max-content;
+  gap: 8px;
+  margin-block: 8px;
+  /* Some extra space between the text and the icon. */
+  margin-inline-start: 8px;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-title {
+  grid-area: title;
+  margin: 0;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-description {
+  grid-area: description;
+  margin: 0;
+}
+
+.downloads-tor-warning-grid .downloads-tor-warning-dismiss-button {
+  grid-area: button;
+  align-self: center;
+}
+
+.downloads-tor-warning-description,
+.downloads-tor-warning-title {
   line-height: 1.4;
 }
 
-#downloadsWarningHeaderTitle {
+.downloads-tor-warning-title {
   font-weight: bold;
 }
 
-#downloadsWarningDescription {
+#downloadsPanelTorWarning :is(
+  .downloads-tor-warning-description,
+  .downloads-tor-warning-title
+) {
+  padding-inline: 8px;
+  margin-block-start: 8px;
+  margin-block-end: 0;
+}
+
+#downloadsPanelTorWarningDescription {
   /* Make sure we wrap the text rather than request the default max-content
    * width from the parent XUL -moz-box. */
   width: 0;
