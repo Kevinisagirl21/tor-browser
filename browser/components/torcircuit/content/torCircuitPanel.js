@@ -220,10 +220,10 @@ var gTorCircuitPanel = {
     // rather than a <html:button>, or <xul:toolbarbutton>, so we need to set up
     // listeners for both "click" and "keydown", and not for "command".
     this.toolbarButton.addEventListener("keydown", event => {
-      event.stopPropagation();
       if (event.key !== "Enter" && event.key !== " ") {
         return;
       }
+      event.stopPropagation();
       this.show();
     });
     this.toolbarButton.addEventListener("click", event => {
