@@ -99,7 +99,7 @@ const TorConnectState = Object.freeze({
   └─┼─────▶ │                                                          │  │
     │       └──────────────────────────────────────────────────────────┘  │
     │         │                        ▲                                  │
-    │         │ beginAutoBootstrap()   │ cancelAutoBootstrap()            │
+    │         │ beginAutoBootstrap()   │ cancelBootstrap()                │
     │         ▼                        │                                  │
     │       ┌───────────────────────┐  │                                  │
     └────── │   AutoBootstrapping   │ ─┘                                  │
@@ -464,6 +464,7 @@ const TorConnect = (() => {
 
               const tbr = new TorBootstrapRequest();
               const internetTest = new InternetTest();
+              let cancelled = false;
 
               let bootstrapError = "";
               let bootstrapErrorDetails = "";
@@ -506,6 +507,7 @@ const TorConnect = (() => {
               this.on_transition = async nextState => {
                 if (nextState === TorConnectState.Configuring) {
                   // stop bootstrap process if user cancelled
+                  cancelled = true;
                   internetTest.cancel();
                   await tbr.cancel();
                 }
@@ -520,6 +522,19 @@ const TorConnect = (() => {
                 TorConnect._changeState(TorConnectState.Bootstrapped);
               };
               tbr.onbootstraperror = (message, details) => {
+                if (cancelled) {
+                  // We ignore this error since it occurred after cancelling (by
+                  // the user). We assume the error is just a side effect of the
+                  // cancelling.
+                  // E.g. If the cancelling is triggered late in the process, we
+                  // get "Building circuits: Establishing a Tor circuit failed".
+                  // TODO: Maybe move this logic deeper in the process to know
+                  // when to filter out such errors triggered by cancelling.
+                  console.log(
+                    `TorConnect: Post-cancel error => ${message}; ${details}`
+                  );
+                  return;
+                }
                 // We have to wait for the Internet test to finish before sending the bootstrap error
                 bootstrapError = message;
                 bootstrapErrorDetails = details;
@@ -1021,11 +1036,6 @@ const TorConnect = (() => {
     beginAutoBootstrap(countryCode) {
       console.log("TorConnect: beginAutoBootstrap()");
       this._changeState(TorConnectState.AutoBootstrapping, countryCode);
-    },
-
-    cancelAutoBootstrap() {
-      console.log("TorConnect: cancelAutoBootstrap()");
-      this._changeState(TorConnectState.Configuring);
     },
 
     /*
