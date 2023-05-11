@@ -3,29 +3,24 @@
 var EXPORTED_SYMBOLS = ["SecurityLevel"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const BrowserTopics = Object.freeze({
-  ProfileAfterChange: "profile-after-change",
-});
-
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
 });
 
-// Logger adapted from CustomizableUI.jsm
-XPCOMUtils.defineLazyGetter(this, "logger", () => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
-  );
-  let consoleOptions = {
-    maxLogLevel: "info",
-    prefix: "SecurityLevel",
-  };
-  return new ConsoleAPI(consoleOptions);
+const logger = new ConsoleAPI({
+  maxLogLevel: "info",
+  prefix: "SecurityLevel",
+});
+
+const BrowserTopics = Object.freeze({
+  ProfileAfterChange: "profile-after-change",
 });
 
 // The Security Settings prefs in question.
@@ -79,7 +74,7 @@ var bindPrefAndInit = (prefName, prefHandler) =>
   bindPref(prefName, prefHandler, true);
 
 async function waitForExtensionMessage(extensionId, checker = () => {}) {
-  const { torWaitForExtensionMessage } = ExtensionParent;
+  const { torWaitForExtensionMessage } = lazy.ExtensionParent;
   if (torWaitForExtensionMessage) {
     return torWaitForExtensionMessage(extensionId, checker);
   }
@@ -87,7 +82,7 @@ async function waitForExtensionMessage(extensionId, checker = () => {}) {
 }
 
 async function sendExtensionMessage(extensionId, message) {
-  const { torSendExtensionMessage } = ExtensionParent;
+  const { torSendExtensionMessage } = lazy.ExtensionParent;
   if (torSendExtensionMessage) {
     return torSendExtensionMessage(extensionId, message);
   }
@@ -400,7 +395,7 @@ function migratePreferences() {
   // For 12.0, check for extensions.torbutton.noscript_inited, which was set
   // as a user preference for sure, if someone used security level in previous
   // versions.
-  if(!Services.prefs.prefHasUserValue(kPrefCheck)) {
+  if (!Services.prefs.prefHasUserValue(kPrefCheck)) {
     return;
   }
   const migrate = (oldName, newName, getter, setter) => {
@@ -415,7 +410,7 @@ function migratePreferences() {
     security_custom: "security_level.security_custom",
     noscript_persist: "security_level.noscript_persist",
     noscript_inited: "security_level.noscript_inited",
-  }
+  };
   for (const [oldName, newName] of Object.entries(prefs)) {
     migrate(
       oldName,
