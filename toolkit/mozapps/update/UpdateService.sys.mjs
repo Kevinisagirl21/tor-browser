@@ -2280,6 +2280,7 @@ UpdatePatch.prototype = {
  * @throws if the update contains no patches
  * @constructor
  */
+// eslint-disable-next-line complexity
 function Update(update) {
   this._patches = [];
   this._properties = {};
