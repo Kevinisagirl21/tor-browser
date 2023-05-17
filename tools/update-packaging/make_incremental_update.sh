@@ -212,6 +212,13 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
       continue 1
     fi
 
+    if check_for_add_if_update "$f"; then
+      # TODO: Remove once we do a watershed release
+      make_add_if_instruction "$f" "$updatemanifestv3"
+      archivefiles="$archivefiles \"$f\""
+      continue 1
+    fi
+
     if check_for_forced_update "$requested_forced_updates" "$f"; then
       # The full workdir may not exist yet, so create it if necessary.
       mkdir -p `dirname "$workdir/$f"`
@@ -303,6 +310,9 @@ for ((i=0; $i<$num_newfiles; i=$i+1)); do
 
   if check_for_add_if_not_update "$f"; then
     make_add_if_not_instruction "$f" "$updatemanifestv3"
+  elif check_for_add_if_update "$f"; then
+    # TODO: Remove once we do a watershed release
+    make_add_if_instruction "$f" "$updatemanifestv3"
   else
     make_add_instruction "$f" "$updatemanifestv3"
   fi
