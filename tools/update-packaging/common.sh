@@ -104,6 +104,28 @@ make_add_if_not_instruction() {
   echo "add-if-not \"$f\" \"$f\"" >> "$filev3"
 }
 
+check_for_add_if_update() {
+  add_if_file_chk="$1"
+
+  # tor-browser#41776: We will remove with the old fontconfig file manually
+  # outside the update process. So, let the updater add the file if there.
+  # TODO: Remove once we do a watershed release.
+  if [ "$add_if_file_chk" = "TorBrowser/Data/fontconfig/fonts.conf" ]; then
+    ## "true" *giggle*
+    return 0;
+  fi
+  ## 'false'... because this is bash. Oh yay!
+  return 1;
+}
+
+make_add_if_instruction() {
+  f="$1"
+  filev3="$2"
+
+  verbose_notice " add-if \"$f\" \"$f\""
+  echo "add-if \"$f\" \"$f\"" >> "$filev3"
+}
+
 make_patch_instruction() {
   f="$1"
   filev3="$2"
