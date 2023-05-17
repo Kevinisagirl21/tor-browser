@@ -105,6 +105,9 @@ for ((i=0; $i<$num_files; i=$i+1)); do
 
   if check_for_add_if_not_update "$f"; then
     make_add_if_not_instruction "$f" "$updatemanifestv3"
+  elif check_for_add_if_update "$f"; then
+    # TODO: Remove once we do a watershed release
+    make_add_if_instruction "$f" "$updatemanifestv3"
   else
     make_add_instruction "$f" "$updatemanifestv3"
   fi
