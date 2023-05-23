@@ -214,6 +214,10 @@ for ((i=0; $i<$num_oldfiles; i=$i+1)); do
 
     if check_for_add_if_update "$f"; then
       # TODO: Remove once we do a watershed release
+      # The full workdir may not exist yet, so create it if necessary.
+      mkdir -p `dirname "$workdir/$f"`
+      $XZ $XZ_OPT --compress $BCJ_OPTIONS --lzma2 --format=xz --check=crc64 --force --stdout "$newdir/$f" > "$workdir/$f"
+      copy_perm "$newdir/$f" "$workdir/$f"
       make_add_if_instruction "$f" "$updatemanifestv3"
       archivefiles="$archivefiles \"$f\""
       continue 1
