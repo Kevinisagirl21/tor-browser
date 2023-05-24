@@ -768,24 +768,27 @@ class AboutTorConnect {
       }
     });
 
-    // Delay the "Enter" activation of the given button from "keydown" to
-    // "keyup".
+    // Prevent repeat triggering on keydown when the Enter key is held down.
     //
-    // Without this, holding down Enter will continue to trigger the button
-    // until the user stops holding. This means that a user can accidentally
-    // re-trigger a button several times. This is particularly bad when the
-    // focus gets moved to a new button, and the new button can get triggered
-    // immediately. E.g. when the "Connect" button is triggered it disappears
-    // and focus moves to the "Cancel" button.
+    // Without this, holding down Enter will continue to trigger the button's
+    // click event until the user stops holding. This means that a user can
+    // accidentally re-trigger a button several times. And if focus moves to a
+    // new button it can also get triggered, despite not receiving the initial
+    // keydown event.
+    //
+    // E.g. If the user presses down Enter on the "Connect" button it will
+    // trigger and focus will move to the "Cancel" button. This should prevent
+    // the user accidentally triggering the "Cancel" button if they hold down
+    // Enter for a little bit too long.
     for (const button of document.body.querySelectorAll("button")) {
       button.addEventListener("keydown", event => {
-        if (event.key === "Enter") {
+        // If the keydown is a repeating Enter event, ignore it.
+        // NOTE: If firefox uses wayland display (rather than xwayland), the
+        // "repeat" event is always "false" so this will not work.
+        // See bugzilla bug 1784438. Also see bugzilla bug 1594003.
+        // Currently tor browser uses xwayland by default on linux.
+        if (event.key === "Enter" && event.repeat) {
           event.preventDefault();
-        }
-      });
-      button.addEventListener("keyup", event => {
-        if (event.key === "Enter") {
-          button.click();
         }
       });
     }
