@@ -94,8 +94,8 @@ var gTorConnectTitlebarStatus = {
     this.icon.setAttribute(
       "src",
       connected
-        ? "chrome://browser/content/torconnect/onion.svg"
-        : "chrome://browser/content/torconnect/onion-slash-fillable.svg"
+        ? "chrome://browser/content/torconnect/tor-connect.svg"
+        : "chrome://browser/content/torconnect/tor-connect-broken.svg"
     );
     this.icon.classList.toggle("tor-connect-status-connected", connected);
     this.icon.classList.toggle(
