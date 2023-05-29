@@ -105,11 +105,11 @@ input[type="checkbox"]:focus, select:focus {
 }
 
 #connect-to-tor-icon {
-  list-style-image: url("chrome://browser/content/torconnect/onion.svg");
+  list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
 }
 
 #connection-assist-icon {
-  list-style-image: url("chrome://browser/content/torconnect/onion-slash-fillable.svg");
+  list-style-image: url("chrome://browser/content/torconnect/tor-connect-broken.svg");
 }
 
 #location-settings-icon {
@@ -311,7 +311,7 @@ body {
 }
 
 .title {
-  background-image: url("chrome://browser/content/torconnect/onion.svg");
+  background-image: url("chrome://browser/content/torconnect/tor-connect.svg");
   -moz-context-properties: stroke, fill, fill-opacity;
   fill-opacity: var(--onion-opacity);
   fill: var(--onion-color);
