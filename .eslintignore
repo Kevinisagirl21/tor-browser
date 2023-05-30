@@ -270,3 +270,4 @@ toolkit/components/uniffi-bindgen-gecko-js/src/templates/js/
 toolkit/components/uniffi-bindgen-gecko-js/components/generated/*
 
 browser/app/profile/001-base-profile.js
+tools/torbrowser/bridges.js
