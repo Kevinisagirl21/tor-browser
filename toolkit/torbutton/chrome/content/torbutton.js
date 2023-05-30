@@ -172,7 +172,7 @@ var torbutton_new_circuit;
   // Bug 1506 P2-P4: This code sets some version variables that are irrelevant.
   // It does read out some important environment variables, though. It is
   // called once per browser window.. This might belong in a component.
-  torbutton_init = function() {
+  torbutton_init = function () {
     torbutton_log(3, "called init()");
 
     if (m_tb_wasinited) {
@@ -181,14 +181,10 @@ var torbutton_new_circuit;
     m_tb_wasinited = true;
 
     // Bug 1506 P4: These vars are very important for New Identity
-    var environ = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-
-    if (environ.exists("TOR_CONTROL_PASSWD")) {
-      m_tb_control_pass = environ.get("TOR_CONTROL_PASSWD");
-    } else if (environ.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
-      var cookie_path = environ.get("TOR_CONTROL_COOKIE_AUTH_FILE");
+    if (Services.env.exists("TOR_CONTROL_PASSWD")) {
+      m_tb_control_pass = Services.env.get("TOR_CONTROL_PASSWD");
+    } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
+      var cookie_path = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
       try {
         if ("" != cookie_path) {
           m_tb_control_pass = torbutton_read_authentication_cookie(cookie_path);
@@ -211,8 +207,8 @@ var torbutton_new_circuit;
     } catch (e) {}
 
     if (!m_tb_control_ipc_file) {
-      if (environ.exists("TOR_CONTROL_PORT")) {
-        m_tb_control_port = environ.get("TOR_CONTROL_PORT");
+      if (Services.env.exists("TOR_CONTROL_PORT")) {
+        m_tb_control_port = Services.env.get("TOR_CONTROL_PORT");
       } else {
         try {
           const kTLControlPortPref = "extensions.torlauncher.control_port";
@@ -224,8 +220,8 @@ var torbutton_new_circuit;
         }
       }
 
-      if (environ.exists("TOR_CONTROL_HOST")) {
-        m_tb_control_host = environ.get("TOR_CONTROL_HOST");
+      if (Services.env.exists("TOR_CONTROL_HOST")) {
+        m_tb_control_host = Services.env.get("TOR_CONTROL_HOST");
       } else {
         try {
           const kTLControlHostPref = "extensions.torlauncher.control_host";
@@ -341,7 +337,7 @@ var torbutton_new_circuit;
   // Bug 1506 P4: Control port interaction. Needed for New Identity.
   function torbutton_array_to_hexdigits(array) {
     return array
-      .map(function(c) {
+      .map(function (c) {
         return String("0" + c.toString(16)).slice(-2);
       })
       .join("");
@@ -375,7 +371,7 @@ var torbutton_new_circuit;
   }
 
   // Bug 1506 P4: Needed for New IP Address
-  torbutton_new_circuit = function() {
+  torbutton_new_circuit = function () {
     let firstPartyDomain = getDomainForBrowser(gBrowser.selectedBrowser);
 
     let domainIsolator = Cc["@torproject.org/domain-isolator;1"].getService(
@@ -419,13 +415,10 @@ var torbutton_new_circuit;
     // perform a check via the control port.
     const kEnvSkipControlPortTest = "TOR_SKIP_CONTROLPORTTEST";
     const kEnvUseTransparentProxy = "TOR_TRANSPROXY";
-    var env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
     if (
       (m_tb_control_ipc_file || m_tb_control_port) &&
-      !env.exists(kEnvUseTransparentProxy) &&
-      !env.exists(kEnvSkipControlPortTest) &&
+      !Services.env.exists(kEnvUseTransparentProxy) &&
+      !Services.env.exists(kEnvSkipControlPortTest) &&
       m_tb_prefs.getBoolPref("extensions.torbutton.local_tor_check")
     ) {
       if (await torbutton_local_tor_check()) {
@@ -510,7 +503,7 @@ var torbutton_new_circuit;
     // within tor-control-port.js; someday this code should use the entire
     // tor-control-port.js framework.
     let addrArray = [];
-    resp.replace(/((\S*?"(.*?)")+\S*|\S+)/g, function(a, captured) {
+    resp.replace(/((\S*?"(.*?)")+\S*|\S+)/g, function (a, captured) {
       addrArray.push(captured);
     });
 
@@ -574,7 +567,7 @@ var torbutton_new_circuit;
         "@torproject.org/torbutton-torCheckService;1"
       ].getService(Ci.nsISupports).wrappedJSObject;
       let req = checkSvc.createCheckRequest(true); // async
-      req.onreadystatechange = function(aEvent) {
+      req.onreadystatechange = function (aEvent) {
         if (req.readyState === 4) {
           let ret = checkSvc.parseCheckResponse(req);
 

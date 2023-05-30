@@ -39,8 +39,9 @@ const TorTopics = Object.freeze({
 
 // __log__.
 // Logging function
-let logger = Cc["@torproject.org/torbutton-logger;1"].getService(Ci.nsISupports)
-  .wrappedJSObject;
+let logger = Cc["@torproject.org/torbutton-logger;1"].getService(
+  Ci.nsISupports
+).wrappedJSObject;
 let log = x => logger.eclog(3, x.trimRight().replace(/\r\n/g, "\n"));
 
 // ### announce this file
@@ -371,22 +372,22 @@ let io = {};
 // Pass pushMessage to another function that needs a callback with a single string
 // argument. Whenever dispatcher.pushMessage receives a string, the dispatcher will
 // check for any regex matches and pass the string on to the corresponding callback(s).
-io.callbackDispatcher = function() {
+io.callbackDispatcher = function () {
   let callbackPairs = [],
-    removeCallback = function(aCallback) {
-      callbackPairs = callbackPairs.filter(function([regex, callback]) {
+    removeCallback = function (aCallback) {
+      callbackPairs = callbackPairs.filter(function ([regex, callback]) {
         return callback !== aCallback;
       });
     },
-    addCallback = function(regex, callback) {
+    addCallback = function (regex, callback) {
       if (callback) {
         callbackPairs.push([regex, callback]);
       }
-      return function() {
+      return function () {
         removeCallback(callback);
       };
     },
-    pushMessage = function(message) {
+    pushMessage = function (message) {
       for (let [regex, callback] of callbackPairs) {
         if (message.match(regex)) {
           callback(message);
@@ -414,7 +415,7 @@ io.callbackDispatcher = function() {
 //     socket.removeNotificationCallback(callback);
 //     // Close the socket permanently
 //     socket.close();
-io.controlSocket = async function(ipcFile, host, port, password) {
+io.controlSocket = async function (ipcFile, host, port, password) {
   let socket = new AsyncSocket(ipcFile, host, port);
   let controlSocket = new ControlSocket(socket);
 
@@ -432,23 +433,23 @@ let utils = {};
 
 // __utils.identity(x)__.
 // Returns its argument unchanged.
-utils.identity = function(x) {
+utils.identity = function (x) {
   return x;
 };
 
 // __utils.isString(x)__.
 // Returns true iff x is a string.
-utils.isString = function(x) {
+utils.isString = function (x) {
   return typeof x === "string" || x instanceof String;
 };
 
 // __utils.capture(string, regex)__.
 // Takes a string and returns an array of capture items, where regex must have a single
 // capturing group and use the suffix /.../g to specify a global search.
-utils.capture = function(string, regex) {
+utils.capture = function (string, regex) {
   let matches = [];
   // Special trick to use string.replace for capturing multiple matches.
-  string.replace(regex, function(a, captured) {
+  string.replace(regex, function (a, captured) {
     matches.push(captured);
   });
   return matches;
@@ -457,15 +458,15 @@ utils.capture = function(string, regex) {
 // __utils.extractor(regex)__.
 // Returns a function that takes a string and returns an array of regex matches. The
 // regex must use the suffix /.../g to specify a global search.
-utils.extractor = function(regex) {
-  return function(text) {
+utils.extractor = function (regex) {
+  return function (text) {
     return utils.capture(text, regex);
   };
 };
 
 // __utils.splitLines(string)__.
 // Splits a string into an array of strings, each corresponding to a line.
-utils.splitLines = function(string) {
+utils.splitLines = function (string) {
   return string.split(/\r?\n/);
 };
 
@@ -477,7 +478,7 @@ utils.splitAtSpaces = utils.extractor(/((\S*?"(.*?)")+\S*|\S+)/g);
 // __utils.splitAtFirst(string, regex)__.
 // Splits a string at the first instance of regex match. If no match is
 // found, returns the whole string.
-utils.splitAtFirst = function(string, regex) {
+utils.splitAtFirst = function (string, regex) {
   let match = string.match(regex);
   return match
     ? [
@@ -495,7 +496,7 @@ utils.splitAtEquals = utils.extractor(/(([^=]*?"(.*?)")+[^=]*|[^=]+)/g);
 // __utils.mergeObjects(arrayOfObjects)__.
 // Takes an array of objects like [{"a":"b"},{"c":"d"}] and merges to a single object.
 // Pure function.
-utils.mergeObjects = function(arrayOfObjects) {
+utils.mergeObjects = function (arrayOfObjects) {
   let result = {};
   for (let obj of arrayOfObjects) {
     for (let key in obj) {
@@ -515,7 +516,7 @@ utils.mergeObjects = function(arrayOfObjects) {
 //                       ["streamID", "event", "circuitID", "IP"])
 //     // --> {"streamID" : "40", "event" : "FAILED", "circuitID" : "0",
 //     //      "address" : "95.78.59.36:80", "REASON" : "CANT_ATTACH"}"
-utils.listMapData = function(parameterString, listNames) {
+utils.listMapData = function (parameterString, listNames) {
   // Split out the space-delimited parameters.
   let parameters = utils.splitAtSpaces(parameterString),
     dataMap = {};
@@ -560,8 +561,8 @@ info.keyValueStringsFromMessage = utils.extractor(
 // __info.applyPerLine(transformFunction)__.
 // Returns a function that splits text into lines,
 // and applies transformFunction to each line.
-info.applyPerLine = function(transformFunction) {
-  return function(text) {
+info.applyPerLine = function (transformFunction) {
+  return function (text) {
     return utils.splitLines(text.trim()).map(transformFunction);
   };
 };
@@ -570,7 +571,7 @@ info.applyPerLine = function(transformFunction) {
 // Parses a router status entry as, described in
 // https://gitweb.torproject.org/torspec.git/tree/dir-spec.txt
 // (search for "router status entry")
-info.routerStatusParser = function(valueString) {
+info.routerStatusParser = function (valueString) {
   let lines = utils.splitLines(valueString),
     objects = [];
   for (let line of lines) {
@@ -604,12 +605,12 @@ info.routerStatusParser = function(valueString) {
 
 // __info.circuitStatusParser(line)__.
 // Parse the output of a circuit status line.
-info.circuitStatusParser = function(line) {
+info.circuitStatusParser = function (line) {
   let data = utils.listMapData(line, ["id", "status", "circuit"]),
     circuit = data.circuit;
   // Parse out the individual circuit IDs and names.
   if (circuit) {
-    data.circuit = circuit.split(",").map(function(x) {
+    data.circuit = circuit.split(",").map(function (x) {
       return x.split(/~|=/);
     });
   }
@@ -618,7 +619,7 @@ info.circuitStatusParser = function(line) {
 
 // __info.streamStatusParser(line)__.
 // Parse the output of a stream status line.
-info.streamStatusParser = function(text) {
+info.streamStatusParser = function (text) {
   return utils.listMapData(text, [
     "StreamID",
     "StreamStatus",
@@ -632,7 +633,7 @@ info.streamStatusParser = function(text) {
 // __info.bridgeParser(bridgeLine)__.
 // Takes a single line from a `getconf bridge` result and returns
 // a map containing the bridge's type, address, and ID.
-info.bridgeParser = function(bridgeLine) {
+info.bridgeParser = function (bridgeLine) {
   let result = {},
     tokens = bridgeLine.split(/\s+/);
   // First check if we have a "vanilla" bridge:
@@ -678,7 +679,7 @@ info.parsers = {
 // __info.getParser(key)__.
 // Takes a key and determines the parser function that should be used to
 // convert its corresponding valueString to JavaScript data.
-info.getParser = function(key) {
+info.getParser = function (key) {
   return (
     info.parsers[key] ||
     info.parsers[key.substring(0, key.lastIndexOf("/") + 1)]
@@ -687,7 +688,7 @@ info.getParser = function(key) {
 
 // __info.stringToValue(string)__.
 // Converts a key-value string as from GETINFO or GETCONF to a value.
-info.stringToValue = function(string) {
+info.stringToValue = function (string) {
   // key should look something like `250+circuit-status=` or `250-circuit-status=...`
   // or `250 circuit-status=...`
   let matchForKey = string.match(/^250[ +-](.+?)=/),
@@ -713,7 +714,7 @@ info.stringToValue = function(string) {
 
 // __info.getMultipleResponseValues(message)__.
 // Process multiple responses to a GETINFO or GETCONF request.
-info.getMultipleResponseValues = function(message) {
+info.getMultipleResponseValues = function (message) {
   return info
     .keyValueStringsFromMessage(message)
     .map(info.stringToValue)
@@ -722,7 +723,7 @@ info.getMultipleResponseValues = function(message) {
 
 // __info.getInfo(controlSocket, key)__.
 // Sends GETINFO for a single key. Returns a promise with the result.
-info.getInfo = function(aControlSocket, key) {
+info.getInfo = function (aControlSocket, key) {
   if (!utils.isString(key)) {
     return utils.rejectPromise("key argument should be a string");
   }
@@ -733,7 +734,7 @@ info.getInfo = function(aControlSocket, key) {
 
 // __info.getConf(aControlSocket, key)__.
 // Sends GETCONF for a single key. Returns a promise with the result.
-info.getConf = function(aControlSocket, key) {
+info.getConf = function (aControlSocket, key) {
   // GETCONF with a single argument returns results with
   // one or more lines that look like `250[- ]key=value`.
   // Any GETCONF lines that contain a single keyword only are currently dropped.
@@ -752,7 +753,7 @@ let onionAuth = {};
 
 onionAuth.keyInfoStringsFromMessage = utils.extractor(/^250-CLIENT\s+(.+)$/gim);
 
-onionAuth.keyInfoObjectsFromMessage = function(message) {
+onionAuth.keyInfoObjectsFromMessage = function (message) {
   let keyInfoStrings = onionAuth.keyInfoStringsFromMessage(message);
   return keyInfoStrings.map(infoStr =>
     utils.listMapData(infoStr, ["hsAddress", "typeAndKey"])
@@ -766,7 +767,7 @@ onionAuth.keyInfoObjectsFromMessage = function(message) {
 //   hsAddress
 //   typeAndKey
 //   Flags (e.g., "Permanent")
-onionAuth.viewKeys = function(aControlSocket) {
+onionAuth.viewKeys = function (aControlSocket) {
   let cmd = "onion_client_auth_view";
   return aControlSocket
     .sendCommand(cmd)
@@ -776,7 +777,7 @@ onionAuth.viewKeys = function(aControlSocket) {
 // __onionAuth.add(controlSocket, hsAddress, b64PrivateKey, isPermanent)__.
 // Sends a ONION_CLIENT_AUTH_ADD command to add a private key to the
 // Tor configuration.
-onionAuth.add = function(
+onionAuth.add = function (
   aControlSocket,
   hsAddress,
   b64PrivateKey,
@@ -801,7 +802,7 @@ onionAuth.add = function(
 // __onionAuth.remove(controlSocket, hsAddress)__.
 // Sends a ONION_CLIENT_AUTH_REMOVE command to remove a private key from the
 // Tor configuration.
-onionAuth.remove = function(aControlSocket, hsAddress) {
+onionAuth.remove = function (aControlSocket, hsAddress) {
   if (!utils.isString(hsAddress)) {
     return utils.rejectPromise("hsAddress argument should be a string");
   }
@@ -827,7 +828,7 @@ event.parsers = {
 // __event.messageToData(type, message)__.
 // Extract the data from an event. Note, at present
 // we only extract streams that look like `"650" SP...`
-event.messageToData = function(type, message) {
+event.messageToData = function (type, message) {
   let dataText = message.match(/^650 \S+?\s(.*)/m)[1];
   return dataText && type.toLowerCase() in event.parsers
     ? event.parsers[type.toLowerCase()](dataText)
@@ -839,10 +840,10 @@ event.messageToData = function(type, message) {
 // data is passed to the onData callback. Returns a zero arg function that
 // stops watching the event. Note: we only observe `"650" SP...` events
 // currently (no `650+...` or `650-...` events).
-event.watchEvent = function(controlSocket, type, filter, onData, raw = false) {
+event.watchEvent = function (controlSocket, type, filter, onData, raw = false) {
   controlSocket.addNotificationCallback(
     new RegExp("^650 " + type),
-    function(message) {
+    function (message) {
       let data = event.messageToData(type, message);
       if (filter === null || filter(data)) {
         if (raw || !data) {
@@ -867,7 +868,7 @@ tor.controllerCache = new Map();
 // __tor.controller(ipcFile, host, port, password)__.
 // Creates a tor controller at the given ipcFile or host and port, with the
 // given password.
-tor.controller = async function(ipcFile, host, port, password) {
+tor.controller = async function (ipcFile, host, port, password) {
   let socket = await io.controlSocket(ipcFile, host, port, password);
   return {
     getInfo: key => info.getInfo(socket, key),
@@ -895,7 +896,7 @@ let controlPortInfo = {};
 // Sets Tor control port connection parameters to be used in future calls to
 // the controller() function. Example:
 //     configureControlPortModule(undefined, "127.0.0.1", 9151, "MyPassw0rd");
-var configureControlPortModule = function(ipcFile, host, port, password) {
+var configureControlPortModule = function (ipcFile, host, port, password) {
   controlPortInfo.ipcFile = ipcFile;
   controlPortInfo.host = host;
   controlPortInfo.port = port || 9151;
@@ -918,7 +919,7 @@ var configureControlPortModule = function(ipcFile, host, port, password) {
 //     let replyPromise = c.getInfo("ip-to-country/16.16.16.16");
 //     // Close the controller permanently
 //     c.close();
-var controller = async function(avoidCache) {
+var controller = async function (avoidCache) {
   if (!controlPortInfo.ipcFile && !controlPortInfo.host) {
     throw new Error("Please call configureControlPortModule first");
   }
@@ -963,7 +964,7 @@ var controller = async function(avoidCache) {
 // Same as controller() function, but explicitly waits until there is a tor daemon
 // to connect to (either launched by tor-launcher, or if we have an existing system
 // tor daemon)
-var wait_for_controller = function(avoidCache) {
+var wait_for_controller = function (avoidCache) {
   // if tor process is running (either ours or system) immediately return controller
   if (!TorMonitorService.ownsTorDaemon || TorMonitorService.isRunning) {
     return controller(avoidCache);

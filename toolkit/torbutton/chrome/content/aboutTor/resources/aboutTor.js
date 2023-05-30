@@ -5,7 +5,7 @@
  * vim: set sw=2 sts=2 ts=8 et syntax=javascript:
  *************************************************************************/
 
-window.addEventListener("pageshow", function() {
+window.addEventListener("pageshow", function () {
   let evt = new CustomEvent("AboutTorLoad", { bubbles: true });
   document.dispatchEvent(evt);
 });
