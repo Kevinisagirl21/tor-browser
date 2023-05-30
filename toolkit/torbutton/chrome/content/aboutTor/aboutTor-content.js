@@ -115,8 +115,9 @@ var AboutTorListener = {
 
   onLocaleChange() {
     // Set localized "Get Involved" link.
-    content.document.getElementById("getInvolvedLink").href =
-      `https://community.torproject.org/${getLocale()}`;
+    content.document.getElementById(
+      "getInvolvedLink"
+    ).href = `https://community.torproject.org/${getLocale()}`;
 
     // Display the Tor Browser product name and version.
     try {
