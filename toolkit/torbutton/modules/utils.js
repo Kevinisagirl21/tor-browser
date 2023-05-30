@@ -11,7 +11,7 @@ let prefs = Services.prefs;
 
 // __getPrefValue(prefName)__
 // Returns the current value of a preference, regardless of its type.
-var getPrefValue = function(prefName) {
+var getPrefValue = function (prefName) {
   switch (prefs.getPrefType(prefName)) {
     case prefs.PREF_BOOL:
       return prefs.getBoolPref(prefName);
@@ -28,7 +28,7 @@ var getPrefValue = function(prefName) {
 // Applies prefHandler whenever the value of the pref changes.
 // If init is true, applies prefHandler to the current value.
 // Returns a zero-arg function that unbinds the pref.
-var bindPref = function(prefName, prefHandler, init = false) {
+var bindPref = function (prefName, prefHandler, init = false) {
   let update = () => {
       prefHandler(getPrefValue(prefName));
     },
@@ -61,7 +61,7 @@ var bindPrefAndInit = (prefName, prefHandler) =>
 // Observe the given topic. When notification of that topic
 // occurs, calls callback(subject, data). Returns a zero-arg
 // function that stops observing.
-var observe = function(topic, callback) {
+var observe = function (topic, callback) {
   let observer = {
     observe(aSubject, aTopic, aData) {
       if (topic === aTopic) {
@@ -75,21 +75,15 @@ var observe = function(topic, callback) {
 
 // ## Environment variables
 
-// __env__.
-// Provides access to process environment variables.
-let env = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-
 // __getEnv(name)__.
 // Reads the environment variable of the given name.
-var getEnv = function(name) {
-  return env.exists(name) ? env.get(name) : undefined;
+var getEnv = function (name) {
+  return Services.env.exists(name) ? Services.env.get(name) : undefined;
 };
 
 // __getLocale
 // Returns the app locale to be used in tor-related urls.
-var getLocale = function() {
+var getLocale = function () {
   const locale = Services.locale.appLocaleAsBCP47;
   if (locale === "ja-JP-macos") {
     // We don't want to distinguish the mac locale.
@@ -107,7 +101,7 @@ let dialogsByName = {};
 // __showDialog(parent, url, name, features, arg1, arg2, ...)__.
 // Like window.openDialog, but if the window is already
 // open, just focuses it instead of opening a new one.
-var showDialog = function(parent, url, name, features) {
+var showDialog = function (parent, url, name, features) {
   let existingDialog = dialogsByName[name];
   if (existingDialog && !existingDialog.closed) {
     existingDialog.focus();
@@ -209,7 +203,7 @@ let _torControl = {
 // __unescapeTorString(str, resultObj)__.
 // Unescape Tor Control string str (removing surrounding "" and \ escapes).
 // Returns the unescaped string. Throws upon failure.
-var unescapeTorString = function(str) {
+var unescapeTorString = function (str) {
   return _torControl._strUnescape(str);
 };
 

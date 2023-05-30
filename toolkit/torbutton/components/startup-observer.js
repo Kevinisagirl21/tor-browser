@@ -57,14 +57,14 @@ function StartupObserver() {
   this._prefs = Services.prefs;
   this.logger.log(3, "Startup Observer created");
 
-  var env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
   var prefName = "browser.startup.homepage";
-  if (env.exists("TOR_DEFAULT_HOMEPAGE")) {
+  if (Services.env.exists("TOR_DEFAULT_HOMEPAGE")) {
     // if the user has set this value in a previous installation, don't override it
     if (!this._prefs.prefHasUserValue(prefName)) {
-      this._prefs.setCharPref(prefName, env.get("TOR_DEFAULT_HOMEPAGE"));
+      this._prefs.setCharPref(
+        prefName,
+        Services.env.get("TOR_DEFAULT_HOMEPAGE")
+      );
     }
   }
 
@@ -95,10 +95,7 @@ StartupObserver.prototype = {
     }
 
     // Bug 1506: Still want to get these env vars
-    let environ = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    if (environ.exists("TOR_TRANSPROXY")) {
+    if (Services.env.exists("TOR_TRANSPROXY")) {
       this.logger.log(3, "Resetting Tor settings to transproxy");
       this._prefs.setBoolPref("network.proxy.socks_remote_dns", false);
       this._prefs.setIntPref("network.proxy.type", 0);
@@ -118,16 +115,16 @@ StartupObserver.prototype = {
         socksPortInfo = { ipcFile: undefined, host: undefined, port: 0 };
 
         let isWindows = Services.appinfo.OS === "WINNT";
-        if (!isWindows && environ.exists("TOR_SOCKS_IPC_PATH")) {
+        if (!isWindows && Services.env.exists("TOR_SOCKS_IPC_PATH")) {
           socksPortInfo.ipcFile = new FileUtils.File(
-            environ.get("TOR_SOCKS_IPC_PATH")
+            Services.env.get("TOR_SOCKS_IPC_PATH")
           );
         } else {
-          if (environ.exists("TOR_SOCKS_HOST")) {
-            socksPortInfo.host = environ.get("TOR_SOCKS_HOST");
+          if (Services.env.exists("TOR_SOCKS_HOST")) {
+            socksPortInfo.host = Services.env.get("TOR_SOCKS_HOST");
           }
-          if (environ.exists("TOR_SOCKS_PORT")) {
-            socksPortInfo.port = parseInt(environ.get("TOR_SOCKS_PORT"));
+          if (Services.env.exists("TOR_SOCKS_PORT")) {
+            socksPortInfo.port = parseInt(Services.env.get("TOR_SOCKS_PORT"));
           }
         }
       }

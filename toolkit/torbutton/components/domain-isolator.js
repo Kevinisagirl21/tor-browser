@@ -18,8 +18,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 // Make the logger available.
-let logger = Cc["@torproject.org/torbutton-logger;1"].getService(Ci.nsISupports)
-  .wrappedJSObject;
+let logger = Cc["@torproject.org/torbutton-logger;1"].getService(
+  Ci.nsISupports
+).wrappedJSObject;
 
 // Import crypto object (FF 37+).
 Cu.importGlobalProperties(["crypto"]);
@@ -41,7 +42,7 @@ mozilla.protocolProxyService = Cc[
 // The filterFunction should expect two arguments, (aChannel, aProxy),
 // where aProxy is the proxy or list of proxies that would be used by default
 // for the given channel, and should return a new Proxy or list of Proxies.
-mozilla.registerProxyChannelFilter = function(filterFunction, positionIndex) {
+mozilla.registerProxyChannelFilter = function (filterFunction, positionIndex) {
   let proxyFilter = {
     applyFilter(aChannel, aProxy, aCallback) {
       aCallback.onProxyFilterResult(filterFunction(aChannel, aProxy));
@@ -72,7 +73,7 @@ tor.isolationEnabled = true;
 // Specifies when the current catch-all circuit was first used
 tor.unknownDirtySince = Date.now();
 
-tor.passwordForDomainAndUserContextId = function(
+tor.passwordForDomainAndUserContextId = function (
   domain,
   userContextId,
   create
@@ -97,7 +98,7 @@ tor.passwordForDomainAndUserContextId = function(
   );
 };
 
-tor.usernameForDomainAndUserContextId = function(domain, userContextId) {
+tor.usernameForDomainAndUserContextId = function (domain, userContextId) {
   return `${domain}:${userContextId}`;
 };
 
@@ -105,7 +106,7 @@ tor.usernameForDomainAndUserContextId = function(domain, userContextId) {
 // Takes a proxyInfo object (originalProxy) and returns a new proxyInfo
 // object with the same properties, except the username is set to the
 // the domain and userContextId, and the password is a nonce.
-tor.socksProxyCredentials = function(originalProxy, domain, userContextId) {
+tor.socksProxyCredentials = function (originalProxy, domain, userContextId) {
   let proxy = originalProxy.QueryInterface(Ci.nsIProxyInfo);
   let proxyUsername = tor.usernameForDomainAndUserContextId(
     domain,
@@ -130,7 +131,7 @@ tor.socksProxyCredentials = function(originalProxy, domain, userContextId) {
   );
 };
 
-tor.nonce = function() {
+tor.nonce = function () {
   // Generate a new 128 bit random tag.  Strictly speaking both using a
   // cryptographic entropy source and using 128 bits of entropy for the
   // tag are likely overkill, as correct behavior only depends on how
@@ -148,7 +149,7 @@ tor.nonce = function() {
   return tagStr;
 };
 
-tor.newCircuitForDomain = function(domain) {
+tor.newCircuitForDomain = function (domain) {
   // Re-generate the nonce for the domain.
   if (domain === "") {
     domain = "--unknown--";
@@ -160,7 +161,7 @@ tor.newCircuitForDomain = function(domain) {
   );
 };
 
-tor.newCircuitForUserContextId = function(userContextId) {
+tor.newCircuitForUserContextId = function (userContextId) {
   // Re-generate the nonce for the context.
   tor.noncesForUserContextId.set(userContextId, tor.nonce());
   logger.eclog(
@@ -174,7 +175,7 @@ tor.newCircuitForUserContextId = function(userContextId) {
 // __tor.clearIsolation()_.
 // Clear the isolation state cache, forcing new circuits to be used for all
 // subsequent requests.
-tor.clearIsolation = function() {
+tor.clearIsolation = function () {
   // Per-domain and per contextId nonces are stored in maps, so simply clear them.
   tor.noncesForDomains.clear();
   tor.noncesForUserContextId.clear();
@@ -189,8 +190,8 @@ tor.clearIsolation = function() {
 // to the SOCKS server (the tor client process) with a username (the first party domain
 // and userContextId) and a nonce password. Tor provides a separate circuit for each
 // username+password combination.
-tor.isolateCircuitsByDomain = function() {
-  mozilla.registerProxyChannelFilter(function(aChannel, aProxy) {
+tor.isolateCircuitsByDomain = function () {
+  mozilla.registerProxyChannelFilter(function (aChannel, aProxy) {
     if (!tor.isolationEnabled) {
       return aProxy;
     }
@@ -266,7 +267,7 @@ DomainIsolator.prototype = {
    * @param {string} firstPartyDomain - The domain to lookup credentials for.
    * @param {integer} userContextId - The ID for the user context.
    *
-   * @return {{ username: string, password: string }?} - The SOCKS credentials,
+   * @returns {{ username: string, password: string }?} - The SOCKS credentials,
    *   or null if none are found.
    */
   getSocksProxyCredentials(firstPartyDomain, userContextId) {
