@@ -15,10 +15,32 @@
   fill: currentColor;
   width: 16px;
   height: 16px;
+  object-fit: none;
+  --num-animation-steps: 8;
+  /* First frame has no offset. */
+  --tor-not-connected-offset: 0;
+  /* Each frame/step is offset by 20px from the previous. */
+  --tor-connected-offset: calc(-20px * var(--num-animation-steps));
+  object-position: var(--tor-not-connected-offset);
+}
+
+#tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked:not(
+  .tor-connect-status-connected
+) {
+  fill: #c50042;
+}
+
+@media (prefers-color-scheme: dark) {
+  #tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked:not(
+    .tor-connect-status-connected
+  ){
+    fill: #ff9aa2;
+  }
 }
 
 #tor-connect-titlebar-status-icon.tor-connect-status-connected {
   fill: var(--purple-60);
+  object-position: var(--tor-connected-offset);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,12 +49,24 @@
   }
 }
 
-#tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked {
-  fill: #c50042;
+@keyframes onion-not-connected-to-connected {
+  from {
+    object-position: var(--tor-not-connected-offset);
+  }
+
+  to {
+    object-position: var(--tor-connected-offset);
+  }
 }
 
-@media (prefers-color-scheme: dark) {
-  #tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked {
-    fill: #ff9aa2;
+@media (prefers-reduced-motion: no-preference) {
+  #tor-connect-titlebar-status-icon.tor-connect-status-connected {
+    transition: fill 1000ms;
+    animation-name: onion-not-connected-to-connected;
+    animation-delay: 200ms;
+    animation-fill-mode: both;
+    /* Run animation at 60 frames-per-second. */
+    animation-duration: calc(var(--num-animation-steps) * 1000ms / 60);
+    animation-timing-function: steps(var(--num-animation-steps));
   }
 }
