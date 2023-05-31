@@ -108,13 +108,10 @@ class TorFile {
 
     // If XDG_RUNTIME_DIR is set, use it as the base directory for IPC
     // objects (e.g., Unix domain sockets) -- assuming it is not too long.
-    const env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    if (!env.exists("XDG_RUNTIME_DIR")) {
+    if (!Services.env.exists("XDG_RUNTIME_DIR")) {
       return;
     }
-    const ipcDir = this.createUniqueIPCDir(env.get("XDG_RUNTIME_DIR"));
+    const ipcDir = this.createUniqueIPCDir(Services.env.get("XDG_RUNTIME_DIR"));
     if (ipcDir) {
       const f = ipcDir.clone();
       f.append(this.ipcFileName);
@@ -466,14 +463,11 @@ const TorLauncherUtil = Object.freeze({
     try {
       const kBrowserToolboxPort = "MOZ_BROWSER_TOOLBOX_PORT";
       const kEnvSkipLaunch = "TOR_SKIP_LAUNCH";
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      if (env.exists(kBrowserToolboxPort)) {
+      if (Services.env.exists(kBrowserToolboxPort)) {
         return false;
       }
-      if (env.exists(kEnvSkipLaunch)) {
-        const value = parseInt(env.get(kEnvSkipLaunch));
+      if (Services.env.exists(kEnvSkipLaunch)) {
+        const value = parseInt(Services.env.get(kEnvSkipLaunch));
         return isNaN(value) || !value;
       }
     } catch (e) {}
@@ -483,11 +477,8 @@ const TorLauncherUtil = Object.freeze({
   get shouldShowNetworkSettings() {
     try {
       const kEnvForceShowNetConfig = "TOR_FORCE_NET_CONFIG";
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      if (env.exists(kEnvForceShowNetConfig)) {
-        const value = parseInt(env.get(kEnvForceShowNetConfig));
+      if (Services.env.exists(kEnvForceShowNetConfig)) {
+        const value = parseInt(Services.env.get(kEnvForceShowNetConfig));
         return !isNaN(value) && value;
       }
     } catch (e) {}
@@ -498,11 +489,8 @@ const TorLauncherUtil = Object.freeze({
     const kPrefOnlyConfigureTor = "extensions.torlauncher.only_configure_tor";
     try {
       const kEnvOnlyConfigureTor = "TOR_CONFIGURE_ONLY";
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      if (env.exists(kEnvOnlyConfigureTor)) {
-        const value = parseInt(env.get(kEnvOnlyConfigureTor));
+      if (Services.env.exists(kEnvOnlyConfigureTor)) {
+        const value = parseInt(Services.env.get(kEnvOnlyConfigureTor));
         return !isNaN(value) && value;
       }
     } catch (e) {}

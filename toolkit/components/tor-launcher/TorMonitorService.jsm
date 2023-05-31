@@ -8,9 +8,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { clearTimeout, setTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 
 const { TorParsers, TorStatuses } = ChromeUtils.import(
   "resource://gre/modules/TorParsers.jsm"
@@ -22,24 +20,19 @@ const { TorProcess } = ChromeUtils.import(
 const { TorLauncherUtil } = ChromeUtils.import(
   "resource://gre/modules/TorLauncherUtil.jsm"
 );
+
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "controller",
   "resource://torbutton/modules/tor-control-port.js"
 );
 
-// TODO: Write a helper to create these logs
-XPCOMUtils.defineLazyGetter(this, "logger", () => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
-  );
-  // TODO: Use a preference to set the log level.
-  const consoleOptions = {
-    // maxLogLevel: "warn",
-    maxLogLevel: "all",
-    prefix: "TorMonitorService",
-  };
-  return new ConsoleAPI(consoleOptions);
+const logger = new ConsoleAPI({
+  // maxLogLevel: "warn",
+  maxLogLevel: "all",
+  prefix: "TorMonitorService",
 });
 
 const Preferences = Object.freeze({
@@ -271,7 +264,7 @@ const TorMonitorService = {
     let conn;
     try {
       const avoidCache = true;
-      conn = await controller(avoidCache);
+      conn = await lazy.controller(avoidCache);
     } catch (e) {
       logger.error("Cannot open a control port connection", e);
       if (conn) {
