@@ -181,9 +181,8 @@ var gTorCircuitPanel = {
           .copyString(this._panelElements.aliasLink.href);
       });
 
-    document.getElementById(
-      "tor-circuit-start-item"
-    ).textContent = this._getString("torbutton.circuit_display.this_browser");
+    document.getElementById("tor-circuit-start-item").textContent =
+      this._getString("torbutton.circuit_display.this_browser");
 
     this._panelElements.relaysItem.textContent = this._getString(
       "torbutton.circuit_display.onion-site-relays"
@@ -337,7 +336,7 @@ var gTorCircuitPanel = {
    * @param {string[]} circuitNodeNames - The names for the circuit node. Only
    *   the first name, the node id, will be used.
    *
-   * @return {NodeData} - The data for this circuit node.
+   * @returns {NodeData} - The data for this circuit node.
    */
   async _nodeDataForCircuit(controller, circuitNodeNames) {
     // The first "name" in circuitNodeNames is the id.
@@ -526,7 +525,7 @@ var gTorCircuitPanel = {
   /**
    * Get the tor onion address alias for the given domain.
    *
-   * @return {string} The alias domain, or null if it has no alias.
+   * @returns {string} The alias domain, or null if it has no alias.
    */
   _getOnionAlias(domain) {
     let alias = null;
@@ -553,7 +552,7 @@ var gTorCircuitPanel = {
    * @param {string} name - The string name.
    * @param {string[]} args - The arguments to pass to the string.
    *
-   * @return {string} The string.
+   * @returns {string} The string.
    */
   _getString(name, args = []) {
     if (!this._stringBundle) {
@@ -577,7 +576,7 @@ var gTorCircuitPanel = {
    *
    * @param {string} address - The address to shorten.
    *
-   * @return {string} The shortened form of the address, or the address itself
+   * @returns {string} The shortened form of the address, or the address itself
    *   if it was not shortened.
    */
   _shortenOnionAddress(address) {
@@ -633,9 +632,8 @@ var gTorCircuitPanel = {
     );
 
     if (onionAlias) {
-      this._panelElements.aliasLink.textContent = this._shortenOnionAddress(
-        onionAlias
-      );
+      this._panelElements.aliasLink.textContent =
+        this._shortenOnionAddress(onionAlias);
       if (scheme === "http" || scheme === "https") {
         // We assume the same scheme as the current page for the alias, which we
         // expect to be either http or https.
@@ -788,7 +786,7 @@ var gTorCircuitPanel = {
    * @param {string?} regionCode - The code to convert. It should be an upper
    *   case 2-letter BCP47 Region subtag to be converted into a flag.
    *
-   * @return {HTMLImgElement?} The emoji flag img, or null if there is no flag.
+   * @returns {HTMLImgElement?} The emoji flag img, or null if there is no flag.
    */
   _regionFlag(regionCode) {
     if (!regionCode?.match(/^[A-Z]{2}$/)) {
