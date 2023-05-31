@@ -4,20 +4,22 @@ var EXPORTED_SYMBOLS = ["TorStartupService"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const lazy = {};
+
 // We will use the modules only when the profile is loaded, so prefer lazy
 // loading
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TorLauncherUtil",
   "resource://gre/modules/TorLauncherUtil.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TorMonitorService",
   "resource://gre/modules/TorMonitorService.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TorProtocolService",
   "resource://gre/modules/TorProtocolService.jsm"
 );
@@ -50,8 +52,8 @@ class TorStartupService {
 
     // Starts TorProtocolService first, because it configures the controller
     // factory, too.
-    await TorProtocolService.init();
-    TorMonitorService.init();
+    await lazy.TorProtocolService.init();
+    lazy.TorMonitorService.init();
 
     gInited = true;
   }
@@ -60,11 +62,11 @@ class TorStartupService {
     Services.obs.removeObserver(this, BrowserTopics.QuitApplicationGranted);
 
     // Close any helper connection first...
-    TorProtocolService.uninit();
+    lazy.TorProtocolService.uninit();
     // ... and only then closes the event monitor connection, which will cause
     // Tor to stop.
-    TorMonitorService.uninit();
+    lazy.TorMonitorService.uninit();
 
-    TorLauncherUtil.cleanupTempDirectories();
+    lazy.TorLauncherUtil.cleanupTempDirectories();
   }
 }

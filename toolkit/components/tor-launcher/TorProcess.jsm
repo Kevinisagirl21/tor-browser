@@ -4,16 +4,15 @@ var EXPORTED_SYMBOLS = ["TorProcess"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 const { Subprocess } = ChromeUtils.import(
   "resource://gre/modules/Subprocess.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TorProtocolService",
   "resource://gre/modules/TorProtocolService.jsm"
 );
@@ -32,17 +31,9 @@ const TorProcessStatus = Object.freeze({
   Exited: 3,
 });
 
-// Logger adapted from CustomizableUI.jsm
-XPCOMUtils.defineLazyGetter(this, "logger", () => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
-  );
-  // TODO: Use a preference to set the log level.
-  const consoleOptions = {
-    maxLogLevel: "info",
-    prefix: "TorProcess",
-  };
-  return new ConsoleAPI(consoleOptions);
+const logger = new ConsoleAPI({
+  maxLogLevel: "info",
+  prefix: "TorProcess",
 });
 
 class TorProcess {
@@ -242,7 +233,7 @@ class TorProcess {
     const torrcFile = TorLauncherUtil.getTorFile("torrc", true);
     this._dataDir = TorLauncherUtil.getTorFile("tordatadir", true);
     const onionAuthDir = TorLauncherUtil.getTorFile("toronionauthdir", true);
-    const hashedPassword = TorProtocolService.torGetPassword(true);
+    const hashedPassword = lazy.TorProtocolService.torGetPassword(true);
     let detailsKey;
     if (!this._exeFile) {
       detailsKey = "tor_missing";
@@ -302,8 +293,8 @@ class TorProcess {
     // to any control ports that the user has defined in their torrc
     // file and (2) it is never written to torrc.
     let controlPortArg;
-    const controlIPCFile = TorProtocolService.torGetControlIPCFile();
-    const controlPort = TorProtocolService.torGetControlPort();
+    const controlIPCFile = lazy.TorProtocolService.torGetControlIPCFile();
+    const controlPort = lazy.TorProtocolService.torGetControlPort();
     if (controlIPCFile) {
       controlPortArg = this._ipcPortArg(controlIPCFile);
     } else if (controlPort) {
@@ -321,7 +312,7 @@ class TorProcess {
     // include a "+__" prefix so that (1) this SOCKS port is added
     // to any SOCKS ports that the user has defined in their torrc
     // file and (2) it is never written to torrc.
-    const socksPortInfo = TorProtocolService.torGetSOCKSPortInfo();
+    const socksPortInfo = lazy.TorProtocolService.torGetSOCKSPortInfo();
     if (socksPortInfo) {
       let socksPortArg;
       if (socksPortInfo.ipcFile) {
@@ -379,9 +370,9 @@ class TorProcess {
       return true;
     }
 
-    const controlIPCFile = TorProtocolService.torGetControlIPCFile();
-    const controlPort = TorProtocolService.torGetControlPort();
-    const socksPortInfo = TorProtocolService.torGetSOCKSPortInfo();
+    const controlIPCFile = lazy.TorProtocolService.torGetControlIPCFile();
+    const controlPort = lazy.TorProtocolService.torGetControlPort();
+    const socksPortInfo = lazy.TorProtocolService.torGetSOCKSPortInfo();
 
     const valueIsUnixDomainSocket = aValue => {
       // Handle several cases:
