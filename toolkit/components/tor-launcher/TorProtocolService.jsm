@@ -6,16 +6,7 @@ var EXPORTED_SYMBOLS = ["TorProtocolService"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "FileUtils",
-  "resource://gre/modules/FileUtils.jsm"
-);
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-Cu.importGlobalProperties(["crypto"]);
+const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 
 const { TorParsers } = ChromeUtils.import(
   "resource://gre/modules/TorParsers.jsm"
@@ -24,18 +15,26 @@ const { TorLauncherUtil } = ChromeUtils.import(
   "resource://gre/modules/TorLauncherUtil.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
+  "FileUtils",
+  "resource://gre/modules/FileUtils.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  lazy,
   "TorMonitorService",
   "resource://gre/modules/TorMonitorService.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "configureControlPortModule",
   "resource://torbutton/modules/tor-control-port.js"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "controller",
   "resource://torbutton/modules/tor-control-port.js"
 );
@@ -45,18 +44,10 @@ const TorTopics = Object.freeze({
   ProcessRestarted: "TorProcessRestarted",
 });
 
-// Logger adapted from CustomizableUI.jsm
-XPCOMUtils.defineLazyGetter(this, "logger", () => {
-  const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
-  );
-  // TODO: Use a preference to set the log level.
-  const consoleOptions = {
-    // maxLogLevel: "warn",
-    maxLogLevel: "all",
-    prefix: "TorProtocolService",
-  };
-  return new ConsoleAPI(consoleOptions);
+const logger = new ConsoleAPI({
+  // maxLogLevel: "warn",
+  maxLogLevel: "all",
+  prefix: "TorProtocolService",
 });
 
 // Manage the connection to tor's control port, to update its settings and query
@@ -175,8 +166,8 @@ const TorProtocolService = {
     settings[kTorConfKeyDisableNetwork] = false;
     await this.setConfWithReply(settings);
     await this.sendCommand("SAVECONF");
-    TorMonitorService.clearBootstrapError();
-    TorMonitorService.retrieveBootstrapStatus();
+    lazy.TorMonitorService.clearBootstrapError();
+    lazy.TorMonitorService.retrieveBootstrapStatus();
   },
 
   async stopBootstrap() {
@@ -191,7 +182,7 @@ const TorProtocolService = {
     // We are not interested in waiting for this, nor in **catching its error**,
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
-    TorMonitorService.retrieveBootstrapStatus();
+    lazy.TorMonitorService.retrieveBootstrapStatus();
   },
 
   // TODO: transform the following 4 functions in getters. At the moment they
@@ -318,21 +309,21 @@ const TorProtocolService = {
   async _setSockets() {
     try {
       const isWindows = TorLauncherUtil.isWindows;
-      const env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
       // Determine how Tor Launcher will connect to the Tor control port.
       // Environment variables get top priority followed by preferences.
-      if (!isWindows && env.exists("TOR_CONTROL_IPC_PATH")) {
-        const ipcPath = env.get("TOR_CONTROL_IPC_PATH");
-        this._controlIPCFile = new FileUtils.File(ipcPath);
+      if (!isWindows && Services.env.exists("TOR_CONTROL_IPC_PATH")) {
+        const ipcPath = Services.env.get("TOR_CONTROL_IPC_PATH");
+        this._controlIPCFile = new lazy.FileUtils.File(ipcPath);
       } else {
         // Check for TCP host and port environment variables.
-        if (env.exists("TOR_CONTROL_HOST")) {
-          this._controlHost = env.get("TOR_CONTROL_HOST");
+        if (Services.env.exists("TOR_CONTROL_HOST")) {
+          this._controlHost = Services.env.get("TOR_CONTROL_HOST");
         }
-        if (env.exists("TOR_CONTROL_PORT")) {
-          this._controlPort = parseInt(env.get("TOR_CONTROL_PORT"), 10);
+        if (Services.env.exists("TOR_CONTROL_PORT")) {
+          this._controlPort = parseInt(
+            Services.env.get("TOR_CONTROL_PORT"),
+            10
+          );
         }
 
         const useIPC =
@@ -363,11 +354,11 @@ const TorProtocolService = {
       }
 
       // Populate _controlPassword so it is available when starting tor.
-      if (env.exists("TOR_CONTROL_PASSWD")) {
-        this._controlPassword = env.get("TOR_CONTROL_PASSWD");
-      } else if (env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
+      if (Services.env.exists("TOR_CONTROL_PASSWD")) {
+        this._controlPassword = Services.env.get("TOR_CONTROL_PASSWD");
+      } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
         // TODO: test this code path (TOR_CONTROL_COOKIE_AUTH_FILE).
-        const cookiePath = env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
+        const cookiePath = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
         if (cookiePath) {
           this._controlPassword = await this._readAuthenticationCookie(
             cookiePath
@@ -424,18 +415,21 @@ const TorProtocolService = {
 
       let useIPC;
       this._SOCKSPortInfo = { ipcFile: undefined, host: undefined, port: 0 };
-      if (!isWindows && env.exists("TOR_SOCKS_IPC_PATH")) {
-        let ipcPath = env.get("TOR_SOCKS_IPC_PATH");
-        this._SOCKSPortInfo.ipcFile = new FileUtils.File(ipcPath);
+      if (!isWindows && Services.env.exists("TOR_SOCKS_IPC_PATH")) {
+        let ipcPath = Services.env.get("TOR_SOCKS_IPC_PATH");
+        this._SOCKSPortInfo.ipcFile = new lazy.FileUtils.File(ipcPath);
         useIPC = true;
       } else {
         // Check for TCP host and port environment variables.
-        if (env.exists("TOR_SOCKS_HOST")) {
-          this._SOCKSPortInfo.host = env.get("TOR_SOCKS_HOST");
+        if (Services.env.exists("TOR_SOCKS_HOST")) {
+          this._SOCKSPortInfo.host = Services.env.get("TOR_SOCKS_HOST");
           useIPC = false;
         }
-        if (env.exists("TOR_SOCKS_PORT")) {
-          this._SOCKSPortInfo.port = parseInt(env.get("TOR_SOCKS_PORT"), 10);
+        if (Services.env.exists("TOR_SOCKS_PORT")) {
+          this._SOCKSPortInfo.port = parseInt(
+            Services.env.get("TOR_SOCKS_PORT"),
+            10
+          );
           useIPC = false;
         }
       }
@@ -488,7 +482,7 @@ const TorProtocolService = {
       // Set the global control port info parameters.
       // These values may be overwritten by torbutton when it initializes, but
       // torbutton's values *should* be identical.
-      configureControlPortModule(
+      lazy.configureControlPortModule(
         this._controlIPCFile,
         this._controlHost,
         this._controlPort,
@@ -617,7 +611,7 @@ const TorProtocolService = {
   async _getConnection() {
     if (!this._controlConnection) {
       const avoidCache = true;
-      this._controlConnection = await controller(avoidCache);
+      this._controlConnection = await lazy.controller(avoidCache);
     }
     if (this._controlConnection.inUse) {
       await new Promise((resolve, reject) =>
