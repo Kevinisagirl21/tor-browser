@@ -299,7 +299,7 @@ const TorSettings = (() => {
         Services.obs.addObserver(this, TorTopics.ProcessIsReady);
 
         if (TorMonitorService.isRunning) {
-          handleProcessReady();
+          this.handleProcessReady();
         }
       }
     },
@@ -308,20 +308,20 @@ const TorSettings = (() => {
     async observe(subject, topic, data) {
       console.log(`TorSettings: Observed ${topic}`);
 
-      // once the tor daemon is ready, we need to apply our settings
-      const handleProcessReady = async () => {
-        // push down settings to tor
-        await this.applySettings();
-        console.log("TorSettings: Ready");
-        Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
-      };
-
       switch (topic) {
         case TorTopics.ProcessIsReady:
           Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
-          await handleProcessReady();
+          await this.handleProcessReady();
           break;
       }
+    },
+
+    // once the tor daemon is ready, we need to apply our settings
+    async handleProcessReady() {
+      // push down settings to tor
+      await this.applySettings();
+      console.log("TorSettings: Ready");
+      Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
     },
 
     // load our settings from prefs
