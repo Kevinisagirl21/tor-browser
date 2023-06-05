@@ -1176,7 +1176,7 @@ function makeBridgeId(bridgeString) {
 }
 
 function parseBridgeLine(line) {
-  const re = /^([^\s]+\s+)?([0-9a-fA-F\.\[\]\:]+:[0-9]{1,5})\s*([0-9a-fA-F]{40})(\s+.+)?/;
+  const re = /^\s*(\S+\s+)?([0-9a-fA-F\.\[\]\:]+:\d{1,5})(\s+[0-9a-fA-F]{40})?(\s+.+)?/;
   const matches = line.match(re);
   if (!matches) {
     return null;
@@ -1186,7 +1186,7 @@ function parseBridgeLine(line) {
     bridge.transport = matches[1].trim();
   }
   if (matches[3] !== undefined) {
-    bridge.id = matches[3].toUpperCase();
+    bridge.id = matches[3].trim().toUpperCase();
   }
   if (matches[4] !== undefined) {
     bridge.args = matches[4].trim();
