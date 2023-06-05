@@ -142,7 +142,8 @@ DragDropFilter.prototype = {
           for (const type of types) {
             if (
               type !== INTERNAL_FALLBACK &&
-              type !== "text/x-moz-place" // don't touch bookmarks
+              type !== "text/x-moz-place" &&    // don't touch bookmarks
+              type !== "application/x-moz-file" // don't touch downloads
             ) {
               aDataTransfer.mozClearDataAt(type, i);
             }
