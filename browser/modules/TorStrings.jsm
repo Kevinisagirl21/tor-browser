@@ -105,6 +105,8 @@ const Loader = {
       bridgeCurrentDescription:
         "You can keep one or more bridges saved, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.",
       bridgeId: "%1$S bridge: %2$S",
+      currentBridge: "Current bridge",
+      connectedBridge: "Connected",
       remove: "Remove",
       bridgeDisableBuiltIn: "Disable built-in bridges",
       bridgeShare:
