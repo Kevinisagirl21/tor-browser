@@ -17,7 +17,7 @@ class ProvideBridgeDialog {
 
   static get selectors() {
     return {
-      header: "#torPreferences-provideBridge-header",
+      description: "#torPreferences-provideBridge-description",
       textarea: "#torPreferences-provideBridge-textarea",
     };
   }
@@ -25,11 +25,25 @@ class ProvideBridgeDialog {
   _populateXUL(window, aDialog) {
     const selectors = ProvideBridgeDialog.selectors;
 
+    const openHelp = () => {
+      window.top.openTrustedLinkIn(
+        TorStrings.settings.learnMoreBridgesURL,
+        "tab"
+      );
+    };
+
     this._dialog = aDialog;
     const dialogWin = this._dialog.parentElement;
-    dialogWin.setAttribute("title", TorStrings.settings.provideBridgeTitle);
-    this._dialog.querySelector(selectors.header).textContent =
-      TorStrings.settings.provideBridgeHeader;
+    dialogWin.setAttribute("title", TorStrings.settings.provideBridgeTitleAdd);
+    const learnMore = window.document.createXULElement("label");
+    learnMore.className = "learnMore text-link";
+    learnMore.setAttribute("is", "text-link");
+    learnMore.setAttribute("value", TorStrings.settings.learnMore);
+    learnMore.addEventListener("click", openHelp);
+    const descr = this._dialog.querySelector(selectors.description);
+    descr.textContent = "";
+    const pieces = TorStrings.settings.provideBridgeDescription.split("%S");
+    descr.append(pieces[0], learnMore, pieces[1] || "");
     this._textarea = this._dialog.querySelector(selectors.textarea);
     this._textarea.setAttribute(
       "placeholder",
@@ -42,12 +56,7 @@ class ProvideBridgeDialog {
     this._dialog.addEventListener("dialogaccept", e => {
       this.onSubmit(this._textarea.value);
     });
-    this._dialog.addEventListener("dialoghelp", e => {
-      window.top.openTrustedLinkIn(
-        TorStrings.settings.learnMoreBridgesURL,
-        "tab"
-      );
-    });
+    this._dialog.addEventListener("dialoghelp", openHelp);
   }
 
   init(window, aDialog) {
