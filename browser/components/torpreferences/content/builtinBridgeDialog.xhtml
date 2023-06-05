@@ -9,45 +9,74 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-builtinBridge-dialog" buttons="help,accept,cancel">
-    <description>
-      <html:div id="torPreferences-builtinBridge-description"
-        >&#8203;<br />&#8203;</html:div
-      >
-    </description>
+    <description id="torPreferences-builtinBridge-description"> </description>
     <radiogroup id="torPreferences-builtinBridge-typeSelection">
-      <radio
-        id="torPreferences-builtinBridges-radioObfs"
-        value="obfs4"
-        hidden="true"
-      />
-      <html:div
-        id="torPreferences-builtinBridges-descrObfs"
-        class="indent"
-        hidden="true"
-        >&#8203;</html:div
-      >
-      <radio
-        id="torPreferences-builtinBridges-radioSnowflake"
-        value="snowflake"
-        hidden="true"
-      />
-      <html:div
-        id="torPreferences-builtinBridges-descrSnowflake"
-        class="indent"
-        hidden="true"
-        >&#8203;</html:div
-      >
-      <radio
-        id="torPreferences-builtinBridges-radioMeekAzure"
-        value="meek-azure"
-        hidden="true"
-      />
-      <html:div
-        id="torPreferences-builtinBridges-descrMeekAzure"
-        class="indent"
-        hidden="true"
-        >&#8203;</html:div
-      >
+      <vbox class="builtin-bridges-option">
+        <hbox>
+          <!-- The radio option is described by both the "Current bridge" label
+          - and the full description. If the "Connected" label is hidden, then
+           - only the latter description should contribute. -->
+          <radio
+            aria-describedby="obfs-bridges-current obfs-bridges-description"
+            value="obfs4"
+          />
+          <html:span class="torPreferences-current-bridge-badge">
+            <image class="torPreferences-current-bridge-icon" />
+            <html:span
+              id="obfs-bridges-current"
+              class="torPreferences-current-bridge-label"
+            >
+            </html:span>
+          </html:span>
+        </hbox>
+        <html:div
+          id="obfs-bridges-description"
+          class="indent builtin-bridges-option-description"
+        >
+        </html:div>
+      </vbox>
+      <vbox class="builtin-bridges-option">
+        <hbox>
+          <radio
+            aria-describedby="snowflake-bridges-current snowflake-bridges-description"
+            value="snowflake"
+          />
+          <html:span class="torPreferences-current-bridge-badge">
+            <image class="torPreferences-current-bridge-icon" />
+            <html:span
+              id="snowflake-bridges-current"
+              class="torPreferences-current-bridge-label"
+            >
+            </html:span>
+          </html:span>
+        </hbox>
+        <html:div
+          id="snowflake-bridges-description"
+          class="indent builtin-bridges-option-description"
+        >
+        </html:div>
+      </vbox>
+      <vbox class="builtin-bridges-option">
+        <hbox>
+          <radio
+            aria-describedby="meek-bridges-current meek-bridges-description"
+            value="meek-azure"
+          />
+          <html:span class="torPreferences-current-bridge-badge">
+            <image class="torPreferences-current-bridge-icon" />
+            <html:span
+              id="meek-bridges-current"
+              class="torPreferences-current-bridge-label"
+            >
+            </html:span>
+          </html:span>
+        </hbox>
+        <html:div
+          id="meek-bridges-description"
+          class="indent builtin-bridges-option-description"
+        >
+        </html:div>
+      </vbox>
     </radiogroup>
     <script type="application/javascript">
       <![CDATA[

@@ -116,7 +116,7 @@ const gConnectionPane = (function () {
       cardId: ".torPreferences-bridgeCard-id",
       cardHeadingManualLink: ".torPreferences-bridgeCard-manualLink",
       cardHeadingAddr: ".torPreferences-bridgeCard-headingAddr",
-      cardConnectedLabel: ".torPreferences-bridgeCard-connectedLabel",
+      cardConnectedLabel: ".torPreferences-current-bridge-label",
       cardOptions: ".torPreferences-bridgeCard-options",
       cardMenu: "#torPreferences-bridgeCard-menu",
       cardQrGrid: ".torPreferences-bridgeCard-grid",
@@ -160,7 +160,7 @@ const gConnectionPane = (function () {
 
     _controller: null,
 
-    _currentBridge: "",
+    _currentBridgeId: null,
 
     // populate xul with strings and cache the relevant elements
     _populateXUL() {
@@ -463,7 +463,7 @@ const gConnectionPane = (function () {
       }
       bridgeTemplate.querySelector(
         selectors.bridges.cardConnectedLabel
-      ).textContent = TorStrings.settings.statusTorConnected;
+      ).textContent = TorStrings.settings.connectedBridge;
       bridgeTemplate
         .querySelector(selectors.bridges.cardCopy)
         .setAttribute("label", TorStrings.settings.bridgeCopy);
@@ -598,7 +598,7 @@ const gConnectionPane = (function () {
             restoreTimeout = null;
           }, RESTORE_TIME);
         });
-        if (details && details.id === this._currentBridge) {
+        if (details?.id && details.id === this._currentBridgeId) {
           card.classList.add("currently-connected");
           bridgeCards.prepend(card);
         } else {
@@ -705,9 +705,9 @@ const gConnectionPane = (function () {
         // Add only the new strings that remained in the set
         for (const bridge of newStrings) {
           if (shownCards >= toShow) {
-            if (this._currentBridge === "") {
+            if (!this._currentBridgeId) {
               break;
-            } else if (!bridge.includes(this._currentBridge)) {
+            } else if (!bridge.includes(this._currentBridgeId)) {
               continue;
             }
           }
@@ -778,7 +778,7 @@ const gConnectionPane = (function () {
         )) {
           card.classList.remove("currently-connected");
         }
-        if (this._currentBridge === "") {
+        if (!this._currentBridgeId) {
           return;
         }
         // Make sure we have the connected bridge in the list
@@ -787,7 +787,7 @@ const gConnectionPane = (function () {
         // case also with built-in bridges!). E.g., one line for the IPv4
         // address and one for the IPv6 address, so use querySelectorAll
         const cards = bridgeCards.querySelectorAll(
-          `[data-bridge-id="${this._currentBridge}"]`
+          `[data-bridge-id="${this._currentBridgeId}"]`
         );
         for (const card of cards) {
           card.classList.add("currently-connected");
@@ -814,6 +814,12 @@ const gConnectionPane = (function () {
           // this circuit to check if the bridge can be used. We do this by
           // checking if the stream has SOCKS username, which actually contains
           // the destination of the stream.
+          // FIXME: We only know the currentBridge *after* a circuit event, but
+          // if the circuit event is sent *before* about:torpreferences is
+          // opened we will miss it. Therefore this approach only works if a
+          // circuit is created after opening about:torconnect. A dedicated
+          // backend outside of about:preferences would help, and could be
+          // shared with gTorCircuitPanel. See tor-browser#41700.
           this._controller.watchEvent(
             "STREAM",
             event =>
@@ -827,10 +833,22 @@ const gConnectionPane = (function () {
               }
               for (const status of circuitStatuses) {
                 if (status.id === event.CircuitID && status.circuit.length) {
-                  // The id in the circuit begins with a $ sign
-                  const bridgeId = status.circuit[0][0].substring(1);
-                  if (bridgeId !== this._currentBridge) {
-                    this._currentBridge = bridgeId;
+                  // The id in the circuit begins with a $ sign.
+                  const id = status.circuit[0][0].replace(/^\$/, "");
+                  if (id !== this._currentBridgeId) {
+                    const bridge = (
+                      await this._controller.getConf("bridge")
+                    )?.find(
+                      foundBridge =>
+                        foundBridge.ID?.toUpperCase() === id.toUpperCase()
+                    );
+                    if (!bridge) {
+                      // Either there is no bridge, or bridge with no
+                      // fingerprint.
+                      this._currentBridgeId = null;
+                    } else {
+                      this._currentBridgeId = id;
+                    }
                     this._updateConnectedBridges();
                   }
                   break;

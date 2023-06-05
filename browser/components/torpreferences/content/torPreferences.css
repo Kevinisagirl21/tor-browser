@@ -298,28 +298,38 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   align-self: center;
 }
 
-.torPreferences-bridgeCard-connectedBadge {
+.torPreferences-current-bridge-badge {
+  /* Hidden by default, otherwise display is "flex". */
   display: none;
-  margin-inline-end: 12px;
-  color: var(--purple-60);
+  align-items: center;
+  font-size: 0.85em;
 }
 
-@media (prefers-color-scheme: dark) {
-  .torPreferences-bridgeCard-connectedBadge {
-    color: var(--purple-30);
-  }
-}
-
-.currently-connected .torPreferences-bridgeCard-connectedBadge {
+:is(
+  .builtin-bridges-option.current-builtin-bridge-type,
+  .torPreferences-bridgeCard.currently-connected
+) .torPreferences-current-bridge-badge {
   display: flex;
 }
 
-.torPreferences-bridgeCard-connectedIcon {
+.torPreferences-current-bridge-icon {
   margin-inline-start: 1px;
   margin-inline-end: 7px;
   list-style-image: url("chrome://browser/content/torpreferences/check.svg");
   -moz-context-properties: fill;
   fill: currentColor;
+  flex: 0 0 auto;
+}
+
+.torPreferences-bridgeCard .torPreferences-current-bridge-badge {
+  color: var(--purple-60);
+  margin-inline-end: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .torPreferences-bridgeCard .torPreferences-current-bridge-badge {
+    color: var(--purple-30);
+  }
 }
 
 .torPreferences-bridgeCard-options {
@@ -562,6 +572,10 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 
 #torPreferences-builtinBridge-typeSelection radio label {
   font-weight: 700;
+}
+
+.builtin-bridges-option .torPreferences-current-bridge-badge {
+  color: var(--in-content-accent-color);
 }
 
 /* Request bridge dialog */
