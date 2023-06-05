@@ -14,82 +14,81 @@ const { TorConnect, TorConnectTopics } = ChromeUtils.import(
 );
 
 class BuiltinBridgeDialog {
+  /**
+   * Create a new instance.
+   *
+   * @param {Function} onSubmit - A callback for when the user accepts the
+   *   dialog selection.
+   */
   constructor(onSubmit) {
     this.onSubmit = onSubmit;
-    this._dialog = null;
     this._acceptButton = null;
   }
 
-  static get selectors() {
-    return {
-      description: "#torPreferences-builtinBridge-description",
-      radiogroup: "#torPreferences-builtinBridge-typeSelection",
-      obfsRadio: "#torPreferences-builtinBridges-radioObfs",
-      obfsDescr: "#torPreferences-builtinBridges-descrObfs",
-      snowflakeRadio: "#torPreferences-builtinBridges-radioSnowflake",
-      snowflakeDescr: "#torPreferences-builtinBridges-descrSnowflake",
-      meekAzureRadio: "#torPreferences-builtinBridges-radioMeekAzure",
-      meekAzureDescr: "#torPreferences-builtinBridges-descrMeekAzure",
-    };
-  }
-
-  _populateXUL(window, aDialog) {
-    const selectors = BuiltinBridgeDialog.selectors;
-
-    this._dialog = aDialog;
-    const dialogWin = this._dialog.parentElement;
+  _populateXUL(window, dialog) {
+    const dialogWin = dialog.parentElement;
     dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeHeader);
 
-    this._dialog.querySelector(selectors.description).textContent =
-      TorStrings.settings.builtinBridgeDescription2;
+    dialog.querySelector(
+      "#torPreferences-builtinBridge-description"
+    ).textContent = TorStrings.settings.builtinBridgeDescription2;
 
-    this._acceptButton = this._dialog.getButton("accept");
+    this._acceptButton = dialog.getButton("accept");
     this.onTorStateChange();
 
-    let radioGroup = this._dialog.querySelector(selectors.radiogroup);
+    const radioGroup = dialog.querySelector(
+      "#torPreferences-builtinBridge-typeSelection"
+    );
 
-    let types = {
+    const typeStrings = {
       obfs4: {
-        elemRadio: this._dialog.querySelector(selectors.obfsRadio),
-        elemDescr: this._dialog.querySelector(selectors.obfsDescr),
         label: TorStrings.settings.builtinBridgeObfs4Title,
         descr: TorStrings.settings.builtinBridgeObfs4Description2,
       },
       snowflake: {
-        elemRadio: this._dialog.querySelector(selectors.snowflakeRadio),
-        elemDescr: this._dialog.querySelector(selectors.snowflakeDescr),
         label: TorStrings.settings.builtinBridgeSnowflake,
         descr: TorStrings.settings.builtinBridgeSnowflakeDescription2,
       },
       "meek-azure": {
-        elemRadio: this._dialog.querySelector(selectors.meekAzureRadio),
-        elemDescr: this._dialog.querySelector(selectors.meekAzureDescr),
         label: TorStrings.settings.builtinBridgeMeekAzure,
         descr: TorStrings.settings.builtinBridgeMeekAzureDescription2,
       },
     };
 
-    TorBuiltinBridgeTypes.forEach(type => {
-      types[type].elemRadio.setAttribute("label", types[type].label);
-      types[type].elemRadio.setAttribute("hidden", "false");
-      types[type].elemDescr.textContent = types[type].descr;
-      types[type].elemDescr.removeAttribute("hidden");
-    });
-
-    if (
+    const currentBuiltinType =
       TorSettings.bridges.enabled &&
       TorSettings.bridges.source == TorBridgeSource.BuiltIn
-    ) {
-      radioGroup.selectedItem =
-        types[TorSettings.bridges.builtin_type]?.elemRadio;
+        ? TorSettings.bridges.builtin_type
+        : null;
+    if (currentBuiltinType) {
+      radioGroup.value = currentBuiltinType;
     } else {
       radioGroup.selectedItem = null;
     }
 
-    this._dialog.addEventListener("dialogaccept", () => {
+    for (const optionEl of radioGroup.querySelectorAll(
+      ".builtin-bridges-option"
+    )) {
+      const radio = optionEl.querySelector("radio");
+      const type = radio.value;
+      optionEl.hidden = !TorBuiltinBridgeTypes.includes(type);
+      radio.label = typeStrings[type].label;
+      optionEl.querySelector(
+        ".builtin-bridges-option-description"
+      ).textContent = typeStrings[type].descr;
+      optionEl.querySelector(
+        ".torPreferences-current-bridge-label"
+      ).textContent = TorStrings.settings.currentBridge;
+      optionEl.classList.toggle(
+        "current-builtin-bridge-type",
+        type === currentBuiltinType
+      );
+    }
+
+    dialog.addEventListener("dialogaccept", () => {
       this.onSubmit(radioGroup.value, TorConnect.canBeginBootstrap);
     });
-    this._dialog.addEventListener("dialoghelp", e => {
+    dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
         TorStrings.settings.learnMoreCircumventionURL,
         "tab"
@@ -97,8 +96,8 @@ class BuiltinBridgeDialog {
     });
 
     // Hack: see the CSS
-    this._dialog.style.minWidth = "0";
-    this._dialog.style.minHeight = "0";
+    dialog.style.minWidth = "0";
+    dialog.style.minHeight = "0";
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
   }
