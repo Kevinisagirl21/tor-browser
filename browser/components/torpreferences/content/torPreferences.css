@@ -586,8 +586,8 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 /* Provide bridge dialog */
-#torPreferences-provideBridge-header {
-  margin-top: 8px;
+#torPreferences-provideBridge-textarea {
+  margin-top: 16px;
 }
 
 /* Connection settings dialog */
