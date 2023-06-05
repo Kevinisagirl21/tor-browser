@@ -161,8 +161,9 @@ const Loader = {
       captchaTextboxPlaceholder: "Enter the characters from the image",
       incorrectCaptcha: "The solution is not correct. Please try again.",
       // Provide bridge dialog
-      provideBridgeTitle: "Provide Bridge",
-      provideBridgeHeader: "Enter bridge information from a trusted source",
+      provideBridgeTitleAdd: "Add a Bridge Manually",
+      provideBridgeDescription:
+        "Add a bridge provided by a trusted organization or someone you know. If you don’t have a bridge, you can request one from the Tor Project. %S",
       provideBridgePlaceholder: "type address:port (one per line)",
       // Connection settings dialog
       connectionSettingsDialogTitle: "Connection Settings",
