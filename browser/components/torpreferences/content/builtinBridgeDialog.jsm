@@ -36,9 +36,6 @@ class BuiltinBridgeDialog {
       "#torPreferences-builtinBridge-description"
     ).textContent = TorStrings.settings.builtinBridgeDescription2;
 
-    this._acceptButton = dialog.getButton("accept");
-    this.onTorStateChange();
-
     const radioGroup = dialog.querySelector(
       "#torPreferences-builtinBridge-typeSelection"
     );
@@ -102,20 +99,26 @@ class BuiltinBridgeDialog {
     dialog.style.minWidth = "0";
     dialog.style.minHeight = "0";
 
+    this._acceptButton = dialog.getButton("accept");
+
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    this.onAcceptStateChange();
   }
 
-  onTorStateChange() {
-    if (TorConnect.canBeginBootstrap) {
-      this._acceptButton.setAttribute(
-        "label",
-        TorStrings.settings.bridgeButtonConnect
-      );
-    } else {
-      this._acceptButton.setAttribute(
-        "label",
-        TorStrings.settings.bridgeButtonAccept
-      );
+  onAcceptStateChange() {
+    this._acceptButton.setAttribute(
+      "label",
+      TorConnect.canBeginBootstrap
+        ? TorStrings.settings.bridgeButtonConnect
+        : TorStrings.settings.bridgeButtonAccept
+    );
+  }
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case TorConnectTopics.StateChange:
+        this.onAcceptStateChange();
+        break;
     }
   }
 
@@ -126,16 +129,8 @@ class BuiltinBridgeDialog {
     }, 0);
   }
 
-  observe(subject, topic, data) {
-    switch (topic) {
-      case TorConnectTopics.StateChange:
-        this.onTorStateChange();
-        break;
-    }
-  }
-
   close() {
-    // unregister our observer topics
+    // Unregister our observer topics.
     Services.obs.removeObserver(this, TorConnectTopics.StateChange);
   }
 

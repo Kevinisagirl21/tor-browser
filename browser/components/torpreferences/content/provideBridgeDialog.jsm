@@ -2,10 +2,16 @@
 
 var EXPORTED_SYMBOLS = ["ProvideBridgeDialog"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 const { TorSettings, TorBridgeSource } = ChromeUtils.import(
   "resource:///modules/TorSettings.jsm"
+);
+
+const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
 );
 
 class ProvideBridgeDialog {
@@ -13,6 +19,7 @@ class ProvideBridgeDialog {
     this.onSubmit = onSubmit;
     this._dialog = null;
     this._textarea = null;
+    this._acceptButton = null;
   }
 
   static get selectors() {
@@ -49,14 +56,43 @@ class ProvideBridgeDialog {
       "placeholder",
       TorStrings.settings.provideBridgePlaceholder
     );
+    this._textarea.addEventListener("input", () => {
+      this.onAcceptStateChange();
+    });
     if (TorSettings.bridges.source == TorBridgeSource.UserProvided) {
       this._textarea.value = TorSettings.bridges.bridge_strings.join("\n");
     }
 
     this._dialog.addEventListener("dialogaccept", e => {
-      this.onSubmit(this._textarea.value);
+      let value = this._textarea.value;
+      if (!value.trim()) {
+        value = null;
+      }
+      this.onSubmit(value, value && TorConnect.canBeginBootstrap);
     });
     this._dialog.addEventListener("dialoghelp", openHelp);
+
+    this._acceptButton = this._dialog.getButton("accept");
+
+    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    this.onAcceptStateChange();
+  }
+
+  onAcceptStateChange() {
+    this._acceptButton.setAttribute(
+      "label",
+      this._textarea.value.trim() && TorConnect.canBeginBootstrap
+        ? TorStrings.settings.bridgeButtonConnect
+        : TorStrings.settings.bridgeButtonAccept
+    );
+  }
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case TorConnectTopics.StateChange:
+        this.onAcceptStateChange();
+        break;
+    }
   }
 
   init(window, aDialog) {
@@ -66,10 +102,20 @@ class ProvideBridgeDialog {
     }, 0);
   }
 
+  close() {
+    // Unregister our observer topics.
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+  }
+
   openDialog(gSubDialog) {
     gSubDialog.open(
       "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
-      { features: "resizable=yes" },
+      {
+        features: "resizable=yes",
+        closingCallback: () => {
+          this.close();
+        },
+      },
       this
     );
   }
