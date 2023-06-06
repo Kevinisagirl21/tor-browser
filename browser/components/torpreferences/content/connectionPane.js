@@ -1037,9 +1037,47 @@ const gConnectionPane = (function () {
       });
     },
 
+    /**
+     * Save and apply settings, then optionally open about:torconnect and start
+     * bootstrapping.
+     *
+     * @param {boolean} connect - Whether to open about:torconnect and start
+     *   bootstrapping if possible.
+     */
+    async saveBridgeSettings(connect) {
+      TorSettings.saveToPrefs();
+      // FIXME: This can throw if the user adds a bridge manually with invalid
+      // content. Should be addressed by tor-browser#40552.
+      await TorSettings.applySettings();
+
+      this._populateBridgeCards();
+
+      if (!connect) {
+        return;
+      }
+
+      // The bridge dialog button is "connect" when Tor is not bootstrapped,
+      // so do the connect.
+
+      // Start Bootstrapping, which should use the configured bridges.
+      // NOTE: We do this regardless of any previous TorConnect Error.
+      if (TorConnect.canBeginBootstrap) {
+        TorConnect.beginBootstrap();
+      }
+      // Open "about:torconnect".
+      // FIXME: If there has been a previous bootstrapping error then
+      // "about:torconnect" will be trying to get the user to use
+      // AutoBootstrapping. It is not set up to handle a forced direct
+      // entry to plain Bootstrapping from this dialog so the UI will not
+      // be aligned. In particular the
+      // AboutTorConnect.uiState.bootstrapCause will be aligned to
+      // whatever was shown previously in "about:torconnect" instead.
+      TorConnect.openTorConnect();
+    },
+
     onAddBuiltinBridge() {
       const builtinBridgeDialog = new BuiltinBridgeDialog(
-        async (bridgeType, connect) => {
+        (bridgeType, connect) => {
           if (!bridgeType) {
             TorSettings.bridges.enabled = false;
             TorSettings.bridges.builtin_type = "";
@@ -1048,29 +1086,8 @@ const gConnectionPane = (function () {
             TorSettings.bridges.source = TorBridgeSource.BuiltIn;
             TorSettings.bridges.builtin_type = bridgeType;
           }
-          TorSettings.saveToPrefs();
-          await TorSettings.applySettings();
 
-          this._populateBridgeCards();
-
-          // The bridge dialog button is "connect" when Tor is not bootstrapped,
-          // so do the connect.
-          if (connect) {
-            // Start Bootstrapping, which should use the configured bridges.
-            // NOTE: We do this regardless of any previous TorConnect Error.
-            if (TorConnect.canBeginBootstrap) {
-              TorConnect.beginBootstrap();
-            }
-            // Open "about:torconnect".
-            // FIXME: If there has been a previous bootstrapping error then
-            // "about:torconnect" will be trying to get the user to use
-            // AutoBootstrapping. It is not set up to handle a forced direct
-            // entry to plain Bootstrapping from this dialog so the UI will not
-            // be aligned. In particular the
-            // AboutTorConnect.uiState.bootstrapCause will be aligned to
-            // whatever was shown previously in "about:torconnect" instead.
-            TorConnect.openTorConnect();
-          }
+          this.saveBridgeSettings(connect);
         }
       );
       builtinBridgeDialog.openDialog(gSubDialog);
@@ -1078,37 +1095,38 @@ const gConnectionPane = (function () {
 
     // called when the request bridge button is activated
     onRequestBridge() {
-      const requestBridgeDialog = new RequestBridgeDialog(aBridges => {
-        if (aBridges.length) {
+      const requestBridgeDialog = new RequestBridgeDialog(
+        (aBridges, connect) => {
+          if (!aBridges.length) {
+            return;
+          }
           const bridgeStrings = aBridges.join("\n");
           TorSettings.bridges.enabled = true;
           TorSettings.bridges.source = TorBridgeSource.BridgeDB;
           TorSettings.bridges.bridge_strings = bridgeStrings;
-          TorSettings.saveToPrefs();
-          TorSettings.applySettings().then(result => {
-            this._populateBridgeCards();
-          });
+
+          this.saveBridgeSettings(connect);
         }
-      });
+      );
       requestBridgeDialog.openDialog(gSubDialog);
     },
 
     onAddBridgeManually() {
-      const provideBridgeDialog = new ProvideBridgeDialog(aBridgeString => {
-        if (aBridgeString.length) {
-          TorSettings.bridges.enabled = true;
-          TorSettings.bridges.source = TorBridgeSource.UserProvided;
-          TorSettings.bridges.bridge_strings = aBridgeString;
-        } else {
-          TorSettings.bridges.enabled = false;
-          TorSettings.bridges.source = TorBridgeSource.Invalid;
-          TorSettings.bridges.bridge_strings = "";
+      const provideBridgeDialog = new ProvideBridgeDialog(
+        (aBridgeString, connect) => {
+          if (aBridgeString) {
+            TorSettings.bridges.enabled = true;
+            TorSettings.bridges.source = TorBridgeSource.UserProvided;
+            TorSettings.bridges.bridge_strings = aBridgeString;
+          } else {
+            TorSettings.bridges.enabled = false;
+            TorSettings.bridges.source = TorBridgeSource.Invalid;
+            TorSettings.bridges.bridge_strings = "";
+          }
+
+          this.saveBridgeSettings(connect);
         }
-        TorSettings.saveToPrefs();
-        TorSettings.applySettings().then(result => {
-          this._populateBridgeCards();
-        });
-      });
+      );
       provideBridgeDialog.openDialog(gSubDialog);
     },
 
