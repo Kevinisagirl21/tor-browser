@@ -251,11 +251,6 @@ const Loader = {
 
       tryAgain: "Try Again",
 
-      // tor connect strings for message box in about:preferences#connection
-      connectMessage:
-        "Changes to Tor Settings will not take effect until you connect",
-      tryAgainMessage:
-        "Tor Browser has failed to establish a connection to the Tor Network",
       yourLocation: "Your Location",
       unblockInternetIn: "Unblock the Internet in",
 
