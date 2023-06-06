@@ -5,29 +5,6 @@
   src="chrome://browser/content/torpreferences/connectionPane.js"
 />
 <html:template id="template-paneConnection">
-  <!-- Tor Connect Message Box -->
-  <groupbox data-category="paneConnection" hidden="true">
-    <html:div
-      id="torPreferences-connectMessageBox"
-      class="subcategory"
-      data-category="paneConnection"
-      hidden="true"
-    >
-      <html:table>
-        <html:tr>
-          <html:td>
-            <html:div id="torPreferences-connectMessageBox-icon" />
-          </html:td>
-          <html:td id="torPreferences-connectMessageBox-message"> </html:td>
-          <html:td>
-            <html:button id="torPreferences-connectMessageBox-button">
-            </html:button>
-          </html:td>
-        </html:tr>
-      </html:table>
-    </html:div>
-  </groupbox>
-
   <hbox
     id="torPreferencesCategory"
     class="subcategory"
@@ -54,15 +31,24 @@
     hidden="true"
   >
     <hbox id="torPreferences-status-box">
-      <image id="torPreferences-status-internet-icon" />
-      <html:span id="torPreferences-status-internet-label" />
-      <button id="torPreferences-status-internet-test" />
-      <image id="torPreferences-status-internet-statusIcon" />
-      <html:span id="torPreferences-status-internet-status" />
-      <image id="torPreferences-status-tor-icon" />
-      <html:span id="torPreferences-status-tor-label" />
-      <image id="torPreferences-status-tor-statusIcon" />
-      <html:span id="torPreferences-status-tor-status" />
+      <hbox
+        id="torPreferences-status-internet"
+        class="torPreferences-status-grouping"
+      >
+        <image class="torPreferences-status-icon" />
+        <html:span class="torPreferences-status-name"></html:span>
+        <html:span class="torPreferences-status-result"></html:span>
+        <button id="torPreferences-status-internet-test" />
+      </hbox>
+      <hbox
+        id="torPreferences-status-tor-connect"
+        class="torPreferences-status-grouping"
+      >
+        <image class="torPreferences-status-icon" />
+        <html:span class="torPreferences-status-name"></html:span>
+        <html:span class="torPreferences-status-result"></html:span>
+        <button id="torPreferences-status-tor-connect-button" />
+      </hbox>
     </hbox>
   </groupbox>
 
