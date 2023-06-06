@@ -2,7 +2,7 @@
 
 
 #category-connection > .category-icon {
-  list-style-image: url("chrome://browser/content/torpreferences/torPreferencesIcon.svg");
+  list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
 }
 
 html:dir(rtl) input[type="checkbox"].toggle-button::before {
