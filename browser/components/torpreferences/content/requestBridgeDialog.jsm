@@ -2,8 +2,14 @@
 
 var EXPORTED_SYMBOLS = ["RequestBridgeDialog"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { BridgeDB } = ChromeUtils.import("resource:///modules/BridgeDB.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+
+const { TorConnect, TorConnectTopics } = ChromeUtils.import(
+  "resource:///modules/TorConnect.jsm"
+);
 
 class RequestBridgeDialog {
   constructor(onSubmit) {
@@ -20,8 +26,6 @@ class RequestBridgeDialog {
 
   static get selectors() {
     return {
-      submitButton:
-        "accept" /* not really a selector but a key for dialog's getButton */,
       dialogHeader: "h3#torPreferences-requestBridge-header",
       captchaImage: "image#torPreferences-requestBridge-captchaImage",
       captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
@@ -57,8 +61,7 @@ class RequestBridgeDialog {
       }
     });
 
-    this._submitButton = this._dialog.getButton(selectors.submitButton);
-    this._submitButton.setAttribute("label", TorStrings.settings.submitCaptcha);
+    this._submitButton = this._dialog.getButton("accept");
     this._submitButton.disabled = true;
     this._dialog.addEventListener("dialogaccept", e => {
       e.preventDefault();
@@ -110,7 +113,25 @@ class RequestBridgeDialog {
       TorStrings.settings.incorrectCaptcha
     );
 
-    return true;
+    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    this.onAcceptStateChange();
+  }
+
+  onAcceptStateChange() {
+    this._submitButton.setAttribute(
+      "label",
+      TorConnect.canBeginBootstrap
+        ? TorStrings.settings.bridgeButtonConnect
+        : TorStrings.settings.submitCaptcha
+    );
+  }
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case TorConnectTopics.StateChange:
+        this.onAcceptStateChange();
+        break;
+    }
   }
 
   _setcaptchaImage(uri) {
@@ -142,6 +163,8 @@ class RequestBridgeDialog {
 
   close() {
     BridgeDB.close();
+    // Unregister our observer topics.
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
   }
 
   /*
@@ -161,7 +184,7 @@ class RequestBridgeDialog {
     BridgeDB.submitCaptchaGuess(captchaText)
       .then(aBridges => {
         if (aBridges) {
-          this.onSubmit(aBridges);
+          this.onSubmit(aBridges, TorConnect.canBeginBootstrap);
           this._submitButton.disabled = false;
           // This was successful, but use cancelDialog() to close, since
           // we intercept the `dialogaccept` event.
