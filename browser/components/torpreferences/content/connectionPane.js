@@ -72,24 +72,10 @@ const gConnectionPane = (function () {
     category: {
       title: "label#torPreferences-labelCategory",
     },
-    messageBox: {
-      box: "div#torPreferences-connectMessageBox",
-      message: "td#torPreferences-connectMessageBox-message",
-      button: "button#torPreferences-connectMessageBox-button",
-    },
     torPreferences: {
       header: "h1#torPreferences-header",
       description: "span#torPreferences-description",
       learnMore: "label#torPreferences-learnMore",
-    },
-    status: {
-      internetLabel: "#torPreferences-status-internet-label",
-      internetTest: "#torPreferences-status-internet-test",
-      internetIcon: "#torPreferences-status-internet-statusIcon",
-      internetStatus: "#torPreferences-status-internet-status",
-      torLabel: "#torPreferences-status-tor-label",
-      torIcon: "#torPreferences-status-tor-statusIcon",
-      torStatus: "#torPreferences-status-tor-status",
     },
     quickstart: {
       header: "h2#torPreferences-quickstart-header",
@@ -175,47 +161,6 @@ const gConnectionPane = (function () {
 
       const prefpane = document.getElementById("mainPrefPane");
 
-      // 'Connect to Tor' Message Bar
-
-      const messageBox = prefpane.querySelector(selectors.messageBox.box);
-      const messageBoxMessage = prefpane.querySelector(
-        selectors.messageBox.message
-      );
-      const messageBoxButton = prefpane.querySelector(
-        selectors.messageBox.button
-      );
-      // wire up connect button
-      messageBoxButton.addEventListener("click", () => {
-        TorConnect.openTorConnect({ beginBootstrap: true });
-      });
-
-      this._populateMessagebox = () => {
-        if (TorConnect.canBeginBootstrap) {
-          // set messagebox style and text
-          if (TorConnect.hasEverFailed) {
-            messageBox.parentNode.style.display = null;
-            messageBox.className = "error";
-            messageBoxMessage.innerText = TorStrings.torConnect.tryAgainMessage;
-            messageBoxButton.innerText = TorStrings.torConnect.tryAgain;
-          } else {
-            messageBox.parentNode.style.display = null;
-            messageBox.className = "warning";
-            messageBoxMessage.innerText = TorStrings.torConnect.connectMessage;
-            messageBoxButton.innerText = TorStrings.torConnect.torConnectButton;
-          }
-        } else {
-          // we need to explicitly hide the groupbox, as switching between
-          // the tor pane and other panes will 'unhide' (via the 'hidden'
-          // attribute) the groupbox, offsetting all of the content down
-          // by the groupbox's margin (even if content is 0 height)
-          messageBox.parentNode.style.display = "none";
-          messageBox.className = "hidden";
-          messageBoxMessage.innerText = "";
-          messageBoxButton.innerText = "";
-        }
-      };
-      this._populateMessagebox();
-
       // Heading
       prefpane.querySelector(selectors.torPreferences.header).innerText =
         TorStrings.settings.categoryTitle;
@@ -236,12 +181,16 @@ const gConnectionPane = (function () {
       }
 
       // Internet and Tor status
-      prefpane.querySelector(selectors.status.internetLabel).textContent =
+      const internetStatus = document.getElementById(
+        "torPreferences-status-internet"
+      );
+      internetStatus.querySelector(".torPreferences-status-name").textContent =
         TorStrings.settings.statusInternetLabel;
-      prefpane.querySelector(selectors.status.torLabel).textContent =
-        TorStrings.settings.statusTorLabel;
-      const internetTest = prefpane.querySelector(
-        selectors.status.internetTest
+      const internetResult = internetStatus.querySelector(
+        ".torPreferences-status-result"
+      );
+      const internetTest = document.getElementById(
+        "torPreferences-status-internet-test"
       );
       internetTest.setAttribute(
         "label",
@@ -250,42 +199,65 @@ const gConnectionPane = (function () {
       internetTest.addEventListener("command", () => {
         this.onInternetTest();
       });
-      const internetIcon = prefpane.querySelector(
-        selectors.status.internetIcon
+
+      const torConnectStatus = document.getElementById(
+        "torPreferences-status-tor-connect"
       );
-      const internetStatus = prefpane.querySelector(
-        selectors.status.internetStatus
+      torConnectStatus.querySelector(
+        ".torPreferences-status-name"
+      ).textContent = TorStrings.settings.statusTorLabel;
+      const torConnectResult = torConnectStatus.querySelector(
+        ".torPreferences-status-result"
       );
-      const torIcon = prefpane.querySelector(selectors.status.torIcon);
-      const torStatus = prefpane.querySelector(selectors.status.torStatus);
+      const torConnectButton = document.getElementById(
+        "torPreferences-status-tor-connect-button"
+      );
+      torConnectButton.setAttribute(
+        "label",
+        TorStrings.torConnect.torConnectButton
+      );
+      torConnectButton.addEventListener("command", () => {
+        TorConnect.openTorConnect({ beginBootstrap: true });
+      });
+
       this._populateStatus = () => {
         switch (this._internetStatus) {
-          case InternetStatus.Unknown:
-            internetTest.removeAttribute("hidden");
-            break;
           case InternetStatus.Online:
-            internetTest.setAttribute("hidden", "true");
-            internetIcon.className = "online";
-            internetStatus.textContent =
+            internetStatus.classList.remove("offline");
+            internetResult.textContent =
               TorStrings.settings.statusInternetOnline;
+            internetResult.hidden = false;
             break;
           case InternetStatus.Offline:
-            internetTest.setAttribute("hidden", "true");
-            internetIcon.className = "offline";
-            internetStatus.textContent =
+            internetStatus.classList.add("offline");
+            internetResult.textContent =
               TorStrings.settings.statusInternetOffline;
+            internetResult.hidden = false;
+            break;
+          case InternetStatus.Unknown:
+          default:
+            internetStatus.classList.remove("offline");
+            internetResult.hidden = true;
             break;
         }
         // FIXME: What about the TorConnectState.Disabled state?
         if (TorConnect.state === TorConnectState.Bootstrapped) {
-          torIcon.className = "connected";
-          torStatus.textContent = TorStrings.settings.statusTorConnected;
-        } else if (TorConnect.potentiallyBlocked) {
-          torIcon.className = "blocked";
-          torStatus.textContent = TorStrings.settings.statusTorBlocked;
+          torConnectStatus.classList.add("connected");
+          torConnectStatus.classList.remove("blocked");
+          torConnectResult.textContent = TorStrings.settings.statusTorConnected;
+          // NOTE: If the button is focused when we hide it, the focus may be
+          // lost. But we don't have an obvious place to put the focus instead.
+          torConnectButton.hidden = true;
         } else {
-          torIcon.className = "";
-          torStatus.textContent = TorStrings.settings.statusTorNotConnected;
+          torConnectStatus.classList.remove("connected");
+          torConnectStatus.classList.toggle(
+            "blocked",
+            TorConnect.potentiallyBlocked
+          );
+          torConnectResult.textContent = TorConnect.potentiallyBlocked
+            ? TorStrings.settings.statusTorBlocked
+            : TorStrings.settings.statusTorNotConnected;
+          torConnectButton.hidden = false;
         }
       };
       this._populateStatus();
@@ -1036,7 +1008,6 @@ const gConnectionPane = (function () {
     },
 
     onStateChange() {
-      this._populateMessagebox();
       this._populateStatus();
       this._showAutoconfiguration();
       this._populateBridgeCards();
