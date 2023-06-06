@@ -10,120 +10,25 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   scale: -1;
 }
 
-/* Connect Message Box */
-
-#torPreferences-connectMessageBox {
-  display: block;
-  position: relative;
-
-  width: auto;
-  min-height: 32px;
-  border-radius: 4px;
-  padding: 8px;
-}
-
-#torPreferences-connectMessageBox.hidden {
-  display: none;
-}
-
-#torPreferences-connectMessageBox.error {
-  background-color: var(--purple-50);
-  color: white;
-}
-
-#torPreferences-connectMessageBox.warning {
-  background-color: var(--purple-50);
-  color: white;
-}
-
-#torPreferences-connectMessageBox table {
-  border-collapse: collapse;
-}
-
-#torPreferences-connectMessageBox td {
-  vertical-align: middle;
-}
-
-#torPreferences-connectMessageBox td:first-child {
-  width: 16px;
-}
-
-#torPreferences-connectMessageBox-icon {
-  width: 16px;
-  height: 16px;
-
-  mask-repeat: no-repeat !important;
-  mask-size: 16px !important;
-}
-
-#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-icon
-{
-  mask: url("chrome://browser/content/torconnect/onion-slash-fillable.svg");
-  background-color: white;
-}
-
-#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-icon
-{
-  mask: url("chrome://browser/skin/onion.svg");
-  background-color: white;
-}
-
-#torPreferences-connectMessageBox-message {
-  line-height: 16px;
-  padding-inline-start: 8px;
-}
-
-#torPreferences-connectMessageBox-button {
-  display: block;
-  width: auto;
-
-  border-radius: 4px;
-  border: 0;
-
-  padding-inline: 18px;
-  padding-block: 8px;
-  margin-block: 0px;
-  margin-inline-start: 8px;
-  margin-inline-end: 0px;
-
-  font-size: 1.0em;
-  font-weight: 600;
-  white-space: nowrap;
-
-  color: white;
-}
-
-#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button {
-  background-color: var(--purple-70);
-}
-
-#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:hover {
-  background-color: var(--purple-80);
-}
-
-#torPreferences-connectMessageBox.error #torPreferences-connectMessageBox-button:active {
-  background-color: var(--purple-90);
-}
-
-#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button {
-  background-color: var(--purple-70);
-}
-
-#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button:hover {
-  background-color: var(--purple-80);
-}
-
-#torPreferences-connectMessageBox.warning #torPreferences-connectMessageBox-button:active {
-  background-color: var(--purple-90);
-}
-
 /* Status */
+
 #torPreferences-status-box {
   display: flex;
   align-items: center;
+  gap: 32px;
 }
 
-#torPreferences-status-internet-icon, #torPreferences-status-tor-icon {
+.torPreferences-status-grouping {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.torPreferences-status-grouping > * {
+  flex: 0 0 auto;
+}
+
+.torPreferences-status-icon {
   width: 18px;
   height: 18px;
   margin-inline-end: 8px;
@@ -131,51 +36,47 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   fill: var(--in-content-text-color);
 }
 
-#torPreferences-status-internet-icon {
+#torPreferences-status-internet .torPreferences-status-icon {
   list-style-image: url("chrome://browser/content/torpreferences/network.svg");
 }
 
-#torPreferences-status-tor-icon {
-  list-style-image: url("chrome://browser/skin/onion.svg");
+#torPreferences-status-tor-connect .torPreferences-status-icon {
+  list-style-image: url("chrome://browser/content/torconnect/tor-connect-broken.svg");
 }
 
-#torPreferences-status-internet-label, #torPreferences-status-tor-label {
+.torPreferences-status-name {
   font-weight: bold;
+  margin-inline-end: 0.75em;
 }
 
-#torPreferences-status-internet-status {
-  margin-inline-end: 32px;
+.torPreferences-status-result {
+  margin-inline-end: 8px;
 }
 
-#torPreferences-status-internet-statusIcon.online,
-#torPreferences-status-internet-statusIcon.offline,
-#torPreferences-status-tor-statusIcon {
-  margin-inline-start: 12px;
-  margin-inline-end: 9px;
+#torPreferences-status-internet.offline .torPreferences-status-icon {
+  list-style-image: url("chrome://browser/content/torpreferences/network-broken.svg");
 }
 
-#torPreferences-status-internet-statusIcon, #torPreferences-status-tor-statusIcon {
-  -moz-context-properties: fill;
-}
-
-#torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
-  list-style-image: url("chrome://browser/content/torpreferences/check.svg");
+#torPreferences-status-tor-connect.connected .torPreferences-status-icon {
+  list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
   fill: var(--purple-60);
 }
 
 @media (prefers-color-scheme: dark) {
-  #torPreferences-status-internet-statusIcon.online, #torPreferences-status-tor-statusIcon.connected {
+  #torPreferences-status-tor-connect.connected .torPreferences-status-icon {
     fill: var(--purple-30);
   }
 }
 
-#torPreferences-status-internet-statusIcon.offline, #torPreferences-status-tor-statusIcon:not(.connected) {
-  list-style-image: url("chrome://global/skin/icons/warning.svg");
-  fill: var(--warning-color);
+#torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
+  /* Same as .tor-connect-status-potentially-blocked. */
+  fill: #c50042;
 }
 
-#torPreferences-status-tor-statusIcon.blocked {
-  fill: var(--in-content-danger-button-background);
+@media (prefers-color-scheme: dark) {
+  #torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
+    fill: #ff9aa2;
+  }
 }
 
 /* Bridge settings */
