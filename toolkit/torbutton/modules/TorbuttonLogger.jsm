@@ -8,19 +8,9 @@
  *
  *************************************************************************/
 
-// Module specific constants
-const kMODULE_NAME = "Torbutton Logger";
-const kMODULE_CONTRACTID = "@torproject.org/torbutton-logger;1";
-const kMODULE_CID = Components.ID("f36d72c9-9718-4134-b550-e109638331d7");
+var EXPORTED_SYMBOLS = ["TorbuttonLogger"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
-});
 
 function TorbuttonLogger() {
   // Register observer
@@ -50,42 +40,16 @@ function TorbuttonLogger() {
  * Everything below is boring boilerplate and can probably be ignored.
  */
 
-const nsIClassInfo = Ci.nsIClassInfo;
-
-const logString = { 1: "VERB", 2: "DBUG", 3: "INFO", 4: "NOTE", 5: "WARN" };
-
-function padInt(i) {
-  return i < 10 ? "0" + i : i;
-}
-
 TorbuttonLogger.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIClassInfo]),
 
   wrappedJSObject: null, // Initialized by constructor
 
-  // make this an nsIClassInfo object
-  flags: nsIClassInfo.DOM_OBJECT,
-
-  // method of nsIClassInfo
-  classDescription: "TorbuttonLogger",
-  classID: kMODULE_CID,
-  contractID: kMODULE_CONTRACTID,
-
-  // method of nsIClassInfo
-  getInterfaces(count) {
-    var interfaceList = [nsIClassInfo];
-    count.value = interfaceList.length;
-    return interfaceList;
-  },
-
-  // method of nsIClassInfo
-  getHelperForLanguage(count) {
-    return null;
-  },
-
   formatLog(str, level) {
-    var d = new Date();
-    var now =
+    const padInt = n => String(n).padStart(2, "0");
+    const logString = { 1: "VERB", 2: "DBUG", 3: "INFO", 4: "NOTE", 5: "WARN" };
+    const d = new Date();
+    const now =
       padInt(d.getUTCMonth() + 1) +
       "-" +
       padInt(d.getUTCDate()) +
@@ -95,7 +59,7 @@ TorbuttonLogger.prototype = {
       padInt(d.getUTCMinutes()) +
       ":" +
       padInt(d.getUTCSeconds());
-    return "[" + now + "] Torbutton " + logString[level] + ": " + str;
+    return `${now} Torbutton ${logString[level]}: ${str}`;
   },
 
   // error console log
@@ -178,8 +142,3 @@ TorbuttonLogger.prototype = {
     }
   },
 };
-
-// Assign factory to global object.
-const NSGetFactory = XPCOMUtils.generateNSGetFactory
-  ? XPCOMUtils.generateNSGetFactory([TorbuttonLogger])
-  : ComponentUtils.generateNSGetFactory([TorbuttonLogger]);
