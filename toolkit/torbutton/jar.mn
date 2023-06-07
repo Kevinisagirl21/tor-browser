@@ -9,7 +9,6 @@ torbutton.jar:
 * content/aboutTor/aboutTor.xhtml        (chrome/content/aboutTor/aboutTor.xhtml)
   content/aboutTor/resources/aboutTor.js (chrome/content/aboutTor/resources/aboutTor.js)
 
-  components/    (components/*)
   modules/       (modules/*)
   skin/          (chrome/skin/*)
 
@@ -18,6 +17,3 @@ torbutton.jar:
 % resource torbutton-assets resource://torbutton/skin/ contentaccessible=yes
 
 % skin torbutton classic/1.0 %skin/
-
-% component {f605ec27-d867-44b5-ad97-2a29276642c3} %components/dragDropFilter.js
-% contract @torproject.org/torbutton-dragDropFilter;1 {f605ec27-d867-44b5-ad97-2a29276642c3}

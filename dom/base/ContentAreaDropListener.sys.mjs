@@ -2,17 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
 const lazy = {};
 
-XPCOMUtils.defineLazyGetter(lazy, "gOpaqueDrag", () => {
-  return Cc["@torproject.org/torbutton-dragDropFilter;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject.opaqueDrag;
-});
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "OpaqueDrag",
+  "resource://torbutton/modules/DragDropFilter.jsm"
+);
 
 // This component is used for handling dragover and drop of urls.
 //
@@ -59,7 +55,7 @@ ContentAreaDropListener.prototype = {
       data = dt.mozGetDataAt(type, i);
       if (data) {
         if (type === "application/x-torbrowser-opaque") {
-          ({ type, value: data = "" } = lazy.gOpaqueDrag.get(data));
+          ({ type, value: data = "" } = lazy.OpaqueDrag.retrieve(data));
         }
         let lines = data.split("\n");
         for (let i = 0, length = lines.length; i < length; i += 2) {

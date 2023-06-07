@@ -5,22 +5,32 @@
  * access to URLs (a potential proxy bypass vector).
  *************************************************************************/
 
+var EXPORTED_SYMBOLS = ["DragDropFilter", "OpaqueDrag"];
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
+const lazy = {};
+
+XPCOMUtils.defineLazyGetter(lazy, "logger", () => {
+  // Keep the logger lazy, because it is used only in the parent process.
+  // For some reason, Mozilla considers reading the preference linked to the
+  // level in the children illegal (and triggers a crash when
+  // fission.enforceBlocklistedPrefsInSubprocesses is true).
+  // (Or maybe this crash used to happen when the logger was not lazy, and maybe
+  // the preferences were not ready, yet?)
+  const { ConsoleAPI } = ChromeUtils.importESModule(
+    "resource://gre/modules/Console.sys.mjs"
+  );
+  return new ConsoleAPI({
+    maxLogLevel: "warn",
+    maxLogLevelPref: "browser.dragdropfilter.log_level",
+    prefix: "DragDropFilter",
+  });
 });
-XPCOMUtils.defineLazyGlobalGetters(this, ["crypto"]);
-
-// Module specific constants
-const kMODULE_NAME = "Torbutton Drag and Drop Handler";
-const kCONTRACT_ID = "@torproject.org/torbutton-dragDropFilter;1";
-const kMODULE_CID = Components.ID("f605ec27-d867-44b5-ad97-2a29276642c3");
-
-const kInterfaces = [Ci.nsIObserver, Ci.nsIClassInfo];
 
 const URLISH_TYPES = Object.freeze([
   "text/x-moz-url",
@@ -65,53 +75,28 @@ const OpaqueDrag = {
   },
 };
 
-function DragDropFilter() {
-  this.logger = Cc["@torproject.org/torbutton-logger;1"].getService(
-    Ci.nsISupports
-  ).wrappedJSObject;
-  this.logger.log(3, "Component Load 0: New DragDropFilter.");
-  if (MAIN_PROCESS) {
-    // We want to update our status in the main process only, in order to
-    // serve the same opaque drag payload in every process.
-    try {
-      Services.obs.addObserver(this, "on-datatransfer-available");
-    } catch (e) {
-      this.logger.log(5, "Failed to register drag observer");
-    }
-  }
-}
-
-DragDropFilter.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
-
-  // make this an nsIClassInfo object
-  flags: Ci.nsIClassInfo.DOM_OBJECT,
-  classDescription: kMODULE_NAME,
-  contractID: kCONTRACT_ID,
-  classID: kMODULE_CID,
-
-  // method of nsIClassInfo
-  getInterfaces(count) {
-    count.value = kInterfaces.length;
-    return kInterfaces;
-  },
-
-  // method of nsIClassInfo
-  getHelperForLanguage(count) {
-    return null;
-  },
-
-  // method of nsIObserver
+class DragDropFilter {
   observe(subject, topic, data) {
     if (topic === "on-datatransfer-available") {
-      this.logger.log(3, "The DataTransfer is available");
+      lazy.logger.debug("The DataTransfer is available");
       this.filterDataTransferURLs(subject);
+    } else if (topic === "profile-after-change" && MAIN_PROCESS) {
+      lazy.logger.info(
+        "Observed profile-after-change: registering the observer."
+      );
+      // We want to update our status in the main process only, in order to
+      // serve the same opaque drag payload in every process.
+      try {
+        Services.obs.addObserver(this, "on-datatransfer-available");
+      } catch (e) {
+        lazy.logger.error("Failed to register drag observer", e);
+      }
     }
-  },
+  }
 
   filterDataTransferURLs(aDataTransfer) {
     for (let i = 0, count = aDataTransfer.mozItemCount; i < count; ++i) {
-      this.logger.log(3, `Inspecting the data transfer: ${i}.`);
+      lazy.logger.debug(`Inspecting the data transfer: ${i}.`);
       const types = aDataTransfer.mozTypesAt(i);
       const urlType = "text/x-moz-url";
       // Fallback url type, to be parsed by this browser but not externally
@@ -133,16 +118,15 @@ DragDropFilter.prototype = {
         aDataTransfer.mozSetDataAt(INTERNAL_FALLBACK, opaqueKey, i);
       }
       for (const type of types) {
-        this.logger.log(3, `Type is: ${type}.`);
+        lazy.logger.debug(`Type is: ${type}.`);
         if (URLISH_TYPES.includes(type)) {
-          this.logger.log(
-            3,
+          lazy.logger.info(
             `Removing transfer data ${aDataTransfer.mozGetDataAt(type, i)}`
           );
           for (const type of types) {
             if (
               type !== INTERNAL_FALLBACK &&
-              type !== "text/x-moz-place" &&    // don't touch bookmarks
+              type !== "text/x-moz-place" && // don't touch bookmarks
               type !== "application/x-moz-file" // don't touch downloads
             ) {
               aDataTransfer.mozClearDataAt(type, i);
@@ -152,16 +136,11 @@ DragDropFilter.prototype = {
         }
       }
     }
-  },
+  }
 
-  opaqueDrag: {
+  opaqueDrag = {
     get(opaqueKey) {
       return OpaqueDrag.retrieve(opaqueKey);
     },
-  },
-};
-
-// Assign factory to global object.
-const NSGetFactory = XPCOMUtils.generateNSGetFactory
-  ? XPCOMUtils.generateNSGetFactory([DragDropFilter])
-  : ComponentUtils.generateNSGetFactory([DragDropFilter]);
+  };
+}
