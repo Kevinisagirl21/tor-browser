@@ -12,9 +12,8 @@
  *
  *************************************************************************/
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
+var EXPORTED_SYMBOLS = ["StartupObserver"];
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -24,15 +23,11 @@ const { TorProtocolService } = ChromeUtils.import(
   "resource://gre/modules/TorProtocolService.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.jsm",
 });
-
-// Module specific constants
-const kMODULE_NAME = "Startup";
-const kMODULE_CONTRACTID = "@torproject.org/startup-observer;1";
-const kMODULE_CID = Components.ID("06322def-6fde-4c06-aef6-47ae8e799629");
 
 function cleanupCookies() {
   const migratedPref = "extensions.torbutton.cookiejar_migrated";
@@ -116,7 +111,7 @@ StartupObserver.prototype = {
 
         let isWindows = Services.appinfo.OS === "WINNT";
         if (!isWindows && Services.env.exists("TOR_SOCKS_IPC_PATH")) {
-          socksPortInfo.ipcFile = new FileUtils.File(
+          socksPortInfo.ipcFile = new lazy.FileUtils.File(
             Services.env.get("TOR_SOCKS_IPC_PATH")
           );
         } else {
@@ -177,18 +172,6 @@ StartupObserver.prototype = {
     Services.prefs.savePrefFile(null);
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIClassInfo]),
-
-  // method of nsIClassInfo
-  classDescription: "Torbutton Startup Observer",
-  classID: kMODULE_CID,
-  contractID: kMODULE_CONTRACTID,
-
   // Hack to get us registered early to observe recovery
   _xpcom_categories: [{ category: "profile-after-change" }],
 };
-
-// Assign factory to global object.
-const NSGetFactory = XPCOMUtils.generateNSGetFactory
-  ? XPCOMUtils.generateNSGetFactory([StartupObserver])
-  : ComponentUtils.generateNSGetFactory([StartupObserver]);

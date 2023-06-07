@@ -228,6 +228,7 @@
 @RESPATH@/components/tor-launcher.manifest
 @RESPATH@/chrome/torbutton.manifest
 @RESPATH@/chrome/torbutton/*
+@RESPATH@/components/torbutton.manifest
 @RESPATH@/chrome/toolkit@JAREXT@
 @RESPATH@/chrome/toolkit.manifest
 #ifdef MOZ_GTK
