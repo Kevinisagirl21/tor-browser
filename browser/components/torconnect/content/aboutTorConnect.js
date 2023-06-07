@@ -449,7 +449,7 @@ class AboutTorConnect {
     if (state?.StateChanged) {
       this.elements.connectButton.focus();
     }
-    if (state.HasEverFailed) {
+    if (state?.HasEverFailed) {
       this.setBreadcrumbsStatus(
         BreadcrumbStatus.Active,
         BreadcrumbStatus.Default,
