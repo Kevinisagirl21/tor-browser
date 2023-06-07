@@ -23,13 +23,21 @@
 /* global console */
 "use strict";
 
-// ### Import Mozilla Services
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
   "TorMonitorService",
   "resource://gre/modules/TorMonitorService.jsm"
+);
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "logger",
+  "@torproject.org/torbutton-logger;1",
+  "nsISupports"
 );
 
 // tor-launcher observer topics
@@ -39,10 +47,8 @@ const TorTopics = Object.freeze({
 
 // __log__.
 // Logging function
-let logger = Cc["@torproject.org/torbutton-logger;1"].getService(
-  Ci.nsISupports
-).wrappedJSObject;
-let log = x => logger.eclog(3, x.trimRight().replace(/\r\n/g, "\n"));
+let log = x =>
+  logger.wrappedJSObject.eclog(3, x.trimRight().replace(/\r\n/g, "\n"));
 
 // ### announce this file
 log("Loading tor-control-port.js\n");

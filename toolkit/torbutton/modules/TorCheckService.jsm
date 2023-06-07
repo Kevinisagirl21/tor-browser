@@ -7,21 +7,16 @@
  * Tor check service
  *************************************************************************/
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+var EXPORTED_SYMBOLS = ["TorCheckService"];
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ComponentUtils: "resource://gre/modules/ComponentUtils.jsm",
-});
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 // Module specific constants
 const kMODULE_NAME = "Torbutton Tor Check Service";
 const kMODULE_CONTRACTID = "@torproject.org/torbutton-torCheckService;1";
 const kMODULE_CID = Components.ID("5d57312b-5d8c-4169-b4af-e80d6a28a72e");
 
-function TBTorCheckService() {
+function TorCheckService() {
   this._logger = Cc["@torproject.org/torbutton-logger;1"].getService(
     Ci.nsISupports
   ).wrappedJSObject;
@@ -31,7 +26,7 @@ function TBTorCheckService() {
   this.wrappedJSObject = this;
 }
 
-TBTorCheckService.prototype = {
+TorCheckService.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIClassInfo]),
 
   kCheckNotInitiated: 0, // Possible values for statusOfTorCheck.
@@ -133,8 +128,3 @@ TBTorCheckService.prototype = {
     return ret;
   },
 };
-
-// Assign factory to global object.
-const NSGetFactory = XPCOMUtils.generateNSGetFactory
-  ? XPCOMUtils.generateNSGetFactory([TBTorCheckService])
-  : ComponentUtils.generateNSGetFactory([TBTorCheckService]);
