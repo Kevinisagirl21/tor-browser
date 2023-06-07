@@ -291,7 +291,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   top: calc(50% - 8px);
   inset-inline-start: calc(50% - 8px);
 
-  mask: url("chrome://browser/skin/onion.svg");
+  mask: url("chrome://browser/content/torpreferences/bridge-qr-onion-mask.svg");
   mask-repeat: no-repeat;
   mask-size: 16px;
   background: var(--qr-one);
@@ -436,7 +436,7 @@ dialog#torPreferences-requestBridge-dialog > hbox {
   height: 38px;
   top: calc(50% - 19px);
   left: calc(50% - 19px);
-  mask: url("chrome://browser/skin/onion.svg");
+  mask: url("chrome://browser/content/torpreferences/bridge-qr-onion-mask.svg");
   mask-repeat: no-repeat;
   mask-size: 38px;
   background: var(--qr-one);
