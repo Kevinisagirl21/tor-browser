@@ -1,1 +1,2 @@
 category profile-after-change StartupObserver @torproject.org/startup-observer;1
+category profile-after-change DragDropFilter @torproject.org/torbutton-dragDropFilter;1
