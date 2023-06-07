@@ -317,9 +317,12 @@ body {
   fill: var(--onion-color);
 }
 
-.title.offline, .title.assist, .title.final {
+.title.offline {
   background-image: url("chrome://browser/content/torconnect/connection-failure.svg");
-  stroke: var(--in-content-danger-button-background);
+}
+
+.title.assist, .title.final {
+  background-image: url("chrome://browser/content/torconnect/tor-connect-broken.svg");
 }
 
 .title.location {
