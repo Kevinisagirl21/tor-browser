@@ -5,8 +5,6 @@
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "DTD/xhtml1-strict.dtd">
   %htmlDTD;
-  <!ENTITY % globalDTD SYSTEM "chrome://global/locale/global.dtd">
-  %globalDTD;
   <!ENTITY % tbUpdateDTD SYSTEM "chrome://browser/locale/aboutTBUpdate.dtd">
   %tbUpdateDTD;
 ]>
@@ -19,8 +17,11 @@
         href="chrome://browser/content/abouttbupdate/aboutTBUpdate.css"/>
   <script src="chrome://browser/content/abouttbupdate/aboutTBUpdate.js"
           type="text/javascript"/>
+  <!-- Hack: we are not using Fluent translations in this page (yet), but we use
+     - this tag so it sets up the page automatically for us. -->
+  <link rel="localization" href="branding/brand.ftl" />
 </head>
-<body dir="&locale.dir;">
+<body>
   <!-- NOTE: We don't use the <dl>, <dt> and <dd> elements to form name-value
      - pairs because this semantics is relatively new, whilst firefox
      - currently still maps these to the more limited "definitionlist", "term"
