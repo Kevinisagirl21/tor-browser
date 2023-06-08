@@ -38,22 +38,3 @@
 <!ENTITY aboutTor.nightly.ready2.label "You’re ready to test the world’s most private browsing experience.">
 <!ENTITY aboutTor.nightly.bannerDescription "Tor Browser Nightly is an unstable version of Tor Browser you can use to preview new features, test their performance and provide feedback before release.">
 <!ENTITY aboutTor.nightly.bannerLink "Report a bug on the Tor Forum">
-
-<!-- YEC 2022 campaign https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41303 -->
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.powered_by_privacy): a header for a list of things which are powered by/enabled by/possible due to privacy (each item should have positive connotations/associations in the translated languages) -->
-<!ENTITY aboutTor.yec2022.powered_by_privacy "POWERED BY PRIVACY:">
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.resistance): resistance as in social/political resistance to opression, injustice, etc -->
-<!ENTITY aboutTor.yec2022.resistance "RESISTANCE">
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.change): change as in the process of social/political progress toward a better/more equitable society -->
-<!ENTITY aboutTor.yec2022.change "CHANGE">
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.freedom): freedom as in liberty, protection against exploition, imprisonment, etc -->
-<!ENTITY aboutTor.yec2022.freedom "FREEDOM">
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.donate_now): Label for a button directing user to donation page-->
-<!ENTITY aboutTor.yec2022.donate_now "DONATE NOW">
-<!-- LOCALIZATION NOTE (aboutTor.yec2022.donation_matching): Please translate the 'Friends of Tor' phrase, but
-also format it like the name of an organization in whichever way that is appropriate for your locale.
-
-Please keep the currency in USD.
-Thank you!
--->
-<!ENTITY aboutTor.yec2022.donation_matching "Your donation will be matched by Friends of Tor, up to $100,000.">
