@@ -6,12 +6,6 @@
   -->
 
 <!DOCTYPE html [
-  <!ENTITY % htmlDTD
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "DTD/xhtml1-strict.dtd">
-  %htmlDTD;
-  <!ENTITY % globalDTD SYSTEM "chrome://global/locale/global.dtd">
-  %globalDTD;
   <!ENTITY % aboutTorDTD SYSTEM "chrome://torbutton/locale/aboutTor.dtd">
   %aboutTorDTD;
   <!ENTITY % tbUpdateDTD SYSTEM "chrome://browser/locale/aboutTBUpdate.dtd">
@@ -20,14 +14,17 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src resource:; object-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src resource: chrome:; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>&aboutTor.title;</title>
   <link rel="stylesheet" href="chrome://browser/skin/onionPattern.css" type="text/css" media="all" />
   <link rel="stylesheet" href="resource://torbutton-assets/aboutTor.css" type="text/css" media="all" />
   <script type="text/javascript" src="resource://torbutton-abouttor/aboutTor.js"></script>
+  <!-- Hack: we are not using Fluent translations in this page (yet), but we use
+     - this tag so it sets up the page automatically for us. -->
+  <link rel="localization" href="branding/brand.ftl" />
 </head>
-<body dir="&locale.dir;">
+<body>
   <div class="torcontent-container">
     <div id="torbrowser-info">
       <div id="torbrowser-version"/>
