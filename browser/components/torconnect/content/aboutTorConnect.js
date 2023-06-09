@@ -287,9 +287,8 @@ class AboutTorConnect {
 
   validateLocation() {
     const selectedIndex = this.elements.locationDropdownSelect.selectedIndex;
-    const selectedOption = this.elements.locationDropdownSelect.options[
-      selectedIndex
-    ];
+    const selectedOption =
+      this.elements.locationDropdownSelect.options[selectedIndex];
     if (!selectedOption.value) {
       this.elements.tryBridgeButton.setAttribute("disabled", "disabled");
     } else {
