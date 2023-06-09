@@ -11,23 +11,15 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
 
-const {
-  TorSettings,
-  TorSettingsTopics,
-  TorSettingsData,
-  TorBridgeSource,
-} = ChromeUtils.import("resource:///modules/TorSettings.jsm");
+const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
+  ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
 const { TorProtocolService } = ChromeUtils.import(
   "resource://gre/modules/TorProtocolService.jsm"
 );
 
-const {
-  TorConnect,
-  TorConnectTopics,
-  TorConnectState,
-  TorCensorshipLevel,
-} = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
+  ChromeUtils.import("resource:///modules/TorConnect.jsm");
 
 const { TorLogDialog } = ChromeUtils.import(
   "chrome://browser/content/torpreferences/torLogDialog.jsm"
@@ -74,7 +66,7 @@ const InternetStatus = Object.freeze({
 
   Code for populating the XUL in about:preferences#connection, handling input events, interfacing with tor-launcher
 */
-const gConnectionPane = (function() {
+const gConnectionPane = (function () {
   /* CSS selectors for all of the Tor Network DOM elements we need to access */
   const selectors = {
     category: {
@@ -548,9 +540,8 @@ const gConnectionPane = (function() {
             id.append(piece);
           }
         }
-        card.querySelector(
-          selectors.bridges.cardHeadingAddr
-        ).textContent = bridgeString;
+        card.querySelector(selectors.bridges.cardHeadingAddr).textContent =
+          bridgeString;
         const optionsButton = card.querySelector(selectors.bridges.cardOptions);
         if (TorSettings.bridges.source === TorBridgeSource.BuiltIn) {
           optionsButton.setAttribute("hidden", "true");
@@ -889,9 +880,8 @@ const gConnectionPane = (function() {
       }
 
       this._confirmBridgeRemoval = () => {
-        const aParentWindow = Services.wm.getMostRecentWindow(
-          "navigator:browser"
-        );
+        const aParentWindow =
+          Services.wm.getMostRecentWindow("navigator:browser");
 
         const ps = Services.prompt;
         const btnFlags =
@@ -1176,7 +1166,8 @@ function makeBridgeId(bridgeString) {
 }
 
 function parseBridgeLine(line) {
-  const re = /^([^\s]+\s+)?([0-9a-fA-F\.\[\]\:]+:[0-9]{1,5})\s*([0-9a-fA-F]{40})(\s+.+)?/;
+  const re =
+    /^([^\s]+\s+)?([0-9a-fA-F\.\[\]\:]+:[0-9]{1,5})\s*([0-9a-fA-F]{40})(\s+.+)?/;
   const matches = line.match(re);
   if (!matches) {
     return null;

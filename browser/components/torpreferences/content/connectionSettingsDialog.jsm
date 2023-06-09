@@ -206,9 +206,8 @@ class ConnectionSettingsDialog {
     this.onToggleFirewall(false);
     if (TorSettings.firewall.enabled) {
       this.onToggleFirewall(true);
-      this._allowedPortsTextbox.value = TorSettings.firewall.allowed_ports.join(
-        ", "
-      );
+      this._allowedPortsTextbox.value =
+        TorSettings.firewall.allowed_ports.join(", ");
     }
 
     this._dialog.addEventListener("dialogaccept", e => {
