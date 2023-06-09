@@ -6,11 +6,8 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
-const {
-  TorSettings,
-  TorBridgeSource,
-  TorBuiltinBridgeTypes,
-} = ChromeUtils.import("resource:///modules/TorSettings.jsm");
+const { TorSettings, TorBridgeSource, TorBuiltinBridgeTypes } =
+  ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
 const { TorConnect, TorConnectTopics } = ChromeUtils.import(
   "resource:///modules/TorConnect.jsm"
