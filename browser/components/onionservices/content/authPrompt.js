@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TorStrings: "resource:///modules/TorStrings.jsm",
 });
 
-const OnionAuthPrompt = (function() {
+const OnionAuthPrompt = (function () {
   // OnionServicesAuthPrompt objects run within the main/chrome process.
   // aReason is the topic passed within the observer notification that is
   // causing this auth prompt to be displayed.
@@ -197,7 +197,8 @@ const OnionAuthPrompt = (function() {
         );
         let torController = await controller();
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
-        const onionServiceIdRegExp = /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
+        const onionServiceIdRegExp =
+          /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
         // match() will return null on bad match, causing throw
         const onionServiceId = this._onionHostname
           .match(onionServiceIdRegExp)
