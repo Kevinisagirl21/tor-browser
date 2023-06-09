@@ -2,9 +2,15 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src chrome:; object-src 'none'" />
-    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
-    <link rel="stylesheet" href="chrome://browser/content/rulesets/aboutRulesets.css">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src chrome:; object-src 'none'"
+    />
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/rulesets/aboutRulesets.css"
+    />
   </head>
   <body>
     <!-- Warning -->
@@ -14,7 +20,11 @@
         <p id="warning-description"></p>
         <p>
           <label>
-            <input id="warning-enable-checkbox" type="checkbox" checked="checked">
+            <input
+              id="warning-enable-checkbox"
+              type="checkbox"
+              checked="checked"
+            />
             <span id="warning-enable-label"></span>
           </label>
         </p>
@@ -35,8 +45,7 @@
           </div>
           <ul id="ruleset-list">
             <li id="ruleset-template">
-              <div class="icon">
-              </div>
+              <div class="icon"></div>
               <div>
                 <div class="name"></div>
                 <div class="description"></div>
@@ -63,13 +72,13 @@
           <dd id="ruleset-scope-value"></dd>
         </dl>
         <label id="ruleset-enable">
-          <input type="checkbox" id="ruleset-enable-checkbox">
+          <input type="checkbox" id="ruleset-enable-checkbox" />
           <span id="ruleset-enable-label"></span>
         </label>
         <div id="ruleset-buttonbar">
           <button id="ruleset-update-button"></button>
         </div>
-        <hr>
+        <hr />
         <p id="ruleset-updated"></p>
       </section>
 
@@ -85,14 +94,14 @@
           </label>
           <label>
             <div id="edit-path-prefix-label"></div>
-            <input id="edit-path-prefix-input" type="text">
+            <input id="edit-path-prefix-input" type="text" />
           </label>
           <label>
             <div id="edit-scope-label"></div>
-            <input id="edit-scope-input" type="text">
+            <input id="edit-scope-input" type="text" />
           </label>
           <label id="edit-enable">
-            <input type="checkbox" id="edit-enable-checkbox">
+            <input type="checkbox" id="edit-enable-checkbox" />
             <span id="edit-enable-label"></span>
           </label>
           <div id="edit-buttonbar">
