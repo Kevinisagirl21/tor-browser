@@ -1,7 +1,3 @@
 . $topsrcdir/browser/config/mozconfigs/base-browser-android
 
 mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
-
-if test ! -z "$LOCAL_DEV_BUILD"; then
-    ac_add_options --with-tor-browser-version=dev-build
-fi
