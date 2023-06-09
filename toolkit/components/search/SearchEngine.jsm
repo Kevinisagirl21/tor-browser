@@ -30,6 +30,12 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
   });
 });
 
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  "SecurityLevelPrefs",
+  "chrome://browser/content/securitylevel/securityLevel.js"
+);
+
 const USER_DEFINED = "searchTerms";
 
 // Supported OpenSearch parameters
@@ -429,7 +435,17 @@ class EngineURL {
   }
 
   getSubmission(searchTerms, engine, purpose) {
-    var url = ParamSubstitution(this.template, searchTerms, engine);
+    let urlTemplate = this.template;
+    if (
+      engine &&
+      (engine._extensionID === "ddg@search.mozilla.org" ||
+        engine._extensionID === "ddg-onion@search.mozilla.org") &&
+      this.type === SearchUtils.URL_TYPE.SEARCH &&
+      SecurityLevelPrefs?.securityLevel === "safest"
+    ) {
+      urlTemplate += "html";
+    }
+    var url = ParamSubstitution(urlTemplate, searchTerms, engine);
     // Default to searchbar if the purpose is not provided
     var requestPurpose = purpose || "searchbar";
 
