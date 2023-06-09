@@ -4,12 +4,8 @@ var EXPORTED_SYMBOLS = ["TorConnectParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const {
-  InternetStatus,
-  TorConnect,
-  TorConnectTopics,
-  TorConnectState,
-} = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+const { InternetStatus, TorConnect, TorConnectTopics, TorConnectState } =
+  ChromeUtils.import("resource:///modules/TorConnect.jsm");
 const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
   "resource:///modules/TorSettings.jsm"
 );
