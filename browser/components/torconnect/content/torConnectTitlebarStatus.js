@@ -56,7 +56,7 @@ var gTorConnectTitlebarStatus = {
   /**
    * De-initialize the component.
    */
-  deinit() {
+  uninit() {
     Services.obs.removeObserver(this._stateListener, this._observeTopic);
   },
 
