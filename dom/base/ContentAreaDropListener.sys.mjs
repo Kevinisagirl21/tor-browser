@@ -4,11 +4,9 @@
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "OpaqueDrag",
-  "resource://torbutton/modules/DragDropFilter.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  OpaqueDrag: "resource://gre/modules/DragDropFilter.sys.mjs",
+});
 
 // This component is used for handling dragover and drop of urls.
 //
