@@ -9727,7 +9727,7 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
                                       const Document* aDocument) {
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (aDocument->ShouldResistFingerprinting()) {
+  if (aDocument->ShouldResistFingerprinting(RFPTarget::Unknown)) {
     GetSpoofedSystemFontForRFP(aFontID, fontStyle, systemFontName);
   } else if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
     return;
