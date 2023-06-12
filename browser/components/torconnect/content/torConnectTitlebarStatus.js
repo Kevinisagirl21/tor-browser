@@ -16,12 +16,6 @@ var gTorConnectTitlebarStatus = {
    * @type {Element}
    */
   label: null,
-  /**
-   * The status icon.
-   *
-   * @type {Element}
-   */
-  icon: null,
 
   /**
    * Initialize the component.
@@ -34,7 +28,6 @@ var gTorConnectTitlebarStatus = {
     this._strings = TorStrings.torConnect;
 
     this.node = document.getElementById("tor-connect-titlebar-status");
-    this.icon = document.getElementById("tor-connect-titlebar-status-icon");
     this.label = document.getElementById("tor-connect-titlebar-status-label");
     // The title also acts as an accessible name for the role="status".
     this.node.setAttribute("title", this._strings.titlebarStatusName);
@@ -91,8 +84,8 @@ var gTorConnectTitlebarStatus = {
         break;
     }
     this.label.textContent = this._strings[textId];
-    this.icon.classList.toggle("tor-connect-status-connected", connected);
-    this.icon.classList.toggle(
+    this.node.classList.toggle("tor-connect-status-connected", connected);
+    this.node.classList.toggle(
       "tor-connect-status-potentially-blocked",
       potentiallyBlocked
     );

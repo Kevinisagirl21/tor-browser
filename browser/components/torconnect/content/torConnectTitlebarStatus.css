@@ -10,9 +10,10 @@
   white-space: nowrap;
 }
 
-#tor-connect-titlebar-status-icon {
-  -moz-context-properties: fill;
+#tor-connect-titlebar-status img {
+  -moz-context-properties: fill, stroke;
   fill: currentColor;
+  stroke: currentColor;
   width: 16px;
   height: 16px;
   object-fit: none;
@@ -24,28 +25,31 @@
   object-position: var(--tor-not-connected-offset);
 }
 
-#tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked:not(
-  .tor-connect-status-connected
-) {
-  fill: #c50042;
+#tor-connect-titlebar-status.tor-connect-status-potentially-blocked img {
+  /* NOTE: context-stroke is only used for the first "frame" for the slash. When
+   * we assign the potentially-blocked class, we do *not* expect to be connected
+   * at the same time, so we only expect this first frame to be visible in this
+   * state. */
+  stroke: #c50042;
 }
 
 @media (prefers-color-scheme: dark) {
-  #tor-connect-titlebar-status-icon.tor-connect-status-potentially-blocked:not(
-    .tor-connect-status-connected
-  ){
-    fill: #ff9aa2;
+  #tor-connect-titlebar-status.tor-connect-status-potentially-blocked img {
+    stroke: #ff9aa2;
   }
 }
 
-#tor-connect-titlebar-status-icon.tor-connect-status-connected {
-  fill: var(--purple-60);
+#tor-connect-titlebar-status.tor-connect-status-connected img {
   object-position: var(--tor-connected-offset);
 }
 
+#tor-connect-titlebar-status.tor-connect-status-connected {
+  color: var(--purple-60);
+}
+
 @media (prefers-color-scheme: dark) {
-  #tor-connect-titlebar-status-icon.tor-connect-status-connected {
-    fill: var(--purple-30);
+  #tor-connect-titlebar-status.tor-connect-status-connected {
+    color: var(--purple-30);
   }
 }
 
@@ -60,8 +64,11 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  #tor-connect-titlebar-status-icon.tor-connect-status-connected {
-    transition: fill 1000ms;
+  #tor-connect-titlebar-status.tor-connect-status-connected {
+    transition: color 1000ms;
+  }
+
+  #tor-connect-titlebar-status.tor-connect-status-connected img {
     animation-name: onion-not-connected-to-connected;
     animation-delay: 200ms;
     animation-fill-mode: both;
