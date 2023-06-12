@@ -70,8 +70,9 @@ input[type="checkbox"]:focus, select:focus {
   display: inline list-item;
   height: 16px;
   list-style-position: inside;
+  -moz-context-properties: fill, stroke;
   fill: currentColor;
-  -moz-context-properties: fill;
+  stroke: currentColor;
 }
 
 .breadcrumb-item.active {
@@ -315,6 +316,7 @@ body {
   -moz-context-properties: stroke, fill, fill-opacity;
   fill-opacity: var(--onion-opacity);
   fill: var(--onion-color);
+  stroke: var(--onion-color);
 }
 
 .title.offline {
