@@ -14,15 +14,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Bookmarks: "resource://gre/modules/Bookmarks.sys.mjs",
   History: "resource://gre/modules/History.sys.mjs",
   Log: "resource://gre/modules/Log.sys.mjs",
+  OpaqueDrag: "resource://gre/modules/DragDropFilter.sys.mjs",
   PlacesSyncUtils: "resource://gre/modules/PlacesSyncUtils.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "OpaqueDrag",
-  "resource://torbutton/modules/DragDropFilter.jsm"
-);
 
 XPCOMUtils.defineLazyGetter(lazy, "MOZ_ACTION_REGEX", () => {
   return /^moz-action:([^,]+),(.*)$/;
