@@ -90,7 +90,7 @@ var gTorConnectUrlbarButton = {
   /**
    * Deactivate and de-initialize the button.
    */
-  deinit() {
+  uninit() {
     if (!this._isActive) {
       return;
     }
@@ -116,7 +116,7 @@ var gTorConnectUrlbarButton = {
       TorConnect.state === TorConnectState.Bootstrapped ||
       TorConnect.state === TorConnectState.Disabled
     ) {
-      this.deinit();
+      this.uninit();
       return;
     }
     this._updateButtonVisibility();
