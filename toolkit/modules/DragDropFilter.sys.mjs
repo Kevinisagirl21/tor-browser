@@ -5,13 +5,7 @@
  * access to URLs (a potential proxy bypass vector).
  *************************************************************************/
 
-var EXPORTED_SYMBOLS = ["DragDropFilter", "OpaqueDrag"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -43,7 +37,7 @@ const MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
 const EMPTY_PAYLOAD = {};
-const OpaqueDrag = {
+export const OpaqueDrag = {
   listening: false,
   payload: EMPTY_PAYLOAD,
   store(value, type) {
@@ -75,12 +69,9 @@ const OpaqueDrag = {
   },
 };
 
-class DragDropFilter {
-  observe(subject, topic, data) {
-    if (topic === "on-datatransfer-available") {
-      lazy.logger.debug("The DataTransfer is available");
-      this.filterDataTransferURLs(subject);
-    } else if (topic === "profile-after-change" && MAIN_PROCESS) {
+export const DragDropFilter = {
+  init() {
+    if (MAIN_PROCESS) {
       lazy.logger.info(
         "Observed profile-after-change: registering the observer."
       );
@@ -92,7 +83,14 @@ class DragDropFilter {
         lazy.logger.error("Failed to register drag observer", e);
       }
     }
-  }
+  },
+
+  observe(subject, topic, data) {
+    if (topic === "on-datatransfer-available") {
+      lazy.logger.debug("The DataTransfer is available");
+      this.filterDataTransferURLs(subject);
+    }
+  },
 
   filterDataTransferURLs(aDataTransfer) {
     for (let i = 0, count = aDataTransfer.mozItemCount; i < count; ++i) {
@@ -117,12 +115,17 @@ class DragDropFilter {
         const opaqueKey = OpaqueDrag.store(links, urlType);
         aDataTransfer.mozSetDataAt(INTERNAL_FALLBACK, opaqueKey, i);
       }
-      for (const type of types) {
-        lazy.logger.debug(`Type is: ${type}.`);
-        if (URLISH_TYPES.includes(type)) {
+      for (const maybeUrlType of types) {
+        lazy.logger.debug(`Type is: ${maybeUrlType}.`);
+        if (URLISH_TYPES.includes(maybeUrlType)) {
           lazy.logger.info(
-            `Removing transfer data ${aDataTransfer.mozGetDataAt(type, i)}`
+            `Removing transfer data ${aDataTransfer.mozGetDataAt(
+              maybeUrlType,
+              i
+            )}`
           );
+          // Once we find a URL, we remove also all the other types that can be
+          // read outside the browser, to be sure the URL is not leaked.
           for (const type of types) {
             if (
               type !== INTERNAL_FALLBACK &&
@@ -136,11 +139,11 @@ class DragDropFilter {
         }
       }
     }
-  }
+  },
 
-  opaqueDrag = {
+  opaqueDrag: {
     get(opaqueKey) {
       return OpaqueDrag.retrieve(opaqueKey);
     },
-  };
-}
+  },
+};
