@@ -32,8 +32,9 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
   width: 18px;
   height: 18px;
   margin-inline-end: 8px;
-  -moz-context-properties: fill;
-  fill: var(--in-content-text-color);
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 #torPreferences-status-internet .torPreferences-status-icon {
@@ -59,23 +60,16 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 
 #torPreferences-status-tor-connect.connected .torPreferences-status-icon {
   list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
-  fill: var(--purple-60);
-}
-
-@media (prefers-color-scheme: dark) {
-  #torPreferences-status-tor-connect.connected .torPreferences-status-icon {
-    fill: var(--purple-30);
-  }
 }
 
 #torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
   /* Same as .tor-connect-status-potentially-blocked. */
-  fill: #c50042;
+  stroke: #c50042;
 }
 
 @media (prefers-color-scheme: dark) {
   #torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
-    fill: #ff9aa2;
+    stroke: #ff9aa2;
   }
 }
 
