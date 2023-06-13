@@ -79,6 +79,8 @@ if [ $# = 0 ]; then
 fi
 
 requested_forced_updates='Contents/MacOS/firefox'
+directories_to_remove=""
+extra_files_to_remove=""
 
 while getopts "hqf:" flag
 do
