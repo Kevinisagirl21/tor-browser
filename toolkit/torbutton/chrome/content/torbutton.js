@@ -28,37 +28,11 @@ var torbutton_init;
 
   // status
   var m_tb_wasinited = false;
-  var m_tb_is_main_window = false;
 
   var m_tb_control_ipc_file = null; // Set if using IPC (UNIX domain socket).
   var m_tb_control_port = null; // Set if using TCP.
   var m_tb_control_host = null; // Set if using TCP.
   var m_tb_control_pass = null;
-
-  // Bug 1506 P2: This object keeps Firefox prefs in sync with Torbutton prefs.
-  // It probably could stand some simplification (See #3100). It also belongs
-  // in a component, not the XUL overlay.
-  var torbutton_unique_pref_observer = {
-    register() {
-      Services.prefs.addObserver("browser.privatebrowsing.autostart", this);
-    },
-
-    unregister() {
-      Services.prefs.removeObserver("browser.privatebrowsing.autostart", this);
-    },
-
-    // topic:   what event occurred
-    // subject: what nsIPrefBranch we're observing
-    // data:    which pref has been changed (relative to subject)
-    observe(subject, topic, data) {
-      if (
-        topic === "nsPref:changed" &&
-        data === "browser.privatebrowsing.autostart"
-      ) {
-        torbutton_update_disk_prefs();
-      }
-    },
-  };
 
   // Bug 1506 P2-P4: This code sets some version variables that are irrelevant.
   // It does read out some important environment variables, though. It is
@@ -160,108 +134,15 @@ var torbutton_init;
       .join("");
   }
 
-  function torbutton_update_disk_prefs() {
-    var mode = m_tb_prefs.getBoolPref("browser.privatebrowsing.autostart");
-
-    m_tb_prefs.setBoolPref("browser.cache.disk.enable", !mode);
-    m_tb_prefs.setBoolPref("places.history.enabled", !mode);
-
-    m_tb_prefs.setBoolPref("security.nocertdb", mode);
-
-    // No way to clear this beast during New Identity. Leave it off.
-    //m_tb_prefs.setBoolPref("dom.indexedDB.enabled", !mode);
-
-    m_tb_prefs.setBoolPref("permissions.memory_only", mode);
-
-    // Third party abuse. Leave it off for now.
-    //m_tb_prefs.setBoolPref("browser.cache.offline.enable", !mode);
-
-    // Force prefs to be synced to disk
-    Services.prefs.savePrefFile(null);
-  }
-
   // ---------------------- Event handlers -----------------
-
-  // Bug 1506 P1-P3: Most of these observers aren't very important.
-  // See their comments for details
-  function torbutton_do_main_window_startup() {
-    torbutton_log(3, "Torbutton main window startup");
-    torbutton_unique_pref_observer.register();
-  }
-
-  // Bug 1506 P4: Most of this function is now useless, save
-  // for the very important SOCKS environment vars at the end.
-  // Those could probably be rolled into a function with the
-  // control port vars, though. See 1506 comments inside.
-  function torbutton_do_startup() {
-    if (m_tb_prefs.getBoolPref("extensions.torbutton.startup")) {
-      // Bug 1506: Should probably be moved to an XPCOM component
-      torbutton_do_main_window_startup();
-
-      // Bug 30565: sync browser.privatebrowsing.autostart with security.nocertdb
-      torbutton_update_disk_prefs();
-      m_tb_prefs.setBoolPref("extensions.torbutton.startup", false);
-    }
-  }
 
   // Bug 1506 P3: This is needed pretty much only for the window resizing.
   // See comments for individual functions for details
   function torbutton_new_window(event) {
     torbutton_log(3, "New window");
-    var browser = window.gBrowser;
-
-    if (!browser) {
-      torbutton_log(5, "No browser for new window.");
-      return;
-    }
-
     if (!m_tb_wasinited) {
       torbutton_init();
     }
-
-    torbutton_do_startup();
   }
-
-    // Bug 1506 P2: This is only needed because we have observers
-  // in XUL that should be in an XPCOM component
-  function torbutton_close_window(event) {
-    // TODO: This is a real ghetto hack.. When the original window
-    // closes, we need to find another window to handle observing
-    // unique events... The right way to do this is to move the
-    // majority of torbutton functionality into a XPCOM component..
-    // But that is a major overhaul..
-    if (m_tb_is_main_window) {
-      torbutton_log(3, "Original window closed. Searching for another");
-      var wm = Services.wm;
-      var enumerator = wm.getEnumerator("navigator:browser");
-      while (enumerator.hasMoreElements()) {
-        var win = enumerator.getNext();
-        // For some reason, when New Identity is called from a pref
-        // observer (ex: torbutton_use_nontor_proxy) on an ASAN build,
-        // we sometimes don't have this symbol set in the new window yet.
-        // However, the new window will run this init later in that case,
-        // as it does in the OSX case.
-        if (win != window && "torbutton_do_main_window_startup" in win) {
-          torbutton_log(3, "Found another window");
-          win.torbutton_do_main_window_startup();
-          m_tb_is_main_window = false;
-          break;
-        }
-      }
-
-      torbutton_unique_pref_observer.unregister();
-
-      if (m_tb_is_main_window) {
-        // main window not reset above
-        // This happens on Mac OS because they allow firefox
-        // to still persist without a navigator window
-        torbutton_log(3, "Last window closed. None remain.");
-        m_tb_prefs.setBoolPref("extensions.torbutton.startup", true);
-        m_tb_is_main_window = false;
-      }
-    }
-  }
-
   window.addEventListener("load", torbutton_new_window);
-  window.addEventListener("unload", torbutton_close_window);
 })();
