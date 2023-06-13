@@ -29,22 +29,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.jsm",
 });
 
-function cleanupCookies() {
-  const migratedPref = "extensions.torbutton.cookiejar_migrated";
-  if (!Services.prefs.getBoolPref(migratedPref, false)) {
-    // Cleanup stored cookie-jar-selector json files
-    const profileFolder = Services.dirsvc.get("ProfD", Ci.nsIFile).clone();
-    for (const file of profileFolder.directoryEntries) {
-      if (file.leafName.match(/^(cookies|protected)-.*[.]json$/)) {
-        try {
-          file.remove(false);
-        } catch (e) {}
-      }
-    }
-    Services.prefs.setBoolPref(migratedPref, true);
-  }
-}
-
 function StartupObserver() {
   this.logger = Cc["@torproject.org/torbutton-logger;1"].getService(
     Ci.nsISupports
@@ -63,8 +47,6 @@ function StartupObserver() {
       "Early proxy change failed. Will try again at profile load. Error: " + e
     );
   }
-
-  cleanupCookies();
 }
 
 StartupObserver.prototype = {

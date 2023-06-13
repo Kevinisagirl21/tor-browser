@@ -180,34 +180,6 @@ var torbutton_init;
     Services.prefs.savePrefFile(null);
   }
 
-  // Bug 1506 P1: This function just cleans up prefs that got set badly in previous releases
-  function torbutton_fixup_old_prefs() {
-    if (m_tb_prefs.getIntPref("extensions.torbutton.pref_fixup_version") < 1) {
-      // TBB 5.0a3 had bad Firefox code that silently flipped this pref on us
-      if (m_tb_prefs.prefHasUserValue("browser.newtabpage.enhanced")) {
-        m_tb_prefs.clearUserPref("browser.newtabpage.enhanced");
-        // TBB 5.0a3 users had all the necessary data cached in
-        // directoryLinks.json. This meant that resetting the pref above
-        // alone was not sufficient as the tiles features uses the cache
-        // even if the pref indicates that feature should be disabled.
-        // We flip the preference below as this forces a refetching which
-        // effectively results in an empty JSON file due to our spoofed
-        // URLs.
-        let matchOS = m_tb_prefs.getBoolPref("intl.locale.matchOS");
-        m_tb_prefs.setBoolPref("intl.locale.matchOS", !matchOS);
-        m_tb_prefs.setBoolPref("intl.locale.matchOS", matchOS);
-      }
-
-      // For some reason, the Share This Page button also survived the
-      // TBB 5.0a4 update's attempt to remove it.
-      if (m_tb_prefs.prefHasUserValue("browser.uiCustomization.state")) {
-        m_tb_prefs.clearUserPref("browser.uiCustomization.state");
-      }
-
-      m_tb_prefs.setIntPref("extensions.torbutton.pref_fixup_version", 1);
-    }
-  }
-
   // ---------------------- Event handlers -----------------
 
   // Bug 1506 P1-P3: Most of these observers aren't very important.
@@ -228,10 +200,6 @@ var torbutton_init;
 
       // Bug 30565: sync browser.privatebrowsing.autostart with security.nocertdb
       torbutton_update_disk_prefs();
-
-      // For general pref fixups to handle pref damage in older versions
-      torbutton_fixup_old_prefs();
-
       m_tb_prefs.setBoolPref("extensions.torbutton.startup", false);
     }
   }
