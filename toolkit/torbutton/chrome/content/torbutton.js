@@ -13,18 +13,16 @@ var torbutton_init;
 
   /* global gBrowser, Services, AppConstants */
 
-  let { unescapeTorString, torbutton_log } = ChromeUtils.import(
+  let { torbutton_log } = ChromeUtils.import(
     "resource://torbutton/modules/utils.js"
   );
-  let { configureControlPortModule, wait_for_controller } = ChromeUtils.import(
+  let { configureControlPortModule } = ChromeUtils.import(
     "resource://torbutton/modules/tor-control-port.js"
   );
 
   const { TorProtocolService } = ChromeUtils.import(
     "resource://gre/modules/TorProtocolService.jsm"
   );
-
-  const k_tb_tor_check_failed_topic = "Torbutton:TorCheckFailed";
 
   var m_tb_prefs = Services.prefs;
 
@@ -61,24 +59,6 @@ var torbutton_init;
       }
     },
   };
-
-  function torCheckFailed() {
-    Services.obs.notifyObservers(null, k_tb_tor_check_failed_topic);
-    // If the user does not have an about:tor tab open in the front most
-    // window, open one.
-    var win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (win == window) {
-      let foundTab = false;
-      let tabBrowser = top.gBrowser;
-      for (let i = 0; !foundTab && i < tabBrowser.browsers.length; ++i) {
-        let b = tabBrowser.getBrowserAtIndex(i);
-        foundTab = b.currentURI.spec.toLowerCase() == "about:tor";
-      }
-      if (!foundTab) {
-        gBrowser.selectedTab = gBrowser.addTrustedTab("about:tor");
-      }
-    }
-  }
 
   // Bug 1506 P2-P4: This code sets some version variables that are irrelevant.
   // It does read out some important environment variables, though. It is
@@ -179,238 +159,6 @@ var torbutton_init;
       })
       .join("");
   }
-
-  // Bug 1506 P4: Control port interaction. Needed for New Identity.
-  //
-  // Asynchronously executes a command on the control port.
-  // returns the response as a string, or null on error
-  async function torbutton_send_ctrl_cmd(command) {
-    const getErrorMessage = e => (e && (e.torMessage || e.message)) || "";
-    let response = null;
-    try {
-      const avoidCache = true;
-      let torController = await wait_for_controller(avoidCache);
-
-      let bytes = await torController.sendCommand(command);
-      if (!bytes.startsWith("250")) {
-        throw new Error(
-          `Unexpected command response on control port '${bytes}'`
-        );
-      }
-      response = bytes.slice(4);
-
-      torController.close();
-    } catch (err) {
-      let msg = getErrorMessage(err);
-      torbutton_log(4, `Error: ${msg}`);
-    }
-    return response;
-  }
-
-  async function torbutton_do_tor_check() {
-    let checkSvc = Cc["@torproject.org/torbutton-torCheckService;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-    if (
-      m_tb_prefs.getBoolPref("extensions.torbutton.use_nontor_proxy") ||
-      !m_tb_prefs.getBoolPref("extensions.torbutton.test_enabled")
-    ) {
-      return;
-    } // Only do the check once.
-
-    // If we have a tor control port and transparent torification is off,
-    // perform a check via the control port.
-    const kEnvSkipControlPortTest = "TOR_SKIP_CONTROLPORTTEST";
-    const kEnvUseTransparentProxy = "TOR_TRANSPROXY";
-    if (
-      (m_tb_control_ipc_file || m_tb_control_port) &&
-      !Services.env.exists(kEnvUseTransparentProxy) &&
-      !Services.env.exists(kEnvSkipControlPortTest) &&
-      m_tb_prefs.getBoolPref("extensions.torbutton.local_tor_check")
-    ) {
-      if (await torbutton_local_tor_check()) {
-        checkSvc.statusOfTorCheck = checkSvc.kCheckSuccessful;
-      } else {
-        // The check failed.  Update toolbar icon and tooltip.
-        checkSvc.statusOfTorCheck = checkSvc.kCheckFailed;
-      }
-    } else {
-      // A local check is not possible, so perform a remote check.
-      torbutton_initiate_remote_tor_check();
-    }
-  }
-
-  async function torbutton_local_tor_check() {
-    let didLogError = false;
-
-    let proxyType = m_tb_prefs.getIntPref("network.proxy.type");
-    if (0 == proxyType) {
-      return false;
-    }
-
-    // Ask tor for its SOCKS listener address and port and compare to the
-    // browser preferences.
-    const kCmdArg = "net/listeners/socks";
-    let resp = await torbutton_send_ctrl_cmd("GETINFO " + kCmdArg);
-    if (!resp) {
-      return false;
-    }
-
-    function logUnexpectedResponse() {
-      if (!didLogError) {
-        didLogError = true;
-        torbutton_log(
-          5,
-          "Local Tor check: unexpected GETINFO response: " + resp
-        );
-      }
-    }
-
-    function removeBrackets(aStr) {
-      // Remove enclosing square brackets if present.
-      if (aStr.startsWith("[") && aStr.endsWith("]")) {
-        return aStr.substr(1, aStr.length - 2);
-      }
-
-      return aStr;
-    }
-
-    // Sample response: net/listeners/socks="127.0.0.1:9149" "127.0.0.1:9150"
-    // First, check for and remove the command argument prefix.
-    if (0 != resp.indexOf(kCmdArg + "=")) {
-      logUnexpectedResponse();
-      return false;
-    }
-    resp = resp.substr(kCmdArg.length + 1);
-
-    // Retrieve configured proxy settings and check each listener against them.
-    // When the SOCKS prefs are set to use IPC (e.g., a Unix domain socket), a
-    // file URL should be present in network.proxy.socks.
-    // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1211567
-    let socksAddr = m_tb_prefs.getCharPref("network.proxy.socks");
-    let socksPort = m_tb_prefs.getIntPref("network.proxy.socks_port");
-    let socksIPCPath;
-    if (socksAddr && socksAddr.startsWith("file:")) {
-      // Convert the file URL to a file path.
-      try {
-        let ioService = Services.io;
-        let fph = ioService
-          .getProtocolHandler("file")
-          .QueryInterface(Ci.nsIFileProtocolHandler);
-        socksIPCPath = fph.getFileFromURLSpec(socksAddr).path;
-      } catch (e) {
-        torbutton_log(5, "Local Tor check: IPC file error: " + e);
-        return false;
-      }
-    } else {
-      socksAddr = removeBrackets(socksAddr);
-    }
-
-    // Split into quoted strings. This code is adapted from utils.splitAtSpaces()
-    // within tor-control-port.js; someday this code should use the entire
-    // tor-control-port.js framework.
-    let addrArray = [];
-    resp.replace(/((\S*?"(.*?)")+\S*|\S+)/g, function (a, captured) {
-      addrArray.push(captured);
-    });
-
-    let foundSocksListener = false;
-    for (let i = 0; !foundSocksListener && i < addrArray.length; ++i) {
-      let addr;
-      try {
-        addr = unescapeTorString(addrArray[i]);
-      } catch (e) {}
-      if (!addr) {
-        continue;
-      }
-
-      // Remove double quotes if present.
-      let len = addr.length;
-      if (len > 2 && '"' == addr.charAt(0) && '"' == addr.charAt(len - 1)) {
-        addr = addr.substring(1, len - 1);
-      }
-
-      if (addr.startsWith("unix:")) {
-        if (!socksIPCPath) {
-          continue;
-        }
-
-        // Check against the configured UNIX domain socket proxy.
-        let path = addr.substring(5);
-        torbutton_log(2, "Tor socks listener (Unix domain socket): " + path);
-        foundSocksListener = socksIPCPath === path;
-      } else if (!socksIPCPath) {
-        // Check against the configured TCP proxy. We expect addr:port where addr
-        // may be an IPv6 address; that is, it may contain colon characters.
-        // Also, we remove enclosing square brackets before comparing addresses
-        // because tor requires them but Firefox does not.
-        let idx = addr.lastIndexOf(":");
-        if (idx < 0) {
-          logUnexpectedResponse();
-        } else {
-          let torSocksAddr = removeBrackets(addr.substring(0, idx));
-          let torSocksPort = parseInt(addr.substring(idx + 1), 10);
-          if (torSocksAddr.length < 1 || isNaN(torSocksPort)) {
-            logUnexpectedResponse();
-          } else {
-            torbutton_log(
-              2,
-              "Tor socks listener: " + torSocksAddr + ":" + torSocksPort
-            );
-            foundSocksListener =
-              socksAddr === torSocksAddr && socksPort === torSocksPort;
-          }
-        }
-      }
-    }
-
-    return foundSocksListener;
-  } // torbutton_local_tor_check
-
-  function torbutton_initiate_remote_tor_check() {
-    try {
-      let checkSvc = Cc[
-        "@torproject.org/torbutton-torCheckService;1"
-      ].getService(Ci.nsISupports).wrappedJSObject;
-      let req = checkSvc.createCheckRequest(true); // async
-      req.onreadystatechange = function (aEvent) {
-        if (req.readyState === 4) {
-          let ret = checkSvc.parseCheckResponse(req);
-
-          // If we received an error response from check.torproject.org,
-          // set the status of the tor check to failure (we don't want
-          // to indicate failure if we didn't receive a response).
-          if (
-            ret == 2 ||
-            ret == 3 ||
-            ret == 5 ||
-            ret == 6 ||
-            ret == 7 ||
-            ret == 8
-          ) {
-            checkSvc.statusOfTorCheck = checkSvc.kCheckFailed;
-            torCheckFailed();
-          } else if (ret == 4) {
-            checkSvc.statusOfTorCheck = checkSvc.kCheckSuccessful;
-          } // Otherwise, redo the check later
-
-          torbutton_log(3, "Tor remote check done. Result: " + ret);
-        }
-      };
-
-      torbutton_log(3, "Sending async Tor remote check");
-      req.send(null);
-    } catch (e) {
-      if (e.result == 0x80004005) {
-        // NS_ERROR_FAILURE
-        torbutton_log(5, "Tor check failed! Is tor running?");
-      } else {
-        torbutton_log(5, "Tor check failed! Tor internal error: " + e);
-      }
-
-      torCheckFailed();
-    }
-  } // torbutton_initiate_remote_tor_check()
 
   function torbutton_update_disk_prefs() {
     var mode = m_tb_prefs.getBoolPref("browser.privatebrowsing.autostart");
