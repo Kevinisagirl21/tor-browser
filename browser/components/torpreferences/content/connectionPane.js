@@ -1078,14 +1078,9 @@ const gConnectionPane = (function () {
     onAddBuiltinBridge() {
       const builtinBridgeDialog = new BuiltinBridgeDialog(
         (bridgeType, connect) => {
-          if (!bridgeType) {
-            TorSettings.bridges.enabled = false;
-            TorSettings.bridges.builtin_type = "";
-          } else {
-            TorSettings.bridges.enabled = true;
-            TorSettings.bridges.source = TorBridgeSource.BuiltIn;
-            TorSettings.bridges.builtin_type = bridgeType;
-          }
+          TorSettings.bridges.enabled = true;
+          TorSettings.bridges.source = TorBridgeSource.BuiltIn;
+          TorSettings.bridges.builtin_type = bridgeType;
 
           this.saveBridgeSettings(connect);
         }
@@ -1114,15 +1109,9 @@ const gConnectionPane = (function () {
     onAddBridgeManually() {
       const provideBridgeDialog = new ProvideBridgeDialog(
         (aBridgeString, connect) => {
-          if (aBridgeString) {
-            TorSettings.bridges.enabled = true;
-            TorSettings.bridges.source = TorBridgeSource.UserProvided;
-            TorSettings.bridges.bridge_strings = aBridgeString;
-          } else {
-            TorSettings.bridges.enabled = false;
-            TorSettings.bridges.source = TorBridgeSource.Invalid;
-            TorSettings.bridges.bridge_strings = "";
-          }
+          TorSettings.bridges.enabled = true;
+          TorSettings.bridges.source = TorBridgeSource.UserProvided;
+          TorSettings.bridges.bridge_strings = aBridgeString;
 
           this.saveBridgeSettings(connect);
         }
