@@ -210,7 +210,7 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 .torPreferences-current-bridge-icon {
   margin-inline-start: 1px;
   margin-inline-end: 7px;
-  list-style-image: url("chrome://browser/content/torpreferences/check.svg");
+  list-style-image: url("chrome://global/skin/icons/check.svg");
   -moz-context-properties: fill;
   fill: currentColor;
   flex: 0 0 auto;
