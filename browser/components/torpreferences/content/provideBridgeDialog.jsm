@@ -56,32 +56,35 @@ class ProvideBridgeDialog {
       "placeholder",
       TorStrings.settings.provideBridgePlaceholder
     );
-    this._textarea.addEventListener("input", () => {
-      this.onAcceptStateChange();
-    });
+
+    this._textarea.addEventListener("input", () => this.onValueChange());
     if (TorSettings.bridges.source == TorBridgeSource.UserProvided) {
       this._textarea.value = TorSettings.bridges.bridge_strings.join("\n");
     }
 
     this._dialog.addEventListener("dialogaccept", e => {
-      let value = this._textarea.value;
-      if (!value.trim()) {
-        value = null;
-      }
-      this.onSubmit(value, value && TorConnect.canBeginBootstrap);
+      this.onSubmit(this._textarea.value, TorConnect.canBeginBootstrap);
     });
     this._dialog.addEventListener("dialoghelp", openHelp);
 
     this._acceptButton = this._dialog.getButton("accept");
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
+
+    this.onValueChange();
     this.onAcceptStateChange();
+  }
+
+  onValueChange() {
+    // TODO: Do some proper value parsing and error reporting. See
+    // tor-browser#40552.
+    this._acceptButton.disabled = !this._textarea.value.trim();
   }
 
   onAcceptStateChange() {
     this._acceptButton.setAttribute(
       "label",
-      this._textarea.value.trim() && TorConnect.canBeginBootstrap
+      TorConnect.canBeginBootstrap
         ? TorStrings.settings.bridgeButtonConnect
         : TorStrings.settings.bridgeButtonAccept
     );
