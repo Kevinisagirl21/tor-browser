@@ -1,5 +1,11 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorCheckService: "resource://torbutton/modules/TorCheckService.sys.mjs",
+});
+
 const kTorCheckFailedTopic = "Torbutton:TorCheckFailed";
 
 class TorCheckObserver {
@@ -50,11 +56,11 @@ export class AboutTorParent extends JSWindowActorParent {
       updateChannel: AppConstants.MOZ_UPDATE_CHANNEL,
     };
 
-    const checkSvc = Cc[
-      "@torproject.org/torbutton-torCheckService;1"
-    ].getService(Ci.nsISupports).wrappedJSObject;
-    await checkSvc.runTorCheck();
-    if (checkSvc.statusOfTorCheck !== checkSvc.kCheckFailed) {
+    await lazy.TorCheckService.runTorCheck();
+    if (
+      lazy.TorCheckService.statusOfTorCheck !==
+      lazy.TorCheckService.kCheckFailed
+    ) {
       data.torOn = true;
     }
 
