@@ -329,6 +329,21 @@ let JSWINDOWACTORS = {
     matches: ["about:tabcrashed*"],
   },
 
+  AboutTor: {
+    parent: {
+      esModuleURI: "resource:///actors/AboutTorParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///actors/AboutTorChild.sys.mjs",
+
+      events: {
+        DOMContentLoaded: {},
+      },
+    },
+
+    matches: ["about:tor"],
+  },
+
   AboutWelcome: {
     parent: {
       moduleURI: "resource:///actors/AboutWelcomeParent.jsm",
