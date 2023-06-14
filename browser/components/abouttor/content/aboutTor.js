@@ -6,8 +6,6 @@
  *************************************************************************/
 
 const AboutTorListener = {
-  tbbVersion: "",
-
   init() {
     window.addEventListener("ChromeData", this.onChromeData.bind(this));
     window.addEventListener("LocaleData", this.onLocaleData.bind(this));
@@ -16,10 +14,6 @@ const AboutTorListener = {
   onChromeData(e) {
     const body = document.body;
     const data = e.detail;
-
-    if (data.tbbVersion) {
-      this.tbbVersion = data.tbbVersion;
-    }
 
     // Update status: tor on/off, Tor Browser manual shown.
     if (data.torOn) {
@@ -46,16 +40,14 @@ const AboutTorListener = {
   },
 
   onLocaleData(e) {
-    const { locale, productName } = e.detail;
+    const { locale, productInfo } = e.detail;
     // Set localized "Get Involved" link.
     document.getElementById(
       "getInvolvedLink"
     ).href = `https://community.torproject.org/${locale}`;
 
     // Display the Tor Browser product name and version.
-    document.getElementById(
-      "torbrowser-version"
-    ).textContent = `${productName} ${this.tbbVersion}`;
+    document.getElementById("torbrowser-version").textContent = productInfo;
   },
 };
 
