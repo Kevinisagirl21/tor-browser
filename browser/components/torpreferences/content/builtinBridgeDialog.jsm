@@ -26,6 +26,7 @@ class BuiltinBridgeDialog {
   constructor(onSubmit) {
     this.onSubmit = onSubmit;
     this._acceptButton = null;
+    this._radioGroup = null;
   }
 
   _populateXUL(window, dialog) {
@@ -36,7 +37,7 @@ class BuiltinBridgeDialog {
       "#torPreferences-builtinBridge-description"
     ).textContent = TorStrings.settings.builtinBridgeDescription2;
 
-    const radioGroup = dialog.querySelector(
+    this._radioGroup = dialog.querySelector(
       "#torPreferences-builtinBridge-typeSelection"
     );
 
@@ -60,13 +61,8 @@ class BuiltinBridgeDialog {
       TorSettings.bridges.source == TorBridgeSource.BuiltIn
         ? TorSettings.bridges.builtin_type
         : null;
-    if (currentBuiltinType) {
-      radioGroup.value = currentBuiltinType;
-    } else {
-      radioGroup.selectedItem = null;
-    }
 
-    for (const optionEl of radioGroup.querySelectorAll(
+    for (const optionEl of this._radioGroup.querySelectorAll(
       ".builtin-bridges-option"
     )) {
       const radio = optionEl.querySelector("radio");
@@ -85,8 +81,15 @@ class BuiltinBridgeDialog {
       );
     }
 
+    if (currentBuiltinType) {
+      this._radioGroup.value = currentBuiltinType;
+    } else {
+      this._radioGroup.selectedItem = null;
+    }
+
+    this._radioGroup.addEventListener("select", () => this.onSelectChange());
     dialog.addEventListener("dialogaccept", () => {
-      this.onSubmit(radioGroup.value, TorConnect.canBeginBootstrap);
+      this.onSubmit(this._radioGroup.value, TorConnect.canBeginBootstrap);
     });
     dialog.addEventListener("dialoghelp", e => {
       window.top.openTrustedLinkIn(
@@ -102,7 +105,13 @@ class BuiltinBridgeDialog {
     this._acceptButton = dialog.getButton("accept");
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
+
+    this.onSelectChange();
     this.onAcceptStateChange();
+  }
+
+  onSelectChange() {
+    this._acceptButton.disabled = !this._radioGroup.value;
   }
 
   onAcceptStateChange() {
