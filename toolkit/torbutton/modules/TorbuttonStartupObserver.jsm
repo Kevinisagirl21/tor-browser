@@ -161,10 +161,6 @@ StartupObserver.prototype = {
 
   observe(subject, topic, data) {
     if (topic == "profile-after-change") {
-      // Bug 1506 P1: We listen to these prefs as signals for startup,
-      // but only for hackish reasons.
-      this._prefs.setBoolPref("extensions.torbutton.startup", true);
-
       this.setProxySettings();
     }
 
