@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const kPrefName = "browser.startup.homepage";
-const kDefaultHomePage = "about:tor";
+const kDefaultHomePage = "about:blank";
 const kExtensionControllerPref =
   "browser.startup.homepage_override.extensionControlled";
 const kHomePageIgnoreListId = "homepage-urls";

@@ -5,16 +5,11 @@ torbutton.jar:
 % content torbutton %content/
 
   content/torbutton.js                   (chrome/content/torbutton.js)
-  content/aboutTor/aboutTor-content.js   (chrome/content/aboutTor/aboutTor-content.js)
-* content/aboutTor/aboutTor.xhtml        (chrome/content/aboutTor/aboutTor.xhtml)
-  content/aboutTor/resources/aboutTor.js (chrome/content/aboutTor/resources/aboutTor.js)
 
   components/    (components/*)
   modules/       (modules/*)
   skin/          (chrome/skin/*)
 
 % resource torbutton %
-% resource torbutton-abouttor resource://torbutton/content/aboutTor/resources/ contentaccessible=yes
-% resource torbutton-assets resource://torbutton/skin/ contentaccessible=yes
 
 % skin torbutton classic/1.0 %skin/
