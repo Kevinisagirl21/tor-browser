@@ -62,42 +62,23 @@ var torbutton_init;
     },
   };
 
-  var torbutton_tor_check_observer = {
-    register() {
-      this._obsSvc = Services.obs;
-      this._obsSvc.addObserver(this, k_tb_tor_check_failed_topic);
-    },
-
-    unregister() {
-      if (this._obsSvc) {
-        this._obsSvc.removeObserver(this, k_tb_tor_check_failed_topic);
+  function torCheckFailed() {
+    Services.obs.notifyObservers(null, k_tb_tor_check_failed_topic);
+    // If the user does not have an about:tor tab open in the front most
+    // window, open one.
+    var win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (win == window) {
+      let foundTab = false;
+      let tabBrowser = top.gBrowser;
+      for (let i = 0; !foundTab && i < tabBrowser.browsers.length; ++i) {
+        let b = tabBrowser.getBrowserAtIndex(i);
+        foundTab = b.currentURI.spec.toLowerCase() == "about:tor";
       }
-    },
-
-    observe(subject, topic, data) {
-      if (topic === k_tb_tor_check_failed_topic) {
-        // Update all open about:tor pages.
-        torbutton_abouttor_message_handler.updateAllOpenPages();
-
-        // If the user does not have an about:tor tab open in the front most
-        // window, open one.
-        var wm = Services.wm;
-        var win = wm.getMostRecentWindow("navigator:browser");
-        if (win == window) {
-          let foundTab = false;
-          let tabBrowser = top.gBrowser;
-          for (let i = 0; !foundTab && i < tabBrowser.browsers.length; ++i) {
-            let b = tabBrowser.getBrowserAtIndex(i);
-            foundTab = b.currentURI.spec.toLowerCase() == "about:tor";
-          }
-
-          if (!foundTab) {
-            gBrowser.selectedTab = gBrowser.addTrustedTab("about:tor");
-          }
-        }
+      if (!foundTab) {
+        gBrowser.selectedTab = gBrowser.addTrustedTab("about:tor");
       }
-    },
-  };
+    }
+  }
 
   // Bug 1506 P2-P4: This code sets some version variables that are irrelevant.
   // It does read out some important environment variables, though. It is
@@ -169,79 +150,7 @@ var torbutton_init;
       m_tb_control_pass
     );
 
-    // Add about:tor IPC message listener.
-    window.messageManager.addMessageListener(
-      "AboutTor:Loaded",
-      torbutton_abouttor_message_handler
-    );
-
-    torbutton_log(1, "registering Tor check observer");
-    torbutton_tor_check_observer.register();
-
-    // Arrange for our about:tor content script to be loaded in each frame.
-    window.messageManager.loadFrameScript(
-      "chrome://torbutton/content/aboutTor/aboutTor-content.js",
-      true
-    );
-
     torbutton_log(3, "init completed");
-  };
-
-  var torbutton_abouttor_message_handler = {
-    // Receive IPC messages from the about:tor content script.
-    async receiveMessage(aMessage) {
-      switch (aMessage.name) {
-        case "AboutTor:Loaded":
-          aMessage.target.messageManager.sendAsyncMessage(
-            "AboutTor:ChromeData",
-            await this.getChromeData(true)
-          );
-          break;
-      }
-    },
-
-    // Send privileged data to all of the about:tor content scripts.
-    async updateAllOpenPages() {
-      window.messageManager.broadcastAsyncMessage(
-        "AboutTor:ChromeData",
-        await this.getChromeData(false)
-      );
-    },
-
-    // The chrome data contains all of the data needed by the about:tor
-    // content process that is only available here (in the chrome process).
-    // It is sent to the content process when an about:tor window is opened
-    // and in response to events such as the browser noticing that Tor is
-    // not working.
-    async getChromeData(aIsRespondingToPageLoad) {
-      let dataObj = {
-        mobile: Services.appinfo.OS === "Android",
-        updateChannel: AppConstants.MOZ_UPDATE_CHANNEL,
-        torOn: await torbutton_tor_check_ok(),
-      };
-
-      if (aIsRespondingToPageLoad) {
-        const kShouldNotifyPref = "torbrowser.post_update.shouldNotify";
-        if (m_tb_prefs.getBoolPref(kShouldNotifyPref, false)) {
-          m_tb_prefs.clearUserPref(kShouldNotifyPref);
-          dataObj.hasBeenUpdated = true;
-          dataObj.updateMoreInfoURL = this.getUpdateMoreInfoURL();
-        }
-      }
-
-      return dataObj;
-    },
-
-    getUpdateMoreInfoURL() {
-      try {
-        return Services.prefs.getCharPref("torbrowser.post_update.url");
-      } catch (e) {}
-
-      // Use the default URL as a fallback.
-      return Services.urlFormatter.formatURLPref(
-        "startup.homepage_override_url"
-      );
-    },
   };
 
   // Bug 1506 P4: Control port interaction. Needed for New Identity.
@@ -459,7 +368,6 @@ var torbutton_init;
   } // torbutton_local_tor_check
 
   function torbutton_initiate_remote_tor_check() {
-    let obsSvc = Services.obs;
     try {
       let checkSvc = Cc[
         "@torproject.org/torbutton-torCheckService;1"
@@ -481,7 +389,7 @@ var torbutton_init;
             ret == 8
           ) {
             checkSvc.statusOfTorCheck = checkSvc.kCheckFailed;
-            obsSvc.notifyObservers(null, k_tb_tor_check_failed_topic);
+            torCheckFailed();
           } else if (ret == 4) {
             checkSvc.statusOfTorCheck = checkSvc.kCheckSuccessful;
           } // Otherwise, redo the check later
@@ -500,17 +408,9 @@ var torbutton_init;
         torbutton_log(5, "Tor check failed! Tor internal error: " + e);
       }
 
-      obsSvc.notifyObservers(null, k_tb_tor_check_failed_topic);
+      torCheckFailed();
     }
   } // torbutton_initiate_remote_tor_check()
-
-  async function torbutton_tor_check_ok() {
-    await torbutton_do_tor_check();
-    let checkSvc = Cc["@torproject.org/torbutton-torCheckService;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-    return checkSvc.kCheckFailed != checkSvc.statusOfTorCheck;
-  }
 
   function torbutton_update_disk_prefs() {
     var mode = m_tb_prefs.getBoolPref("browser.privatebrowsing.autostart");
@@ -566,7 +466,6 @@ var torbutton_init;
   // See their comments for details
   function torbutton_do_main_window_startup() {
     torbutton_log(3, "Torbutton main window startup");
-    m_tb_is_main_window = true;
     torbutton_unique_pref_observer.register();
   }
 
@@ -607,11 +506,9 @@ var torbutton_init;
     torbutton_do_startup();
   }
 
-  // Bug 1506 P2: This is only needed because we have observers
+    // Bug 1506 P2: This is only needed because we have observers
   // in XUL that should be in an XPCOM component
   function torbutton_close_window(event) {
-    torbutton_tor_check_observer.unregister();
-
     // TODO: This is a real ghetto hack.. When the original window
     // closes, we need to find another window to handle observing
     // unique events... The right way to do this is to move the

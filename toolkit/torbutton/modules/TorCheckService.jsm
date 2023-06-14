@@ -127,4 +127,8 @@ TorCheckService.prototype = {
 
     return ret;
   },
+
+  async runTorCheck() {
+    // await torbutton_do_tor_check();
+  },
 };
