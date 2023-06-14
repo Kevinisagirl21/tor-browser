@@ -16,6 +16,12 @@ var gTorConnectTitlebarStatus = {
    * @type {Element}
    */
   label: null,
+  /**
+   * Whether we are connected, or null if the connection state is not yet known.
+   *
+   * @type {bool?}
+   */
+  connected: null,
 
   /**
    * Initialize the component.
@@ -84,7 +90,31 @@ var gTorConnectTitlebarStatus = {
         break;
     }
     this.label.textContent = this._strings[textId];
-    this.node.classList.toggle("tor-connect-status-connected", connected);
+    if (this.connected !== connected) {
+      // When we are transitioning from
+      //   this.connected = false
+      // to
+      //   this.connected = true
+      // we want to animate the transition from the not connected state to the
+      // connected state (provided prefers-reduced-motion is not set).
+      //
+      // If instead we are transitioning directly from the initial state
+      //   this.connected = null
+      // to
+      //   this.connected = true
+      // we want to immediately show the connected state without any transition.
+      //
+      // In both cases, the status will eventually be hidden.
+      //
+      // We only expect this latter case when opening a new window after
+      // bootstrapping has already completed. See tor-browser#41850.
+      this.node.classList.toggle(
+        "tor-connect-status-animate-transition",
+        connected && this.connected !== null
+      );
+      this.node.classList.toggle("tor-connect-status-connected", connected);
+      this.connected = connected;
+    }
     this.node.classList.toggle(
       "tor-connect-status-potentially-blocked",
       potentiallyBlocked

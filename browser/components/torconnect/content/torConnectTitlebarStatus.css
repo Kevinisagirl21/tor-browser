@@ -64,11 +64,11 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  #tor-connect-titlebar-status.tor-connect-status-connected {
+  #tor-connect-titlebar-status.tor-connect-status-connected.tor-connect-status-animate-transition {
     transition: color 1000ms;
   }
 
-  #tor-connect-titlebar-status.tor-connect-status-connected img {
+  #tor-connect-titlebar-status.tor-connect-status-connected.tor-connect-status-animate-transition img {
     animation-name: onion-not-connected-to-connected;
     animation-delay: 200ms;
     animation-fill-mode: both;
