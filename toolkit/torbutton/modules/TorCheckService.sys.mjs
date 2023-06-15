@@ -9,15 +9,14 @@
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
+});
+
 ChromeUtils.defineModuleGetter(
   lazy,
-  "unescapeTorString",
-  "resource://torbutton/modules/utils.js"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "wait_for_controller",
-  "resource://torbutton/modules/tor-control-port.js"
+  "TorProtocolService",
+  "resource://gre/modules/TorProtocolService.jsm"
 );
 
 export const TorCheckService = {
@@ -25,12 +24,12 @@ export const TorCheckService = {
   kCheckSuccessful: 1,
   kCheckFailed: 2,
 
-  kCheckFailedTopic: "Torbutton:TorCheckFailed",
+  kObserverTopic: "TorCheckService:StatusChanged",
 
-  _logger: null,
   _status: 0, // this.kCheckNotInitiated,
+  _loggerObject: null,
 
-  // Public methods.
+  // Public methods
   get statusOfTorCheck() {
     return this._status;
   },
@@ -40,8 +39,9 @@ export const TorCheckService = {
       return;
     }
     this._status = aStatus;
+    Services.obs.notifyObservers(null, this.kObserverTopic);
     if (aStatus === this.kCheckFailed) {
-      this._broadcastFailure();
+      this._openAboutTor();
     }
   },
 
@@ -53,6 +53,21 @@ export const TorCheckService = {
         false
       )
     );
+  },
+
+  get hasFailed() {
+    return this._status === this.kCheckFailed;
+  },
+
+  get _logger() {
+    if (!this._loggerObject) {
+      this._loggerObject = new lazy.ConsoleAPI({
+        maxLogLevel: "warn",
+        maxLogLevelPref: "extensions.torbutton.test_log_level",
+        prefix: "TorCheckService",
+      });
+    }
+    return this._loggerObject;
   },
 
   async runTorCheck() {
@@ -82,63 +97,34 @@ export const TorCheckService = {
     }
   },
 
-  _init() {
-    // TODO: Get rid of this logger
-    this._logger = Cc["@torproject.org/torbutton-logger;1"].getService(
-      Ci.nsISupports
-    ).wrappedJSObject;
-    this._logger.log(3, "Torbutton Tor Check Service initialized");
-  },
-
+  // In the local check, we ask tor for its SOCKS listener address and port and
+  // compare them with the browser settings.
   async _localCheck() {
-    let didLogError = false;
-
     let proxyType = Services.prefs.getIntPref("network.proxy.type");
-    if (0 == proxyType) {
+    if (proxyType === 0) {
+      this._logger.error("Local Tor check failed: no proxy set!");
       return false;
     }
 
-    // Ask tor for its SOCKS listener address and port and compare to the
-    // browser preferences.
-    const kCmdArg = "net/listeners/socks";
-    let resp = await this.torbutton_send_ctrl_cmd("GETINFO " + kCmdArg);
-    if (!resp) {
+    let listeners;
+    try {
+      listeners = await lazy.TorProtocolService.getSocksListeners();
+    } catch (e) {
+      this._logger.error("Failed to get the SOCKS listerner addresses.", e);
       return false;
     }
 
-    function logUnexpectedResponse() {
-      if (!didLogError) {
-        didLogError = true;
-        this._logger.log(
-          5,
-          "Local Tor check: unexpected GETINFO response: " + resp
-        );
-      }
-    }
-
-    function removeBrackets(aStr) {
-      // Remove enclosing square brackets if present.
-      if (aStr.startsWith("[") && aStr.endsWith("]")) {
-        return aStr.substr(1, aStr.length - 2);
-      }
-
-      return aStr;
-    }
-
-    // Sample response: net/listeners/socks="127.0.0.1:9149" "127.0.0.1:9150"
-    // First, check for and remove the command argument prefix.
-    if (0 != resp.indexOf(kCmdArg + "=")) {
-      logUnexpectedResponse();
-      return false;
-    }
-    resp = resp.substr(kCmdArg.length + 1);
+    // Remove enclosing square brackets if present.
+    const removeBrackets = aStr =>
+      aStr.startsWith("[") && aStr.endsWith("]")
+        ? aStr.substr(1, aStr.length - 2)
+        : aStr;
 
     // Retrieve configured proxy settings and check each listener against them.
     // When the SOCKS prefs are set to use IPC (e.g., a Unix domain socket), a
     // file URL should be present in network.proxy.socks.
     // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1211567
     let socksAddr = Services.prefs.getCharPref("network.proxy.socks");
-    let socksPort = Services.prefs.getIntPref("network.proxy.socks_port");
     let socksIPCPath;
     if (socksAddr && socksAddr.startsWith("file:")) {
       // Convert the file URL to a file path.
@@ -148,72 +134,71 @@ export const TorCheckService = {
           .QueryInterface(Ci.nsIFileProtocolHandler);
         socksIPCPath = fph.getFileFromURLSpec(socksAddr).path;
       } catch (e) {
-        this._logger.log(5, "Local Tor check: IPC file error: " + e);
+        this._logger.error("Local Tor check: IPC file error", e);
         return false;
       }
     } else {
       socksAddr = removeBrackets(socksAddr);
     }
+    const socksPort = Services.prefs.getIntPref("network.proxy.socks_port");
 
-    // Split into quoted strings. This code is adapted from utils.splitAtSpaces()
-    // within tor-control-port.js; someday this code should use the entire
-    // tor-control-port.js framework.
-    let addrArray = [];
-    resp.replace(/((\S*?"(.*?)")+\S*|\S+)/g, function (a, captured) {
-      addrArray.push(captured);
-    });
-
-    let foundSocksListener = false;
-    for (let i = 0; !foundSocksListener && i < addrArray.length; ++i) {
-      let addr;
-      try {
-        addr = lazy.unescapeTorString(addrArray[i]);
-      } catch (e) {}
-      if (!addr) {
+    for (let addr of listeners) {
+      let len = addr.length;
+      // We need to have at least 2 characters to check for quotes.
+      // But no address can be shorter than 3 characters anyway, since it must
+      // either start by unix: or have host:port.
+      if (len < 2) {
         continue;
       }
-
       // Remove double quotes if present.
-      let len = addr.length;
-      if (len > 2 && '"' == addr.charAt(0) && '"' == addr.charAt(len - 1)) {
+      if (addr[0] === '"' && addr[len - 1] === '"') {
         addr = addr.substring(1, len - 1);
       }
-
       if (addr.startsWith("unix:")) {
-        if (!socksIPCPath) {
-          continue;
+        const path = addr.substring(5);
+        this._logger.debug(
+          `Found Tor SOCKS IPC listener (Unix domain socket): ${path}.`
+        );
+        if (socksIPCPath && socksIPCPath === path) {
+          return true;
         }
-
-        // Check against the configured UNIX domain socket proxy.
-        let path = addr.substring(5);
-        this._logger.log(2, "Tor socks listener (Unix domain socket): " + path);
-        foundSocksListener = socksIPCPath === path;
       } else if (!socksIPCPath) {
         // Check against the configured TCP proxy. We expect addr:port where addr
         // may be an IPv6 address; that is, it may contain colon characters.
         // Also, we remove enclosing square brackets before comparing addresses
         // because tor requires them but Firefox does not.
-        let idx = addr.lastIndexOf(":");
-        if (idx < 0) {
-          logUnexpectedResponse();
-        } else {
-          let torSocksAddr = removeBrackets(addr.substring(0, idx));
-          let torSocksPort = parseInt(addr.substring(idx + 1), 10);
-          if (torSocksAddr.length < 1 || isNaN(torSocksPort)) {
-            logUnexpectedResponse();
-          } else {
-            this._logger.log(
-              2,
-              "Tor socks listener: " + torSocksAddr + ":" + torSocksPort
-            );
-            foundSocksListener =
-              socksAddr === torSocksAddr && socksPort === torSocksPort;
-          }
+        const portIdx = addr.lastIndexOf(":");
+        if (portIdx < 0) {
+          this._logger.warn(
+            `Ignoring address ${addr} because does not contain a port number.`
+          );
+          continue;
+        }
+
+        const torSocksAddr = removeBrackets(addr.substring(0, portIdx));
+        const torSocksPort = parseInt(addr.substring(portIdx + 1), 10);
+        if (!torSocksAddr) {
+          this._logger.warn(`Ignoring address ${addr} its host is empty.`);
+          continue;
+        }
+        if (isNaN(torSocksPort) || torSocksPort <= 0) {
+          this._logger.warn(
+            `Ignoring address ${addr} its port is not a number.`
+          );
+          continue;
+        }
+        this._logger.debug(
+          `Found Tor SOCKS listener: ${torSocksAddr}:${torSocksPort}.`
+        );
+        if (socksAddr === torSocksAddr && socksPort === torSocksPort) {
+          return true;
         }
       }
     }
-
-    return foundSocksListener;
+    this._logger.error(
+      "Local Tor check: no SOCKS listener match the browser settings."
+    );
+    return false;
   },
 
   _remoteCheck() {
@@ -239,26 +224,22 @@ export const TorCheckService = {
             this.statusOfTorCheck = this.kCheckSuccessful;
           } // Otherwise, redo the check later
 
-          this._logger.log(3, "Tor remote check done. Result: " + ret);
+          this._logger.info(`Tor remote check done. Result: ${ret}`);
         }
       };
-
-      this._logger.log(3, "Sending async Tor remote check");
       req.send(null);
     } catch (e) {
       if (e.result == 0x80004005) {
         // NS_ERROR_FAILURE
-        this._logger.log(5, "Tor check failed! Is tor running?");
+        this._logger.error("Tor check failed! Is tor running?");
       } else {
-        this._logger.log(5, "Tor check failed! Tor internal error: " + e);
+        this._logger.error("Tor check failed!", e);
       }
       this.statusOfTorCheck = this.kCheckFailed;
     }
   },
 
-  _broadcastFailure() {
-    Services.obs.notifyObservers(null, this.kCheckFailedTopic);
-
+  _openAboutTor() {
     // If the user does not have an about:tor tab open in the front most
     // window, open one.
     const win = Services.wm.getMostRecentWindow("navigator:browser");
@@ -286,31 +267,31 @@ export const TorCheckService = {
     let ret = 0;
     if (aReq.status == 200) {
       if (!aReq.responseXML) {
-        this._logger.log(5, "Check failed! Not text/xml!");
+        this._logger.error("Check failed! Not text/xml!");
         ret = 1;
       } else {
         let result = aReq.responseXML.getElementById("TorCheckResult");
 
         if (result === null) {
-          this._logger.log(5, "Test failed! No TorCheckResult element");
+          this._logger.error("Test failed! No TorCheckResult element");
           ret = 2;
         } else if (
           typeof result.target == "undefined" ||
           result.target === null
         ) {
-          this._logger.log(5, "Test failed! No target");
+          this._logger.error("Test failed! No target");
           ret = 3;
         } else if (result.target === "success") {
-          this._logger.log(3, "Test Successful");
+          this._logger.info("Remote test Successful");
           ret = 4;
         } else if (result.target === "failure") {
-          this._logger.log(5, "Tor test failed!");
+          this._logger.error("Tor test failed!");
           ret = 5;
         } else if (result.target === "unknown") {
-          this._logger.log(5, "Tor test failed. TorDNSEL Failure?");
+          this._logger.error("Tor test failed. TorDNSEL Failure?");
           ret = 6;
         } else {
-          this._logger.log(5, "Tor test failed. Strange target.");
+          this._logger.error("Tor test failed. Strange target.");
           ret = 7;
         }
       }
@@ -319,43 +300,18 @@ export const TorCheckService = {
         try {
           var req = aReq.channel.QueryInterface(Ci.nsIRequest);
           if (req.status == Cr.NS_ERROR_PROXY_CONNECTION_REFUSED) {
-            this._logger.log(5, "Tor test failed. Proxy connection refused");
+            this._logger.error("Tor test failed. Proxy connection refused");
             ret = 8;
           }
         } catch (e) {}
       }
 
       if (ret == 0) {
-        this._logger.log(5, "Tor test failed. HTTP Error: " + aReq.status);
+        this._logger.error(`Tor test failed. HTTP Error: ${aReq.status}`);
         ret = -aReq.status;
       }
     }
 
     return ret;
   },
-
-  async torbutton_send_ctrl_cmd(command) {
-    const getErrorMessage = e => (e && (e.torMessage || e.message)) || "";
-    let response = null;
-    try {
-      const avoidCache = true;
-      let torController = await lazy.wait_for_controller(avoidCache);
-
-      let bytes = await torController.sendCommand(command);
-      if (!bytes.startsWith("250")) {
-        throw new Error(
-          `Unexpected command response on control port '${bytes}'`
-        );
-      }
-      response = bytes.slice(4);
-
-      torController.close();
-    } catch (err) {
-      let msg = getErrorMessage(err);
-      this._logger.log(4, `Error: ${msg}`);
-    }
-    return response;
-  },
 };
-
-TorCheckService._init();
