@@ -20,7 +20,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 export const TorCheckService = {
-  kCheckNotInitiated: 0, // Possible values for statusOfTorCheck.
+  kCheckNotInitiated: 0, // Possible values for status.
   kCheckSuccessful: 1,
   kCheckFailed: 2,
 
@@ -30,11 +30,11 @@ export const TorCheckService = {
   _loggerObject: null,
 
   // Public methods
-  get statusOfTorCheck() {
+  get status() {
     return this._status;
   },
 
-  set statusOfTorCheck(aStatus) {
+  set status(aStatus) {
     if (aStatus === this._status) {
       return;
     }
@@ -87,13 +87,14 @@ export const TorCheckService = {
       Services.prefs.getBoolPref("extensions.torbutton.local_tor_check")
     ) {
       if (await this._localCheck()) {
-        this.statusOfTorCheck = this.kCheckSuccessful;
+        this.status = this.kCheckSuccessful;
       } else {
-        this.statusOfTorCheck = this.kCheckFailed;
+        this.status = this.kCheckFailed;
       }
+    } else if (await this._remoteCheck()) {
+      this.status = this.kCheckSuccessful;
     } else {
-      // A local check is not possible, so perform a remote check.
-      this._remoteCheck();
+      this.status = this.kCheckFailed;
     }
   },
 
@@ -201,41 +202,33 @@ export const TorCheckService = {
     return false;
   },
 
-  _remoteCheck() {
+  async _remoteCheck() {
     try {
-      let req = this.createCheckRequest(true); // async
-      req.onreadystatechange = function (aEvent) {
-        if (req.readyState === 4) {
-          let ret = this.parseCheckResponse(req);
-
-          // If we received an error response from check.torproject.org,
-          // set the status of the tor check to failure (we don't want
-          // to indicate failure if we didn't receive a response).
-          if (
-            ret == 2 ||
-            ret == 3 ||
-            ret == 5 ||
-            ret == 6 ||
-            ret == 7 ||
-            ret == 8
-          ) {
-            this.statusOfTorCheck = this.kCheckFailed;
-          } else if (ret == 4) {
-            this.statusOfTorCheck = this.kCheckSuccessful;
-          } // Otherwise, redo the check later
-
-          this._logger.info(`Tor remote check done. Result: ${ret}`);
-        }
-      };
-      req.send(null);
-    } catch (e) {
-      if (e.result == 0x80004005) {
-        // NS_ERROR_FAILURE
-        this._logger.error("Tor check failed! Is tor running?");
-      } else {
-        this._logger.error("Tor check failed!", e);
+      const url = Services.prefs.getCharPref("extensions.torbutton.test_url");
+      const request = await fetch(url, { cache: "no-store" });
+      const parser = new DOMParser();
+      const document = parser.parseFromString(
+        await request.text(),
+        "text/html"
+      );
+      const elem = document.getElementById("TorCheckResult");
+      if (!elem) {
+        this._logger.error(
+          "Could not find the HTML element with the check result."
+        );
       }
-      this.statusOfTorCheck = this.kCheckFailed;
+      // #TorCheckResult is an <a>, and has the outcome in the target attribute.
+      const target = elem.getAttribute("target");
+      this._logger.debug(`Remote test: target=${target}`);
+      if (target === "success") {
+        this._logger.info("Remote test succeeded.");
+        return true;
+      }
+      this._logger.error(`Remote test: unexpected target value '${target}'.`);
+      return false;
+    } catch (e) {
+      this._logger.error("Failed to perform the remote check", e);
+      return false;
     }
   },
 
@@ -251,67 +244,5 @@ export const TorCheckService = {
       }
     }
     browser.selectedTab = browser.addTrustedTab("about:tor");
-  },
-
-  createCheckRequest(aAsync) {
-    let req = new XMLHttpRequest();
-    let url = Services.prefs.getCharPref("extensions.torbutton.test_url");
-    req.open("GET", url, aAsync);
-    req.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
-    req.overrideMimeType("text/xml");
-    req.timeout = 120000; // Wait at most two minutes for a response.
-    return req;
-  },
-
-  parseCheckResponse(aReq) {
-    let ret = 0;
-    if (aReq.status == 200) {
-      if (!aReq.responseXML) {
-        this._logger.error("Check failed! Not text/xml!");
-        ret = 1;
-      } else {
-        let result = aReq.responseXML.getElementById("TorCheckResult");
-
-        if (result === null) {
-          this._logger.error("Test failed! No TorCheckResult element");
-          ret = 2;
-        } else if (
-          typeof result.target == "undefined" ||
-          result.target === null
-        ) {
-          this._logger.error("Test failed! No target");
-          ret = 3;
-        } else if (result.target === "success") {
-          this._logger.info("Remote test Successful");
-          ret = 4;
-        } else if (result.target === "failure") {
-          this._logger.error("Tor test failed!");
-          ret = 5;
-        } else if (result.target === "unknown") {
-          this._logger.error("Tor test failed. TorDNSEL Failure?");
-          ret = 6;
-        } else {
-          this._logger.error("Tor test failed. Strange target.");
-          ret = 7;
-        }
-      }
-    } else {
-      if (0 == aReq.status) {
-        try {
-          var req = aReq.channel.QueryInterface(Ci.nsIRequest);
-          if (req.status == Cr.NS_ERROR_PROXY_CONNECTION_REFUSED) {
-            this._logger.error("Tor test failed. Proxy connection refused");
-            ret = 8;
-          }
-        } catch (e) {}
-      }
-
-      if (ret == 0) {
-        this._logger.error(`Tor test failed. HTTP Error: ${aReq.status}`);
-        ret = -aReq.status;
-      }
-    }
-
-    return ret;
   },
 };
