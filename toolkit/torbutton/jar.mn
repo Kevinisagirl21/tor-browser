@@ -6,7 +6,6 @@ torbutton.jar:
 
   content/torbutton.js                   (chrome/content/torbutton.js)
   modules/       (modules/*)
-  skin/          (chrome/skin/*)
 
 % resource torbutton %
 
@@ -20,5 +19,3 @@ torbutton.jar:
 
 % locale torbutton en-US %locale/en-US/
   locale/en-US/ (chrome/locale/en-US/*)
-
-% skin torbutton classic/1.0 %skin/
