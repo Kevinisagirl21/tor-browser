@@ -179,6 +179,15 @@ export const TorProtocolService = {
     return this.sendCommand("SIGNAL NEWNYM");
   },
 
+  // Ask tor which ports it is listening to for SOCKS connections.
+  // At the moment this is used only in TorCheckService.
+  async getSocksListeners() {
+    const cmd = "GETINFO";
+    const keyword = "net/listeners/socks";
+    const response = await this.sendCommand(cmd, keyword);
+    return TorParsers.parseReply(cmd, keyword, response);
+  },
+
   // TODO: transform the following 4 functions in getters. At the moment they
   // are also used in torbutton.
 
@@ -529,11 +538,7 @@ export const TorProtocolService = {
 
     const cmd = "GETCONF";
     let reply = await this.sendCommand(cmd, aSetting);
-    reply = TorParsers.parseReply(cmd, aSetting, reply);
-    if (TorParsers.commandSucceeded(reply)) {
-      return reply.lineArray;
-    }
-    throw new Error(reply.lineArray.join("\n"));
+    return TorParsers.parseReply(cmd, aSetting, reply);
   },
 
   async _readStringSetting(aSetting) {

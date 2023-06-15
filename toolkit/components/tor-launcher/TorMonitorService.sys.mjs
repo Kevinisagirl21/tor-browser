@@ -117,8 +117,8 @@ export const TorMonitorService = {
       throw new Error(`${cmd} failed`);
     }
     reply = TorParsers.parseReply(cmd, key, reply);
-    if (reply.lineArray) {
-      this._processBootstrapStatus(reply.lineArray[0], true);
+    if (reply.length) {
+      this._processBootstrapStatus(reply[0], true);
     }
   },
 
