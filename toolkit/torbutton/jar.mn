@@ -8,8 +8,5 @@ torbutton.jar:
 
   components/    (components/*)
   modules/       (modules/*)
-  skin/          (chrome/skin/*)
 
 % resource torbutton %
-
-% skin torbutton classic/1.0 %skin/
