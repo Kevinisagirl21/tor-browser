@@ -6,22 +6,22 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorCheckService: "resource://torbutton/modules/TorCheckService.sys.mjs",
 });
 
-const kTorCheckFailedTopic = "Torbutton:TorCheckFailed";
+const kTorCheckTopic = "TorCheckService:StatusChanged";
 
 class TorCheckObserver {
   #callback = null;
 
   constructor(callback) {
     this.#callback = callback;
-    Services.obs.addObserver(this, kTorCheckFailedTopic);
+    Services.obs.addObserver(this, kTorCheckTopic);
   }
 
   stop() {
-    Services.obs.removeObserver(this, kTorCheckFailedTopic);
+    Services.obs.removeObserver(this, kTorCheckTopic);
   }
 
   observe(subject, topic, data) {
-    if (topic === kTorCheckFailedTopic && this.#callback) {
+    if (topic === kTorCheckTopic && this.#callback) {
       this.#callback();
     }
   }
@@ -56,11 +56,16 @@ export class AboutTorParent extends JSWindowActorParent {
       updateChannel: AppConstants.MOZ_UPDATE_CHANNEL,
     };
 
-    await lazy.TorCheckService.runTorCheck();
-    if (
-      lazy.TorCheckService.statusOfTorCheck !==
-      lazy.TorCheckService.kCheckFailed
-    ) {
+    if (lazy.TorCheckService.hasFailed || !isRespondingToPageLoad) {
+      // If it has failed, check again, but do not wait for it.
+      // An observer will call us if we need to change the page status.
+      // Same if we are invoked by an observer, since now it can be called only
+      // by the TorServiceCheck observer.
+      lazy.TorCheckService.runTorCheck();
+    } else {
+      await lazy.TorCheckService.runTorCheck();
+    }
+    if (!lazy.TorCheckService.hasFailed) {
       data.torOn = true;
     }
 
