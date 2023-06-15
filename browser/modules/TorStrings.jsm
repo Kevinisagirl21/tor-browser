@@ -11,9 +11,11 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { getLocale } = ChromeUtils.import(
-  "resource://torbutton/modules/utils.js"
-);
+
+function getLocale() {
+  const locale = Services.locale.appLocaleAsBCP47;
+  return locale === "ja-JP-macos" ? "ja" : locale;
+}
 
 /*
   Tor Property String Bundle
