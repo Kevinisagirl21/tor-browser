@@ -12,7 +12,7 @@ export const TorParsers = Object.freeze({
 
   // parseReply() understands simple GETCONF and GETINFO replies.
   parseReply(aCmd, aKey, aReply) {
-    if (!aCmd || !aKey || !aReply) {
+    if (!aCmd || !aKey || !aReply || !aReply.lineArray?.length) {
       return [];
     }
 
@@ -39,8 +39,7 @@ export const TorParsers = Object.freeze({
       }
     }
 
-    aReply.lineArray = tmpArray;
-    return aReply;
+    return tmpArray;
   },
 
   // Returns false if more lines are needed.  The first time, callers
