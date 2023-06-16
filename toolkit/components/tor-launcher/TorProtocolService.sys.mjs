@@ -188,6 +188,24 @@ export const TorProtocolService = {
     return TorParsers.parseReply(cmd, keyword, response);
   },
 
+  async onionAuthAdd(hsAddress, b64PrivateKey, isPermanent) {
+    return this._withConnection(conn => {
+      return conn.onionAuthAdd(hsAddress, b64PrivateKey, isPermanent);
+    });
+  },
+
+  async onionAuthRemove(hsAddress) {
+    return this._withConnection(conn => {
+      return conn.onionAuthRemove(hsAddress);
+    });
+  },
+
+  async onionAuthViewKeys() {
+    return this._withConnection(conn => {
+      return conn.onionAuthViewKeys();
+    });
+  },
+
   // TODO: transform the following 4 functions in getters. At the moment they
   // are also used in torbutton.
 
@@ -627,6 +645,16 @@ export const TorProtocolService = {
       this._connectionQueue.shift().resolve();
     } else {
       this._controlConnection.inUse = false;
+    }
+  },
+
+  async _withConnection(func) {
+    // TODO: Make more robust?
+    const conn = await this._getConnection();
+    try {
+      return await func(conn);
+    } finally {
+      this._returnConnection();
     }
   },
 
