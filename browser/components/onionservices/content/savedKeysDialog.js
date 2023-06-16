@@ -10,8 +10,8 @@ ChromeUtils.defineModuleGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "controller",
-  "resource://torbutton/modules/tor-control-port.js"
+  "TorProtocolService",
+  "resource://gre/modules/TorProtocolService.jsm"
 );
 
 var gOnionServicesSavedKeysDialog = {
@@ -49,11 +49,9 @@ var gOnionServicesSavedKeysDialog = {
       const controllerFailureMsg =
         TorStrings.onionServices.authPreferences.failedToRemoveKey;
       try {
-        const torController = await controller();
-
         // Remove in reverse index order to avoid issues caused by index changes.
         for (let i = indexesToDelete.length - 1; i >= 0; --i) {
-          await this._deleteOneKey(torController, indexesToDelete[i]);
+          await this._deleteOneKey(indexesToDelete[i]);
         }
       } catch (e) {
         if (e.torMessage) {
@@ -127,8 +125,7 @@ var gOnionServicesSavedKeysDialog = {
     try {
       this._tree.view = this;
 
-      const torController = await controller();
-      const keyInfoList = await torController.onionAuthViewKeys();
+      const keyInfoList = await TorProtocolService.onionAuthViewKeys();
       if (keyInfoList) {
         // Filter out temporary keys.
         this._keyInfoList = keyInfoList.filter(aKeyInfo => {
@@ -165,9 +162,9 @@ var gOnionServicesSavedKeysDialog = {
   },
 
   // This method may throw; callers should catch errors.
-  async _deleteOneKey(aTorController, aIndex) {
+  async _deleteOneKey(aIndex) {
     const keyInfoObj = this._keyInfoList[aIndex];
-    await aTorController.onionAuthRemove(keyInfoObj.hsAddress);
+    await TorProtocolService.onionAuthRemove(keyInfoObj.hsAddress);
     this._tree.view.selection.clearRange(aIndex, aIndex);
     this._keyInfoList.splice(aIndex, 1);
     this._tree.rowCountChanged(aIndex + 1, -1);

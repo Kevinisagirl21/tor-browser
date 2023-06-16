@@ -7,6 +7,7 @@
 XPCOMUtils.defineLazyModuleGetters(this, {
   OnionAuthUtil: "chrome://browser/content/onionservices/authUtil.jsm",
   CommonUtils: "resource://services-common/utils.js",
+  TorProtocolService: "resource://gre/modules/TorProtocolService.jsm",
   TorStrings: "resource:///modules/TorStrings.jsm",
 });
 
@@ -192,10 +193,6 @@ const OnionAuthPrompt = (function () {
       let controllerFailureMsg =
         TorStrings.onionServices.authPrompt.failedToSetKey;
       try {
-        let { controller } = ChromeUtils.import(
-          "resource://torbutton/modules/tor-control-port.js"
-        );
-        let torController = await controller();
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
         const onionServiceIdRegExp =
           /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
@@ -206,8 +203,7 @@ const OnionAuthPrompt = (function () {
 
         let checkboxElem = this._getCheckboxElement();
         let isPermanent = checkboxElem && checkboxElem.checked;
-        torController
-          .onionAuthAdd(onionServiceId, base64key, isPermanent)
+        TorProtocolService.onionAuthAdd(onionServiceId, base64key, isPermanent)
           .then(aResponse => {
             // Success! Reload the page.
             this._browser.sendMessageToActor(
