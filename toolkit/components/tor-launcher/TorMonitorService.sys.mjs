@@ -52,7 +52,7 @@ const ControlConnTimings = Object.freeze({
  */
 export const TorMonitorService = {
   _connection: null,
-  _eventsToMonitor: Object.freeze(["STATUS_CLIENT", "NOTICE", "WARN", "ERR"]),
+  _eventHandlers: {},
   _torLog: [], // Array of objects with date, type, and msg properties.
   _startTimeout: null,
 
@@ -72,6 +72,17 @@ export const TorMonitorService = {
       return;
     }
     this._inited = true;
+
+    this._eventHandlers = new Map([
+      [
+        "STATUS_CLIENT",
+        (_eventType, lines) => this._processBootstrapStatus(lines[0], false),
+      ],
+      ["NOTICE", this._processLog.bind(this)],
+      ["WARN", this._processLog.bind(this)],
+      ["ERR", this._processLog.bind(this)],
+    ]);
+
     if (this.ownsTorDaemon) {
       this._controlTor();
     } else {
@@ -272,7 +283,7 @@ export const TorMonitorService = {
 
     // TODO: optionally monitor INFO and DEBUG log messages.
     let reply = await conn.sendCommand(
-      "SETEVENTS " + this._eventsToMonitor.join(" ")
+      "SETEVENTS " + Array.from(this._eventHandlers.keys()).join(" ")
     );
     reply = TorParsers.parseCommandResponse(reply);
     if (!TorParsers.commandSucceeded(reply)) {
@@ -297,7 +308,11 @@ export const TorMonitorService = {
     }
 
     this._connection = conn;
-    this._waitForEventData();
+
+    for (const [type, callback] of this._eventHandlers.entries()) {
+      this._monitorEvent(type, callback);
+    }
+
     return true;
   },
 
@@ -318,65 +333,45 @@ export const TorMonitorService = {
     }
   },
 
-  _waitForEventData() {
-    if (!this._connection) {
-      return;
-    }
-    logger.debug("Start watching events:", this._eventsToMonitor);
+  _monitorEvent(type, callback) {
+    logger.debug(`Watching events of type ${type}.`);
     let replyObj = {};
-    for (const torEvent of this._eventsToMonitor) {
-      this._connection.watchEvent(
-        torEvent,
-        null,
-        line => {
-          if (!line) {
-            return;
-          }
-          logger.debug("Event response: ", line);
-          const isComplete = TorParsers.parseReplyLine(line, replyObj);
-          if (isComplete) {
-            this._processEventReply(replyObj);
-            replyObj = {};
-          }
-        },
-        true
-      );
-    }
+    this._connection.watchEvent(
+      type,
+      null,
+      line => {
+        if (!line) {
+          return;
+        }
+        logger.debug("Event response: ", line);
+        const isComplete = TorParsers.parseReplyLine(line, replyObj);
+        if (!isComplete || replyObj._parseError || !replyObj.lineArray.length) {
+          return;
+        }
+        const reply = replyObj;
+        replyObj = {};
+        if (reply.statusCode !== TorStatuses.EventNotification) {
+          logger.error("Unexpected event status code:", reply.statusCode);
+          return;
+        }
+        if (!reply.lineArray[0].startsWith(`${type} `)) {
+          logger.error("Wrong format for the first line:", reply.lineArray[0]);
+          return;
+        }
+        reply.lineArray[0] = reply.lineArray[0].substring(type.length + 1);
+        callback(type, reply.lineArray);
+      },
+      true
+    );
   },
 
-  _processEventReply(aReply) {
-    if (aReply._parseError || !aReply.lineArray.length) {
-      return;
-    }
-
-    if (aReply.statusCode !== TorStatuses.EventNotification) {
-      logger.warn("Unexpected event status code:", aReply.statusCode);
-      return;
-    }
-
-    // TODO: do we need to handle multiple lines?
-    const s = aReply.lineArray[0];
-    const idx = s.indexOf(" ");
-    if (idx === -1) {
-      return;
-    }
-    const eventType = s.substring(0, idx);
-    const msg = s.substring(idx + 1).trim();
-
-    if (eventType === "STATUS_CLIENT") {
-      this._processBootstrapStatus(msg, false);
-      return;
-    } else if (!this._eventsToMonitor.includes(eventType)) {
-      logger.debug(`Dropping unlistened event ${eventType}`);
-      return;
-    }
-
-    if (eventType === "WARN" || eventType === "ERR") {
+  _processLog(type, lines) {
+    if (type === "WARN" || type === "ERR") {
       // Notify so that Copy Log can be enabled.
       Services.obs.notifyObservers(null, TorTopics.HasWarnOrErr);
     }
 
-    const now = new Date();
+    const date = new Date();
     const maxEntries = Services.prefs.getIntPref(
       "extensions.torlauncher.max_tor_log_entries",
       1000
@@ -384,8 +379,10 @@ export const TorMonitorService = {
     if (maxEntries > 0 && this._torLog.length >= maxEntries) {
       this._torLog.splice(0, 1);
     }
-    this._torLog.push({ date: now, type: eventType, msg });
-    const logString = `Tor ${eventType}: ${msg}`;
+
+    const msg = lines.join("\n");
+    this._torLog.push({ date, type, msg });
+    const logString = `Tor ${type}: ${msg}`;
     logger.info(logString);
   },
 

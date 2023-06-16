@@ -181,12 +181,12 @@ export const TorParsers = Object.freeze({
       return aStr;
     }
     const escaped = aStr
-      .replace("\\", "\\\\")
-      .replace('"', '\\"')
-      .replace("\n", "\\n")
-      .replace("\r", "\\r")
-      .replace("\t", "\\t")
-      .replace(/[^\x20-\x7e]+/g, text => {
+      .replaceAll("\\", "\\\\")
+      .replaceAll('"', '\\"')
+      .replaceAll("\n", "\\n")
+      .replaceAll("\r", "\\r")
+      .replaceAll("\t", "\\t")
+      .replaceAll(/[^\x20-\x7e]+/g, text => {
         const encoder = new TextEncoder();
         return Array.from(
           encoder.encode(text),
