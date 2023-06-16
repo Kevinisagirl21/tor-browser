@@ -1,6 +1,6 @@
 EXTRA_JS_MODULES += [
     "TorBootstrapRequest.sys.mjs",
-    "TorDomainIsolator.jsm",
+    "TorDomainIsolator.sys.mjs",
     "TorLauncherUtil.sys.mjs",
     "TorMonitorService.sys.mjs",
     "TorParsers.sys.mjs",

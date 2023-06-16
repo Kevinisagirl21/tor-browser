@@ -66,6 +66,7 @@ ChromeUtils.defineESModuleGetters(this, {
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   UITour: "resource:///modules/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
@@ -100,7 +101,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TorConnect: "resource:///modules/TorConnect.jsm",
   TorConnectState: "resource:///modules/TorConnect.jsm",
   TorConnectTopics: "resource:///modules/TorConnect.jsm",
-  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   webrtcUI: "resource:///modules/webrtcUI.jsm",
   ZoomUI: "resource:///modules/ZoomUI.jsm",
