@@ -4,16 +4,11 @@ const lazy = {};
 // loading
 ChromeUtils.defineESModuleGetters(lazy, {
   TorConnect: "resource:///modules/TorConnect.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorSettings: "resource:///modules/TorSettings.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorDomainIsolator",
-  "resource://gre/modules/TorDomainIsolator.jsm"
-);
 
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
