@@ -193,10 +193,6 @@ var gTorCircuitPanel = {
       .getElementById("tor-circuit-new-circuit")
       .addEventListener("command", () => {
         TorDomainIsolator.newCircuitForBrowser(gBrowser);
-        // And hide.
-        // NOTE: focus should return to the toolbar button, which we expect to
-        // remain visible during reload.
-        this.hide();
       });
 
     // Update the display just before opening.
