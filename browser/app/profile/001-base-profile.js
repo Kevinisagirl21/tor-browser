@@ -503,6 +503,10 @@ pref("corroborator.enabled", false);
 // stop using .textContent.
 pref("intl.multilingual.liveReload", false);
 
+// tor-browser#41729: if it is false, web content is not accessible to screen
+// readers, at least on Windows.
+pref("accessibility.cache.enabled", true);
+
 // Onboarding.
 pref("browser.onboarding.tourset-version", 5);
 pref("browser.onboarding.newtour", "welcome,privacy,tor-network-9.0,circuit-display,security,expect-differences,onion-services,learn-more");
