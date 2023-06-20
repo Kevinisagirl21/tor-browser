@@ -17,6 +17,9 @@ const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
 const { TorProtocolService } = ChromeUtils.import(
   "resource://gre/modules/TorProtocolService.jsm"
 );
+const { TorMonitorService, TorMonitorTopics } = ChromeUtils.import(
+  "resource://gre/modules/TorMonitorService.jsm"
+);
 
 const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
   ChromeUtils.import("resource:///modules/TorConnect.jsm");
@@ -143,8 +146,6 @@ const gConnectionPane = (function () {
     _enableQuickstartCheckbox: null,
 
     _internetStatus: InternetStatus.Unknown,
-
-    _controller: null,
 
     _currentBridgeId: null,
 
@@ -727,9 +728,10 @@ const gConnectionPane = (function () {
       };
       // Use a promise to avoid blocking the population of the page
       // FIXME: Stop using a JSON file, and switch to properties
-      fetch(
+      const annotationPromise = fetch(
         "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
-      ).then(async res => {
+      );
+      annotationPromise.then(async res => {
         const annotations = await res.json();
         const bcp47 = Services.locale.appLocaleAsBCP47;
         const dash = bcp47.indexOf("-");
@@ -749,6 +751,7 @@ const gConnectionPane = (function () {
           ".currently-connected"
         )) {
           card.classList.remove("currently-connected");
+          card.querySelector(selectors.bridges.cardQrGrid).style.height = "";
         }
         if (!this._currentBridgeId) {
           return;
@@ -769,72 +772,17 @@ const gConnectionPane = (function () {
         placeholder.replaceWith(...cards);
         this._checkBridgeCardsHeight();
       };
-      try {
-        const { controller } = ChromeUtils.import(
-          "resource://torbutton/modules/tor-control-port.js"
-        );
-        // Avoid the cache because we set our custom event watcher, and at the
-        // moment, watchers cannot be removed from a controller.
-        controller(true).then(aController => {
-          this._controller = aController;
-          // Getting the circuits may be enough, if we have bootstrapped for a
-          // while, but at the beginning it gives many bridges as connected,
-          // because tor pokes all the bridges to find the best one.
-          // Also, watching circuit events does not work, at the moment, but in
-          // any case, checking the stream has the advantage that we can see if
-          // it really used for a connection, rather than tor having created
-          // this circuit to check if the bridge can be used. We do this by
-          // checking if the stream has SOCKS username, which actually contains
-          // the destination of the stream.
-          // FIXME: We only know the currentBridge *after* a circuit event, but
-          // if the circuit event is sent *before* about:torpreferences is
-          // opened we will miss it. Therefore this approach only works if a
-          // circuit is created after opening about:torconnect. A dedicated
-          // backend outside of about:preferences would help, and could be
-          // shared with gTorCircuitPanel. See tor-browser#41700.
-          this._controller.watchEvent(
-            "STREAM",
-            event =>
-              event.StreamStatus === "SUCCEEDED" && "SOCKS_USERNAME" in event,
-            async event => {
-              const circuitStatuses = await this._controller.getInfo(
-                "circuit-status"
-              );
-              if (!circuitStatuses) {
-                return;
-              }
-              for (const status of circuitStatuses) {
-                if (status.id === event.CircuitID && status.circuit.length) {
-                  // The id in the circuit begins with a $ sign.
-                  const id = status.circuit[0][0].replace(/^\$/, "");
-                  if (id !== this._currentBridgeId) {
-                    const bridge = (
-                      await this._controller.getConf("bridge")
-                    )?.find(
-                      foundBridge =>
-                        foundBridge.ID?.toUpperCase() === id.toUpperCase()
-                    );
-                    if (!bridge) {
-                      // Either there is no bridge, or bridge with no
-                      // fingerprint.
-                      this._currentBridgeId = null;
-                    } else {
-                      this._currentBridgeId = id;
-                    }
-                    this._updateConnectedBridges();
-                  }
-                  break;
-                }
-              }
-            }
-          );
-        });
-      } catch (err) {
-        console.warn(
-          "We could not load torbutton, bridge statuses will not be updated",
-          err
-        );
-      }
+      this._checkConnectedBridge = () => {
+        // TODO: We could make sure TorSettings is in sync by monitoring also
+        // changes of settings. At that point, we could query it, instead of
+        // doing a query over the control port.
+        const bridge = TorMonitorService.currentBridge;
+        if (bridge?.fingerprint !== this._currentBridgeId) {
+          this._currentBridgeId = bridge?.fingerprint ?? null;
+          this._updateConnectedBridges();
+        }
+      };
+      annotationPromise.then(this._checkConnectedBridge.bind(this));
 
       // Add a new bridge
       prefpane.querySelector(selectors.bridges.addHeader).textContent =
@@ -927,6 +875,7 @@ const gConnectionPane = (function () {
       });
 
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
+      Services.obs.addObserver(this, TorMonitorTopics.BridgeChanged);
     },
 
     init() {
@@ -950,11 +899,7 @@ const gConnectionPane = (function () {
       // unregister our observer topics
       Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
       Services.obs.removeObserver(this, TorConnectTopics.StateChange);
-
-      if (this._controller !== null) {
-        this._controller.close();
-        this._controller = null;
-      }
+      Services.obs.removeObserver(this, TorMonitorTopics.BridgeChanged);
     },
 
     // whether the page should be present in about:preferences
@@ -983,6 +928,12 @@ const gConnectionPane = (function () {
         // need to update the messagebox
         case TorConnectTopics.StateChange: {
           this.onStateChange();
+          break;
+        }
+        case TorMonitorTopics.BridgeChanged: {
+          if (data?.fingerprint !== this._currentBridgeId) {
+            this._checkConnectedBridge();
+          }
           break;
         }
       }
@@ -1028,7 +979,7 @@ const gConnectionPane = (function () {
     onRemoveAllBridges() {
       TorSettings.bridges.enabled = false;
       TorSettings.bridges.bridge_strings = "";
-      if (TorSettings.bridges.source == TorBridgeSource.BuiltIn) {
+      if (TorSettings.bridges.source === TorBridgeSource.BuiltIn) {
         TorSettings.bridges.builtin_type = "";
       }
       TorSettings.saveToPrefs();
