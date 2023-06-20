@@ -19,6 +19,10 @@ ChromeUtils.defineModuleGetter(
   "resource://torbutton/modules/tor-control-port.js"
 );
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+});
+
 const logger = new ConsoleAPI({
   maxLogLevel: "warn",
   maxLogLevelPref: "browser.tor_monitor_service.log_level",
@@ -37,11 +41,33 @@ const TorTopics = Object.freeze({
   ProcessRestarted: "TorProcessRestarted",
 });
 
+export const TorMonitorTopics = Object.freeze({
+  BridgeChanged: "TorBridgeChanged",
+  StreamSucceeded: "TorStreamSucceeded",
+});
+
 const ControlConnTimings = Object.freeze({
   initialDelayMS: 25, // Wait 25ms after the process has started, before trying to connect
   maxRetryMS: 10000, // Retry at most every 10 seconds
   timeoutMS: 5 * 60 * 1000, // Wait at most 5 minutes for tor to start
 });
+
+/**
+ * From control-spec.txt:
+ *   CircuitID = 1*16 IDChar
+ *   IDChar = ALPHA / DIGIT
+ *   Currently, Tor only uses digits, but this may change.
+ *
+ * @typedef {string} CircuitID
+ */
+/**
+ * The fingerprint of a node.
+ * From control-spec.txt:
+ *   Fingerprint = "$" 40*HEXDIG
+ * However, we do not keep the $ in our structures.
+ *
+ * @typedef {string} NodeFingerprint
+ */
 
 /**
  * This service monitors an existing Tor instance, or starts one, if needed, and
@@ -64,6 +90,28 @@ export const TorMonitorService = {
 
   _inited: false,
 
+  /**
+   * Stores the nodes of a circuit. Keys are cicuit IDs, and values are the node
+   * fingerprints.
+   *
+   * Theoretically, we could hook this map up to the new identity notification,
+   * but in practice it does not work. Tor pre-builds circuits, and the NEWNYM
+   * signal does not affect them. So, we might end up using a circuit that was
+   * built before the new identity but not yet used. If we cleaned the map, we
+   * risked of not having the data about it.
+   *
+   * @type {Map<CircuitID, NodeFingerprint[]>}
+   */
+  _circuits: new Map(),
+  /**
+   * The last used bridge, or null if bridges are not in use or if it was not
+   * possible to detect the bridge. This needs the user to have specified bridge
+   * lines with fingerprints to work.
+   *
+   * @type {NodeFingerprint?}
+   */
+  _currentBridge: null,
+
   // Public methods
 
   // Starts Tor, if needed, and starts monitoring for events
@@ -73,24 +121,27 @@ export const TorMonitorService = {
     }
     this._inited = true;
 
+    // We always liten to these events, because they are needed for the circuit
+    // display.
     this._eventHandlers = new Map([
-      [
-        "STATUS_CLIENT",
-        (_eventType, lines) => this._processBootstrapStatus(lines[0], false),
-      ],
-      ["NOTICE", this._processLog.bind(this)],
-      ["WARN", this._processLog.bind(this)],
-      ["ERR", this._processLog.bind(this)],
+      ["CIRC", this._processCircEvent.bind(this)],
+      ["STREAM", this._processStreamEvent.bind(this)],
     ]);
 
     if (this.ownsTorDaemon) {
+      // When we own the tor daemon, we listen to more events, that are used
+      // for about:torconnect or for showing the logs in the settings page.
+      this._eventHandlers.set("STATUS_CLIENT", (_eventType, lines) =>
+        this._processBootstrapStatus(lines[0], false)
+      );
+      this._eventHandlers.set("NOTICE", this._processLog.bind(this));
+      this._eventHandlers.set("WARN", this._processLog.bind(this));
+      this._eventHandlers.set("ERR", this._processLog.bind(this));
       this._controlTor();
     } else {
-      logger.info(
-        "Not starting the event monitor, as we do not own the Tor daemon."
-      );
+      this._startEventMonitor();
     }
-    logger.debug("TorMonitorService initialized");
+    logger.info("TorMonitorService initialized");
   },
 
   // Closes the connection that monitors for events.
@@ -162,6 +213,18 @@ export const TorMonitorService = {
 
   get isRunning() {
     return !!this._connection;
+  },
+
+  /**
+   * Return the data about the current bridge, if any, or null.
+   * We can detect bridge only when the configured bridge lines include the
+   * fingerprints.
+   *
+   * @returns {NodeData?} The node information, or null if the first node
+   * is not a bridge, or no circuit has been opened, yet.
+   */
+  get currentBridge() {
+    return this._currentBridge;
   },
 
   // Private methods
@@ -292,14 +355,10 @@ export const TorMonitorService = {
       return false;
     }
 
-    // FIXME: At the moment it is not possible to start the event monitor
-    // when we do start the tor process. So, does it make sense to keep this
-    // control?
     if (this._torProcess) {
       this._torProcess.connectionWorked();
     }
-
-    if (!TorLauncherUtil.shouldOnlyConfigureTor) {
+    if (this.ownsTorDaemon && !TorLauncherUtil.shouldOnlyConfigureTor) {
       try {
         await this._takeTorOwnership(conn);
       } catch (e) {
@@ -311,6 +370,26 @@ export const TorMonitorService = {
 
     for (const [type, callback] of this._eventHandlers.entries()) {
       this._monitorEvent(type, callback);
+    }
+
+    // Populate the circuit map already, in case we are connecting to an
+    // external tor daemon.
+    try {
+      const reply = await this._connection.sendCommand(
+        "GETINFO circuit-status"
+      );
+      const lines = reply.split(/\r?\n/);
+      if (lines.shift() === "250+circuit-status=") {
+        for (const line of lines) {
+          if (line === ".") {
+            break;
+          }
+          // _processCircEvent processes only one line at a time
+          this._processCircEvent("CIRC", [line]);
+        }
+      }
+    } catch (e) {
+      logger.warn("Could not populate the initial circuit map", e);
     }
 
     return true;
@@ -334,7 +413,7 @@ export const TorMonitorService = {
   },
 
   _monitorEvent(type, callback) {
-    logger.debug(`Watching events of type ${type}.`);
+    logger.info(`Watching events of type ${type}.`);
     let replyObj = {};
     this._connection.watchEvent(
       type,
@@ -359,7 +438,11 @@ export const TorMonitorService = {
           return;
         }
         reply.lineArray[0] = reply.lineArray[0].substring(type.length + 1);
-        callback(type, reply.lineArray);
+        try {
+          callback(type, reply.lineArray);
+        } catch (e) {
+          logger.error("Exception while handling an event", reply, e);
+        }
       },
       true
     );
@@ -458,8 +541,108 @@ export const TorMonitorService = {
     }
   },
 
+  async _processCircEvent(_type, lines) {
+    const builtEvent =
+      /^(?<CircuitID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(?:,?\$[0-9a-fA-F]{40}(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
+        lines[0]
+      );
+    const closedEvent = /^(?<ID>[a-zA-Z0-9]{1,16})\sCLOSED/.exec(lines[0]);
+    if (builtEvent) {
+      const fp = /\$([0-9a-fA-F]{40})/g;
+      const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
+        g[1].toUpperCase()
+      );
+      this._circuits.set(builtEvent.groups.CircuitID, nodes);
+      // Ignore circuits of length 1, that are used, for example, to probe
+      // bridges. So, only store them, since we might see streams that use them,
+      // but then early-return.
+      if (nodes.length === 1) {
+        return;
+      }
+      // In some cases, we might already receive SOCKS credentials in the line.
+      // However, this might be a problem with onion services: we get also a
+      // 4-hop circuit that we likely do not want to show to the user,
+      // especially because it is used only temporarily, and it would need a
+      // technical explaination.
+      // this._checkCredentials(lines[0], nodes);
+      if (this._currentBridge?.fingerprint !== nodes[0]) {
+        const nodeInfo = await lazy.TorProtocolService.getNodeInfo(nodes[0]);
+        let notify = false;
+        if (nodeInfo?.bridgeType) {
+          logger.info(`Bridge changed to ${nodes[0]}`);
+          this._currentBridge = nodeInfo;
+          notify = true;
+        } else if (this._currentBridge) {
+          logger.info("Bridges disabled");
+          this._currentBridge = null;
+          notify = true;
+        }
+        if (notify) {
+          Services.obs.notifyObservers(
+            null,
+            TorMonitorTopics.BridgeChanged,
+            this._currentBridge
+          );
+        }
+      }
+    } else if (closedEvent) {
+      this._circuits.delete(closedEvent.groups.ID);
+    }
+  },
+
+  _processStreamEvent(_type, lines) {
+    // The first block is the stream ID, which we do not need at the moment.
+    const succeeedEvent =
+      /^[a-zA-Z0-9]{1,16}\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
+        lines[0]
+      );
+    if (!succeeedEvent) {
+      return;
+    }
+    const circuit = this._circuits.get(succeeedEvent.groups.CircuitID);
+    if (!circuit) {
+      logger.error(
+        "Seen a STREAM SUCCEEDED with an unknown circuit. Not notifying observers.",
+        lines[0]
+      );
+      return;
+    }
+    this._checkCredentials(lines[0], circuit);
+  },
+
+  /**
+   * Check if a STREAM or CIRC response line contains SOCKS_USERNAME and
+   * SOCKS_PASSWORD. In case, notify observers that we could associate a certain
+   * circuit to these credentials.
+   *
+   * @param {string} line The circ or stream line to check
+   * @param {NodeFingerprint[]} circuit The fingerprints of the nodes in the
+   * circuit.
+   */
+  _checkCredentials(line, circuit) {
+    const username = /SOCKS_USERNAME=("(?:[^"\\]|\\.)*")/.exec(line);
+    const password = /SOCKS_PASSWORD=("(?:[^"\\]|\\.)*")/.exec(line);
+    if (!username || !password) {
+      return;
+    }
+    Services.obs.notifyObservers(
+      {
+        wrappedJSObject: {
+          username: TorParsers.unescapeString(username[1]),
+          password: TorParsers.unescapeString(password[1]),
+          circuit,
+        },
+      },
+      TorMonitorTopics.StreamSucceeded
+    );
+  },
+
   _shutDownEventMonitor() {
-    this._connection?.close();
+    try {
+      this._connection?.close();
+    } catch (e) {
+      logger.error("Could not close the connection to the control port", e);
+    }
     this._connection = null;
     if (this._startTimeout !== null) {
       clearTimeout(this._startTimeout);
