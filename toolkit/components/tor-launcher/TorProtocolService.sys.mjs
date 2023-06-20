@@ -40,6 +40,20 @@ const logger = new ConsoleAPI({
   prefix: "TorProtocolService",
 });
 
+/**
+ * Stores the data associated with a circuit node.
+ *
+ * @typedef NodeData
+ * @property {string} fingerprint The node fingerprint.
+ * @property {string[]} ipAddrs - The ip addresses associated with this node.
+ * @property {string?} bridgeType - The bridge type for this node, or "" if the
+ *   node is a bridge but the type is unknown, or null if this is not a bridge
+ *   node.
+ * @property {string?} regionCode - An upper case 2-letter ISO3166-1 code for
+ *   the first ip address, or null if there is no region. This should also be a
+ *   valid BCP47 Region subtag.
+ */
+
 // Manage the connection to tor's control port, to update its settings and query
 // other useful information.
 //
@@ -186,6 +200,71 @@ export const TorProtocolService = {
     const keyword = "net/listeners/socks";
     const response = await this.sendCommand(cmd, keyword);
     return TorParsers.parseReply(cmd, keyword, response);
+  },
+
+  async getBridges() {
+    // Ideally, we would not need this function, because we should be the one
+    // setting them with TorSettings. However, TorSettings is not notified of
+    // change of settings. So, asking tor directly with the control connection
+    // is the most reliable way of getting the configured bridges, at the
+    // moment. Also, we are using this for the circuit display, which should
+    // work also when we are not configuring the tor daemon, but just using it.
+    return this._withConnection(conn => {
+      return conn.getConf("bridge");
+    });
+  },
+
+  /**
+   * Returns tha data about a relay or a bridge.
+   *
+   * @param {string} id The fingerprint of the node to get data about
+   * @returns {NodeData}
+   */
+  async getNodeInfo(id) {
+    return this._withConnection(async conn => {
+      const node = {
+        fingerprint: id,
+        ipAddrs: [],
+        bridgeType: null,
+        regionCode: null,
+      };
+      const bridge = (await conn.getConf("bridge"))?.find(
+        foundBridge => foundBridge.ID?.toUpperCase() === id.toUpperCase()
+      );
+      const addrRe = /^\[?([^\]]+)\]?:\d+$/;
+      if (bridge) {
+        node.bridgeType = bridge.type ?? "";
+        // Attempt to get an IP address from bridge address string.
+        const ip = bridge.address.match(addrRe)?.[1];
+        if (ip && !ip.startsWith("0.")) {
+          node.ipAddrs.push(ip);
+        }
+      } else {
+        // Either dealing with a relay, or a bridge whose fingerprint is not
+        // saved in torrc.
+        const info = await conn.getInfo(`ns/id/${id}`);
+        if (info.IP && !info.IP.startsWith("0.")) {
+          node.ipAddrs.push(info.IP);
+        }
+        const ip6 = info.IPv6?.match(addrRe)?.[1];
+        if (ip6) {
+          node.ipAddrs.push(ip6);
+        }
+      }
+      if (node.ipAddrs.length) {
+        // Get the country code for the node's IP address.
+        let regionCode;
+        try {
+          // Expect a 2-letter ISO3166-1 code, which should also be a valid
+          // BCP47 Region subtag.
+          regionCode = await conn.getInfo("ip-to-country/" + node.ipAddrs[0]);
+        } catch {}
+        if (regionCode && regionCode !== "??") {
+          node.regionCode = regionCode.toUpperCase();
+        }
+      }
+      return node;
+    });
   },
 
   async onionAuthAdd(hsAddress, b64PrivateKey, isPermanent) {
