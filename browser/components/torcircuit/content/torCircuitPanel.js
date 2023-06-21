@@ -1,19 +1,6 @@
 /* eslint-env mozilla/browser-window */
 
 /**
- * Stores the data associated with a circuit node.
- *
- * @typedef NodeData
- * @property {string[]} ipAddrs - The ip addresses associated with this node.
- * @property {string?} bridgeType - The bridge type for this node, or "" if the
- *   node is a bridge but the type is unknown, or null if this is not a bridge
- *   node.
- * @property {string?} regionCode - An upper case 2-letter ISO3166-1 code for
- *   the first ip address, or null if there is no region. This should also be a
- *   valid BCP47 Region subtag.
- */
-
-/**
  * Data about the current domain and circuit for a xul:browser.
  *
  * @typedef BrowserCircuitData
@@ -36,29 +23,6 @@ var gTorCircuitPanel = {
    */
   toolbarButton: null,
   /**
-   * A list of IDs for "mature" circuits (those that have conveyed a stream).
-   *
-   * @type {string[]}
-   */
-  _knownCircuitIDs: [],
-  /**
-   * Stores the circuit nodes for each SOCKS username/password pair. The keys
-   * are of the form "<username>|<password>".
-   *
-   * @type {Map<string, NodeData[]>}
-   */
-  _credentialsToCircuitNodes: new Map(),
-  /**
-   * Browser data for their currently shown page.
-   *
-   * This data may be stale for a given browser since we only update this data
-   * when loading a new page in the currently selected browser, when switching
-   * tabs, or if we find a new circuit for the current browser.
-   *
-   * @type {WeakMap<MozBrowser, BrowserCircuitData>}
-   */
-  _browserData: new WeakMap(),
-  /**
    * The data for the currently shown browser.
    *
    * @type {BrowserCircuitData?}
@@ -70,6 +34,13 @@ var gTorCircuitPanel = {
    * @type {bool}
    */
   _isActive: false,
+
+  /**
+   * The topic on which circuit changes are broadcast.
+   *
+   * @type {string}
+   */
+  TOR_CIRCUIT_TOPIC: "TorCircuitChange",
 
   /**
    * Initialize the panel.
@@ -85,31 +56,6 @@ var gTorCircuitPanel = {
       maxLogLevel: "log",
       maxLogLevelPref: "browser.torcircuitpanel.loglevel",
     });
-
-    const { wait_for_controller } = ChromeUtils.import(
-      "resource://torbutton/modules/tor-control-port.js"
-    );
-    wait_for_controller().then(
-      controller => {
-        if (!this._isActive) {
-          // uninit() was called before resolution.
-          return;
-        }
-        // FIXME: We should be using some dedicated integrated back end to
-        // store circuit information, rather than collecting it all here in the
-        // front end. See tor-browser#41700.
-        controller.watchEvent(
-          "STREAM",
-          streamEvent => streamEvent.StreamStatus === "SENTCONNECT",
-          streamEvent => this._collectCircuit(controller, streamEvent)
-        );
-      },
-      error => {
-        this._log.error(
-          `Not collecting circuits because of an error: ${error.message}`
-        );
-      }
-    );
 
     this.panel = document.getElementById("tor-circuit-panel");
     this._panelElements = {
@@ -245,6 +191,9 @@ var gTorCircuitPanel = {
     // Notified of new locations for the currently selected browser (tab) *and*
     // switching selected browser.
     gBrowser.addProgressListener(this._locationListener);
+
+    // Get notifications for circuit changes.
+    Services.obs.addObserver(this, this.TOR_CIRCUIT_TOPIC);
   },
 
   /**
@@ -253,6 +202,17 @@ var gTorCircuitPanel = {
   uninit() {
     this._isActive = false;
     gBrowser.removeProgressListener(this._locationListener);
+    Services.obs.removeObserver(this, this.TOR_CIRCUIT_TOPIC);
+  },
+
+  /**
+   * Observe circuit changes.
+   */
+  observe(subject, topic, data) {
+    if (topic === this.TOR_CIRCUIT_TOPIC) {
+      // TODO: Maybe check if we actually need to do something earlier.
+      this._updateCurrentBrowser();
+    }
   },
 
   /**
@@ -287,109 +247,6 @@ var gTorCircuitPanel = {
   },
 
   /**
-   * Collect circuit data for the found circuits, to be used later for display.
-   *
-   * @param {controller} controller - The tor controller.
-   * @param {object} streamEvent - The streamEvent for the new circuit.
-   */
-  async _collectCircuit(controller, streamEvent) {
-    const id = streamEvent.CircuitID;
-    if (this._knownCircuitIDs.includes(id)) {
-      return;
-    }
-    this._log.debug(`New streamEvent.CircuitID: ${id}.`);
-    // FIXME: This list grows and is never freed. See tor-browser#41700.
-    this._knownCircuitIDs.push(id);
-    const circuitStatus = (await controller.getInfo("circuit-status"))?.find(
-      circuit => circuit.id === id
-    );
-    if (!circuitStatus?.SOCKS_USERNAME || !circuitStatus?.SOCKS_PASSWORD) {
-      return;
-    }
-    const nodes = await Promise.all(
-      circuitStatus.circuit.map(names =>
-        this._nodeDataForCircuit(controller, names)
-      )
-    );
-    // Remove quotes from the strings.
-    const username = circuitStatus.SOCKS_USERNAME.replace(/^"(.*)"$/, "$1");
-    const password = circuitStatus.SOCKS_PASSWORD.replace(/^"(.*)"$/, "$1");
-    const credentials = `${username}|${password}`;
-    // FIXME: This map grows and is never freed. We cannot simply request this
-    // information when needed because it is no longer available once the
-    // circuit is dropped, even if the web page is still displayed.
-    // See tor-browser#41700.
-    this._credentialsToCircuitNodes.set(credentials, nodes);
-    // Update the circuit in case the current page gains a new circuit whilst
-    // the popup is still open.
-    this._updateCurrentBrowser(credentials);
-  },
-
-  /**
-   * Fetch the node data for the given circuit node.
-   *
-   * @param {controller} controller - The tor controller.
-   * @param {string[]} circuitNodeNames - The names for the circuit node. Only
-   *   the first name, the node id, will be used.
-   *
-   * @returns {NodeData} - The data for this circuit node.
-   */
-  async _nodeDataForCircuit(controller, circuitNodeNames) {
-    // The first "name" in circuitNodeNames is the id.
-    // Remove the leading '$' if present.
-    const id = circuitNodeNames[0].replace(/^\$/, "");
-    let result = { ipAddrs: [], bridgeType: null, regionCode: null };
-    const bridge = (await controller.getConf("bridge"))?.find(
-      foundBridge => foundBridge.ID?.toUpperCase() === id.toUpperCase()
-    );
-    const addrRe = /^\[?([^\]]+)\]?:\d+$/;
-    if (bridge) {
-      result.bridgeType = bridge.type ?? "";
-      // Attempt to get an IP address from bridge address string.
-      const ip = bridge.address.match(addrRe)?.[1];
-      if (ip && !ip.startsWith("0.")) {
-        result.ipAddrs.push(ip);
-      }
-    } else {
-      // Either dealing with a relay, or a bridge whose fingerprint is not saved
-      // in torrc.
-      let statusMap;
-      try {
-        statusMap = await controller.getInfo("ns/id/" + id);
-      } catch {
-        // getInfo will throw if the given id is not a relay.
-        // This probably means we are dealing with a user-provided bridge with
-        // no fingerprint.
-        // We don't know the ip/ipv6 or type, so leave blank.
-        result.bridgeType = "";
-        return result;
-      }
-      if (statusMap.IP && !statusMap.IP.startsWith("0.")) {
-        result.ipAddrs.push(statusMap.IP);
-      }
-      const ip6 = statusMap.IPv6?.match(addrRe)?.[1];
-      if (ip6) {
-        result.ipAddrs.push(ip6);
-      }
-    }
-    if (result.ipAddrs.length) {
-      // Get the country code for the node's IP address.
-      let regionCode;
-      try {
-        // Expect a 2-letter ISO3166-1 code, which should also be a valid BCP47
-        // Region subtag.
-        regionCode = await controller.getInfo(
-          "ip-to-country/" + result.ipAddrs[0]
-        );
-      } catch {}
-      if (regionCode && regionCode !== "??") {
-        result.regionCode = regionCode.toUpperCase();
-      }
-    }
-    return result;
-  },
-
-  /**
    * A list of schemes to never show the circuit display for.
    *
    * NOTE: Some of these pages may still have remote content within them, so
@@ -398,71 +255,50 @@ var gTorCircuitPanel = {
    *
    * @type {string[]}
    */
-  // FIXME: Have a back end that handles this instead. See tor-browser#41700.
+  // FIXME: Check if we find a UX to handle some of these cases, and if we
+  // manage to solve some technical issues.
+  // See tor-browser#41700 and tor-browser!699.
   _ignoredSchemes: ["about", "file", "chrome", "resource"],
 
   /**
    * Update the current circuit and domain data for the currently selected
    * browser, possibly changing the UI.
-   *
-   * @param {string?} [matchingCredentials=null] - If given, only update the
-   *   current browser data if the current browser's credentials match.
    */
-  _updateCurrentBrowser(matchingCredentials = null) {
+  _updateCurrentBrowser() {
     const browser = gBrowser.selectedBrowser;
     const domain = TorDomainIsolator.getDomainForBrowser(browser);
+    const nodes = TorDomainIsolator.getCircuit(
+      browser,
+      domain,
+      browser.contentPrincipal.originAttributes.userContextId
+    );
     // We choose the currentURI, which matches what is shown in the URL bar and
     // will match up with the domain.
     // In contrast, documentURI corresponds to the shown page. E.g. it could
     // point to "about:certerror".
     const scheme = browser.currentURI?.scheme;
 
-    let credentials = TorDomainIsolator.getSocksProxyCredentials(
-      domain,
-      browser.contentPrincipal.originAttributes.userContextId
-    );
-    if (credentials) {
-      credentials = `${credentials.username}|${credentials.password}`;
-    }
-
-    if (matchingCredentials && matchingCredentials !== credentials) {
-      // This update was triggered by the circuit update for some other browser
-      // or process.
-      return;
-    }
-
-    let nodes = this._credentialsToCircuitNodes.get(credentials) ?? [];
-
-    const prevData = this._browserData.get(browser);
-    if (
-      prevData &&
-      prevData.domain &&
-      prevData.domain === domain &&
-      prevData.scheme === scheme &&
-      prevData.nodes.length &&
-      !nodes.length
-    ) {
-      // Since this is the same domain, for the same browser, and we used to
-      // have circuit nodes, we *assume* we are re-generating a circuit. So we
-      // keep the old circuit data around for the time being.
-      // FIXME: Have a back end that makes this explicit, rather than an
-      // assumption. See tor-browser#41700.
-      nodes = prevData.nodes;
-      this._log.debug(`Keeping old circuit for ${domain}.`);
-    }
-
-    this._browserData.set(browser, { domain, scheme, nodes });
     if (
       this._currentBrowserData &&
       this._currentBrowserData.domain === domain &&
       this._currentBrowserData.scheme === scheme &&
-      this._currentBrowserData.nodes === nodes
+      this._currentBrowserData.nodes.length === nodes.length &&
+      // If non-null, the fingerprints of the nodes match.
+      (!nodes ||
+        nodes.every(
+          (n, index) =>
+            n.fingerprint === this._currentBrowserData.nodes[index].fingerprint
+        ))
     ) {
       // No change.
+      this._log.debug(
+        "Skipping browser update because the data is already up to date."
+      );
       return;
     }
 
-    this._currentBrowserData = this._browserData.get(browser);
+    this._currentBrowserData = { domain, scheme, nodes };
+    this._log.debug("Updating current browser.", this._currentBrowserData);
 
     if (
       // Schemes where we always want to hide the display.
