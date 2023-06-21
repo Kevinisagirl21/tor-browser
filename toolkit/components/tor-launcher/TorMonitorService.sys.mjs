@@ -15,13 +15,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+  controller: "resource://gre/modules/TorControlPort.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "controller",
-  "resource://torbutton/modules/tor-control-port.js"
-);
 
 ChromeUtils.defineESModuleGetters(lazy, {
   TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
@@ -172,9 +167,7 @@ export const TorMonitorService = {
     const cmd = "GETINFO";
     const key = "status/bootstrap-phase";
     let reply = await this._connection.sendCommand(`${cmd} ${key}`);
-    if (!reply) {
-      throw new Error("We received an empty reply");
-    }
+
     // A typical reply looks like:
     //  250-status/bootstrap-phase=NOTICE BOOTSTRAP PROGRESS=100 TAG=done SUMMARY="Done"
     //  250 OK
@@ -335,8 +328,7 @@ export const TorMonitorService = {
 
     let conn;
     try {
-      const avoidCache = true;
-      conn = await lazy.controller(avoidCache);
+      conn = await lazy.controller();
     } catch (e) {
       logger.error("Cannot open a control port connection", e);
       if (conn) {
@@ -353,12 +345,10 @@ export const TorMonitorService = {
     }
 
     // TODO: optionally monitor INFO and DEBUG log messages.
-    let reply = await conn.sendCommand(
-      "SETEVENTS " + Array.from(this._eventHandlers.keys()).join(" ")
-    );
-    reply = TorParsers.parseCommandResponse(reply);
-    if (!TorParsers.commandSucceeded(reply)) {
-      logger.error("SETEVENTS failed");
+    try {
+      await conn.setEvents(Array.from(this._eventHandlers.keys()));
+    } catch (e) {
+      logger.error("SETEVENTS failed", e);
       conn.close();
       return false;
     }
@@ -405,18 +395,16 @@ export const TorMonitorService = {
 
   // Try to become the primary controller (TAKEOWNERSHIP).
   async _takeTorOwnership(conn) {
-    const takeOwnership = "TAKEOWNERSHIP";
-    let reply = await conn.sendCommand(takeOwnership);
-    reply = TorParsers.parseCommandResponse(reply);
-    if (!TorParsers.commandSucceeded(reply)) {
-      logger.warn("Take ownership failed");
-    } else {
-      const resetConf = "RESETCONF __OwningControllerProcess";
-      reply = await conn.sendCommand(resetConf);
-      reply = TorParsers.parseCommandResponse(reply);
-      if (!TorParsers.commandSucceeded(reply)) {
-        logger.warn("Clear owning controller process failed");
-      }
+    try {
+      conn.takeOwnership();
+    } catch (e) {
+      logger.warn("Take ownership failed", e);
+      return;
+    }
+    try {
+      conn.resetOwningControllerProcess();
+    } catch (e) {
+      logger.warn("Clear owning controller process failed", e);
     }
   },
 
