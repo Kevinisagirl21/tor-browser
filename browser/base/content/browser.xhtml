@@ -128,16 +128,10 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/search/autocomplete-popup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/languageNotification.js", this);
-  Services.scriptloader.loadSubScript("chrome://torbutton/content/torbutton.js", this);
 
   window.onload = gBrowserInit.onLoad.bind(gBrowserInit);
   window.onunload = gBrowserInit.onUnload.bind(gBrowserInit);
   window.onclose = WindowIsClosing;
-
-  //onLoad Handler
-  try {
-    window.addEventListener("load", torbutton_init);
-  } catch (e) {}
 
   window.addEventListener("MozBeforeInitialXULLayout",
     gBrowserInit.onBeforeInitialXULLayout.bind(gBrowserInit), { once: true });
