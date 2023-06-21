@@ -1,19 +1,12 @@
 #filter substitution
 
 torbutton.jar:
-
-% content torbutton %content/
-
-  content/torbutton.js                   (chrome/content/torbutton.js)
-
-  modules/       (modules/*)
-
 % resource torbutton %
+% category l10n-registry torbutton resource://torbutton/locale/{locale}/
 
 # browser branding
 % override chrome://branding/locale/brand.dtd chrome://torbutton/locale/brand.dtd
 % override chrome://branding/locale/brand.properties chrome://torbutton/locale/brand.properties
-% category l10n-registry torbutton resource://torbutton/locale/{locale}/
 
 # Strings for the about:tbupdate page
 % override chrome://browser/locale/aboutTBUpdate.dtd chrome://torbutton/locale/aboutTBUpdate.dtd
