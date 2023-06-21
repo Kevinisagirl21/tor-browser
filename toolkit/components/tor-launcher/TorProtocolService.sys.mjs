@@ -19,16 +19,10 @@ ChromeUtils.defineModuleGetter(
   "TorMonitorService",
   "resource://gre/modules/TorMonitorService.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "configureControlPortModule",
-  "resource://torbutton/modules/tor-control-port.js"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "controller",
-  "resource://torbutton/modules/tor-control-port.js"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  controller: "resource://gre/modules/TorControlPort.sys.mjs",
+  configureControlPortModule: "resource://gre/modules/TorControlPort.sys.mjs",
+});
 
 const TorTopics = Object.freeze({
   ProcessExited: "TorProcessExited",
@@ -285,8 +279,7 @@ export const TorProtocolService = {
     });
   },
 
-  // TODO: transform the following 4 functions in getters. At the moment they
-  // are also used in torbutton.
+  // TODO: transform the following 4 functions in getters.
 
   // Returns Tor password string or null if an error occurs.
   torGetPassword() {
@@ -490,8 +483,6 @@ export const TorProtocolService = {
       TorLauncherUtil.setProxyConfiguration(this._SOCKSPortInfo);
 
       // Set the global control port info parameters.
-      // These values may be overwritten by torbutton when it initializes, but
-      // torbutton's values *should* be identical.
       lazy.configureControlPortModule(
         this._controlIPCFile,
         this._controlHost,
@@ -616,8 +607,7 @@ export const TorProtocolService = {
   // return it.
   async _getConnection() {
     if (!this._controlConnection) {
-      const avoidCache = true;
-      this._controlConnection = await lazy.controller(avoidCache);
+      this._controlConnection = await lazy.controller();
     }
     if (this._controlConnection.inUse) {
       await new Promise((resolve, reject) =>
