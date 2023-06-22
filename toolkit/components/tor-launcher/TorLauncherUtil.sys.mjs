@@ -1,15 +1,9 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 // See LICENSE for licensing information.
 
-"use strict";
-
 /*************************************************************************
  * Tor Launcher Util JS Module
  *************************************************************************/
-
-var EXPORTED_SYMBOLS = ["TorLauncherUtil"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const kPropBundleURI = "chrome://torbutton/locale/torlauncher.properties";
 const kPropNamePrefix = "torlauncher.";
@@ -323,7 +317,7 @@ class TorFile {
   }
 }
 
-const TorLauncherUtil = Object.freeze({
+export const TorLauncherUtil = Object.freeze({
   get isMac() {
     return Services.appinfo.OS === "Darwin";
   },

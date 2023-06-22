@@ -1,28 +1,12 @@
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TorStartupService"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const lazy = {};
 
 // We will use the modules only when the profile is loaded, so prefer lazy
 // loading
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorLauncherUtil",
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorMonitorService",
-  "resource://gre/modules/TorMonitorService.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorProtocolService",
-  "resource://gre/modules/TorProtocolService.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
+  TorMonitorService: "resource://gre/modules/TorMonitorService.sys.mjs",
+  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+});
 
 /* Browser observer topis */
 const BrowserTopics = Object.freeze({
@@ -36,7 +20,7 @@ let gInited = false;
 // by Firefox.
 // When it observes profile-after-change, it initializes whatever is needed to
 // launch Tor.
-class TorStartupService {
+export class TorStartupService {
   _defaultPreferencesAreLoaded = false;
 
   observe(aSubject, aTopic, aData) {

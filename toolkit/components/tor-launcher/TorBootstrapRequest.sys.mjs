@@ -1,21 +1,10 @@
-"use strict";
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["TorBootstrapRequest", "TorTopics"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout, clearTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
-);
-
-const { TorProtocolService } = ChromeUtils.import(
-  "resource://gre/modules/TorProtocolService.jsm"
-);
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
+import { TorProtocolService } from "resource://gre/modules/TorProtocolService.sys.mjs";
+import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 
 /* tor-launcher observer topics */
-const TorTopics = Object.freeze({
+export const TorTopics = Object.freeze({
   BootstrapStatus: "TorBootstrapStatus",
   BootstrapError: "TorBootstrapError",
   LogHasWarnOrErr: "TorLogHasWarnOrErr",
@@ -23,7 +12,7 @@ const TorTopics = Object.freeze({
 
 // modeled after XMLHttpRequest
 // nicely encapsulates the observer register/unregister logic
-class TorBootstrapRequest {
+export class TorBootstrapRequest {
   constructor() {
     // number of ms to wait before we abandon the bootstrap attempt
     // a value of 0 implies we never wait

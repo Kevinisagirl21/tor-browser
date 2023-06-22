@@ -1,15 +1,11 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TorParsers", "TorStatuses"];
-
-const TorStatuses = Object.freeze({
+export const TorStatuses = Object.freeze({
   OK: 250,
   EventNotification: 650,
 });
 
-const TorParsers = Object.freeze({
+export const TorParsers = Object.freeze({
   commandSucceeded(aReply) {
     return aReply?.statusCode === TorStatuses.OK;
   },
