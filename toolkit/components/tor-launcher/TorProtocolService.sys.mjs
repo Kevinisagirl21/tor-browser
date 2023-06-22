@@ -1,19 +1,10 @@
 // Copyright (c) 2021, The Tor Project, Inc.
 
-"use strict";
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["TorProtocolService"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
-
-const { TorParsers } = ChromeUtils.import(
-  "resource://gre/modules/TorParsers.jsm"
-);
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
+import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
+import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 
 const lazy = {};
 
@@ -57,7 +48,7 @@ const logger = new ConsoleAPI({
 //   reply.statusCode  -- integer, e.g., 250
 //   reply.lineArray   -- an array of strings returned by tor
 // For GetConf calls, the aKey prefix is removed from the lineArray strings.
-const TorProtocolService = {
+export const TorProtocolService = {
   _inited: false,
 
   // Maintain a map of tor settings set by Tor Browser so that we don't

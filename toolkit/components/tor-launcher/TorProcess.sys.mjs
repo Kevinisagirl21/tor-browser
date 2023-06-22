@@ -1,13 +1,6 @@
-"use strict";
-
-var EXPORTED_SYMBOLS = ["TorProcess"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
-const { Subprocess } = ChromeUtils.import(
-  "resource://gre/modules/Subprocess.jsm"
-);
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
+import { Subprocess } from "resource://gre/modules/Subprocess.sys.mjs";
 
 const lazy = {};
 
@@ -36,7 +29,7 @@ const logger = new ConsoleAPI({
   prefix: "TorProcess",
 });
 
-class TorProcess {
+export class TorProcess {
   _exeFile = null;
   _dataDir = null;
   _args = [];

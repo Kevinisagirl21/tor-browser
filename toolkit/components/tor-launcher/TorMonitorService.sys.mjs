@@ -1,25 +1,15 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
-"use strict";
+import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["TorMonitorService"];
+import {
+  TorParsers,
+  TorStatuses,
+} from "resource://gre/modules/TorParsers.sys.mjs";
+import { TorProcess } from "resource://gre/modules/TorProcess.sys.mjs";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { clearTimeout, setTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
-);
-const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
-
-const { TorParsers, TorStatuses } = ChromeUtils.import(
-  "resource://gre/modules/TorParsers.jsm"
-);
-const { TorProcess } = ChromeUtils.import(
-  "resource://gre/modules/TorProcess.jsm"
-);
-
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
+import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 
 const lazy = {};
 
@@ -30,8 +20,8 @@ ChromeUtils.defineModuleGetter(
 );
 
 const logger = new ConsoleAPI({
-  // maxLogLevel: "warn",
-  maxLogLevel: "all",
+  maxLogLevel: "warn",
+  maxLogLevelPref: "browser.tor_monitor_service.log_level",
   prefix: "TorMonitorService",
 });
 
@@ -60,7 +50,7 @@ const ControlConnTimings = Object.freeze({
  * This is the service which should be queried to know information about the
  * status of the bootstrap, the logs, etc...
  */
-const TorMonitorService = {
+export const TorMonitorService = {
   _connection: null,
   _eventsToMonitor: Object.freeze(["STATUS_CLIENT", "NOTICE", "WARN", "ERR"]),
   _torLog: [], // Array of objects with date, type, and msg properties.
