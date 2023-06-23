@@ -81,8 +81,18 @@ const OnionAuthPrompt = (function () {
       );
     },
 
+    _autoFocus(event) {
+      event.target.ownerGlobal.focus();
+    },
+
     _onPromptShowing(aWarningMessage) {
       let xulDoc = this._browser.ownerDocument;
+
+      // Force back focus: tor-browser#41856
+      (this._popupElem = xulDoc.getElementById(
+        "tor-clientauth-notification"
+      ))?.addEventListener("click", this._autoFocus);
+
       let descElem = xulDoc.getElementById("tor-clientauth-notification-desc");
       if (descElem) {
         // Handle replacement of the onion name within the localized
@@ -153,6 +163,7 @@ const OnionAuthPrompt = (function () {
           this._boundOnKeyFieldInput = undefined;
         }
       }
+      this._popupElem?.removeEventListener("click", this._autoFocus);
     },
 
     _onKeyFieldKeyPress(aEvent) {
