@@ -14,8 +14,11 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
   ChromeUtils.import("resource:///modules/TorSettings.jsm");
 
-const { TorProtocolService } = ChromeUtils.import(
-  "resource://gre/modules/TorProtocolService.jsm"
+const { TorParsers } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorParsers.sys.mjs"
+);
+const { TorProtocolService } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorProtocolService.sys.mjs"
 );
 const { TorMonitorService, TorMonitorTopics } = ChromeUtils.import(
   "resource://gre/modules/TorMonitorService.jsm"
@@ -495,7 +498,7 @@ const gConnectionPane = (function () {
         });
         const idString = TorStrings.settings.bridgeId;
         const id = card.querySelector(selectors.bridges.cardId);
-        const details = parseBridgeLine(bridgeString);
+        const details = TorParsers.parseBridgeLine(bridgeString);
         if (details && details.id !== undefined) {
           card.setAttribute("data-bridge-id", details.id);
         }
@@ -1110,24 +1113,4 @@ function makeBridgeId(bridgeString) {
     (hash & 0x0000ff00) >> 8,
     hash & 0x000000ff,
   ];
-}
-
-function parseBridgeLine(line) {
-  const re =
-    /^\s*(\S+\s+)?([0-9a-fA-F\.\[\]\:]+:\d{1,5})(\s+[0-9a-fA-F]{40})?(\s+.+)?/;
-  const matches = line.match(re);
-  if (!matches) {
-    return null;
-  }
-  let bridge = { addr: matches[2] };
-  if (matches[1] !== undefined) {
-    bridge.transport = matches[1].trim();
-  }
-  if (matches[3] !== undefined) {
-    bridge.id = matches[3].trim().toUpperCase();
-  }
-  if (matches[4] !== undefined) {
-    bridge.args = matches[4].trim();
-  }
-  return bridge;
 }
