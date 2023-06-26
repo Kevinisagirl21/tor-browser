@@ -4,10 +4,13 @@
 
 /* globals gBrowser, PopupNotifications, Services, XPCOMUtils */
 
+ChromeUtils.defineESModuleGetters(this, {
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   OnionAuthUtil: "chrome://browser/content/onionservices/authUtil.jsm",
   CommonUtils: "resource://services-common/utils.js",
-  TorProtocolService: "resource://gre/modules/TorProtocolService.jsm",
   TorStrings: "resource:///modules/TorStrings.jsm",
 });
 
@@ -203,7 +206,8 @@ const OnionAuthPrompt = (function () {
 
         let checkboxElem = this._getCheckboxElement();
         let isPermanent = checkboxElem && checkboxElem.checked;
-        TorProtocolService.onionAuthAdd(onionServiceId, base64key, isPermanent)
+        TorProviderBuilder.build()
+          .onionAuthAdd(onionServiceId, base64key, isPermanent)
           .then(aResponse => {
             // Success! Reload the page.
             this._browser.sendMessageToActor(

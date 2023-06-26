@@ -8,11 +8,9 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/TorStrings.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TorProtocolService",
-  "resource://gre/modules/TorProtocolService.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+});
 
 var gOnionServicesSavedKeysDialog = {
   selector: {
@@ -54,6 +52,7 @@ var gOnionServicesSavedKeysDialog = {
           await this._deleteOneKey(indexesToDelete[i]);
         }
       } catch (e) {
+        console.error("Removing a saved key failed", e);
         if (e.torMessage) {
           this._showError(e.torMessage);
         } else {
@@ -125,22 +124,16 @@ var gOnionServicesSavedKeysDialog = {
     try {
       this._tree.view = this;
 
-      const keyInfoList = await TorProtocolService.onionAuthViewKeys();
+      const keyInfoList = await TorProviderBuilder.build().onionAuthViewKeys();
       if (keyInfoList) {
         // Filter out temporary keys.
-        this._keyInfoList = keyInfoList.filter(aKeyInfo => {
-          if (!aKeyInfo.Flags) {
-            return false;
-          }
-
-          const flags = aKeyInfo.Flags.split(",");
-          return flags.includes("Permanent");
-        });
-
+        this._keyInfoList = keyInfoList.filter(aKeyInfo =>
+          aKeyInfo.flags?.includes("Permanent")
+        );
         // Sort by the .onion address.
         this._keyInfoList.sort((aObj1, aObj2) => {
-          const hsAddr1 = aObj1.hsAddress.toLowerCase();
-          const hsAddr2 = aObj2.hsAddress.toLowerCase();
+          const hsAddr1 = aObj1.address.toLowerCase();
+          const hsAddr2 = aObj2.address.toLowerCase();
           if (hsAddr1 < hsAddr2) {
             return -1;
           }
@@ -164,7 +157,7 @@ var gOnionServicesSavedKeysDialog = {
   // This method may throw; callers should catch errors.
   async _deleteOneKey(aIndex) {
     const keyInfoObj = this._keyInfoList[aIndex];
-    await TorProtocolService.onionAuthRemove(keyInfoObj.hsAddress);
+    await TorProviderBuilder.build().onionAuthRemove(keyInfoObj.address);
     this._tree.view.selection.clearRange(aIndex, aIndex);
     this._keyInfoList.splice(aIndex, 1);
     this._tree.rowCountChanged(aIndex + 1, -1);
@@ -193,26 +186,20 @@ var gOnionServicesSavedKeysDialog = {
 
   // XUL tree widget view implementation.
   get rowCount() {
-    return this._keyInfoList ? this._keyInfoList.length : 0;
+    return this._keyInfoList?.length ?? 0;
   },
 
   getCellText(aRow, aCol) {
-    let val = "";
     if (this._keyInfoList && aRow < this._keyInfoList.length) {
       const keyInfo = this._keyInfoList[aRow];
       if (aCol.id.endsWith("-siteCol")) {
-        val = keyInfo.hsAddress;
+        return keyInfo.address;
       } else if (aCol.id.endsWith("-keyCol")) {
-        val = keyInfo.typeAndKey;
-        // Omit keyType because it is always "x25519".
-        const idx = val.indexOf(":");
-        if (idx > 0) {
-          val = val.substring(idx + 1);
-        }
+        // keyType is always "x25519", so do not show it.
+        return keyInfo.keyBlob;
       }
     }
-
-    return val;
+    return "";
   },
 
   isSeparator(index) {
