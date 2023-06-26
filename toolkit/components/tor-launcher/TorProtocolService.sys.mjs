@@ -10,18 +10,13 @@ const lazy = {};
 
 ChromeUtils.defineModuleGetter(
   lazy,
-  "FileUtils",
-  "resource://gre/modules/FileUtils.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  lazy,
   "TorMonitorService",
   "resource://gre/modules/TorMonitorService.jsm"
 );
 ChromeUtils.defineESModuleGetters(lazy, {
   controller: "resource://gre/modules/TorControlPort.sys.mjs",
   configureControlPortModule: "resource://gre/modules/TorControlPort.sys.mjs",
+  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
 
 const TorTopics = Object.freeze({
@@ -56,52 +51,52 @@ const logger = new ConsoleAPI({
 //   reply.statusCode  -- integer, e.g., 250
 //   reply.lineArray   -- an array of strings returned by tor
 // For GetConf calls, the aKey prefix is removed from the lineArray strings.
-export const TorProtocolService = {
-  _inited: false,
+class TorProvider {
+  #inited = false;
 
   // Maintain a map of tor settings set by Tor Browser so that we don't
   // repeatedly set the same key/values over and over.
   // This map contains string keys to primitives or array values.
-  _settingsCache: new Map(),
+  #settingsCache = new Map();
 
-  _controlPort: null,
-  _controlHost: null,
-  _controlIPCFile: null, // An nsIFile if using IPC for control port.
-  _controlPassword: null, // JS string that contains hex-encoded password.
-  _SOCKSPortInfo: null, // An object that contains ipcFile, host, port.
+  #controlPort = null;
+  #controlHost = null;
+  #controlIPCFile = null; // An nsIFile if using IPC for control port.
+  #controlPassword = null; // JS string that contains hex-encoded password.
+  #SOCKSPortInfo = null; // An object that contains ipcFile, host, port.
 
-  _controlConnection: null, // This is cached and reused.
-  _connectionQueue: [],
+  #controlConnection = null; // This is cached and reused.
+  #connectionQueue = [];
 
   // Public methods
 
   async init() {
-    if (this._inited) {
+    if (this.#inited) {
       return;
     }
-    this._inited = true;
+    this.#inited = true;
 
     Services.obs.addObserver(this, TorTopics.ProcessExited);
     Services.obs.addObserver(this, TorTopics.ProcessRestarted);
 
-    await this._setSockets();
+    await this.#setSockets();
 
     logger.debug("TorProtocolService initialized");
-  },
+  }
 
   uninit() {
     Services.obs.removeObserver(this, TorTopics.ProcessExited);
     Services.obs.removeObserver(this, TorTopics.ProcessRestarted);
-    this._closeConnection();
-  },
+    this.#closeConnection();
+  }
 
   observe(subject, topic, data) {
     if (topic === TorTopics.ProcessExited) {
-      this._closeConnection();
+      this.#closeConnection();
     } else if (topic === TorTopics.ProcessRestarted) {
-      this._reconnect();
+      this.#reconnect();
     }
-  },
+  }
 
   // takes a Map containing tor settings
   // throws on error
@@ -109,14 +104,14 @@ export const TorProtocolService = {
     // only write settings that have changed
     const newSettings = Array.from(aSettingsObj).filter(([setting, value]) => {
       // make sure we have valid data here
-      this._assertValidSetting(setting, value);
+      this.#assertValidSetting(setting, value);
 
-      if (!this._settingsCache.has(setting)) {
+      if (!this.#settingsCache.has(setting)) {
         // no cached setting, so write
         return true;
       }
 
-      const cachedValue = this._settingsCache.get(setting);
+      const cachedValue = this.#settingsCache.get(setting);
       if (value === cachedValue) {
         return false;
       } else if (Array.isArray(value) && Array.isArray(cachedValue)) {
@@ -142,21 +137,21 @@ export const TorProtocolService = {
 
       // save settings to cache after successfully writing to Tor
       for (const [setting, value] of newSettings) {
-        this._settingsCache.set(setting, value);
+        this.#settingsCache.set(setting, value);
       }
     }
-  },
+  }
 
   async readStringArraySetting(aSetting) {
-    const value = await this._readSetting(aSetting);
-    this._settingsCache.set(aSetting, value);
+    const value = await this.#readSetting(aSetting);
+    this.#settingsCache.set(aSetting, value);
     return value;
-  },
+  }
 
   // writes current tor settings to disk
   async flushSettings() {
     await this.sendCommand("SAVECONF");
-  },
+  }
 
   async connect() {
     const kTorConfKeyDisableNetwork = "DisableNetwork";
@@ -166,7 +161,7 @@ export const TorProtocolService = {
     await this.sendCommand("SAVECONF");
     lazy.TorMonitorService.clearBootstrapError();
     lazy.TorMonitorService.retrieveBootstrapStatus();
-  },
+  }
 
   async stopBootstrap() {
     // Tell tor to disable use of the network; this should stop the bootstrap
@@ -181,11 +176,11 @@ export const TorProtocolService = {
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
     lazy.TorMonitorService.retrieveBootstrapStatus();
-  },
+  }
 
   async newnym() {
     return this.sendCommand("SIGNAL NEWNYM");
-  },
+  }
 
   // Ask tor which ports it is listening to for SOCKS connections.
   // At the moment this is used only in TorCheckService.
@@ -194,7 +189,7 @@ export const TorProtocolService = {
     const keyword = "net/listeners/socks";
     const response = await this.sendCommand(cmd, keyword);
     return TorParsers.parseReply(cmd, keyword, response);
-  },
+  }
 
   async getBridges() {
     // Ideally, we would not need this function, because we should be the one
@@ -203,10 +198,10 @@ export const TorProtocolService = {
     // is the most reliable way of getting the configured bridges, at the
     // moment. Also, we are using this for the circuit display, which should
     // work also when we are not configuring the tor daemon, but just using it.
-    return this._withConnection(conn => {
+    return this.#withConnection(conn => {
       return conn.getConf("bridge");
     });
-  },
+  }
 
   /**
    * Returns tha data about a relay or a bridge.
@@ -215,7 +210,7 @@ export const TorProtocolService = {
    * @returns {NodeData}
    */
   async getNodeInfo(id) {
-    return this._withConnection(async conn => {
+    return this.#withConnection(async conn => {
       const node = {
         fingerprint: id,
         ipAddrs: [],
@@ -259,62 +254,62 @@ export const TorProtocolService = {
       }
       return node;
     });
-  },
+  }
 
   async onionAuthAdd(hsAddress, b64PrivateKey, isPermanent) {
-    return this._withConnection(conn => {
+    return this.#withConnection(conn => {
       return conn.onionAuthAdd(hsAddress, b64PrivateKey, isPermanent);
     });
-  },
+  }
 
   async onionAuthRemove(hsAddress) {
-    return this._withConnection(conn => {
+    return this.#withConnection(conn => {
       return conn.onionAuthRemove(hsAddress);
     });
-  },
+  }
 
   async onionAuthViewKeys() {
-    return this._withConnection(conn => {
+    return this.#withConnection(conn => {
       return conn.onionAuthViewKeys();
     });
-  },
+  }
 
   // TODO: transform the following 4 functions in getters.
 
   // Returns Tor password string or null if an error occurs.
   torGetPassword() {
-    return this._controlPassword;
-  },
+    return this.#controlPassword;
+  }
 
   torGetControlIPCFile() {
-    return this._controlIPCFile?.clone();
-  },
+    return this.#controlIPCFile?.clone();
+  }
 
   torGetControlPort() {
-    return this._controlPort;
-  },
+    return this.#controlPort;
+  }
 
   torGetSOCKSPortInfo() {
-    return this._SOCKSPortInfo;
-  },
+    return this.#SOCKSPortInfo;
+  }
 
   get torControlPortInfo() {
     const info = {
-      password: this._controlPassword,
+      password: this.#controlPassword,
     };
-    if (this._controlIPCFile) {
-      info.ipcFile = this._controlIPCFile?.clone();
+    if (this.#controlIPCFile) {
+      info.ipcFile = this.#controlIPCFile?.clone();
     }
-    if (this._controlPort) {
-      info.host = this._controlHost;
-      info.port = this._controlPort;
+    if (this.#controlPort) {
+      info.host = this.#controlHost;
+      info.port = this.#controlPort;
     }
     return info;
-  },
+  }
 
   get torSOCKSPortInfo() {
-    return this._SOCKSPortInfo;
-  },
+    return this.#SOCKSPortInfo;
+  }
 
   // Public, but called only internally
 
@@ -326,7 +321,7 @@ export const TorProtocolService = {
     let timeout = 250;
     let reply;
     while (leftConnAttempts-- > 0) {
-      const response = await this._trySend(cmd, args, leftConnAttempts == 0);
+      const response = await this.#trySend(cmd, args, leftConnAttempts === 0);
       if (response.connected) {
         reply = response.reply;
         break;
@@ -360,7 +355,7 @@ export const TorProtocolService = {
     }
 
     return reply;
-  },
+  }
 
   // Perform a SETCONF command.
   // aSettingsObj should be a JavaScript object with keys (property values)
@@ -398,39 +393,39 @@ export const TorProtocolService = {
     }
 
     await this.sendCommand("SETCONF", args.join(" "));
-  },
+  }
 
   // Public, never called?
 
   async readBoolSetting(aSetting) {
-    let value = await this._readBoolSetting(aSetting);
-    this._settingsCache.set(aSetting, value);
+    let value = await this.#readBoolSetting(aSetting);
+    this.#settingsCache.set(aSetting, value);
     return value;
-  },
+  }
 
   async readStringSetting(aSetting) {
-    let value = await this._readStringSetting(aSetting);
-    this._settingsCache.set(aSetting, value);
+    let value = await this.#readStringSetting(aSetting);
+    this.#settingsCache.set(aSetting, value);
     return value;
-  },
+  }
 
   // Private
 
-  async _setSockets() {
+  async #setSockets() {
     try {
       const isWindows = TorLauncherUtil.isWindows;
       // Determine how Tor Launcher will connect to the Tor control port.
       // Environment variables get top priority followed by preferences.
       if (!isWindows && Services.env.exists("TOR_CONTROL_IPC_PATH")) {
         const ipcPath = Services.env.get("TOR_CONTROL_IPC_PATH");
-        this._controlIPCFile = new lazy.FileUtils.File(ipcPath);
+        this.#controlIPCFile = new lazy.FileUtils.File(ipcPath);
       } else {
         // Check for TCP host and port environment variables.
         if (Services.env.exists("TOR_CONTROL_HOST")) {
-          this._controlHost = Services.env.get("TOR_CONTROL_HOST");
+          this.#controlHost = Services.env.get("TOR_CONTROL_HOST");
         }
         if (Services.env.exists("TOR_CONTROL_PORT")) {
-          this._controlPort = parseInt(
+          this.#controlPort = parseInt(
             Services.env.get("TOR_CONTROL_PORT"),
             10
           );
@@ -442,20 +437,20 @@ export const TorProtocolService = {
             "extensions.torlauncher.control_port_use_ipc",
             false
           );
-        if (!this._controlHost && !this._controlPort && useIPC) {
-          this._controlIPCFile = TorLauncherUtil.getTorFile(
+        if (!this.#controlHost && !this.#controlPort && useIPC) {
+          this.#controlIPCFile = TorLauncherUtil.getTorFile(
             "control_ipc",
             false
           );
         } else {
-          if (!this._controlHost) {
-            this._controlHost = Services.prefs.getCharPref(
+          if (!this.#controlHost) {
+            this.#controlHost = Services.prefs.getCharPref(
               "extensions.torlauncher.control_host",
               "127.0.0.1"
             );
           }
-          if (!this._controlPort) {
-            this._controlPort = Services.prefs.getIntPref(
+          if (!this.#controlPort) {
+            this.#controlPort = Services.prefs.getIntPref(
               "extensions.torlauncher.control_port",
               9151
             );
@@ -465,46 +460,46 @@ export const TorProtocolService = {
 
       // Populate _controlPassword so it is available when starting tor.
       if (Services.env.exists("TOR_CONTROL_PASSWD")) {
-        this._controlPassword = Services.env.get("TOR_CONTROL_PASSWD");
+        this.#controlPassword = Services.env.get("TOR_CONTROL_PASSWD");
       } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
         // TODO: test this code path (TOR_CONTROL_COOKIE_AUTH_FILE).
         const cookiePath = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
         if (cookiePath) {
-          this._controlPassword = await this._readAuthenticationCookie(
+          this.#controlPassword = await this.#readAuthenticationCookie(
             cookiePath
           );
         }
       }
-      if (!this._controlPassword) {
-        this._controlPassword = this._generateRandomPassword();
+      if (!this.#controlPassword) {
+        this.#controlPassword = this.#generateRandomPassword();
       }
 
-      this._SOCKSPortInfo = TorLauncherUtil.getPreferredSocksConfiguration();
-      TorLauncherUtil.setProxyConfiguration(this._SOCKSPortInfo);
+      this.#SOCKSPortInfo = TorLauncherUtil.getPreferredSocksConfiguration();
+      TorLauncherUtil.setProxyConfiguration(this.#SOCKSPortInfo);
 
       // Set the global control port info parameters.
       lazy.configureControlPortModule(
-        this._controlIPCFile,
-        this._controlHost,
-        this._controlPort,
-        this._controlPassword
+        this.#controlIPCFile,
+        this.#controlHost,
+        this.#controlPort,
+        this.#controlPassword
       );
     } catch (e) {
       logger.error("Failed to get environment variables", e);
     }
-  },
+  }
 
-  _assertValidSettingKey(aSetting) {
+  #assertValidSettingKey(aSetting) {
     // ensure the 'key' is a string
     if (typeof aSetting !== "string") {
       throw new Error(
         `Expected setting of type string but received ${typeof aSetting}`
       );
     }
-  },
+  }
 
-  _assertValidSetting(aSetting, aValue) {
-    this._assertValidSettingKey(aSetting);
+  #assertValidSetting(aSetting, aValue) {
+    this.#assertValidSettingKey(aSetting);
     switch (typeof aValue) {
       case "boolean":
       case "string":
@@ -528,29 +523,29 @@ export const TorProtocolService = {
           `Invalid object type received for setting '${aSetting}'`
         );
     }
-  },
+  }
 
   // Perform a GETCONF command.
-  async _readSetting(aSetting) {
-    this._assertValidSettingKey(aSetting);
+  async #readSetting(aSetting) {
+    this.#assertValidSettingKey(aSetting);
 
     const cmd = "GETCONF";
     let reply = await this.sendCommand(cmd, aSetting);
     return TorParsers.parseReply(cmd, aSetting, reply);
-  },
+  }
 
-  async _readStringSetting(aSetting) {
-    let lineArray = await this._readSetting(aSetting);
+  async #readStringSetting(aSetting) {
+    let lineArray = await this.#readSetting(aSetting);
     if (lineArray.length !== 1) {
       throw new Error(
         `Expected an array with length 1 but received array of length ${lineArray.length}`
       );
     }
     return lineArray[0];
-  },
+  }
 
-  async _readBoolSetting(aSetting) {
-    const value = this._readStringSetting(aSetting);
+  async #readBoolSetting(aSetting) {
+    const value = this.#readStringSetting(aSetting);
     switch (value) {
       case "0":
         return false;
@@ -559,16 +554,16 @@ export const TorProtocolService = {
       default:
         throw new Error(`Expected boolean (1 or 0) but received '${value}'`);
     }
-  },
+  }
 
-  async _trySend(cmd, args, rethrow) {
+  async #trySend(cmd, args, rethrow) {
     let connected = false;
     let reply;
     let leftAttempts = 2;
     while (leftAttempts-- > 0) {
       let conn;
       try {
-        conn = await this._getConnection();
+        conn = await this.#getConnection();
       } catch (e) {
         logger.error("Cannot get a connection to the control port", e);
         if (leftAttempts == 0 && rethrow) {
@@ -584,105 +579,105 @@ export const TorProtocolService = {
         reply = await conn.sendCommand(cmd + (args ? " " + args : ""));
         if (reply) {
           // Return for reuse.
-          this._returnConnection();
+          this.#returnConnection();
         } else {
           // Connection is bad.
           logger.warn(
             "sendCommand returned an empty response, taking the connection as broken and closing it."
           );
-          this._closeConnection();
+          this.#closeConnection();
         }
       } catch (e) {
         logger.error(`Cannot send the command ${cmd}`, e);
-        this._closeConnection();
+        this.#closeConnection();
         if (leftAttempts == 0 && rethrow) {
           throw e;
         }
       }
     }
     return { connected, reply };
-  },
+  }
 
-  // Opens an authenticated connection, sets it to this._controlConnection, and
+  // Opens an authenticated connection, sets it to this.#controlConnection, and
   // return it.
-  async _getConnection() {
-    if (!this._controlConnection) {
-      this._controlConnection = await lazy.controller();
+  async #getConnection() {
+    if (!this.#controlConnection) {
+      this.#controlConnection = await lazy.controller();
     }
-    if (this._controlConnection.inUse) {
+    if (this.#controlConnection.inUse) {
       await new Promise((resolve, reject) =>
-        this._connectionQueue.push({ resolve, reject })
+        this.#connectionQueue.push({ resolve, reject })
       );
     } else {
-      this._controlConnection.inUse = true;
+      this.#controlConnection.inUse = true;
     }
-    return this._controlConnection;
-  },
+    return this.#controlConnection;
+  }
 
-  _returnConnection() {
-    if (this._connectionQueue.length) {
-      this._connectionQueue.shift().resolve();
+  #returnConnection() {
+    if (this.#connectionQueue.length) {
+      this.#connectionQueue.shift().resolve();
     } else {
-      this._controlConnection.inUse = false;
+      this.#controlConnection.inUse = false;
     }
-  },
+  }
 
-  async _withConnection(func) {
+  async #withConnection(func) {
     // TODO: Make more robust?
-    const conn = await this._getConnection();
+    const conn = await this.#getConnection();
     try {
       return await func(conn);
     } finally {
-      this._returnConnection();
+      this.#returnConnection();
     }
-  },
+  }
 
   // If aConn is omitted, the cached connection is closed.
-  _closeConnection() {
-    if (this._controlConnection) {
+  #closeConnection() {
+    if (this.#controlConnection) {
       logger.info("Closing the control connection");
-      this._controlConnection.close();
-      this._controlConnection = null;
+      this.#controlConnection.close();
+      this.#controlConnection = null;
     }
-    for (const promise of this._connectionQueue) {
+    for (const promise of this.#connectionQueue) {
       promise.reject("Connection closed");
     }
-    this._connectionQueue = [];
-  },
+    this.#connectionQueue = [];
+  }
 
-  async _reconnect() {
-    this._closeConnection();
-    const conn = await this._getConnection();
+  async #reconnect() {
+    this.#closeConnection();
+    const conn = await this.#getConnection();
     logger.debug("Reconnected to the control port.");
-    this._returnConnection(conn);
-  },
+    this.#returnConnection(conn);
+  }
 
-  async _readAuthenticationCookie(aPath) {
+  async #readAuthenticationCookie(aPath) {
     const bytes = await IOUtils.read(aPath);
-    return Array.from(bytes, b => this._toHex(b, 2)).join("");
-  },
+    return Array.from(bytes, b => this.#toHex(b, 2)).join("");
+  }
 
   // Returns a random 16 character password, hex-encoded.
-  _generateRandomPassword() {
+  #generateRandomPassword() {
     // Similar to Vidalia's crypto_rand_string().
     const kPasswordLen = 16;
     const kMinCharCode = "!".charCodeAt(0);
     const kMaxCharCode = "~".charCodeAt(0);
     let pwd = "";
     for (let i = 0; i < kPasswordLen; ++i) {
-      const val = this._cryptoRandInt(kMaxCharCode - kMinCharCode + 1);
+      const val = this.#cryptoRandInt(kMaxCharCode - kMinCharCode + 1);
       if (val < 0) {
         logger.error("_cryptoRandInt() failed");
         return null;
       }
-      pwd += this._toHex(kMinCharCode + val, 2);
+      pwd += this.#toHex(kMinCharCode + val, 2);
     }
 
     return pwd;
-  },
+  }
 
   // Returns -1 upon failure.
-  _cryptoRandInt(aMax) {
+  #cryptoRandInt(aMax) {
     // Based on tor's crypto_rand_int().
     const maxUInt = 0xffffffff;
     if (aMax <= 0 || aMax > maxUInt) {
@@ -697,9 +692,11 @@ export const TorProtocolService = {
       val = uint32[0];
     }
     return val % aMax;
-  },
+  }
 
-  _toHex(aValue, aMinLen) {
+  #toHex(aValue, aMinLen) {
     return aValue.toString(16).padStart(aMinLen, "0");
-  },
-};
+  }
+}
+
+export const TorProtocolService = new TorProvider();

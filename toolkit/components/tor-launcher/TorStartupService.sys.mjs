@@ -4,8 +4,7 @@ const lazy = {};
 // loading
 ChromeUtils.defineESModuleGetters(lazy, {
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
-  TorMonitorService: "resource://gre/modules/TorMonitorService.sys.mjs",
-  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 /* Browser observer topis */
@@ -21,36 +20,26 @@ let gInited = false;
 // When it observes profile-after-change, it initializes whatever is needed to
 // launch Tor.
 export class TorStartupService {
-  _defaultPreferencesAreLoaded = false;
-
   observe(aSubject, aTopic, aData) {
     if (aTopic === BrowserTopics.ProfileAfterChange && !gInited) {
-      this._init();
+      this.#init();
     } else if (aTopic === BrowserTopics.QuitApplicationGranted) {
-      this._uninit();
+      this.#uninit();
     }
   }
 
-  async _init() {
+  async #init() {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
 
-    // Starts TorProtocolService first, because it configures the controller
-    // factory, too.
-    await lazy.TorProtocolService.init();
-    lazy.TorMonitorService.init();
+    await lazy.TorProviderBuilder.init();
 
     gInited = true;
   }
 
-  _uninit() {
+  #uninit() {
     Services.obs.removeObserver(this, BrowserTopics.QuitApplicationGranted);
 
-    // Close any helper connection first...
-    lazy.TorProtocolService.uninit();
-    // ... and only then closes the event monitor connection, which will cause
-    // Tor to stop.
-    lazy.TorMonitorService.uninit();
-
+    lazy.TorProviderBuilder.uninit();
     lazy.TorLauncherUtil.cleanupTempDirectories();
   }
 }
