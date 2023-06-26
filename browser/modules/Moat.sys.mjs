@@ -1,24 +1,19 @@
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = ["MoatRPC"];
+import {
+  TorSettings,
+  TorBridgeSource,
+} from "resource:///modules/TorSettings.sys.mjs";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const lazy = {};
 
-const { Subprocess } = ChromeUtils.import(
-  "resource://gre/modules/Subprocess.jsm"
-);
-
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
-
-const { TorProtocolService } = ChromeUtils.import(
-  "resource://gre/modules/TorProtocolService.jsm"
-);
-
-const { TorSettings, TorBridgeSource } = ChromeUtils.import(
-  "resource:///modules/TorSettings.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+});
 
 const TorLauncherPrefs = Object.freeze({
   bridgedb_front: "extensions.torlauncher.bridgedb_front",
@@ -26,73 +21,54 @@ const TorLauncherPrefs = Object.freeze({
   moat_service: "extensions.torlauncher.moat_service",
 });
 
-// Config keys used to query tor daemon properties
-const TorConfigKeys = Object.freeze({
-  clientTransportPlugin: "ClientTransportPlugin",
-});
-
 //
 // Launches and controls the PT process lifetime
 //
 class MeekTransport {
-  constructor() {
-    this._inited = false;
-    this._meekClientProcess = null;
-    this._meekProxyType = null;
-    this._meekProxyAddress = null;
-    this._meekProxyPort = 0;
-    this._meekProxyUsername = null;
-    this._meekProxyPassword = null;
-  }
+  // These members are used by consumers to setup the proxy to do requests over
+  // meek. They are passed to newProxyInfoWithAuth.
+  proxyType = null;
+  proxyAddress = null;
+  proxyPort = 0;
+  proxyUsername = null;
+  proxyPassword = null;
+
+  #inited = false;
+  #meekClientProcess = null;
 
   // launches the meekprocess
   async init() {
     // ensure we haven't already init'd
-    if (this._inited) {
+    if (this.#inited) {
       throw new Error("MeekTransport: Already initialized");
     }
 
-    // cleanup function for killing orphaned pt process
-    let onException = () => {};
     try {
       // figure out which pluggable transport to use
       const supportedTransports = ["meek", "meek_lite"];
-      let transportPlugins = await TorProtocolService.readStringArraySetting(
-        TorConfigKeys.clientTransportPlugin
+      const proxy = (
+        await lazy.TorProviderBuilder.build().getPluggableTransports()
+      ).find(
+        pt =>
+          pt.type === "exec" &&
+          supportedTransports.some(t => pt.transports.includes(t))
       );
+      if (!proxy) {
+        throw new Error("No supported transport found.");
+      }
 
-      let { meekTransport, meekClientPath, meekClientArgs } = (() => {
-        for (const line of transportPlugins) {
-          let tokens = line.split(" ");
-          if (tokens.length > 2 && tokens[1] == "exec") {
-            let transportArray = tokens[0].split(",").map(aStr => aStr.trim());
-            let transport = transportArray.find(aTransport =>
-              supportedTransports.includes(aTransport)
-            );
-
-            if (transport != undefined) {
-              return {
-                meekTransport: transport,
-                meekClientPath: tokens[2],
-                meekClientArgs: tokens.slice(3),
-              };
-            }
-          }
-        }
-
-        return {
-          meekTransport: null,
-          meekClientPath: null,
-          meekClientArgs: null,
-        };
-      })();
-
+      const meekTransport = proxy.transports.find(t =>
+        supportedTransports.includes(t)
+      );
       // Convert meek client path to absolute path if necessary
-      let meekWorkDir = TorLauncherUtil.getTorFile("pt-startup-dir", false);
-      if (TorLauncherUtil.isPathRelative(meekClientPath)) {
-        let meekPath = meekWorkDir.clone();
-        meekPath.appendRelativePath(meekClientPath);
-        meekClientPath = meekPath.path;
+      const meekWorkDir = lazy.TorLauncherUtil.getTorFile(
+        "pt-startup-dir",
+        false
+      );
+      if (lazy.TorLauncherUtil.isPathRelative(proxy.pathToBinary)) {
+        const meekPath = meekWorkDir.clone();
+        meekPath.appendRelativePath(proxy.pathToBinary);
+        proxy.pathToBinary = meekPath.path;
       }
 
       // Construct the per-connection arguments.
@@ -105,16 +81,13 @@ class MeekTransport {
       //   First the "<Key>=<Value>" formatted arguments MUST be escaped,
       //   such that all backslash, equal sign, and semicolon characters
       //   are escaped with a backslash.
-      let escapeArgValue = aValue => {
-        if (!aValue) {
-          return "";
-        }
-
-        let rv = aValue.replace(/\\/g, "\\\\");
-        rv = rv.replace(/=/g, "\\=");
-        rv = rv.replace(/;/g, "\\;");
-        return rv;
-      };
+      const escapeArgValue = aValue =>
+        aValue
+          ? aValue
+              .replaceAll("\\", "\\\\")
+              .replaceAll("=", "\\=")
+              .replaceAll(";", "\\;")
+          : "";
 
       if (meekReflector) {
         meekClientEscapedArgs += "url=";
@@ -132,10 +105,10 @@ class MeekTransport {
       }
 
       // Setup env and start meek process
-      let ptStateDir = TorLauncherUtil.getTorFile("tordatadir", false);
+      const ptStateDir = lazy.TorLauncherUtil.getTorFile("tordatadir", false);
       ptStateDir.append("pt_state"); // Match what tor uses.
 
-      let envAdditions = {
+      const envAdditions = {
         TOR_PT_MANAGED_TRANSPORT_VER: "1",
         TOR_PT_STATE_LOCATION: ptStateDir.path,
         TOR_PT_EXIT_ON_STDIN_CLOSE: "1",
@@ -145,9 +118,9 @@ class MeekTransport {
         envAdditions.TOR_PT_PROXY = TorSettings.proxy.uri;
       }
 
-      let opts = {
-        command: meekClientPath,
-        arguments: meekClientArgs,
+      const opts = {
+        command: proxy.pathToBinary,
+        arguments: proxy.options.split(/s+/),
         workdir: meekWorkDir.path,
         environmentAppend: true,
         environment: envAdditions,
@@ -155,27 +128,23 @@ class MeekTransport {
       };
 
       // Launch meek client
-      let meekClientProcess = await Subprocess.call(opts);
-      // kill our process if exception is thrown
-      onException = () => {
-        meekClientProcess.kill();
-      };
+      this.#meekClientProcess = await lazy.Subprocess.call(opts);
 
       // Callback chain for reading stderr
-      let stderrLogger = async () => {
-        if (this._meekClientProcess) {
-          let errString = await this._meekClientProcess.stderr.readString();
-          console.log(`MeekTransport: stderr => ${errString}`);
-          await stderrLogger();
+      const stderrLogger = async () => {
+        while (this.#meekClientProcess) {
+          const errString = await this.#meekClientProcess.stderr.readString();
+          if (errString) {
+            console.log(`MeekTransport: stderr => ${errString}`);
+          }
         }
       };
       stderrLogger();
 
       // Read pt's stdout until terminal (CMETHODS DONE) is reached
       // returns array of lines for parsing
-      let getInitLines = async (stdout = "") => {
-        let string = await meekClientProcess.stdout.readString();
-        stdout += string;
+      const getInitLines = async (stdout = "") => {
+        stdout += await this.#meekClientProcess.stdout.readString();
 
         // look for the final message
         const CMETHODS_DONE = "CMETHODS DONE";
@@ -188,19 +157,15 @@ class MeekTransport {
       };
 
       // read our lines from pt's stdout
-      let meekInitLines = await getInitLines();
+      const meekInitLines = await getInitLines();
       // tokenize our pt lines
-      let meekInitTokens = meekInitLines.map(line => {
-        let tokens = line.split(" ");
+      const meekInitTokens = meekInitLines.map(line => {
+        const tokens = line.split(" ");
         return {
           keyword: tokens[0],
           args: tokens.slice(1),
         };
       });
-
-      let meekProxyType = null;
-      let meekProxyAddr = null;
-      let meekProxyPort = 0;
 
       // parse our pt tokens
       for (const { keyword, args } of meekInitTokens) {
@@ -251,9 +216,9 @@ class MeekTransport {
             }
 
             // convert proxy type to strings used by protocol-proxy-servce
-            meekProxyType = proxyType === "socks5" ? "socks" : "socks4";
-            meekProxyAddr = addr;
-            meekProxyPort = port;
+            this.proxyType = proxyType === "socks5" ? "socks" : "socks4";
+            this.proxyAddress = addr;
+            this.proxyPort = port;
 
             break;
           }
@@ -278,49 +243,47 @@ class MeekTransport {
         }
       }
 
-      this._meekClientProcess = meekClientProcess;
       // register callback to cleanup on process exit
-      this._meekClientProcess.wait().then(exitObj => {
-        this._meekClientProcess = null;
+      this.#meekClientProcess.wait().then(exitObj => {
+        this.#meekClientProcess = null;
         this.uninit();
       });
 
-      this._meekProxyType = meekProxyType;
-      this._meekProxyAddress = meekProxyAddr;
-      this._meekProxyPort = meekProxyPort;
-
       // socks5
-      if (meekProxyType === "socks") {
+      if (this.proxyType === "socks") {
         if (meekClientEscapedArgs.length <= 255) {
-          this._meekProxyUsername = meekClientEscapedArgs;
-          this._meekProxyPassword = "\x00";
+          this.proxyUsername = meekClientEscapedArgs;
+          this.proxyPassword = "\x00";
         } else {
-          this._meekProxyUsername = meekClientEscapedArgs.substring(0, 255);
-          this._meekProxyPassword = meekClientEscapedArgs.substring(255);
+          this.proxyUsername = meekClientEscapedArgs.substring(0, 255);
+          this.proxyPassword = meekClientEscapedArgs.substring(255);
         }
         // socks4
       } else {
-        this._meekProxyUsername = meekClientEscapedArgs;
-        this._meekProxyPassword = undefined;
+        this.proxyUsername = meekClientEscapedArgs;
+        this.proxyPassword = undefined;
       }
 
-      this._inited = true;
+      this.#inited = true;
     } catch (ex) {
-      onException();
+      if (this.#meekClientProcess) {
+        this.#meekClientProcess.kill();
+        this.#meekClientProcess = null;
+      }
       throw ex;
     }
   }
 
   async uninit() {
-    this._inited = false;
+    this.#inited = false;
 
-    await this._meekClientProcess?.kill();
-    this._meekClientProcess = null;
-    this._meekProxyType = null;
-    this._meekProxyAddress = null;
-    this._meekProxyPort = 0;
-    this._meekProxyUsername = null;
-    this._meekProxyPassword = null;
+    await this.#meekClientProcess?.kill();
+    this.#meekClientProcess = null;
+    this.proxyType = null;
+    this.proxyAddress = null;
+    this.proxyPort = 0;
+    this.proxyUsername = null;
+    this.proxyPassword = null;
   }
 }
 
@@ -328,21 +291,25 @@ class MeekTransport {
 // Callback object with a cached promise for the returned Moat data
 //
 class MoatResponseListener {
+  #response = "";
+  #responsePromise;
+  #resolve;
+  #reject;
   constructor() {
-    this._response = "";
+    this.#response = "";
     // we need this promise here because await nsIHttpChannel::asyncOpen does
     // not return only once the request is complete, it seems to return
     // after it begins, so we have to get the result from this listener object.
     // This promise is only resolved once onStopRequest is called
-    this._responsePromise = new Promise((resolve, reject) => {
-      this._resolve = resolve;
-      this._reject = reject;
+    this.#responsePromise = new Promise((resolve, reject) => {
+      this.#resolve = resolve;
+      this.#reject = reject;
     });
   }
 
   // callers wait on this for final response
   response() {
-    return this._responsePromise;
+    return this.#responsePromise;
   }
 
   // noop
@@ -352,16 +319,17 @@ class MoatResponseListener {
   onStopRequest(request, status) {
     try {
       if (!Components.isSuccessCode(status)) {
-        const errorMessage = TorLauncherUtil.getLocalizedStringForError(status);
-        this._reject(new Error(errorMessage));
+        const errorMessage =
+          lazy.TorLauncherUtil.getLocalizedStringForError(status);
+        this.#reject(new Error(errorMessage));
       }
       if (request.responseStatus != 200) {
-        this._reject(new Error(request.responseStatusText));
+        this.#reject(new Error(request.responseStatusText));
       }
     } catch (err) {
-      this._reject(err);
+      this.#reject(err);
     }
-    this._resolve(this._response);
+    this.#resolve(this.#response);
   }
 
   // read response data
@@ -370,30 +338,32 @@ class MoatResponseListener {
       "@mozilla.org/scriptableinputstream;1"
     ].createInstance(Ci.nsIScriptableInputStream);
     scriptableStream.init(stream);
-    this._response += scriptableStream.read(length);
+    this.#response += scriptableStream.read(length);
   }
 }
 
 class InternetTestResponseListener {
+  #promise;
+  #resolve;
+  #reject;
   constructor() {
-    this._promise = new Promise((resolve, reject) => {
-      this._resolve = resolve;
-      this._reject = reject;
+    this.#promise = new Promise((resolve, reject) => {
+      this.#resolve = resolve;
+      this.#reject = reject;
     });
   }
 
   // callers wait on this for final response
   get status() {
-    return this._promise;
+    return this.#promise;
   }
 
   onStartRequest(request) {}
 
   // resolve or reject our Promise
   onStopRequest(request, status) {
-    let statuses = {};
     try {
-      statuses = {
+      const statuses = {
         components: status,
         successful: Components.isSuccessCode(status),
       };
@@ -408,56 +378,51 @@ class InternetTestResponseListener {
           err
         );
       }
+      this.#resolve(statuses);
     } catch (err) {
-      this._reject(err);
+      this.#reject(err);
     }
-    this._resolve(statuses);
   }
 
   onDataAvailable(request, stream, offset, length) {
-    //  We do not care of the actual data, as long as we have a successful
+    // We do not care of the actual data, as long as we have a successful
     // connection
   }
 }
 
 // constructs the json objects and sends the request over moat
-class MoatRPC {
-  constructor() {
-    this._meekTransport = null;
-    this._inited = false;
-  }
+export class MoatRPC {
+  #inited = false;
+  #meekTransport = null;
 
   get inited() {
-    return this._inited;
+    return this.#inited;
   }
 
   async init() {
-    if (this._inited) {
+    if (this.#inited) {
       throw new Error("MoatRPC: Already initialized");
     }
 
     let meekTransport = new MeekTransport();
     await meekTransport.init();
-    this._meekTransport = meekTransport;
-    this._inited = true;
+    this.#meekTransport = meekTransport;
+    this.#inited = true;
   }
 
   async uninit() {
-    await this._meekTransport?.uninit();
-    this._meekTransport = null;
-    this._inited = false;
+    await this.#meekTransport?.uninit();
+    this.#meekTransport = null;
+    this.#inited = false;
   }
 
-  _makeHttpHandler(uriString) {
-    if (!this._inited) {
+  #makeHttpHandler(uriString) {
+    if (!this.#inited) {
       throw new Error("MoatRPC: Not initialized");
     }
 
-    const proxyType = this._meekTransport._meekProxyType;
-    const proxyAddress = this._meekTransport._meekProxyAddress;
-    const proxyPort = this._meekTransport._meekProxyPort;
-    const proxyUsername = this._meekTransport._meekProxyUsername;
-    const proxyPassword = this._meekTransport._meekProxyPassword;
+    const { proxyType, proxyAddress, proxyPort, proxyUsername, proxyPassword } =
+      this.#meekTransport;
 
     const proxyPS = Cc[
       "@mozilla.org/network/protocol-proxy-service;1"
@@ -511,11 +476,11 @@ class MoatRPC {
     return ch;
   }
 
-  async _makeRequest(procedure, args) {
+  async #makeRequest(procedure, args) {
     const procedureURIString = `${Services.prefs.getStringPref(
       TorLauncherPrefs.moat_service
     )}/${procedure}`;
-    const ch = this._makeHttpHandler(procedureURIString);
+    const ch = this.#makeHttpHandler(procedureURIString);
 
     // Arrange for the POST data to be sent.
     const argsJson = JSON.stringify(args);
@@ -544,7 +509,7 @@ class MoatRPC {
     const uri = `${Services.prefs.getStringPref(
       TorLauncherPrefs.moat_service
     )}/circumvention/countries`;
-    const ch = this._makeHttpHandler(uri);
+    const ch = this.#makeHttpHandler(uri);
     ch.requestMethod = "HEAD";
 
     const listener = new InternetTestResponseListener();
@@ -582,7 +547,7 @@ class MoatRPC {
           },
         ],
       };
-      const response = await this._makeRequest("fetch", args);
+      const response = await this.#makeRequest("fetch", args);
       if ("errors" in response) {
         const code = response.errors[0].code;
         const detail = response.errors[0].detail;
@@ -623,7 +588,7 @@ class MoatRPC {
         },
       ],
     };
-    const response = await this._makeRequest("check", args);
+    const response = await this.#makeRequest("check", args);
     if ("errors" in response) {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
@@ -642,7 +607,7 @@ class MoatRPC {
 
   // Convert received settings object to format used by TorSettings module
   // In the event of error, just return null
-  _fixupSettings(settings) {
+  #fixupSettings(settings) {
     try {
       let retval = TorSettings.defaultSettings();
       if ("bridges" in settings) {
@@ -691,11 +656,11 @@ class MoatRPC {
   // Converts a list of settings objects received from BridgeDB to a list of settings objects
   // understood by the TorSettings module
   // In the event of error, returns and empty list
-  _fixupSettingsList(settingsList) {
+  #fixupSettingsList(settingsList) {
     try {
       let retval = [];
       for (let settings of settingsList) {
-        settings = this._fixupSettings(settings);
+        settings = this.#fixupSettings(settings);
         if (settings != null) {
           retval.push(settings);
         }
@@ -724,7 +689,7 @@ class MoatRPC {
       transports: transports ? transports : [],
       country,
     };
-    const response = await this._makeRequest("circumvention/settings", args);
+    const response = await this.#makeRequest("circumvention/settings", args);
     let settings = {};
     if ("errors" in response) {
       const code = response.errors[0].code;
@@ -739,7 +704,7 @@ class MoatRPC {
 
       throw new Error(`MoatRPC: ${detail} (${code})`);
     } else if ("settings" in response) {
-      settings.settings = this._fixupSettingsList(response.settings);
+      settings.settings = this.#fixupSettingsList(response.settings);
     }
     if ("country" in response) {
       settings.country = response.country;
@@ -753,7 +718,7 @@ class MoatRPC {
   // for
   async circumvention_countries() {
     const args = {};
-    return this._makeRequest("circumvention/countries", args);
+    return this.#makeRequest("circumvention/countries", args);
   }
 
   // Request a copy of the builtin bridges, takes the following parameters:
@@ -766,7 +731,7 @@ class MoatRPC {
     const args = {
       transports: transports ? transports : [],
     };
-    const response = await this._makeRequest("circumvention/builtin", args);
+    const response = await this.#makeRequest("circumvention/builtin", args);
     if ("errors" in response) {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
@@ -791,13 +756,13 @@ class MoatRPC {
     const args = {
       transports: transports ? transports : [],
     };
-    const response = await this._makeRequest("circumvention/defaults", args);
+    const response = await this.#makeRequest("circumvention/defaults", args);
     if ("errors" in response) {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
       throw new Error(`MoatRPC: ${detail} (${code})`);
     } else if ("settings" in response) {
-      return this._fixupSettingsList(response.settings);
+      return this.#fixupSettingsList(response.settings);
     }
     return [];
   }

@@ -1,36 +1,22 @@
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = [
-  "TorSettings",
-  "TorSettingsTopics",
-  "TorSettingsData",
-  "TorBridgeSource",
-  "TorBuiltinBridgeTypes",
-  "TorProxyType",
-];
+const lazy = {};
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const { TorMonitorService } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
-);
-const { TorProtocolService } = ChromeUtils.import(
-  "resource://gre/modules/TorProtocolService.jsm"
-);
-
-/* tor-launcher observer topics */
-const TorTopics = Object.freeze({
-  ProcessIsReady: "TorProcessIsReady",
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 /* TorSettings observer topics */
-const TorSettingsTopics = Object.freeze({
+export const TorSettingsTopics = Object.freeze({
   Ready: "torsettings:ready",
   SettingChanged: "torsettings:setting-changed",
 });
 
 /* TorSettings observer data (for SettingChanged topic) */
-const TorSettingsData = Object.freeze({
+export const TorSettingsData = Object.freeze({
   QuickStartEnabled: "torsettings:quickstart_enabled",
 });
 
@@ -98,21 +84,21 @@ const TorConfigKeys = Object.freeze({
   clientTransportPlugin: "ClientTransportPlugin",
 });
 
-const TorBridgeSource = Object.freeze({
+export const TorBridgeSource = Object.freeze({
   Invalid: -1,
   BuiltIn: 0,
   BridgeDB: 1,
   UserProvided: 2,
 });
 
-const TorProxyType = Object.freeze({
+export const TorProxyType = Object.freeze({
   Invalid: -1,
   Socks4: 0,
   Socks5: 1,
   HTTPS: 2,
 });
 
-const TorBuiltinBridgeTypes = Object.freeze(
+export const TorBuiltinBridgeTypes = Object.freeze(
   (() => {
     const bridgeListBranch = Services.prefs.getBranch(
       TorLauncherPrefs.default_bridge
@@ -254,7 +240,7 @@ const arrayCopy = function (array) {
 
 /* TorSettings module */
 
-const TorSettings = (() => {
+export const TorSettings = (() => {
   const self = {
     _settings: null,
 
@@ -288,7 +274,8 @@ const TorSettings = (() => {
 
     /* load or init our settings, and register observers */
     init() {
-      if (TorMonitorService.ownsTorDaemon) {
+      const provider = lazy.TorProviderBuilder.build();
+      if (provider.ownsTorDaemon) {
         // if the settings branch exists, load settings from prefs
         if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
           this.loadFromPrefs();
@@ -296,9 +283,9 @@ const TorSettings = (() => {
           // otherwise load defaults
           this._settings = this.defaultSettings();
         }
-        Services.obs.addObserver(this, TorTopics.ProcessIsReady);
+        Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
 
-        if (TorMonitorService.isRunning) {
+        if (provider.isRunning) {
           this.handleProcessReady();
         }
       }
@@ -309,8 +296,11 @@ const TorSettings = (() => {
       console.log(`TorSettings: Observed ${topic}`);
 
       switch (topic) {
-        case TorTopics.ProcessIsReady:
-          Services.obs.removeObserver(this, TorTopics.ProcessIsReady);
+        case lazy.TorProviderTopics.ProcessIsReady:
+          Services.obs.removeObserver(
+            this,
+            lazy.TorProviderTopics.ProcessIsReady
+          );
           await this.handleProcessReady();
           break;
       }
@@ -569,7 +559,7 @@ const TorSettings = (() => {
       }
 
       /* Push to Tor */
-      await TorProtocolService.writeSettings(settingsMap);
+      await lazy.TorProviderBuilder.build().writeSettings(settingsMap);
 
       return this;
     },

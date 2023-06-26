@@ -1,35 +1,31 @@
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = [
-  "InternetStatus",
-  "TorConnect",
-  "TorConnectTopics",
-  "TorConnectState",
-];
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const lazy = {};
 
-const { setTimeout, clearTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  MoatRPC: "resource:///modules/Moat.sys.mjs",
+  TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+});
 
-const { BrowserWindowTracker } = ChromeUtils.import(
+// TODO: Should we move this to the about:torconnect actor?
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "BrowserWindowTracker",
   "resource:///modules/BrowserWindowTracker.jsm"
 );
 
-const { TorMonitorService } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
-);
-const { TorBootstrapRequest } = ChromeUtils.import(
-  "resource://gre/modules/TorBootstrapRequest.jsm"
-);
-
-const { TorSettings, TorSettingsTopics, TorBuiltinBridgeTypes } =
-  ChromeUtils.import("resource:///modules/TorSettings.jsm");
+import {
+  TorSettings,
+  TorSettingsTopics,
+  TorBuiltinBridgeTypes,
+} from "resource:///modules/TorSettings.sys.mjs";
 
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-const { MoatRPC } = ChromeUtils.import("resource:///modules/Moat.jsm");
 
 const TorTopics = Object.freeze({
   LogHasWarnOrErr: "TorLogHasWarnOrErr",
@@ -46,7 +42,7 @@ const TorConnectPrefs = Object.freeze({
   allow_internet_test: "torbrowser.bootstrap.allow_internet_test",
 });
 
-const TorConnectState = Object.freeze({
+export const TorConnectState = Object.freeze({
   /* Our initial state */
   Initial: "Initial",
   /* In-between initial boot and bootstrapping, users can change tor network settings during this state */
@@ -156,7 +152,7 @@ const TorConnectStateTransitions = Object.freeze(
 );
 
 /* Topics Notified by the TorConnect module */
-const TorConnectTopics = Object.freeze({
+export const TorConnectTopics = Object.freeze({
   StateChange: "torconnect:state-change",
   BootstrapProgress: "torconnect:bootstrap-progress",
   BootstrapComplete: "torconnect:bootstrap-complete",
@@ -238,7 +234,7 @@ const debug_sleep = async ms => {
   });
 };
 
-const InternetStatus = Object.freeze({
+export const InternetStatus = Object.freeze({
   Unknown: -1,
   Offline: 0,
   Online: 1,
@@ -302,7 +298,7 @@ class InternetTest {
     // waiting both for the bootstrap, and for the Internet test.
     // However, managing Moat with async/await is much easier as it avoids a
     // callback hell, and it makes extra explicit that we are uniniting it.
-    const mrpc = new MoatRPC();
+    const mrpc = new lazy.MoatRPC();
     let status = null;
     let error = null;
     try {
@@ -340,7 +336,7 @@ class InternetTest {
   }
 }
 
-const TorConnect = (() => {
+export const TorConnect = (() => {
   let retval = {
     _state: TorConnectState.Initial,
     _bootstrapProgress: 0,
@@ -459,7 +455,7 @@ const TorConnect = (() => {
                 return;
               }
 
-              const tbr = new TorBootstrapRequest();
+              const tbr = new lazy.TorBootstrapRequest();
               const internetTest = new InternetTest();
               let cancelled = false;
 
@@ -604,7 +600,7 @@ const TorConnect = (() => {
 
               // lookup user's potential censorship circumvention settings from Moat service
               try {
-                this.mrpc = new MoatRPC();
+                this.mrpc = new lazy.MoatRPC();
                 await this.mrpc.init();
 
                 if (this.transitioning) {
@@ -678,7 +674,7 @@ const TorConnect = (() => {
                     await TorSettings.applySettings();
 
                     // build out our bootstrap request
-                    const tbr = new TorBootstrapRequest();
+                    const tbr = new lazy.TorBootstrapRequest();
                     tbr.onbootstrapstatus = (progress, status) => {
                       TorConnect._updateBootstrapStatus(progress, status);
                     };
@@ -915,7 +911,7 @@ const TorConnect = (() => {
      * @type {boolean}
      */
     get enabled() {
-      return TorMonitorService.ownsTorDaemon;
+      return lazy.TorProviderBuilder.build().ownsTorDaemon;
     },
 
     get shouldShowTorConnect() {
@@ -1053,7 +1049,7 @@ const TorConnect = (() => {
         Further external commands and helper methods
         */
     openTorPreferences() {
-      const win = BrowserWindowTracker.getTopWindow();
+      const win = lazy.BrowserWindowTracker.getTopWindow();
       win.switchToTabHavingURI("about:preferences#connection", true);
     },
 
@@ -1073,7 +1069,7 @@ const TorConnect = (() => {
      *   begin AutoBootstrapping, if possible.
      */
     openTorConnect(options) {
-      const win = BrowserWindowTracker.getTopWindow();
+      const win = lazy.BrowserWindowTracker.getTopWindow();
       win.switchToTabHavingURI("about:torconnect", true, {
         ignoreQueryString: true,
       });
@@ -1094,7 +1090,7 @@ const TorConnect = (() => {
     },
 
     viewTorLogs() {
-      const win = BrowserWindowTracker.getTopWindow();
+      const win = lazy.BrowserWindowTracker.getTopWindow();
       win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
     },
 
@@ -1104,7 +1100,7 @@ const TorConnect = (() => {
       if (this._countryCodes.length) {
         return this._countryCodes;
       }
-      const mrpc = new MoatRPC();
+      const mrpc = new lazy.MoatRPC();
       try {
         await mrpc.init();
         this._countryCodes = await mrpc.circumvention_countries();
