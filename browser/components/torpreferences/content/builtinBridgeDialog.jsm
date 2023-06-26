@@ -7,10 +7,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 const { TorSettings, TorBridgeSource, TorBuiltinBridgeTypes } =
-  ChromeUtils.import("resource:///modules/TorSettings.jsm");
+  ChromeUtils.importESModule("resource:///modules/TorSettings.sys.mjs");
 
-const { TorConnect, TorConnectTopics } = ChromeUtils.import(
-  "resource:///modules/TorConnect.jsm"
+const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
+  "resource:///modules/TorConnect.sys.mjs"
 );
 
 class BuiltinBridgeDialog {

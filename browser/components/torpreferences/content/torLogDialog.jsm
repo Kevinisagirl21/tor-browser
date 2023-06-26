@@ -2,12 +2,12 @@
 
 var EXPORTED_SYMBOLS = ["TorLogDialog"];
 
-const { setTimeout, clearTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
+const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
 );
 
-const { TorMonitorService } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
+const { TorProviderBuilder } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorProviderBuilder.sys.mjs"
 );
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
@@ -56,7 +56,7 @@ class TorLogDialog {
       }, RESTORE_TIME);
     });
 
-    this._logTextarea.value = TorMonitorService.getLog();
+    this._logTextarea.value = TorProviderBuilder.build().getLog();
   }
 
   init(window, aDialog) {
