@@ -1,10 +1,14 @@
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = ["BridgeDB"];
+const lazy = {};
 
-const { MoatRPC } = ChromeUtils.import("resource:///modules/Moat.jsm");
+ChromeUtils.defineESModuleGetters(lazy, {
+  MoatRPC: "resource:///modules/Moat.sys.mjs",
+});
 
-var BridgeDB = {
+export var BridgeDB = {
   _moatRPC: null,
   _challenge: null,
   _image: null,
@@ -20,7 +24,7 @@ var BridgeDB = {
 
   async submitCaptchaGuess(solution) {
     if (!this._moatRPC) {
-      this._moatRPC = new MoatRPC();
+      this._moatRPC = new lazy.MoatRPC();
       await this._moatRPC.init();
     }
 
@@ -37,7 +41,7 @@ var BridgeDB = {
   async requestNewCaptchaImage() {
     try {
       if (!this._moatRPC) {
-        this._moatRPC = new MoatRPC();
+        this._moatRPC = new lazy.MoatRPC();
         await this._moatRPC.init();
       }
 
