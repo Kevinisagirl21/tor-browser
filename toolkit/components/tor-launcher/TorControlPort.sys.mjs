@@ -983,18 +983,6 @@ class TorController {
 
   /**
    * Sends a GETINFO for a single key.
-   *
-   * @param {string} key The key to get value for
-   * @returns {any} The return value depends on the requested key
-   */
-  async getInfo(key) {
-    this.#expectString(key, "key");
-    const response = await this.sendCommand(`getinfo ${key}`);
-    return this.#getMultipleResponseValues(response)[0];
-  }
-
-  /**
-   * Sends a GETINFO for a single key.
    * control-spec.txt says "one ReplyLine is sent for each requested value", so,
    * we expect to receive only one line starting with `250-keyword=`, or one
    * line starting with `250+keyword=` (in which case we will match until a
@@ -1054,9 +1042,7 @@ class TorController {
     const addresses = [v4[5]];
     // a address:port
     // dir-spec.txt also states only the first one should be taken
-    // TODO: The consumers do not care about the port or the square brackets
-    // either. Remove them when integrating this function with the rest
-    const v6 = reply.match(/^a\s+(\[[0-9a-fA-F:]+\]:[0-9]{1,5})$/m);
+    const v6 = reply.match(/^a\s+\[([0-9a-fA-F:]+)\]:\d{1,5}$/m);
     if (v6) {
       addresses.push(v6[1]);
     }
@@ -1090,23 +1076,6 @@ class TorController {
   }
 
   // Configuration
-
-  /**
-   * Sends a GETCONF for a single key.
-   * GETCONF with a single argument returns results with one or more lines that
-   * look like `250[- ]key=value`.
-   * Any GETCONF lines that contain a single keyword only are currently dropped.
-   * So we can use similar parsing to that for getInfo.
-   *
-   * @param {string} key The key to get value for
-   * @returns {any} A parsed config value (it depends if a parser is known)
-   */
-  async getConf(key) {
-    this.#expectString(key, "key");
-    return this.#getMultipleResponseValues(
-      await this.sendCommand(`getconf ${key}`)
-    );
-  }
 
   /**
    * Sends a GETCONF for a single key.
@@ -1264,12 +1233,14 @@ class TorController {
       // TODO: Change the consumer and make the fields more consistent with what
       // we get (e.g., separate key and type, and use a boolen for permanent).
       const info = {
-        hsAddress: match.groups.HSAddress,
-        typeAndKey: `${match.groups.KeyType}:${match.groups.PrivateKeyBlob}`,
+        address: match.groups.HSAddress,
+        keyType: match.groups.KeyType,
+        keyBlob: match.groups.PrivateKeyBlob,
+        flags: [],
       };
       const maybeFlags = match.groups.other?.match(/Flags=(\S+)/);
       if (maybeFlags) {
-        info.Flags = maybeFlags[1];
+        info.flags = maybeFlags[1].split(",");
       }
       return info;
     });
@@ -1452,19 +1423,6 @@ class TorController {
         pair => [pair[1], TorParsers.unescapeString(pair[2])]
       )
     );
-  }
-
-  /**
-   * Process multiple responses to a GETINFO or GETCONF request.
-   *
-   * @param {string} message The message to process
-   * @returns {object[]} The keys depend on the message
-   */
-  #getMultipleResponseValues(message) {
-    return info
-      .keyValueStringsFromMessage(message)
-      .map(info.stringToValue)
-      .filter(x => x);
   }
 }
 

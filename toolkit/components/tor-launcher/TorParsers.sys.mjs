@@ -269,11 +269,14 @@ export const TorParsers = Object.freeze({
   },
 
   parseBridgeLine(line) {
+    if (!line) {
+      return null;
+    }
     const re =
       /\s*(?:(?<transport>\S+)\s+)?(?<addr>[0-9a-fA-F\.\[\]\:]+:\d{1,5})(?:\s+(?<id>[0-9a-fA-F]{40}))?(?:\s+(?<args>.+))?/;
     const match = re.exec(line);
     if (!match) {
-      throw new Error("Invalid bridge line.");
+      throw new Error(`Invalid bridge line: ${line}.`);
     }
     const bridge = match.groups;
     if (!bridge.transport) {
