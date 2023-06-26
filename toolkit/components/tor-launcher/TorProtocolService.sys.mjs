@@ -11,7 +11,6 @@ import {
 import { TorProviderTopics } from "resource://gre/modules/TorProviderBuilder.sys.mjs";
 
 const lazy = {};
-
 ChromeUtils.defineESModuleGetters(lazy, {
   controller: "resource://gre/modules/TorControlPort.sys.mjs",
   configureControlPortModule: "resource://gre/modules/TorControlPort.sys.mjs",
@@ -21,7 +20,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const logger = new ConsoleAPI({
   maxLogLevel: "warn",
-  prefix: "TorProtocolService",
+  maxLogLevelPref: "browser.tor_provider.log_level",
+  prefix: "TorProvider",
 });
 
 /**
@@ -85,7 +85,6 @@ class TorProvider {
   #SOCKSPortInfo = null; // An object that contains ipcFile, host, port.
 
   #controlConnection = null; // This is cached and reused.
-  #connectionQueue = [];
 
   // Public methods
 
@@ -123,39 +122,34 @@ class TorProvider {
   // takes a Map containing tor settings
   // throws on error
   async writeSettings(aSettingsObj) {
+    const entries =
+      aSettingsObj instanceof Map
+        ? Array.from(aSettingsObj.entries())
+        : Object.entries(aSettingsObj);
     // only write settings that have changed
-    const newSettings = Array.from(aSettingsObj).filter(([setting, value]) => {
-      // make sure we have valid data here
-      this.#assertValidSetting(setting, value);
-
+    const newSettings = entries.filter(([setting, value]) => {
       if (!this.#settingsCache.has(setting)) {
         // no cached setting, so write
         return true;
       }
 
       const cachedValue = this.#settingsCache.get(setting);
-      if (value === cachedValue) {
-        return false;
-      } else if (Array.isArray(value) && Array.isArray(cachedValue)) {
-        // compare arrays member-wise
-        if (value.length !== cachedValue.length) {
-          return true;
-        }
-        for (let i = 0; i < value.length; i++) {
-          if (value[i] !== cachedValue[i]) {
-            return true;
-          }
-        }
-        return false;
+      // Arrays are the only special case for which === could fail.
+      // The other values we accept (strings, booleans, numbers, null and
+      // undefined) work correctly with ===.
+      if (Array.isArray(value) && Array.isArray(cachedValue)) {
+        return (
+          value.length !== cachedValue.length ||
+          value.some((val, idx) => val !== cachedValue[idx])
+        );
       }
-      // some other different values
-      return true;
+      return value !== cachedValue;
     });
 
     // only write if new setting to save
     if (newSettings.length) {
-      const settingsObject = Object.fromEntries(newSettings);
-      await this.setConfWithReply(settingsObject);
+      const conn = await this.#getConnection();
+      await conn.setConf(Object.fromEntries(newSettings));
 
       // save settings to cache after successfully writing to Tor
       for (const [setting, value] of newSettings) {
@@ -164,23 +158,15 @@ class TorProvider {
     }
   }
 
-  async readStringArraySetting(aSetting) {
-    const value = await this.#readSetting(aSetting);
-    this.#settingsCache.set(aSetting, value);
-    return value;
-  }
-
   // writes current tor settings to disk
   async flushSettings() {
-    await this.sendCommand("SAVECONF");
+    const conn = await this.#getConnection();
+    await conn.flushSettings();
   }
 
   async connect() {
-    const kTorConfKeyDisableNetwork = "DisableNetwork";
-    const settings = {};
-    settings[kTorConfKeyDisableNetwork] = false;
-    await this.setConfWithReply(settings);
-    await this.sendCommand("SAVECONF");
+    const conn = await this.#getConnection();
+    await conn.setNetworkEnabled(true);
     this.clearBootstrapError();
     this.retrieveBootstrapStatus();
   }
@@ -188,12 +174,8 @@ class TorProvider {
   async stopBootstrap() {
     // Tell tor to disable use of the network; this should stop the bootstrap
     // process.
-    try {
-      const settings = { DisableNetwork: true };
-      await this.setConfWithReply(settings);
-    } catch (e) {
-      logger.error("Error stopping bootstrap", e);
-    }
+    const conn = await this.#getConnection();
+    await conn.setNetworkEnabled(false);
     // We are not interested in waiting for this, nor in **catching its error**,
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
@@ -201,28 +183,31 @@ class TorProvider {
   }
 
   async newnym() {
-    return this.sendCommand("SIGNAL NEWNYM");
+    const conn = await this.#getConnection();
+    await conn.newnym();
   }
 
   // Ask tor which ports it is listening to for SOCKS connections.
   // At the moment this is used only in TorCheckService.
   async getSocksListeners() {
-    const cmd = "GETINFO";
-    const keyword = "net/listeners/socks";
-    const response = await this.sendCommand(cmd, keyword);
-    return TorParsers.parseReply(cmd, keyword, response);
+    const conn = await this.#getConnection();
+    return conn.getSocksListeners();
   }
 
   async getBridges() {
+    const conn = await this.#getConnection();
     // Ideally, we would not need this function, because we should be the one
     // setting them with TorSettings. However, TorSettings is not notified of
     // change of settings. So, asking tor directly with the control connection
     // is the most reliable way of getting the configured bridges, at the
     // moment. Also, we are using this for the circuit display, which should
     // work also when we are not configuring the tor daemon, but just using it.
-    return this.#withConnection(conn => {
-      return conn.getConf("bridge");
-    });
+    return conn.getBridges();
+  }
+
+  async getPluggableTransports() {
+    const conn = await this.#getConnection();
+    return conn.getPluggableTransports();
   }
 
   /**
@@ -232,68 +217,55 @@ class TorProvider {
    * @returns {Promise<NodeData>}
    */
   async getNodeInfo(id) {
-    return this.#withConnection(async conn => {
-      const node = {
-        fingerprint: id,
-        ipAddrs: [],
-        bridgeType: null,
-        regionCode: null,
-      };
-      const bridge = (await conn.getConf("bridge"))?.find(
-        foundBridge => foundBridge.ID?.toUpperCase() === id.toUpperCase()
-      );
-      const addrRe = /^\[?([^\]]+)\]?:\d+$/;
-      if (bridge) {
-        node.bridgeType = bridge.type ?? "";
-        // Attempt to get an IP address from bridge address string.
-        const ip = bridge.address.match(addrRe)?.[1];
-        if (ip && !ip.startsWith("0.")) {
-          node.ipAddrs.push(ip);
-        }
-      } else {
-        // Either dealing with a relay, or a bridge whose fingerprint is not
-        // saved in torrc.
-        const info = await conn.getInfo(`ns/id/${id}`);
-        if (info.IP && !info.IP.startsWith("0.")) {
-          node.ipAddrs.push(info.IP);
-        }
-        const ip6 = info.IPv6?.match(addrRe)?.[1];
-        if (ip6) {
-          node.ipAddrs.push(ip6);
-        }
+    const conn = await this.#getConnection();
+    const node = {
+      fingerprint: id,
+      ipAddrs: [],
+      bridgeType: null,
+      regionCode: null,
+    };
+    const bridge = (await conn.getBridges())?.find(
+      foundBridge => foundBridge.id?.toUpperCase() === id.toUpperCase()
+    );
+    if (bridge) {
+      node.bridgeType = bridge.transport ?? "";
+      // Attempt to get an IP address from bridge address string.
+      const ip = bridge.addr.match(/^\[?([^\]]+)\]?:\d+$/)?.[1];
+      if (ip && !ip.startsWith("0.")) {
+        node.ipAddrs.push(ip);
       }
-      if (node.ipAddrs.length) {
-        // Get the country code for the node's IP address.
-        let regionCode;
-        try {
-          // Expect a 2-letter ISO3166-1 code, which should also be a valid
-          // BCP47 Region subtag.
-          regionCode = await conn.getInfo("ip-to-country/" + node.ipAddrs[0]);
-        } catch {}
+    } else {
+      node.ipAddrs = await conn.getNodeAddresses(id);
+    }
+    if (node.ipAddrs.length) {
+      // Get the country code for the node's IP address.
+      try {
+        // Expect a 2-letter ISO3166-1 code, which should also be a valid
+        // BCP47 Region subtag.
+        const regionCode = await conn.getIPCountry(node.ipAddrs[0]);
         if (regionCode && regionCode !== "??") {
           node.regionCode = regionCode.toUpperCase();
         }
+      } catch (e) {
+        logger.warn(`Cannot get a country for IP ${node.ipAddrs[0]}`, e);
       }
-      return node;
-    });
+    }
+    return node;
   }
 
-  async onionAuthAdd(hsAddress, b64PrivateKey, isPermanent) {
-    return this.#withConnection(conn => {
-      return conn.onionAuthAdd(hsAddress, b64PrivateKey, isPermanent);
-    });
+  async onionAuthAdd(address, b64PrivateKey, isPermanent) {
+    const conn = await this.#getConnection();
+    return conn.onionAuthAdd(address, b64PrivateKey, isPermanent);
   }
 
-  async onionAuthRemove(hsAddress) {
-    return this.#withConnection(conn => {
-      return conn.onionAuthRemove(hsAddress);
-    });
+  async onionAuthRemove(address) {
+    const conn = await this.#getConnection();
+    return conn.onionAuthRemove(address);
   }
 
   async onionAuthViewKeys() {
-    return this.#withConnection(conn => {
-      return conn.onionAuthViewKeys();
-    });
+    const conn = await this.#getConnection();
+    return conn.onionAuthViewKeys();
   }
 
   // TODO: transform the following 4 functions in getters.
@@ -332,106 +304,6 @@ class TorProvider {
   get torSOCKSPortInfo() {
     return this.#SOCKSPortInfo;
   }
-
-  // Public, but called only internally
-
-  // Executes a command on the control port.
-  // Return a reply object or null if a fatal error occurs.
-  async sendCommand(cmd, args) {
-    const maxTimeout = 1000;
-    let leftConnAttempts = 5;
-    let timeout = 250;
-    let reply;
-    while (leftConnAttempts-- > 0) {
-      const response = await this.#trySend(cmd, args, leftConnAttempts === 0);
-      if (response.connected) {
-        reply = response.reply;
-        break;
-      }
-      // We failed to acquire the controller after multiple attempts.
-      // Try again after some time.
-      logger.warn(
-        "sendCommand: Acquiring control connection failed, trying again later.",
-        cmd,
-        args
-      );
-      await new Promise(resolve => setTimeout(() => resolve(), timeout));
-      timeout = Math.min(2 * timeout, maxTimeout);
-    }
-
-    // We sent the command, but we still got an empty response.
-    // Something must be busted elsewhere.
-    if (!reply) {
-      throw new Error(`${cmd} sent an empty response`);
-    }
-
-    // TODO: Move the parsing of the reply to the controller, because anyone
-    // calling sendCommand on it actually wants a parsed reply.
-
-    reply = TorParsers.parseCommandResponse(reply);
-    if (!TorParsers.commandSucceeded(reply)) {
-      if (reply?.lineArray) {
-        throw new Error(reply.lineArray.join("\n"));
-      }
-      throw new Error(`${cmd} failed with code ${reply.statusCode}`);
-    }
-
-    return reply;
-  }
-
-  // Perform a SETCONF command.
-  // aSettingsObj should be a JavaScript object with keys (property values)
-  // that correspond to tor config. keys. The value associated with each
-  // key should be a simple string, a string array, or a Boolean value.
-  // If an associated value is undefined or null, a key with no value is
-  // passed in the SETCONF command.
-  // Throws in case of error, or returns a reply object.
-  async setConfWithReply(settings) {
-    if (!settings) {
-      throw new Error("Empty settings object");
-    }
-    const args = Object.entries(settings)
-      .map(([key, val]) => {
-        if (val === undefined || val === null) {
-          return key;
-        }
-        const valType = typeof val;
-        let rv = `${key}=`;
-        if (valType === "boolean") {
-          rv += val ? "1" : "0";
-        } else if (Array.isArray(val)) {
-          rv += val.map(TorParsers.escapeString).join(` ${key}=`);
-        } else if (valType === "string") {
-          rv += TorParsers.escapeString(val);
-        } else {
-          logger.error(`Got unsupported type for ${key}`, val);
-          throw new Error(`Unsupported type ${valType} (key ${key})`);
-        }
-        return rv;
-      })
-      .filter(arg => arg);
-    if (!args.length) {
-      throw new Error("No settings to set");
-    }
-
-    await this.sendCommand("SETCONF", args.join(" "));
-  }
-
-  // Public, never called?
-
-  async readBoolSetting(aSetting) {
-    let value = await this.#readBoolSetting(aSetting);
-    this.#settingsCache.set(aSetting, value);
-    return value;
-  }
-
-  async readStringSetting(aSetting) {
-    let value = await this.#readStringSetting(aSetting);
-    this.#settingsCache.set(aSetting, value);
-    return value;
-  }
-
-  // Private
 
   async #setSockets() {
     try {
@@ -511,167 +383,24 @@ class TorProvider {
     }
   }
 
-  #assertValidSettingKey(aSetting) {
-    // ensure the 'key' is a string
-    if (typeof aSetting !== "string") {
-      throw new Error(
-        `Expected setting of type string but received ${typeof aSetting}`
-      );
-    }
-  }
-
-  #assertValidSetting(aSetting, aValue) {
-    this.#assertValidSettingKey(aSetting);
-    switch (typeof aValue) {
-      case "boolean":
-      case "string":
-        return;
-      case "object":
-        if (aValue === null) {
-          return;
-        } else if (Array.isArray(aValue)) {
-          for (const element of aValue) {
-            if (typeof element !== "string") {
-              throw new Error(
-                `Setting '${aSetting}' array contains value of invalid type '${typeof element}'`
-              );
-            }
-          }
-          return;
-        }
-      // fall through
-      default:
-        throw new Error(
-          `Invalid object type received for setting '${aSetting}'`
-        );
-    }
-  }
-
-  // Perform a GETCONF command.
-  async #readSetting(aSetting) {
-    this.#assertValidSettingKey(aSetting);
-
-    const cmd = "GETCONF";
-    let reply = await this.sendCommand(cmd, aSetting);
-    return TorParsers.parseReply(cmd, aSetting, reply);
-  }
-
-  async #readStringSetting(aSetting) {
-    let lineArray = await this.#readSetting(aSetting);
-    if (lineArray.length !== 1) {
-      throw new Error(
-        `Expected an array with length 1 but received array of length ${lineArray.length}`
-      );
-    }
-    return lineArray[0];
-  }
-
-  async #readBoolSetting(aSetting) {
-    const value = this.#readStringSetting(aSetting);
-    switch (value) {
-      case "0":
-        return false;
-      case "1":
-        return true;
-      default:
-        throw new Error(`Expected boolean (1 or 0) but received '${value}'`);
-    }
-  }
-
-  async #trySend(cmd, args, rethrow) {
-    let connected = false;
-    let reply;
-    let leftAttempts = 2;
-    while (leftAttempts-- > 0) {
-      let conn;
-      try {
-        conn = await this.#getConnection();
-      } catch (e) {
-        logger.error("Cannot get a connection to the control port", e);
-        if (leftAttempts == 0 && rethrow) {
-          throw e;
-        }
-      }
-      if (!conn) {
-        continue;
-      }
-      // If we _ever_ got a connection, the caller should not try again
-      connected = true;
-      try {
-        reply = await conn.sendCommand(cmd + (args ? " " + args : ""));
-        if (reply) {
-          // Return for reuse.
-          this.#returnConnection();
-        } else {
-          // Connection is bad.
-          logger.warn(
-            "sendCommand returned an empty response, taking the connection as broken and closing it."
-          );
-          this.#closeConnection();
-        }
-      } catch (e) {
-        logger.error(`Cannot send the command ${cmd}`, e);
-        this.#closeConnection();
-        if (leftAttempts == 0 && rethrow) {
-          throw e;
-        }
-      }
-    }
-    return { connected, reply };
-  }
-
-  // Opens an authenticated connection, sets it to this.#controlConnection, and
-  // return it.
   async #getConnection() {
-    if (!this.#controlConnection) {
+    if (!this.#controlConnection?.isOpen) {
       this.#controlConnection = await lazy.controller();
-    }
-    if (this.#controlConnection.inUse) {
-      await new Promise((resolve, reject) =>
-        this.#connectionQueue.push({ resolve, reject })
-      );
-    } else {
-      this.#controlConnection.inUse = true;
     }
     return this.#controlConnection;
   }
 
-  #returnConnection() {
-    if (this.#connectionQueue.length) {
-      this.#connectionQueue.shift().resolve();
-    } else {
-      this.#controlConnection.inUse = false;
-    }
-  }
-
-  async #withConnection(func) {
-    // TODO: Make more robust?
-    const conn = await this.#getConnection();
-    try {
-      return await func(conn);
-    } finally {
-      this.#returnConnection();
-    }
-  }
-
-  // If aConn is omitted, the cached connection is closed.
   #closeConnection() {
     if (this.#controlConnection) {
       logger.info("Closing the control connection");
       this.#controlConnection.close();
       this.#controlConnection = null;
     }
-    for (const promise of this.#connectionQueue) {
-      promise.reject("Connection closed");
-    }
-    this.#connectionQueue = [];
   }
 
   async #reconnect() {
     this.#closeConnection();
-    const conn = await this.#getConnection();
-    logger.debug("Reconnected to the control port.");
-    this.#returnConnection(conn);
+    await this.#getConnection();
   }
 
   async #readAuthenticationCookie(aPath) {
@@ -777,8 +506,9 @@ class TorProvider {
     if (this.ownsTorDaemon) {
       // When we own the tor daemon, we listen to more events, that are used
       // for about:torconnect or for showing the logs in the settings page.
-      this._eventHandlers.set("STATUS_CLIENT", (_eventType, lines) =>
-        this._processBootstrapStatus(lines[0], false)
+      this._eventHandlers.set(
+        "STATUS_CLIENT",
+        this._processStatusClient.bind(this)
       );
       this._eventHandlers.set("NOTICE", this._processLog.bind(this));
       this._eventHandlers.set("WARN", this._processLog.bind(this));
@@ -809,23 +539,10 @@ class TorProvider {
       throw new Error("Event monitor connection not available");
     }
 
-    // TODO: Unify with TorProtocolService.sendCommand and put everything in the
-    // reviewed torbutton replacement.
-    const cmd = "GETINFO";
-    const key = "status/bootstrap-phase";
-    let reply = await this._connection.sendCommand(`${cmd} ${key}`);
-
-    // A typical reply looks like:
-    //  250-status/bootstrap-phase=NOTICE BOOTSTRAP PROGRESS=100 TAG=done SUMMARY="Done"
-    //  250 OK
-    reply = TorParsers.parseCommandResponse(reply);
-    if (!TorParsers.commandSucceeded(reply)) {
-      throw new Error(`${cmd} failed`);
-    }
-    reply = TorParsers.parseReply(cmd, key, reply);
-    if (reply.length) {
-      this._processBootstrapStatus(reply[0], true);
-    }
+    this._processBootstrapStatus(
+      await this._connection.getBootstrapPhase(),
+      true
+    );
   }
 
   // Returns captured log message as a text string (one message per line).
@@ -1116,15 +833,12 @@ class TorProvider {
   // to TorBootstrapStatus observers.
   // If aSuppressErrors is true, errors are ignored. This is used when we
   // are handling the response to a "GETINFO status/bootstrap-phase" command.
-  _processBootstrapStatus(aStatusMsg, aSuppressErrors) {
-    const statusObj = TorParsers.parseBootstrapStatus(aStatusMsg);
-    if (!statusObj) {
-      return;
-    }
-
+  _processBootstrapStatus(statusObj, suppressErrors) {
     // Notify observers
-    statusObj.wrappedJSObject = statusObj;
-    Services.obs.notifyObservers(statusObj, "TorBootstrapStatus");
+    Services.obs.notifyObservers(
+      { wrappedJSObject: statusObj },
+      "TorBootstrapStatus"
+    );
 
     if (statusObj.PROGRESS === 100) {
       this._isBootstrapDone = true;
@@ -1141,7 +855,7 @@ class TorProvider {
     if (
       statusObj.TYPE === "WARN" &&
       statusObj.RECOMMENDATION !== "ignore" &&
-      !aSuppressErrors
+      !suppressErrors
     ) {
       this._notifyBootstrapError(statusObj);
     }
@@ -1182,6 +896,15 @@ class TorProvider {
         TorProviderTopics.BootstrapError
       );
     }
+  }
+
+  _processStatusClient(_type, lines) {
+    const statusObj = TorParsers.parseBootstrapStatus(lines[0]);
+    if (!statusObj) {
+      // No `BOOTSTRAP` in the line
+      return;
+    }
+    this._processBootstrapStatus(statusObj, false);
   }
 
   async _processCircEvent(_type, lines) {
