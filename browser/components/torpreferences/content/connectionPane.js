@@ -12,20 +12,17 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 );
 
 const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
-  ChromeUtils.import("resource:///modules/TorSettings.jsm");
+  ChromeUtils.importESModule("resource:///modules/TorSettings.sys.mjs");
 
 const { TorParsers } = ChromeUtils.importESModule(
   "resource://gre/modules/TorParsers.sys.mjs"
 );
-const { TorProtocolService } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorProtocolService.sys.mjs"
-);
-const { TorMonitorService, TorMonitorTopics } = ChromeUtils.import(
-  "resource://gre/modules/TorMonitorService.jsm"
+const { TorProviderBuilder, TorProviderTopics } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorProviderBuilder.sys.mjs"
 );
 
 const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
-  ChromeUtils.import("resource:///modules/TorConnect.jsm");
+  ChromeUtils.importESModule("resource:///modules/TorConnect.sys.mjs");
 
 const { TorLogDialog } = ChromeUtils.import(
   "chrome://browser/content/torpreferences/torLogDialog.jsm"
@@ -51,7 +48,9 @@ const { ProvideBridgeDialog } = ChromeUtils.import(
   "chrome://browser/content/torpreferences/provideBridgeDialog.jsm"
 );
 
-const { MoatRPC } = ChromeUtils.import("resource:///modules/Moat.jsm");
+const { MoatRPC } = ChromeUtils.importESModule(
+  "resource:///modules/Moat.sys.mjs"
+);
 
 const { QRCode } = ChromeUtils.import("resource://gre/modules/QRCode.jsm");
 
@@ -156,7 +155,7 @@ const gConnectionPane = (function () {
     _populateXUL() {
       // saves tor settings to disk when navigate away from about:preferences
       window.addEventListener("blur", val => {
-        TorProtocolService.flushSettings();
+        TorProviderBuilder.build().flushSettings();
       });
 
       document
@@ -751,7 +750,7 @@ const gConnectionPane = (function () {
         // TODO: We could make sure TorSettings is in sync by monitoring also
         // changes of settings. At that point, we could query it, instead of
         // doing a query over the control port.
-        const bridge = TorMonitorService.currentBridge;
+        const bridge = TorProviderBuilder.build().currentBridge;
         if (bridge?.fingerprint !== this._currentBridgeId) {
           this._currentBridgeId = bridge?.fingerprint ?? null;
           this._updateConnectedBridges();
@@ -850,7 +849,7 @@ const gConnectionPane = (function () {
       });
 
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
-      Services.obs.addObserver(this, TorMonitorTopics.BridgeChanged);
+      Services.obs.addObserver(this, TorProviderTopics.BridgeChanged);
       Services.obs.addObserver(this, "intl:app-locales-changed");
     },
 
@@ -875,7 +874,7 @@ const gConnectionPane = (function () {
       // unregister our observer topics
       Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
       Services.obs.removeObserver(this, TorConnectTopics.StateChange);
-      Services.obs.removeObserver(this, TorMonitorTopics.BridgeChanged);
+      Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
       Services.obs.removeObserver(this, "intl:app-locales-changed");
     },
 
@@ -907,7 +906,7 @@ const gConnectionPane = (function () {
           this.onStateChange();
           break;
         }
-        case TorMonitorTopics.BridgeChanged: {
+        case TorProviderTopics.BridgeChanged: {
           if (data?.fingerprint !== this._currentBridgeId) {
             this._checkConnectedBridge();
           }

@@ -4,11 +4,13 @@ var EXPORTED_SYMBOLS = ["RequestBridgeDialog"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { BridgeDB } = ChromeUtils.import("resource:///modules/BridgeDB.jsm");
+const { BridgeDB } = ChromeUtils.importESModule(
+  "resource:///modules/BridgeDB.sys.mjs"
+);
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
-const { TorConnect, TorConnectTopics } = ChromeUtils.import(
-  "resource:///modules/TorConnect.jsm"
+const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
+  "resource:///modules/TorConnect.sys.mjs"
 );
 
 class RequestBridgeDialog {

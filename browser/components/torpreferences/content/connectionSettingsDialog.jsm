@@ -2,8 +2,8 @@
 
 var EXPORTED_SYMBOLS = ["ConnectionSettingsDialog"];
 
-const { TorSettings, TorProxyType } = ChromeUtils.import(
-  "resource:///modules/TorSettings.jsm"
+const { TorSettings, TorProxyType } = ChromeUtils.importESModule(
+  "resource:///modules/TorSettings.sys.mjs"
 );
 
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
