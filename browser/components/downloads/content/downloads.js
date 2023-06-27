@@ -198,8 +198,6 @@ var DownloadsPanel = {
       );
       dismissButton.addEventListener("click", event => {
         Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
-        document.getElementById("downloadsWarning").hidden = true;
-        this._focusPanel(true);
       });
       this._torWarningInitialized = true;
     }
