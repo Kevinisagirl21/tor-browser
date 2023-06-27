@@ -3,7 +3,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  TorCheckService: "resource://torbutton/modules/TorCheckService.sys.mjs",
+  TorCheckService: "resource:///modules/TorCheckService.sys.mjs",
 });
 
 const kTorCheckTopic = "TorCheckService:StatusChanged";
