@@ -1,45 +1,6 @@
 import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
 
 /**
- * @callback MessageCallback A callback to receive messages from the control
- * port.
- * @param {string} message The message to handle
- */
-/**
- * @callback RemoveCallback A function used to remove a previously registered
- * callback.
- */
-
-class CallbackDispatcher {
-  #callbackPairs = [];
-
-  /**
-   * Register a callback to handle a certain type of responses.
-   *
-   * @param {RegExp} regex The regex that tells which messages the callback
-   * wants to handle.
-   * @param {MessageCallback} callback The function to call
-   * @returns {RemoveCallback} A function to remove the just added callback
-   */
-  addCallback(regex, callback) {
-    this.#callbackPairs.push([regex, callback]);
-  }
-
-  /**
-   * Push a certain message to all the callbacks whose regex matches it.
-   *
-   * @param {string} message The message to push to the callbacks
-   */
-  pushMessage(message) {
-    for (const [regex, callback] of this.#callbackPairs) {
-      if (message.match(regex)) {
-        callback(message);
-      }
-    }
-  }
-}
-
-/**
  * A wrapper around XPCOM sockets and buffers to handle streams in a standard
  * async JS fashion.
  * This class can handle both Unix sockets and TCP sockets.
@@ -273,7 +234,6 @@ class AsyncSocket {
  * @property {Function} reject The function to reject the promise associated to
  * the command
  */
-
 /**
  * @typedef {object} Bridge
  * @property {string} transport The transport of the bridge, or vanilla if not
@@ -303,13 +263,9 @@ class AsyncSocket {
  * @property {string} Flags Additional flags, such as Permanent
  */
 /**
- * @callback EventFilterCallback
- * @param {any} data Either a raw string, or already parsed data
- * @returns {boolean}
- */
-/**
- * @callback EventCallback
- * @param {any} data Either a raw string, or already parsed data
+ * @callback EventCallback A callback to receive messages from the control
+ * port.
+ * @param {string} message The message to handle
  */
 
 class TorError extends Error {
@@ -324,26 +280,13 @@ class TorError extends Error {
   }
 }
 
-class ControlSocket {
+class TorController {
   /**
    * The socket to write to the control port.
    *
    * @type {AsyncSocket}
    */
   #socket;
-
-  /**
-   * The dispatcher used for the data we receive over the control port.
-   *
-   * @type {CallbackDispatcher}
-   */
-  #mainDispatcher = new CallbackDispatcher();
-  /**
-   * A secondary dispatcher used only to dispatch aynchronous events.
-   *
-   * @type {CallbackDispatcher}
-   */
-  #notificationDispatcher = new CallbackDispatcher();
 
   /**
    * Data we received on a read but that was not a complete line (missing a
@@ -365,23 +308,48 @@ class ControlSocket {
    */
   #commandQueue = [];
 
-  constructor(asyncSocket) {
-    this.#socket = asyncSocket;
+  /**
+   * The callbacks for handling async notifications.
+   *
+   * @type {Map<string, EventCallback>}
+   */
+  #eventCallbacks = new Map();
 
-    // #mainDispatcher pushes only async notifications (650) to
-    // #notificationDispatcher
-    this.#mainDispatcher.addCallback(
-      /^650/,
-      this.#handleNotification.bind(this)
-    );
-    // callback for handling responses and errors
-    this.#mainDispatcher.addCallback(
-      /^[245]\d\d/,
-      this.#handleCommandReply.bind(this)
-    );
+  /**
+   * Connect to a control port over a Unix socket.
+   * Not available on Windows.
+   *
+   * @param {nsIFile} ipcFile The path to the Unix socket to connect to
+   */
+  static fromIpcFile(ipcFile) {
+    return new TorController(AsyncSocket.fromIpcFile(ipcFile));
+  }
 
+  /**
+   * Connect to a control port over a TCP socket.
+   *
+   * @param {string} host The hostname to connect to
+   * @param {number} port The port to connect the to
+   */
+  static fromSocketAddress(host, port) {
+    return new TorController(AsyncSocket.fromSocketAddress(host, port));
+  }
+
+  /**
+   * Construct the controller and start the message pump.
+   * The class should not be constructed directly, but through static methods.
+   * However, this is public because JavaScript does not support private
+   * constructors.
+   *
+   * @private
+   * @param {AsyncSocket} socket The socket to use
+   */
+  constructor(socket) {
+    this.#socket = socket;
     this.#startMessagePump();
   }
+
+  // Socket and communication handling
 
   /**
    * Return the next line in the queue. If there is not any, block until one is
@@ -464,6 +432,42 @@ class ControlSocket {
   }
 
   /**
+   * Handles a message that was received as a reply to a command (i.e., all the
+   * messages that are not async notification messages starting with 650).
+   *
+   * @param {string} message The message to handle
+   */
+  #handleCommandReply(message) {
+    const cmd = this.#commandQueue.shift();
+    // We resolve also for messages that are failures for sure. The commands
+    // should always check the output.
+    cmd.resolve(message);
+
+    // send next command if one is available
+    if (this.#commandQueue.length) {
+      this.#writeNextCommand();
+    }
+  }
+
+  /**
+   * Re-route an event message to the notification dispatcher.
+   *
+   * @param {string} message The message received on the control port. It should
+   * starts with `"650" SP`.
+   */
+  #handleNotification(message) {
+    const maybeType = message.match(/^650\s+(?<type>\S+)/);
+    const callback = this.#eventCallbacks.get(maybeType?.groups.type);
+    if (callback) {
+      try {
+        callback(message);
+      } catch (e) {
+        console.error("An event watcher threw", e);
+      }
+    }
+  }
+
+  /**
    * Read messages on the socket and routed them to a dispatcher until the
    * socket is open or some error happens (including the underlying socket being
    * closed).
@@ -475,8 +479,11 @@ class ControlSocket {
       // condition becoming false.
       while (this.#socket) {
         const message = await this.#readMessage();
-        // log("controlPort >> " + message);
-        this.#mainDispatcher.pushMessage(message);
+        if (message.startsWith("650")) {
+          this.#handleNotification(message);
+        } else {
+          this.#handleCommandReply(message);
+        }
       }
     } catch (err) {
       try {
@@ -497,7 +504,6 @@ class ControlSocket {
    */
   #writeNextCommand() {
     const cmd = this.#commandQueue[0];
-    // log("controlPort << " + cmd.commandString);
     this.#socket.write(`${cmd.commandString}\r\n`).catch(cmd.reject);
   }
 
@@ -508,12 +514,11 @@ class ControlSocket {
    * needs to handle multi-line messages.
    *
    * @param {string} commandString
-   * @returns {Promise<string>} The message sent by the control port. It will
-   * always start with 2xx. In case of other codes the function will throw,
-   * instead. This means that the return value will never be an empty string
-   * (even though it will not include the final CRLF).
+   * @returns {Promise<string>} The message sent by the control port. The return
+   * value should never be an empty string (even though it will not include the
+   * final CRLF).
    */
-  async sendCommand(commandString) {
+  async #sendCommand(commandString) {
     if (!this.#socket) {
       throw new Error("ControlSocket not open");
     }
@@ -534,42 +539,16 @@ class ControlSocket {
   }
 
   /**
-   * Handles a message starting with 2xx, 4xx, or 5xx.
-   * This function should be used only as a callback for the main dispatcher.
+   * Send a simple command whose response is expected to be simply a "250 OK".
+   * The function will not return a reply, but will throw if an unexpected one
+   * is received.
    *
-   * @param {string} message The message to handle
+   * @param {string} command The command to send
    */
-  #handleCommandReply(message) {
-    const cmd = this.#commandQueue.shift();
-    if (message[0] === "2") {
-      cmd.resolve(message);
-    } else if (message.match(/^[45]/)) {
-      cmd.reject(new TorError(cmd.commandString, message));
-    } else {
-      // This should never happen, as the dispatcher should filter the messages
-      // already.
-      cmd.reject(
-        new Error(`Received unexpected message:\n----\n${message}\n----`)
-      );
-    }
-
-    // send next command if one is available
-    if (this.#commandQueue.length) {
-      this.#writeNextCommand();
-    }
-  }
-
-  /**
-   * Re-route an event message to the notification dispatcher.
-   * This function should be used only as a callback for the main dispatcher.
-   *
-   * @param {string} message The message received on the control port
-   */
-  #handleNotification(message) {
-    try {
-      this.#notificationDispatcher.pushMessage(message);
-    } catch (e) {
-      console.error("An event watcher threw", e);
+  async #sendCommandSimple(command) {
+    const reply = await this.#sendCommand(command);
+    if (!/^250 OK\s*$/i.test(reply)) {
+      throw new TorError(command, reply);
     }
   }
 
@@ -605,82 +584,10 @@ class ControlSocket {
   }
 
   /**
-   * Register an event watcher.
-   *
-   * @param {RegExp} regex The regex to filter on messages to receive
-   * @param {MessageCallback} callback The callback for the messages
-   */
-  addNotificationCallback(regex, callback) {
-    this.#notificationDispatcher.addCallback(regex, callback);
-  }
-
-  /**
    * Tells whether the underlying socket is still open.
    */
   get isOpen() {
     return !!this.#socket;
-  }
-}
-
-class TorController {
-  /**
-   * The control socket
-   *
-   * @type {ControlSocket}
-   */
-  #socket;
-
-  /**
-   * Builds a new TorController.
-   *
-   * @param {AsyncSocket} socket The socket to communicate to the control port
-   */
-  constructor(socket) {
-    this.#socket = new ControlSocket(socket);
-  }
-
-  /**
-   * Tells whether the underlying socket is open.
-   *
-   * @returns {boolean}
-   */
-  get isOpen() {
-    return this.#socket.isOpen;
-  }
-
-  /**
-   * Close the underlying socket.
-   */
-  close() {
-    this.#socket.close();
-  }
-
-  /**
-   * Send a command over the control port.
-   * TODO: Make this function private, and force the operations to go through
-   * specialized methods.
-   *
-   * @param {string} cmd The command to send
-   * @returns {Promise<string>} A 2xx response obtained from the control port.
-   * For other codes, this function will throw. The returned string will never
-   * be empty.
-   */
-  async sendCommand(cmd) {
-    return this.#socket.sendCommand(cmd);
-  }
-
-  /**
-   * Send a simple command whose response is expected to be simply a "250 OK".
-   * The function will not return a reply, but will throw if an unexpected one
-   * is received.
-   *
-   * @param {string} command The command to send
-   */
-  async #sendCommandSimple(command) {
-    const reply = await this.sendCommand(command);
-    if (!/^250 OK\s*$/i.test(reply)) {
-      throw new TorError(command, reply);
-    }
   }
 
   /**
@@ -695,6 +602,8 @@ class TorController {
     }
     await this.#sendCommandSimple(`authenticate ${password || ""}`);
   }
+
+  // Information
 
   /**
    * Sends a GETINFO for a single key.
@@ -713,7 +622,7 @@ class TorController {
   async #getInfo(key) {
     this.#expectString(key);
     const cmd = `GETINFO ${key}`;
-    const reply = await this.sendCommand(cmd);
+    const reply = await this.#sendCommand(cmd);
     const match =
       reply.match(/^250-([^=]+)=(.*)$/m) ||
       reply.match(/^250\+([^=]+)=([\s\S]*?)^\.\r?\n^250 OK\s*$/m);
@@ -805,7 +714,7 @@ class TorController {
       throw new Error("The key can be composed only of letters and numbers.");
     }
     const cmd = `GETCONF ${key}`;
-    const reply = await this.sendCommand(cmd);
+    const reply = await this.#sendCommand(cmd);
     // From control-spec.txt: a 'default' value semantically different from an
     // empty string will not have an equal sign, just `250 $key`.
     const defaultRe = new RegExp(`^250[-\\s]${key}$`, "gim");
@@ -924,7 +833,7 @@ class TorController {
    */
   async onionAuthViewKeys() {
     const cmd = "onion_client_auth_view";
-    const message = await this.sendCommand(cmd);
+    const message = await this.#sendCommand(cmd);
     // Either `250-CLIENT`, or `250 OK` if no keys are available.
     if (!message.startsWith("250")) {
       throw new TorError(cmd, message);
@@ -964,7 +873,7 @@ class TorController {
     if (isPermanent) {
       cmd += " Flags=Permanent";
     }
-    const reply = await this.sendCommand(cmd);
+    const reply = await this.#sendCommand(cmd);
     const status = reply.substring(0, 3);
     if (status !== "250" && status !== "251" && status !== "252") {
       throw new TorError(cmd, reply);
@@ -980,7 +889,7 @@ class TorController {
   async onionAuthRemove(address) {
     this.#expectString(address, "address");
     const cmd = `onion_client_auth_remove ${address}`;
-    const reply = await this.sendCommand(cmd);
+    const reply = await this.#sendCommand(cmd);
     const status = reply.substring(0, 3);
     if (status !== "250" && status !== "251") {
       throw new TorError(cmd, reply);
@@ -1046,8 +955,7 @@ class TorController {
    */
   watchEvent(type, callback) {
     this.#expectString(type, "type");
-    const start = `650 ${type}`;
-    this.#socket.addNotificationCallback(new RegExp(`^${start}`), callback);
+    this.#eventCallbacks.set(type, callback);
   }
 
   // Other helpers
@@ -1112,7 +1020,7 @@ class TorController {
   }
 }
 
-const controlPortInfo = {};
+let controlPortInfo = {};
 
 /**
  * Sets Tor control port connection parameters to be used in future calls to
@@ -1130,10 +1038,18 @@ const controlPortInfo = {};
  * @param {string} password The password of the control port in clear text.
  */
 export function configureControlPortModule(ipcFile, host, port, password) {
-  controlPortInfo.ipcFile = ipcFile;
-  controlPortInfo.host = host;
-  controlPortInfo.port = port || 9151;
-  controlPortInfo.password = password;
+  if (ipcFile && (host || port)) {
+    throw new Error("Called both with IPC and network parameters set.");
+  }
+  if (ipcFile) {
+    controlPortInfo = { ipcFile, password };
+  } else {
+    controlPortInfo = {
+      host,
+      port: port || 9151,
+      password,
+    };
+  }
 }
 
 /**
@@ -1153,16 +1069,15 @@ export async function controller() {
   if (!controlPortInfo.ipcFile && !controlPortInfo.host) {
     throw new Error("Please call configureControlPortModule first");
   }
-  let socket;
+  let controller;
   if (controlPortInfo.ipcFile) {
-    socket = AsyncSocket.fromIpcFile(controlPortInfo.ipcFile);
+    controller = TorController.fromIpcFile(controlPortInfo.ipcFile);
   } else {
-    socket = AsyncSocket.fromSocketAddress(
+    controller = TorController.fromSocketAddress(
       controlPortInfo.host,
       controlPortInfo.port
     );
   }
-  const controller = new TorController(socket);
   try {
     await controller.authenticate(controlPortInfo.password);
   } catch (e) {
