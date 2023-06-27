@@ -52,19 +52,6 @@ function StartupObserver() {
   this._prefs = Services.prefs;
   this.logger.log(3, "Startup Observer created");
 
-  var prefName = "browser.startup.homepage";
-  if (Services.env.exists("TOR_DEFAULT_HOMEPAGE")) {
-    // if the user has set this value in a previous installation, don't override it
-    if (!this._prefs.prefHasUserValue(prefName)) {
-      this._prefs.setCharPref(
-        prefName,
-        Services.env.get("TOR_DEFAULT_HOMEPAGE")
-      );
-    }
-  }
-
-  this.is_tbb = true;
-
   try {
     // XXX: We're in a race with HTTPS-Everywhere to update our proxy settings
     // before the initial SSL-Observatory test... If we lose the race, Firefox
@@ -85,10 +72,6 @@ StartupObserver.prototype = {
   // some weird proxy caching code that showed up in FF15.
   // Otherwise, homepage domain loads fail forever.
   setProxySettings() {
-    if (!this.is_tbb) {
-      return;
-    }
-
     // Bug 1506: Still want to get these env vars
     if (Services.env.exists("TOR_TRANSPROXY")) {
       this.logger.log(3, "Resetting Tor settings to transproxy");
