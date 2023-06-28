@@ -909,7 +909,7 @@ class Onboarding {
     }
 
     const kOnionURL = "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/";  // DuckDuckGo
-    const kLearnMore = "https://www.torproject.org/releases/tor-browser-12-0/";
+    const kLearnMore = "https://www.torproject.org/releases/tor-browser-12-5/";
     let handledTourActionClick = false;
     switch (id) {
       case "onboarding-overlay-button-icon":
