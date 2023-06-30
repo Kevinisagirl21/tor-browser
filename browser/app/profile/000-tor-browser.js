@@ -47,21 +47,11 @@ pref("network.http.connection-retry-timeout", 0);
 
 // Old torbutton prefs
 
-// debug prefs
-pref("extensions.torbutton.loglevel", 4);
-pref("extensions.torbutton.logmethod", 1); // 0=stdout, 1=errorconsole, 2=debuglog
-
 // Tor check and proxy prefs
 pref("extensions.torbutton.test_enabled", true);
 pref("extensions.torbutton.test_url", "https://check.torproject.org/?TorButton=true");
 pref("extensions.torbutton.local_tor_check", true);
 pref("extensions.torbutton.use_nontor_proxy", false);
-
-// State prefs:
-pref("extensions.torbutton.startup", false);
-
-// Security prefs:
-pref("extensions.torbutton.resize_new_windows", false);
 
 // Browser home page:
 pref("browser.startup.homepage", "about:tor");
@@ -77,14 +67,11 @@ pref("extensions.torbutton.pref_fixup_version", 0);
 // Formerly tor-launcher defaults
 // When presenting the setup wizard, first prompt for locale.
 pref("intl.locale.matchOS", true);
-pref("extensions.torlauncher.prompt_for_locale", true);
 
 pref("extensions.torlauncher.start_tor", true);
 pref("extensions.torlauncher.prompt_at_startup", true);
 pref("extensions.torlauncher.quickstart", false);
 
-pref("extensions.torlauncher.loglevel", 4);  // 1=verbose, 2=debug, 3=info, 4=note, 5=warn
-pref("extensions.torlauncher.logmethod", 1);  // 0=stdout, 1=errorconsole, 2=debuglog
 pref("extensions.torlauncher.max_tor_log_entries", 1000);
 
 // By default, Tor Launcher configures a TCP listener for the Tor
