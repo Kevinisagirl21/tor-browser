@@ -20,7 +20,9 @@
       "name": "DuckDuckGoOnion",
       "search_url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion",
       "search_form": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/?q={searchTerms}",
-      "search_url_get_params": "q={searchTerms}"
+      "search_url_get_params": "q={searchTerms}",
+      "suggest_url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/ac/",
+      "suggest_url_get_params": "q={searchTerms}&type=list"
     }
   }
 }
