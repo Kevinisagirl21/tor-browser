@@ -201,6 +201,7 @@ static_assert(
 #define KB *1024ULL
 #define MB *1024ULL KB
 #define GB *1024ULL MB
+#define TB *1024ULL GB
 
 namespace mozilla::dom::quota {
 
@@ -6365,6 +6366,9 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
                 groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
 
             if (originInfo && originInfo->LockedPersisted()) {
+              if (nsContentUtils::ShouldResistFingerprinting()) {
+                return std::pair(mTemporaryStorageUsage, 8 TB);
+              }
               return std::pair(mTemporaryStorageUsage, mTemporaryStorageLimit);
             }
           }
@@ -6376,6 +6380,9 @@ std::pair<uint64_t, uint64_t> QuotaManager::GetUsageAndLimitForEstimate(
     }
   }
 
+  if (nsContentUtils::ShouldResistFingerprinting()) {
+    return std::pair(totalGroupUsage, 10 GB);
+  }
   return std::pair(totalGroupUsage, GetGroupLimit());
 }
 
