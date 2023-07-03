@@ -13,6 +13,10 @@ import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs"
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+});
+
 ChromeUtils.defineModuleGetter(
   lazy,
   "controller",
@@ -233,7 +237,10 @@ export const TorMonitorService = {
     // TorProcess should be instanced once, then always reused and restarted
     // only through the prompt it exposes when the controlled process dies.
     if (!this._torProcess) {
-      this._torProcess = new TorProcess();
+      this._torProcess = new TorProcess(
+        lazy.TorProtocolService.torControlPortInfo,
+        lazy.TorProtocolService.torSOCKSPortInfo
+      );
       this._torProcess.onExit = () => {
         this._shutDownEventMonitor();
         Services.obs.notifyObservers(null, TorTopics.ProcessExited);
@@ -254,6 +261,7 @@ export const TorMonitorService = {
       await this._torProcess.start();
       if (this._torProcess.isRunning) {
         logger.info("tor started");
+        this._torProcessStartTime = Date.now();
       }
     } catch (e) {
       // TorProcess already logs the error.

@@ -306,6 +306,24 @@ export const TorProtocolService = {
     return this._SOCKSPortInfo;
   },
 
+  get torControlPortInfo() {
+    const info = {
+      password: this._hashPassword(this._controlPassword),
+    };
+    if (this._controlIPCFile) {
+      info.ipcFile = this._controlIPCFile?.clone();
+    }
+    if (this._controlPort) {
+      info.host = this._controlHost;
+      info.port = this._controlPort;
+    }
+    return info;
+  },
+
+  get torSOCKSPortInfo() {
+    return this._SOCKSPortInfo;
+  },
+
   // Public, but called only internally
 
   // Executes a command on the control port.
@@ -469,115 +487,8 @@ export const TorProtocolService = {
         this._controlPassword = this._generateRandomPassword();
       }
 
-      // Determine what kind of SOCKS port Tor and the browser will use.
-      // On Windows (where Unix domain sockets are not supported), TCP is
-      // always used.
-      //
-      // The following environment variables are supported and take
-      // precedence over preferences:
-      //    TOR_SOCKS_IPC_PATH  (file system path; ignored on Windows)
-      //    TOR_SOCKS_HOST
-      //    TOR_SOCKS_PORT
-      //
-      // The following preferences are consulted:
-      //    network.proxy.socks
-      //    network.proxy.socks_port
-      //    extensions.torlauncher.socks_port_use_ipc (Boolean)
-      //    extensions.torlauncher.socks_ipc_path (file system path)
-      // If extensions.torlauncher.socks_ipc_path is empty, a default
-      // path is used (<tor-data-directory>/socks.socket).
-      //
-      // When using TCP, if a value is not defined via an env variable it is
-      // taken from the corresponding browser preference if possible. The
-      // exceptions are:
-      //   If network.proxy.socks contains a file: URL, a default value of
-      //     "127.0.0.1" is used instead.
-      //   If the network.proxy.socks_port value is 0, a default value of
-      //     9150 is used instead.
-      //
-      // Supported scenarios:
-      // 1. By default, an IPC object at a default path is used.
-      // 2. If extensions.torlauncher.socks_port_use_ipc is set to false,
-      //    a TCP socket at 127.0.0.1:9150 is used, unless different values
-      //    are set in network.proxy.socks and network.proxy.socks_port.
-      // 3. If the TOR_SOCKS_IPC_PATH env var is set, an IPC object at that
-      //    path is used (e.g., a Unix domain socket).
-      // 4. If the TOR_SOCKS_HOST and/or TOR_SOCKS_PORT env vars are set, TCP
-      //    is used. Values not set via env vars will be taken from the
-      //    network.proxy.socks and network.proxy.socks_port prefs as described
-      //    above.
-      // 5. If extensions.torlauncher.socks_port_use_ipc is true and
-      //    extensions.torlauncher.socks_ipc_path is set, an IPC object at
-      //    the specified path is used.
-      // 6. Tor Launcher is disabled. Torbutton will respect the env vars if
-      //    present; if not, the values in network.proxy.socks and
-      //    network.proxy.socks_port are used without modification.
-
-      let useIPC;
-      this._SOCKSPortInfo = { ipcFile: undefined, host: undefined, port: 0 };
-      if (!isWindows && Services.env.exists("TOR_SOCKS_IPC_PATH")) {
-        let ipcPath = Services.env.get("TOR_SOCKS_IPC_PATH");
-        this._SOCKSPortInfo.ipcFile = new lazy.FileUtils.File(ipcPath);
-        useIPC = true;
-      } else {
-        // Check for TCP host and port environment variables.
-        if (Services.env.exists("TOR_SOCKS_HOST")) {
-          this._SOCKSPortInfo.host = Services.env.get("TOR_SOCKS_HOST");
-          useIPC = false;
-        }
-        if (Services.env.exists("TOR_SOCKS_PORT")) {
-          this._SOCKSPortInfo.port = parseInt(
-            Services.env.get("TOR_SOCKS_PORT"),
-            10
-          );
-          useIPC = false;
-        }
-      }
-
-      if (useIPC === undefined) {
-        useIPC =
-          !isWindows &&
-          Services.prefs.getBoolPref(
-            "extensions.torlauncher.socks_port_use_ipc",
-            false
-          );
-      }
-
-      // Fill in missing SOCKS info from prefs.
-      if (useIPC) {
-        if (!this._SOCKSPortInfo.ipcFile) {
-          this._SOCKSPortInfo.ipcFile = TorLauncherUtil.getTorFile(
-            "socks_ipc",
-            false
-          );
-        }
-      } else {
-        if (!this._SOCKSPortInfo.host) {
-          let socksAddr = Services.prefs.getCharPref(
-            "network.proxy.socks",
-            "127.0.0.1"
-          );
-          let socksAddrHasHost = socksAddr && !socksAddr.startsWith("file:");
-          this._SOCKSPortInfo.host = socksAddrHasHost ? socksAddr : "127.0.0.1";
-        }
-
-        if (!this._SOCKSPortInfo.port) {
-          let socksPort = Services.prefs.getIntPref(
-            "network.proxy.socks_port",
-            0
-          );
-          // This pref is set as 0 by default in Firefox, use 9150 if we get 0.
-          this._SOCKSPortInfo.port = socksPort != 0 ? socksPort : 9150;
-        }
-      }
-
-      logger.info("SOCKS port type: " + (useIPC ? "IPC" : "TCP"));
-      if (useIPC) {
-        logger.info(`ipcFile: ${this._SOCKSPortInfo.ipcFile.path}`);
-      } else {
-        logger.info(`SOCKS host: ${this._SOCKSPortInfo.host}`);
-        logger.info(`SOCKS port: ${this._SOCKSPortInfo.port}`);
-      }
+      this._SOCKSPortInfo = TorLauncherUtil.getPreferredSocksConfiguration();
+      TorLauncherUtil.setProxyConfiguration(this._SOCKSPortInfo);
 
       // Set the global control port info parameters.
       // These values may be overwritten by torbutton when it initializes, but

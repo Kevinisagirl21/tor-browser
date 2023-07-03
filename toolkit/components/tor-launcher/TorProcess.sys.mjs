@@ -4,18 +4,10 @@ import { Subprocess } from "resource://gre/modules/Subprocess.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorProtocolService",
-  "resource://gre/modules/TorProtocolService.jsm"
-);
-const { TorLauncherUtil } = ChromeUtils.import(
-  "resource://gre/modules/TorLauncherUtil.jsm"
-);
-
-const { TorParsers } = ChromeUtils.import(
-  "resource://gre/modules/TorParsers.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
+  TorParsers: "resource://gre/modules/TorParsers.sys.mjs",
+});
 
 const TorProcessStatus = Object.freeze({
   Unknown: 0,
@@ -30,16 +22,51 @@ const logger = new ConsoleAPI({
 });
 
 export class TorProcess {
+  #controlSettings;
+  #socksSettings;
   #exeFile = null;
   #dataDir = null;
   #args = [];
   #subprocess = null;
   #status = TorProcessStatus.Unknown;
-  #torProcessStartTime = null; // JS Date.now()
-  #didConnectToTorControlPort = false; // Have we ever made a connection?
+  // Have we ever made a connection on the control port?
+  #didConnectToTorControlPort = false;
 
   onExit = () => {};
   onRestart = () => {};
+
+  constructor(controlSettings, socksSettings) {
+    if (
+      controlSettings &&
+      !controlSettings.password &&
+      !controlSettings.cookieFile
+    ) {
+      throw new Error("Unauthenticated control port is not supported");
+    }
+
+    const checkPort = port =>
+      port === undefined ||
+      (Number.isInteger(controlSettings.port) &&
+        controlSettings.port > 0 &&
+        controlSettings.port < 65535);
+    if (!checkPort(controlSettings?.port)) {
+      throw new Error("Invalid control port");
+    }
+    if (!checkPort(socksSettings.port)) {
+      throw new Error("Invalid port specified for the SOCKS port");
+    }
+
+    this.#controlSettings = { ...controlSettings };
+    const ipcFileToString = file =>
+      "unix:" + lazy.TorParsers.escapeString(file.path);
+    if (controlSettings.ipcFile) {
+      this.#controlSettings.ipcFile = ipcFileToString(controlSettings.ipcFile);
+    }
+    this.#socksSettings = { ...socksSettings };
+    if (socksSettings.ipcFile) {
+      this.#socksSettings.ipcFile = ipcFileToString(socksSettings.ipcFile);
+    }
+  }
 
   get status() {
     return this.#status;
@@ -61,7 +88,7 @@ export class TorProcess {
 
     try {
       this.#makeArgs();
-      this.#addControlPortArg();
+      this.#addControlPortArgs();
       this.#addSocksPortArg();
 
       const pid = Services.appinfo.processID;
@@ -69,7 +96,7 @@ export class TorProcess {
         this.#args.push("__OwningControllerProcess", pid.toString());
       }
 
-      if (TorLauncherUtil.shouldShowNetworkSettings) {
+      if (lazy.TorLauncherUtil.shouldShowNetworkSettings) {
         this.#args.push("DisableNetwork", "1");
       }
 
@@ -91,24 +118,26 @@ export class TorProcess {
         command: this.#exeFile.path,
         arguments: this.#args,
         stderr: "stdout",
-        workdir: TorLauncherUtil.getTorFile("pt-startup-dir", false).path,
+        workdir: lazy.TorLauncherUtil.getTorFile("pt-startup-dir", false).path,
       };
       this.#subprocess = await Subprocess.call(options);
-      this.#dumpStdout();
-      this.#watchProcess();
       this.#status = TorProcessStatus.Running;
-      this.#torProcessStartTime = Date.now();
     } catch (e) {
       this.#status = TorProcessStatus.Exited;
       this.#subprocess = null;
       logger.error("startTor error:", e);
       throw e;
     }
+
+    // Do not await the following functions, as they will return only when the
+    // process exits.
+    this.#dumpStdout();
+    this.#watchProcess();
   }
 
   // Forget about a process.
   //
-  // Instead of killing the tor process, we  rely on the TAKEOWNERSHIP feature
+  // Instead of killing the tor process, we rely on the TAKEOWNERSHIP feature
   // to shut down tor when we close the control port connection.
   //
   // Previously, we sent a SIGNAL HALT command to the tor control port,
@@ -175,16 +204,17 @@ export class TorProcess {
     if (!this.#didConnectToTorControlPort) {
       // tor might be misconfigured, becauser we could never connect to it
       const key = "tor_exited_during_startup";
-      s = TorLauncherUtil.getLocalizedString(key);
+      s = lazy.TorLauncherUtil.getLocalizedString(key);
     } else {
       // tor exited suddenly, so configuration should be okay
       s =
-        TorLauncherUtil.getLocalizedString("tor_exited") +
+        lazy.TorLauncherUtil.getLocalizedString("tor_exited") +
         "\n\n" +
-        TorLauncherUtil.getLocalizedString("tor_exited2");
+        lazy.TorLauncherUtil.getLocalizedString("tor_exited2");
     }
     logger.info(s);
-    const defaultBtnLabel = TorLauncherUtil.getLocalizedString("restart_tor");
+    const defaultBtnLabel =
+      lazy.TorLauncherUtil.getLocalizedString("restart_tor");
     let cancelBtnLabel = "OK";
     try {
       const kSysBundleURI = "chrome://global/locale/commonDialogs.properties";
@@ -194,7 +224,7 @@ export class TorProcess {
       logger.warn("Could not localize the cancel button", e);
     }
 
-    const restart = TorLauncherUtil.showConfirm(
+    const restart = lazy.TorLauncherUtil.showConfirm(
       null,
       s,
       defaultBtnLabel,
@@ -212,17 +242,15 @@ export class TorProcess {
   }
 
   #makeArgs() {
-    // Ideally, we would cd to the Firefox application directory before
-    // starting tor (but we don't know how to do that). Instead, we
-    // rely on the TBB launcher to start Firefox from the right place.
-
+    this.#exeFile = lazy.TorLauncherUtil.getTorFile("tor", false);
+    const torrcFile = lazy.TorLauncherUtil.getTorFile("torrc", true);
     // Get the Tor data directory first so it is created before we try to
     // construct paths to files that will be inside it.
-    this.#exeFile = TorLauncherUtil.getTorFile("tor", false);
-    const torrcFile = TorLauncherUtil.getTorFile("torrc", true);
-    this.#dataDir = TorLauncherUtil.getTorFile("tordatadir", true);
-    const onionAuthDir = TorLauncherUtil.getTorFile("toronionauthdir", true);
-    const hashedPassword = lazy.TorProtocolService.torGetPassword(true);
+    this.#dataDir = lazy.TorLauncherUtil.getTorFile("tordatadir", true);
+    const onionAuthDir = lazy.TorLauncherUtil.getTorFile(
+      "toronionauthdir",
+      true
+    );
     let detailsKey;
     if (!this.#exeFile) {
       detailsKey = "tor_missing";
@@ -232,13 +260,11 @@ export class TorProcess {
       detailsKey = "datadir_missing";
     } else if (!onionAuthDir) {
       detailsKey = "onionauthdir_missing";
-    } else if (!hashedPassword) {
-      detailsKey = "password_hash_missing";
     }
     if (detailsKey) {
-      const details = TorLauncherUtil.getLocalizedString(detailsKey);
+      const details = lazy.TorLauncherUtil.getLocalizedString(detailsKey);
       const key = "unable_to_start_tor";
-      const err = TorLauncherUtil.getFormattedLocalizedString(
+      const err = lazy.TorLauncherUtil.getFormattedLocalizedString(
         key,
         [details],
         1
@@ -246,7 +272,7 @@ export class TorProcess {
       throw new Error(err);
     }
 
-    const torrcDefaultsFile = TorLauncherUtil.getTorFile(
+    const torrcDefaultsFile = lazy.TorLauncherUtil.getTorFile(
       "torrc-defaults",
       false
     );
@@ -265,59 +291,64 @@ export class TorProcess {
     this.#args.push("ClientOnionAuthDir", onionAuthDir.path);
     this.#args.push("GeoIPFile", geoipFile.path);
     this.#args.push("GeoIPv6File", geoip6File.path);
-    this.#args.push("HashedControlPassword", hashedPassword);
   }
 
-  #addControlPortArg() {
-    // Include a ControlPort argument to support switching between
-    // a TCP port and an IPC port (e.g., a Unix domain socket). We
-    // include a "+__" prefix so that (1) this control port is added
-    // to any control ports that the user has defined in their torrc
-    // file and (2) it is never written to torrc.
+  /**
+   * Add all the arguments related to the control port.
+   * We use the + prefix so that the the port is added to any other port already
+   * defined in the torrc, and the __ prefix so that it is never written to
+   * torrc.
+   */
+  #addControlPortArgs() {
+    if (!this.#controlSettings) {
+      return;
+    }
+
     let controlPortArg;
-    const controlIPCFile = lazy.TorProtocolService.torGetControlIPCFile();
-    const controlPort = lazy.TorProtocolService.torGetControlPort();
-    if (controlIPCFile) {
-      controlPortArg = this.#ipcPortArg(controlIPCFile);
-    } else if (controlPort) {
-      controlPortArg = "" + controlPort;
+    if (this.#controlSettings.ipcFile) {
+      controlPortArg = this.#controlSettings.ipcFile;
+    } else if (this.#controlSettings.port) {
+      controlPortArg = this.#controlSettings.host
+        ? `${this.#controlSettings.host}:${this.#controlSettings.port}`
+        : this.#controlSettings.port.toString();
     }
     if (controlPortArg) {
       this.#args.push("+__ControlPort", controlPortArg);
     }
-  }
 
-  #addSocksPortArg() {
-    // Include a SocksPort argument to support switching between
-    // a TCP port and an IPC port (e.g., a Unix domain socket). We
-    // include a "+__" prefix so that (1) this SOCKS port is added
-    // to any SOCKS ports that the user has defined in their torrc
-    // file and (2) it is never written to torrc.
-    const socksPortInfo = lazy.TorProtocolService.torGetSOCKSPortInfo();
-    if (socksPortInfo) {
-      let socksPortArg;
-      if (socksPortInfo.ipcFile) {
-        socksPortArg = this.#ipcPortArg(socksPortInfo.ipcFile);
-      } else if (socksPortInfo.host && socksPortInfo.port != 0) {
-        socksPortArg = socksPortInfo.host + ":" + socksPortInfo.port;
-      }
-      if (socksPortArg) {
-        const socksPortFlags = Services.prefs.getCharPref(
-          "extensions.torlauncher.socks_port_flags",
-          "IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth"
-        );
-        if (socksPortFlags) {
-          socksPortArg += " " + socksPortFlags;
-        }
-        this.#args.push("+__SocksPort", socksPortArg);
-      }
+    if (this.#controlSettings.password) {
+      this.#args.push("HashedControlPassword", this.#controlSettings.password);
+    }
+    if (this.#controlSettings.cookieFile) {
+      this.#args.push("CookieAuthentication", "1");
+      this.#args.push("CookieAuthFile", this.#controlSettings.cookieFile);
     }
   }
 
-  // Return a ControlPort or SocksPort argument for aIPCFile (an nsIFile).
-  // The result is unix:/path or unix:"/path with spaces" with appropriate
-  // C-style escaping within the path portion.
-  #ipcPortArg(aIPCFile) {
-    return "unix:" + TorParsers.escapeString(aIPCFile.path);
+  /**
+   * Add the argument related to the control port.
+   * We use the + prefix so that the the port is added to any other port already
+   * defined in the torrc, and the __ prefix so that it is never written to
+   * torrc.
+   */
+  #addSocksPortArg() {
+    let socksPortArg;
+    if (this.#socksSettings.ipcFile) {
+      socksPortArg = this.#socksSettings.ipcFile;
+    } else if (this.#socksSettings.port != 0) {
+      socksPortArg = this.#socksSettings.host
+        ? `${this.#socksSettings.host}:${this.#socksSettings.port}`
+        : this.#socksSettings.port.toString();
+    }
+    if (socksPortArg) {
+      const socksPortFlags = Services.prefs.getCharPref(
+        "extensions.torlauncher.socks_port_flags",
+        "IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth"
+      );
+      if (socksPortFlags) {
+        socksPortArg += " " + socksPortFlags;
+      }
+      this.#args.push("+__SocksPort", socksPortArg);
+    }
   }
 }

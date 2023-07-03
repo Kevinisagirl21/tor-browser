@@ -5,6 +5,12 @@
  * Tor Launcher Util JS Module
  *************************************************************************/
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  FileUtils: "resource://gre/modules/FileUtils.sys.jsm",
+});
+
 const kPropBundleURI = "chrome://torbutton/locale/torlauncher.properties";
 const kPropNamePrefix = "torlauncher.";
 const kIPCDirPrefName = "extensions.torlauncher.tmp_ipc_dir";
@@ -451,6 +457,154 @@ export const TorLauncherUtil = Object.freeze({
     }
 
     return result ? result : "";
+  },
+
+  /**
+   * Determine what kind of SOCKS port has been requested for this session or
+   * the browser has been configured for.
+   * On Windows (where Unix domain sockets are not supported), TCP is always
+   * used.
+   *
+   * The following environment variables are supported and take precedence over
+   * preferences:
+   *    TOR_TRANSPROXY (do not use a proxy)
+   *    TOR_SOCKS_IPC_PATH (file system path; ignored on Windows)
+   *    TOR_SOCKS_HOST
+   *    TOR_SOCKS_PORT
+   *
+   * The following preferences are consulted:
+   *    network.proxy.socks
+   *    network.proxy.socks_port
+   *    extensions.torlauncher.socks_port_use_ipc (Boolean)
+   *    extensions.torlauncher.socks_ipc_path (file system path)
+   * If extensions.torlauncher.socks_ipc_path is empty, a default path is used.
+   *
+   * When using TCP, if a value is not defined via an env variable it is
+   * taken from the corresponding browser preference if possible. The
+   * exceptions are:
+   *   If network.proxy.socks contains a file: URL, a default value of
+   *     "127.0.0.1" is used instead.
+   *   If the network.proxy.socks_port value is not valid (outside the
+   *     (0; 65535] range), a default value of 9150 is used instead.
+   *
+   * The SOCKS configuration will not influence the launch of a tor daemon and
+   * the configuration of the control port in any way.
+   * When a SOCKS configuration is required without TOR_SKIP_LAUNCH, the browser
+   * will try to configure the tor instance to use the required configuration.
+   * This also applies to TOR_TRANSPROXY (at least for now): tor will be
+   * launched with its defaults.
+   *
+   * TODO: add a preference to ignore the current configuration, and let tor
+   * listen on any free port. Then, the browser will prompt the daemon the port
+   * to use through the control port (even though this is quite dangerous at the
+   * moment, because with network disabled tor will disable also the SOCKS
+   * listeners, so it means that we will have to check it every time we change
+   * the network status).
+   */
+  getPreferredSocksConfiguration() {
+    if (Services.env.exists("TOR_TRANSPROXY")) {
+      Services.prefs.setBoolPref("network.proxy.socks_remote_dns", false);
+      Services.prefs.setIntPref("network.proxy.type", 0);
+      Services.prefs.setIntPref("network.proxy.socks_port", 0);
+      Services.prefs.setCharPref("network.proxy.socks", "");
+      return { transproxy: true };
+    }
+
+    let useIPC;
+    const socksPortInfo = {
+      transproxy: false,
+    };
+
+    if (!this.isWindows && Services.env.exists("TOR_SOCKS_IPC_PATH")) {
+      useIPC = true;
+      const ipcPath = Services.env.get("TOR_SOCKS_IPC_PATH");
+      if (ipcPath) {
+        socksPortInfo.ipcFile = new lazy.FileUtils.File(ipcPath);
+      }
+    } else {
+      // Check for TCP host and port environment variables.
+      if (Services.env.exists("TOR_SOCKS_HOST")) {
+        socksPortInfo.host = Services.env.get("TOR_SOCKS_HOST");
+        useIPC = false;
+      }
+      if (Services.env.exists("TOR_SOCKS_PORT")) {
+        const port = parseInt(Services.env.get("TOR_SOCKS_PORT"), 10);
+        if (Number.isInteger(port) && port > 0 && port <= 65535) {
+          socksPortInfo.port = port;
+          useIPC = false;
+        }
+      }
+    }
+
+    if (useIPC === undefined) {
+      socksPortInfo.useIPC =
+        !this.isWindows &&
+        Services.prefs.getBoolPref(
+          "extensions.torlauncher.socks_port_use_ipc",
+          false
+        );
+    }
+
+    // Fill in missing SOCKS info from prefs.
+    if (socksPortInfo.useIPC) {
+      if (!socksPortInfo.ipcFile) {
+        socksPortInfo.ipcFile = TorLauncherUtil.getTorFile("socks_ipc", false);
+      }
+    } else {
+      if (!socksPortInfo.host) {
+        let socksAddr = Services.prefs.getCharPref(
+          "network.proxy.socks",
+          "127.0.0.1"
+        );
+        let socksAddrHasHost = socksAddr && !socksAddr.startsWith("file:");
+        socksPortInfo.host = socksAddrHasHost ? socksAddr : "127.0.0.1";
+      }
+
+      if (!socksPortInfo.port) {
+        let socksPort = Services.prefs.getIntPref(
+          "network.proxy.socks_port",
+          0
+        );
+        // This pref is set as 0 by default in Firefox, use 9150 if we get 0.
+        socksPortInfo.port =
+          socksPort > 0 && socksPort <= 65535 ? socksPort : 9150;
+      }
+    }
+
+    return socksPortInfo;
+  },
+
+  setProxyConfiguration(socksPortInfo) {
+    if (socksPortInfo.transproxy) {
+      return;
+    }
+
+    if (socksPortInfo.useIPC) {
+      const fph = Services.io
+        .getProtocolHandler("file")
+        .QueryInterface(Ci.nsIFileProtocolHandler);
+      const fileURI = fph.newFileURI(socksPortInfo.ipcFile);
+      Services.prefs.setCharPref("network.proxy.socks", fileURI.spec);
+      Services.prefs.setIntPref("network.proxy.socks_port", 0);
+    } else {
+      if (socksPortInfo.host) {
+        Services.prefs.setCharPref("network.proxy.socks", socksPortInfo.host);
+      }
+      if (socksPortInfo.port) {
+        Services.prefs.setIntPref(
+          "network.proxy.socks_port",
+          socksPortInfo.port
+        );
+      }
+    }
+
+    if (socksPortInfo.ipcFile || socksPortInfo.host || socksPortInfo.port) {
+      Services.prefs.setBoolPref("network.proxy.socks_remote_dns", true);
+      Services.prefs.setIntPref("network.proxy.type", 1);
+    }
+
+    // Force prefs to be synced to disk
+    Services.prefs.savePrefFile(null);
   },
 
   get shouldStartAndOwnTor() {
