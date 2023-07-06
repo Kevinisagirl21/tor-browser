@@ -16,8 +16,11 @@ function TorbuttonLogger() {
   // Register observer
   Services.prefs.addObserver("extensions.torbutton", this);
 
-  this.loglevel = Services.prefs.getIntPref("extensions.torbutton.loglevel");
-  this.logmethod = Services.prefs.getIntPref("extensions.torbutton.logmethod");
+  this.loglevel = Services.prefs.getIntPref("extensions.torbutton.loglevel", 4);
+  this.logmethod = Services.prefs.getIntPref(
+    "extensions.torbutton.logmethod",
+    1
+  );
 
   try {
     var logMngr = Cc["@mozmonkey.com/debuglogger/manager;1"].getService(
