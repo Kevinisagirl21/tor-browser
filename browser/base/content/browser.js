@@ -696,7 +696,6 @@ var gPageIcons = {
 };
 
 var gInitialPages = [
-  "about:tor",
   "about:blank",
   "about:home",
   "about:firefoxview",
