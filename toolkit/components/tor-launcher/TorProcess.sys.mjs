@@ -30,53 +30,53 @@ const logger = new ConsoleAPI({
 });
 
 export class TorProcess {
-  _exeFile = null;
-  _dataDir = null;
-  _args = [];
-  _subprocess = null;
-  _status = TorProcessStatus.Unknown;
-  _torProcessStartTime = null; // JS Date.now()
-  _didConnectToTorControlPort = false; // Have we ever made a connection?
+  #exeFile = null;
+  #dataDir = null;
+  #args = [];
+  #subprocess = null;
+  #status = TorProcessStatus.Unknown;
+  #torProcessStartTime = null; // JS Date.now()
+  #didConnectToTorControlPort = false; // Have we ever made a connection?
 
-  onExit = null;
-  onRestart = null;
+  onExit = () => {};
+  onRestart = () => {};
 
   get status() {
-    return this._status;
+    return this.#status;
   }
 
   get isRunning() {
     return (
-      this._status === TorProcessStatus.Starting ||
-      this._status === TorProcessStatus.Running
+      this.#status === TorProcessStatus.Starting ||
+      this.#status === TorProcessStatus.Running
     );
   }
 
   async start() {
-    if (this._subprocess) {
+    if (this.#subprocess) {
       return;
     }
 
-    this._status = TorProcessStatus.Unknown;
+    this.#status = TorProcessStatus.Unknown;
 
     try {
-      this._makeArgs();
-      this._addControlPortArg();
-      this._addSocksPortArg();
+      this.#makeArgs();
+      this.#addControlPortArg();
+      this.#addSocksPortArg();
 
       const pid = Services.appinfo.processID;
       if (pid !== 0) {
-        this._args.push("__OwningControllerProcess");
-        this._args.push("" + pid);
+        this.#args.push("__OwningControllerProcess");
+        this.#args.push("" + pid);
       }
 
       if (TorLauncherUtil.shouldShowNetworkSettings) {
-        this._args.push("DisableNetwork");
-        this._args.push("1");
+        this.#args.push("DisableNetwork");
+        this.#args.push("1");
       }
 
-      this._status = TorProcessStatus.Starting;
-      this._didConnectToTorControlPort = false;
+      this.#status = TorProcessStatus.Starting;
+      this.#didConnectToTorControlPort = false;
 
       // useful for simulating slow tor daemon launch
       const kPrefTorDaemonLaunchDelay = "extensions.torlauncher.launch_delay";
@@ -88,21 +88,21 @@ export class TorProcess {
         await new Promise(resolve => setTimeout(() => resolve(), launchDelay));
       }
 
-      logger.debug(`Starting ${this._exeFile.path}`, this._args);
+      logger.debug(`Starting ${this.#exeFile.path}`, this.#args);
       const options = {
-        command: this._exeFile.path,
-        arguments: this._args,
+        command: this.#exeFile.path,
+        arguments: this.#args,
         stderr: "stdout",
         workdir: TorLauncherUtil.getTorFile("pt-startup-dir", false).path,
       };
-      this._subprocess = await Subprocess.call(options);
-      this._dumpStdout();
-      this._watchProcess();
-      this._status = TorProcessStatus.Running;
-      this._torProcessStartTime = Date.now();
+      this.#subprocess = await Subprocess.call(options);
+      this.#dumpStdout();
+      this.#watchProcess();
+      this.#status = TorProcessStatus.Running;
+      this.#torProcessStartTime = Date.now();
     } catch (e) {
-      this._status = TorProcessStatus.Exited;
-      this._subprocess = null;
+      this.#status = TorProcessStatus.Exited;
+      this.#subprocess = null;
       logger.error("startTor error:", e);
       throw e;
     }
@@ -123,36 +123,36 @@ export class TorProcess {
   // Still, before closing the owning connection, this class should forget about
   // the process, so that future notifications will be ignored.
   forget() {
-    this._subprocess = null;
-    this._status = TorProcessStatus.Exited;
+    this.#subprocess = null;
+    this.#status = TorProcessStatus.Exited;
   }
 
   // The owner of the process can use this function to tell us that they
   // successfully connected to the control port. This information will be used
   // only to decide which text to show in the confirmation dialog if tor exits.
   connectionWorked() {
-    this._didConnectToTorControlPort = true;
+    this.#didConnectToTorControlPort = true;
   }
 
-  async _dumpStdout() {
+  async #dumpStdout() {
     let string;
     while (
-      this._subprocess &&
-      (string = await this._subprocess.stdout.readString())
+      this.#subprocess &&
+      (string = await this.#subprocess.stdout.readString())
     ) {
       dump(string);
     }
   }
 
-  async _watchProcess() {
-    const watched = this._subprocess;
+  async #watchProcess() {
+    const watched = this.#subprocess;
     if (!watched) {
       return;
     }
     try {
       const { exitCode } = await watched.wait();
 
-      if (watched !== this._subprocess) {
+      if (watched !== this.#subprocess) {
         logger.debug(`A Tor process exited with code ${exitCode}.`);
       } else if (exitCode) {
         logger.warn(`The watched Tor process exited with code ${exitCode}.`);
@@ -163,18 +163,18 @@ export class TorProcess {
       logger.error("Failed to watch the tor process", e);
     }
 
-    if (watched === this._subprocess) {
-      this._processExitedUnexpectedly();
+    if (watched === this.#subprocess) {
+      this.#processExitedUnexpectedly();
     }
   }
 
-  _processExitedUnexpectedly() {
-    this._subprocess = null;
-    this._status = TorProcessStatus.Exited;
+  #processExitedUnexpectedly() {
+    this.#subprocess = null;
+    this.#status = TorProcessStatus.Exited;
 
     // TODO: Move this logic somewhere else?
     let s;
-    if (!this._didConnectToTorControlPort) {
+    if (!this.#didConnectToTorControlPort) {
       // tor might be misconfigured, becauser we could never connect to it
       const key = "tor_exited_during_startup";
       s = TorLauncherUtil.getLocalizedString(key);
@@ -213,24 +213,24 @@ export class TorProcess {
     }
   }
 
-  _makeArgs() {
+  #makeArgs() {
     // Ideally, we would cd to the Firefox application directory before
     // starting tor (but we don't know how to do that). Instead, we
     // rely on the TBB launcher to start Firefox from the right place.
 
     // Get the Tor data directory first so it is created before we try to
     // construct paths to files that will be inside it.
-    this._exeFile = TorLauncherUtil.getTorFile("tor", false);
+    this.#exeFile = TorLauncherUtil.getTorFile("tor", false);
     const torrcFile = TorLauncherUtil.getTorFile("torrc", true);
-    this._dataDir = TorLauncherUtil.getTorFile("tordatadir", true);
+    this.#dataDir = TorLauncherUtil.getTorFile("tordatadir", true);
     const onionAuthDir = TorLauncherUtil.getTorFile("toronionauthdir", true);
     const hashedPassword = lazy.TorProtocolService.torGetPassword(true);
     let detailsKey;
-    if (!this._exeFile) {
+    if (!this.#exeFile) {
       detailsKey = "tor_missing";
     } else if (!torrcFile) {
       detailsKey = "torrc_missing";
-    } else if (!this._dataDir) {
+    } else if (!this.#dataDir) {
       detailsKey = "datadir_missing";
     } else if (!onionAuthDir) {
       detailsKey = "onionauthdir_missing";
@@ -258,26 +258,26 @@ export class TorProcess {
     const geoip6File = torrcDefaultsFile.clone();
     geoip6File.leafName = "geoip6";
 
-    this._args = [];
+    this.#args = [];
     if (torrcDefaultsFile) {
-      this._args.push("--defaults-torrc");
-      this._args.push(torrcDefaultsFile.path);
+      this.#args.push("--defaults-torrc");
+      this.#args.push(torrcDefaultsFile.path);
     }
-    this._args.push("-f");
-    this._args.push(torrcFile.path);
-    this._args.push("DataDirectory");
-    this._args.push(this._dataDir.path);
-    this._args.push("ClientOnionAuthDir");
-    this._args.push(onionAuthDir.path);
-    this._args.push("GeoIPFile");
-    this._args.push(geoipFile.path);
-    this._args.push("GeoIPv6File");
-    this._args.push(geoip6File.path);
-    this._args.push("HashedControlPassword");
-    this._args.push(hashedPassword);
+    this.#args.push("-f");
+    this.#args.push(torrcFile.path);
+    this.#args.push("DataDirectory");
+    this.#args.push(this.#dataDir.path);
+    this.#args.push("ClientOnionAuthDir");
+    this.#args.push(onionAuthDir.path);
+    this.#args.push("GeoIPFile");
+    this.#args.push(geoipFile.path);
+    this.#args.push("GeoIPv6File");
+    this.#args.push(geoip6File.path);
+    this.#args.push("HashedControlPassword");
+    this.#args.push(hashedPassword);
   }
 
-  _addControlPortArg() {
+  #addControlPortArg() {
     // Include a ControlPort argument to support switching between
     // a TCP port and an IPC port (e.g., a Unix domain socket). We
     // include a "+__" prefix so that (1) this control port is added
@@ -287,17 +287,17 @@ export class TorProcess {
     const controlIPCFile = lazy.TorProtocolService.torGetControlIPCFile();
     const controlPort = lazy.TorProtocolService.torGetControlPort();
     if (controlIPCFile) {
-      controlPortArg = this._ipcPortArg(controlIPCFile);
+      controlPortArg = this.#ipcPortArg(controlIPCFile);
     } else if (controlPort) {
       controlPortArg = "" + controlPort;
     }
     if (controlPortArg) {
-      this._args.push("+__ControlPort");
-      this._args.push(controlPortArg);
+      this.#args.push("+__ControlPort");
+      this.#args.push(controlPortArg);
     }
   }
 
-  _addSocksPortArg() {
+  #addSocksPortArg() {
     // Include a SocksPort argument to support switching between
     // a TCP port and an IPC port (e.g., a Unix domain socket). We
     // include a "+__" prefix so that (1) this SOCKS port is added
@@ -307,7 +307,7 @@ export class TorProcess {
     if (socksPortInfo) {
       let socksPortArg;
       if (socksPortInfo.ipcFile) {
-        socksPortArg = this._ipcPortArg(socksPortInfo.ipcFile);
+        socksPortArg = this.#ipcPortArg(socksPortInfo.ipcFile);
       } else if (socksPortInfo.host && socksPortInfo.port != 0) {
         socksPortArg = socksPortInfo.host + ":" + socksPortInfo.port;
       }
@@ -319,8 +319,8 @@ export class TorProcess {
         if (socksPortFlags) {
           socksPortArg += " " + socksPortFlags;
         }
-        this._args.push("+__SocksPort");
-        this._args.push(socksPortArg);
+        this.#args.push("+__SocksPort");
+        this.#args.push(socksPortArg);
       }
     }
   }
@@ -328,7 +328,7 @@ export class TorProcess {
   // Return a ControlPort or SocksPort argument for aIPCFile (an nsIFile).
   // The result is unix:/path or unix:"/path with spaces" with appropriate
   // C-style escaping within the path portion.
-  _ipcPortArg(aIPCFile) {
+  #ipcPortArg(aIPCFile) {
     return "unix:" + TorParsers.escapeString(aIPCFile.path);
   }
 }
