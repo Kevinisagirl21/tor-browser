@@ -60,7 +60,7 @@ var torbutton_init;
     } else {
       try {
         // Try to get password from Tor Launcher.
-        m_tb_control_pass = TorProtocolService.torGetPassword(false);
+        m_tb_control_pass = TorProtocolService.torGetPassword();
       } catch (e) {}
     }
 
