@@ -267,4 +267,18 @@ export const TorParsers = Object.freeze({
     rv += aStr.substring(lastAdded, aStr.length - 1);
     return rv;
   },
+
+  parseBridgeLine(line) {
+    const re =
+      /\s*(?:(?<transport>\S+)\s+)?(?<addr>[0-9a-fA-F\.\[\]\:]+:\d{1,5})(?:\s+(?<id>[0-9a-fA-F]{40}))?(?:\s+(?<args>.+))?/;
+    const match = re.exec(line);
+    if (!match) {
+      throw new Error("Invalid bridge line.");
+    }
+    const bridge = match.groups;
+    if (!bridge.transport) {
+      bridge.transport = "vanilla";
+    }
+    return bridge;
+  },
 });
