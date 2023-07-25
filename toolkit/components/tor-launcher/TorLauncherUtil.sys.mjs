@@ -209,13 +209,14 @@ class TorFile {
   // and return a file object. The control and SOCKS IPC objects will be
   // created by tor.
   normalize() {
-    if (!this.file.exists() && !this.isIPC) {
+    if (this.file.exists()) {
+      try {
+        this.file.normalize();
+      } catch (e) {
+        console.warn("Normalization of the path failed", e);
+      }
+    } else if (!this.isIPC) {
       throw new Error(`${this.fileType} file not found: ${this.file.path}`);
-    }
-    try {
-      this.file.normalize();
-    } catch (e) {
-      console.warn("Normalization of the path failed", e);
     }
 
     // Ensure that the IPC path length is short enough for use by the
