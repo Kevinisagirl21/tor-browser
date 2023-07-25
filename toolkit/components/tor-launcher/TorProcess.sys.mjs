@@ -66,13 +66,11 @@ export class TorProcess {
 
       const pid = Services.appinfo.processID;
       if (pid !== 0) {
-        this.#args.push("__OwningControllerProcess");
-        this.#args.push("" + pid);
+        this.#args.push("__OwningControllerProcess", pid.toString());
       }
 
       if (TorLauncherUtil.shouldShowNetworkSettings) {
-        this.#args.push("DisableNetwork");
-        this.#args.push("1");
+        this.#args.push("DisableNetwork", "1");
       }
 
       this.#status = TorProcessStatus.Starting;
@@ -260,21 +258,14 @@ export class TorProcess {
 
     this.#args = [];
     if (torrcDefaultsFile) {
-      this.#args.push("--defaults-torrc");
-      this.#args.push(torrcDefaultsFile.path);
+      this.#args.push("--defaults-torrc", torrcDefaultsFile.path);
     }
-    this.#args.push("-f");
-    this.#args.push(torrcFile.path);
-    this.#args.push("DataDirectory");
-    this.#args.push(this.#dataDir.path);
-    this.#args.push("ClientOnionAuthDir");
-    this.#args.push(onionAuthDir.path);
-    this.#args.push("GeoIPFile");
-    this.#args.push(geoipFile.path);
-    this.#args.push("GeoIPv6File");
-    this.#args.push(geoip6File.path);
-    this.#args.push("HashedControlPassword");
-    this.#args.push(hashedPassword);
+    this.#args.push("-f", torrcFile.path);
+    this.#args.push("DataDirectory", this.#dataDir.path);
+    this.#args.push("ClientOnionAuthDir", onionAuthDir.path);
+    this.#args.push("GeoIPFile", geoipFile.path);
+    this.#args.push("GeoIPv6File", geoip6File.path);
+    this.#args.push("HashedControlPassword", hashedPassword);
   }
 
   #addControlPortArg() {
@@ -292,8 +283,7 @@ export class TorProcess {
       controlPortArg = "" + controlPort;
     }
     if (controlPortArg) {
-      this.#args.push("+__ControlPort");
-      this.#args.push(controlPortArg);
+      this.#args.push("+__ControlPort", controlPortArg);
     }
   }
 
@@ -312,15 +302,14 @@ export class TorProcess {
         socksPortArg = socksPortInfo.host + ":" + socksPortInfo.port;
       }
       if (socksPortArg) {
-        let socksPortFlags = Services.prefs.getCharPref(
+        const socksPortFlags = Services.prefs.getCharPref(
           "extensions.torlauncher.socks_port_flags",
           "IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth"
         );
         if (socksPortFlags) {
           socksPortArg += " " + socksPortFlags;
         }
-        this.#args.push("+__SocksPort");
-        this.#args.push(socksPortArg);
+        this.#args.push("+__SocksPort", socksPortArg);
       }
     }
   }
