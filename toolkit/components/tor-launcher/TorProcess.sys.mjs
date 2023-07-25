@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 import { Subprocess } from "resource://gre/modules/Subprocess.sys.mjs";
@@ -32,14 +36,14 @@ export class TorProcess {
   // Have we ever made a connection on the control port?
   #didConnectToTorControlPort = false;
 
-  onExit = () => {};
+  onExit = exitCode => {};
   onRestart = () => {};
 
   constructor(controlSettings, socksSettings) {
     if (
       controlSettings &&
       !controlSettings.password &&
-      !controlSettings.cookieFile
+      !controlSettings.cookieFilePath
     ) {
       throw new Error("Unauthenticated control port is not supported");
     }
@@ -176,8 +180,10 @@ export class TorProcess {
     if (!watched) {
       return;
     }
+    let processExitCode;
     try {
       const { exitCode } = await watched.wait();
+      processExitCode = exitCode;
 
       if (watched !== this.#subprocess) {
         logger.debug(`A Tor process exited with code ${exitCode}.`);
@@ -191,11 +197,11 @@ export class TorProcess {
     }
 
     if (watched === this.#subprocess) {
-      this.#processExitedUnexpectedly();
+      this.#processExitedUnexpectedly(processExitCode);
     }
   }
 
-  #processExitedUnexpectedly() {
+  #processExitedUnexpectedly(exitCode) {
     this.#subprocess = null;
     this.#status = TorProcessStatus.Exited;
 
@@ -231,13 +237,9 @@ export class TorProcess {
       cancelBtnLabel
     );
     if (restart) {
-      this.start().then(() => {
-        if (this.onRestart) {
-          this.onRestart();
-        }
-      });
-    } else if (this.onExit) {
-      this.onExit();
+      this.start().then(this.onRestart);
+    } else {
+      this.onExit(exitCode);
     }
   }
 
@@ -317,11 +319,14 @@ export class TorProcess {
     }
 
     if (this.#controlSettings.password) {
-      this.#args.push("HashedControlPassword", this.#controlSettings.password);
+      this.#args.push(
+        "HashedControlPassword",
+        this.#hashPassword(this.#controlSettings.password)
+      );
     }
-    if (this.#controlSettings.cookieFile) {
+    if (this.#controlSettings.cookieFilePath) {
       this.#args.push("CookieAuthentication", "1");
-      this.#args.push("CookieAuthFile", this.#controlSettings.cookieFile);
+      this.#args.push("CookieAuthFile", this.#controlSettings.cookieFilePath);
     }
   }
 
@@ -350,5 +355,60 @@ export class TorProcess {
       }
       this.#args.push("+__SocksPort", socksPortArg);
     }
+  }
+
+  // Based on Vidalia's TorSettings::hashPassword().
+  #hashPassword(aHexPassword) {
+    if (!aHexPassword) {
+      return null;
+    }
+
+    // Generate a random, 8 byte salt value.
+    const salt = Array.from(crypto.getRandomValues(new Uint8Array(8)));
+
+    // Convert hex-encoded password to an array of bytes.
+    const password = [];
+    for (let i = 0; i < aHexPassword.length; i += 2) {
+      password.push(parseInt(aHexPassword.substring(i, i + 2), 16));
+    }
+
+    // Run through the S2K algorithm and convert to a string.
+    const toHex = v => v.toString(16).padStart(2, "0");
+    const arrayToHex = aArray => aArray.map(toHex).join("");
+    const kCodedCount = 96;
+    const hashVal = this.#cryptoSecretToKey(password, salt, kCodedCount);
+    return "16:" + arrayToHex(salt) + toHex(kCodedCount) + arrayToHex(hashVal);
+  }
+
+  // #cryptoSecretToKey() is similar to Vidalia's crypto_secret_to_key().
+  // It generates and returns a hash of aPassword by following the iterated
+  // and salted S2K algorithm (see RFC 2440 section 3.6.1.3).
+  // See also https://gitlab.torproject.org/tpo/core/torspec/-/blob/main/control-spec.txt#L3824.
+  // Returns an array of bytes.
+  #cryptoSecretToKey(aPassword, aSalt, aCodedCount) {
+    const inputArray = aSalt.concat(aPassword);
+
+    // Subtle crypto only has the final digest, and does not allow incremental
+    // updates.
+    const hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
+      Ci.nsICryptoHash
+    );
+    hasher.init(hasher.SHA1);
+    const kEXPBIAS = 6;
+    let count = (16 + (aCodedCount & 15)) << ((aCodedCount >> 4) + kEXPBIAS);
+    while (count > 0) {
+      if (count > inputArray.length) {
+        hasher.update(inputArray, inputArray.length);
+        count -= inputArray.length;
+      } else {
+        const finalArray = inputArray.slice(0, count);
+        hasher.update(finalArray, finalArray.length);
+        count = 0;
+      }
+    }
+    return hasher
+      .finish(false)
+      .split("")
+      .map(b => b.charCodeAt(0));
   }
 }

@@ -289,9 +289,8 @@ export const TorProtocolService = {
   // are also used in torbutton.
 
   // Returns Tor password string or null if an error occurs.
-  torGetPassword(aPleaseHash) {
-    const pw = this._controlPassword;
-    return aPleaseHash ? this._hashPassword(pw) : pw;
+  torGetPassword() {
+    return this._controlPassword;
   },
 
   torGetControlIPCFile() {
@@ -308,7 +307,7 @@ export const TorProtocolService = {
 
   get torControlPortInfo() {
     const info = {
-      password: this._hashPassword(this._controlPassword),
+      password: this._controlPassword,
     };
     if (this._controlIPCFile) {
       info.ipcFile = this._controlIPCFile?.clone();
@@ -692,38 +691,6 @@ export const TorProtocolService = {
     return pwd;
   },
 
-  // Based on Vidalia's TorSettings::hashPassword().
-  _hashPassword(aHexPassword) {
-    if (!aHexPassword) {
-      return null;
-    }
-
-    // Generate a random, 8 byte salt value.
-    const salt = Array.from(crypto.getRandomValues(new Uint8Array(8)));
-
-    // Convert hex-encoded password to an array of bytes.
-    const password = [];
-    for (let i = 0; i < aHexPassword.length; i += 2) {
-      password.push(parseInt(aHexPassword.substring(i, i + 2), 16));
-    }
-
-    // Run through the S2K algorithm and convert to a string.
-    const kCodedCount = 96;
-    const hashVal = this._cryptoSecretToKey(password, salt, kCodedCount);
-    if (!hashVal) {
-      logger.error("_cryptoSecretToKey() failed");
-      return null;
-    }
-
-    const arrayToHex = aArray =>
-      aArray.map(item => this._toHex(item, 2)).join("");
-    let rv = "16:";
-    rv += arrayToHex(salt);
-    rv += this._toHex(kCodedCount, 2);
-    rv += arrayToHex(hashVal);
-    return rv;
-  },
-
   // Returns -1 upon failure.
   _cryptoRandInt(aMax) {
     // Based on tor's crypto_rand_int().
@@ -740,43 +707,6 @@ export const TorProtocolService = {
       val = uint32[0];
     }
     return val % aMax;
-  },
-
-  // _cryptoSecretToKey() is similar to Vidalia's crypto_secret_to_key().
-  // It generates and returns a hash of aPassword by following the iterated
-  // and salted S2K algorithm (see RFC 2440 section 3.6.1.3).
-  // Returns an array of bytes.
-  _cryptoSecretToKey(aPassword, aSalt, aCodedCount) {
-    if (!aPassword || !aSalt) {
-      return null;
-    }
-
-    const inputArray = aSalt.concat(aPassword);
-
-    // Subtle crypto only has the final digest, and does not allow incremental
-    // updates. Also, it is async, so we should hash and keep the hash in a
-    // variable if we wanted to switch to getters.
-    // So, keeping this implementation should be okay for now.
-    const hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
-      Ci.nsICryptoHash
-    );
-    hasher.init(hasher.SHA1);
-    const kEXPBIAS = 6;
-    let count = (16 + (aCodedCount & 15)) << ((aCodedCount >> 4) + kEXPBIAS);
-    while (count > 0) {
-      if (count > inputArray.length) {
-        hasher.update(inputArray, inputArray.length);
-        count -= inputArray.length;
-      } else {
-        const finalArray = inputArray.slice(0, count);
-        hasher.update(finalArray, finalArray.length);
-        count = 0;
-      }
-    }
-    return hasher
-      .finish(false)
-      .split("")
-      .map(b => b.charCodeAt(0));
   },
 
   _toHex(aValue, aMinLen) {
