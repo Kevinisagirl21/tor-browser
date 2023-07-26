@@ -874,6 +874,18 @@ const TorConnect = (() => {
       switch (topic) {
         /* We need to wait until TorSettings have been loaded and applied before we can Quickstart */
         case TorSettingsTopics.Ready: {
+          // tor-browser#41907: This is only a workaround to avoid users being
+          // bounced back to the initial panel without any explanation.
+          // Longer term we should disable the clickable elements, or find a UX
+          // to prevent this from happening (e.g., allow buttons to be clicked,
+          // but show an intermediate starting state, or a message that tor is
+          // starting while the butons are disabled, etc...).
+          if (this.state !== TorConnectState.Initial) {
+            console.warn(
+              "TorConnect: Seen the torsettings:ready after the state has already changed, ignoring the notification."
+            );
+            break;
+          }
           if (this.shouldQuickStart) {
             // Quickstart
             this._changeState(TorConnectState.Bootstrapping);
