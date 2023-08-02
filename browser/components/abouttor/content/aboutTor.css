@@ -1,270 +1,180 @@
-/*
- * Copyright (c) 2019, The Tor Project, Inc.
- * See LICENSE for licensing information.
- *
- * vim: set sw=2 sts=2 ts=8 et syntax=css:
- */
-
-:root {
-  --abouttor-text-color: white;
-  --abouttor-bg-toron-color: #420C5D;
-  --abouttor-bg-toroff-color: #A4000F;
-  --onion-opacity: 0.2;
-  --onion-color: #fff;
-  --onion-radius: 75px;
-}
-
-* {
-  padding: 0px;
-  margin: 0px;
-}
-
-html {
-  height: 100%;
-}
+@import url("chrome://browser/skin/browser-colors.css");
 
 body {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  margin: 0px auto;
-  padding: 0px 0px;
-  font-family: Helvetica, Arial, sans-serif;
-  color: var(--abouttor-text-color);
-  background-color: var(--abouttor-bg-toroff-color);
-  background-attachment: fixed;
-  background-size: 100% 100%;
-}
-
-body[toron] {
-  background-color: var(--abouttor-bg-toron-color);
-}
-
-/* Hide the entire document by default to avoid showing the incorrect
- * Tor on / off status (that info must be retrieved from the chrome
- * process, which involves IPC when multiprocess mode is enabled). An
- * initialized attribute will be added as soon as the status is known.
- */
-body:not([initialized]) {
-  display: none;
-}
-
-.torcontent-container {
-  margin: 40px 20px 28px 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-@media only screen and (min-width: 900px) {
-  .torcontent-container {
-    margin: 40px auto 28px auto;
-    max-width: 1000px;
-  }
-}
-
-#torbrowser-info {
-  position: absolute;
-  top: 16px;
-  offset-inline-end: 16px;
-  inset-inline-end: 16px;
-  height: 36px;
-  width: 200px;
-}
-
-#torbrowser-info div {
-  font-size: 14px;
-  white-space: pre-wrap;
-  text-align: end;
-  margin-bottom: 6px;
-}
-
-/* Hide "View Changelog" link if update channel is not release or alpha. */
-body:not([updatechannel="release"]):not([updatechannel="alpha"]) #torbrowser-changelog-link {
-  display: none;
-}
-
-a {
-  color: var(--abouttor-text-color);
-}
-
-#torstatus {
-  margin-top: 135px;
-  display: flex;
-  flex-direction: column;
-  align-content: center;
-  justify-content: flex-end;
-  min-height: 92px;
-}
-
-.top {
-  white-space: nowrap;
-}
-
-.torstatus-container {
-  text-align: center;
-}
-
-body[hasbeenupdated] .hideIfHasBeenUpdated,
-body[toron] .hideIfTorOn,
-body:not([toron]) .hideIfTorOff {
-  display: none;
-}
-
-body:not([hasbeenupdated]) .showIfHasBeenUpdated {
-  display: none;
-}
-
-.torstatus-container * {
-  text-align: center;
-}
-
-.top div.hideIfTorOff .heading1 {
-  margin-top: 20px;
-}
-
-.top .heading1 {
-  font-size: 50px;
-  font-weight: 300;
-  margin-bottom: 5px;
-}
-
-.top .heading2 {
-  font-size: 15px;
-  margin-bottom: 20px;
-}
-
-#bottom {
-  margin-top: 10vh;
-  margin-inline: auto;
-  max-width: 730px;
-}
-
-#bottom p {
-  font-size: 10px;
-  text-align: start;
-  padding-bottom: 20px;
-}
-
-#bottom p:last-child {
-  padding-bottom: 0px;
-}
-
-#bottom p.moreInfoLink {
-  font-size: 15px;
-}
-
-#bottom img.imageStyle {
-  padding-inline-end: 0.5em;
-  height: 1.5em;
-  vertical-align: bottom;
-  -moz-context-properties: fill;
-  fill: white;
-}
-
-/* Hide the linebreaks on large enough screens (desktops, laptops, and
- * tablets).
- */
-@media only screen and (min-width: 768px) {
-  #bottom br {
-    display: none;
-  }
-}
-
-.searchbox form {
-  max-width: 575px;
-  width: auto;
-  margin-block: 0;
-  margin-inline: auto;
-  text-align: left;
-}
-
-.searchwrapper {
-  display: flex;
-  height: 46px;
-  border: 1px solid black;
-  border-radius: 8px;
-  background-color: white;
-}
-
-.searchlabel {
-  height: auto;
-  width: 50px;
-  display: inline-block;
-  background: url('dax-logo.svg') no-repeat center center;
-  background-size: 30px 30px;
-}
-
-#search-button {
-  height: auto;
-  width: 36px;
-  border: 0;
-  background: url('chrome://browser/skin/forward.svg') no-repeat center center;
-  background-size: 16px 16px;
-  cursor: pointer;
-}
-
-#search-button:dir(rtl) {
-  transform: scaleX(-1);
-}
-
-#search-button:hover {
-  background-color: rgba(12, 12, 13, 0.1);  /* same as Firefox's about:home */
-}
-
-#bannerRoot {
-  width: 690px;
-  padding: 20px 25px 25px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 6px;
-  margin: 35px auto 0px;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  position: static;
-}
-
-#bannerTextCol {
-  padding-top: 8px;
-  padding-inline-start: 15px;
-  font-size: 15px;
-  line-height: normal;
-  color: #FFFFFF;
-  width: 633px;
-}
-
-#bannerHeader {
-  font-weight: bold;
-}
-
-#bannerImg {
-    width: 32px;
-    position: static;
-}
-
-a#bannerLink {
-  text-decoration: underline;
-}
-
-a#bannerLink:hover {
-  text-decoration: none;
-}
-
-/* #search-text is the search input field */
-#search-text {
-  flex: 1;
-  border: none;
-  padding: 4px 2px 5px 2px;
   margin: 0;
-  font-size: 15px;
+  min-height: 100vh;
+  display: grid;
+  grid-template:
+    /* Start space: unfilled. */
+    ". . ." 1fr
+    "heading heading heading" auto
+    ". form ." min-content
+    "message message message" auto
+    /* End space: unfilled.
+     * Reserve 150px for background image.
+     * NOTE: Since the body has "auto" height, the other "1fr" flex row will
+     * not shrink to zero, but will instead shrink to a minimum size of
+     * 75px = (150px * 1fr / 2fr) */
+    ". . ." minmax(150px, 2fr)
+    /* NOTE: "form" will be given a maximum width of 600px. */
+    / 1fr minmax(max-content, 600px) 1fr;
+  justify-items: center;
+  padding-inline: 20px;
 }
 
-#search-text:focus-visible {
+h1 {
+  grid-area: heading;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 40px;
+  line-height: 1.3; /* Used when wrapping. */
+  margin-block-start: 0;
+  margin-block-end: 40px;
+  margin-inline: 20px;
+}
+
+#tor-browser-logo {
+  height: 80px;
+  flex: 0 0 auto;
+}
+
+.home-message:not(.shown-message) {
+  display: none;
+}
+
+.home-message {
+  grid-area: message;
+  font-weight: 400;
+  /* line-height and text-align are used when wrapping. */
+  line-height: 1.5;
+  text-align: center;
+  margin-block-start: 1.6em;
+  margin-block-end: 1em;
+}
+
+.message-emoji {
+  height: 1em;
+  vertical-align: sub;
+}
+
+#search-form {
+  grid-area: form;
+  /* Occupy the entire "form" block. */
+  justify-self: stretch;
+  background: var(--in-content-page-background);
+  display: flex;
+  align-items: stretch;
+  /* Padding between elements. */
+  --form-padding: 12px;
+  --form-border-width: 1px;
+  /* Padding between elements and the parent's border edge. */
+  --form-outer-padding: calc(var(--form-padding) - var(--form-border-width));
+  --form-radius: 7px;
+  --logo-size: 30px;
+  border-radius: calc(var(--form-radius) + var(--form-border-width));
+  border-width: var(--form-border-width);
+  border-style: solid;
+}
+
+#search-form.search-input-focus-visible {
+  outline: var(--focus-outline);
+}
+
+#dax-logo {
+  width: var(--logo-size);
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline-start: var(--form-outer-padding);
+  /* Does not occupy any layout width. */
+  margin-inline-end: calc(-1 * (var(--logo-size) + var(--form-outer-padding)))
+}
+
+#search-input {
+  flex: 1 0 auto;
+  min-width: 200px;
+  min-height: var(--logo-size);
+  margin: 0;
+  padding-block: var(--form-outer-padding);
+  padding-inline-end: var(--form-padding);
+  padding-inline-start: calc(
+    var(--form-outer-padding) + var(--logo-size) /* logo */
+    + var(--form-padding) /* padding after logo. */
+  );
+  /* Make sure clickable area does not extend beyond the form's border. */
+  border-start-start-radius: var(--form-radius);
+  border-end-start-radius: var(--form-radius);
+  /* Focus and outline styling move to the parent. */
+  background: none;
+  border: none;
   outline: none;
 }
 
-#search-button:focus-visible {
-  outline: 1px dotted black;
-  outline-offset: -6px;
+#onionize-toggle {
+  flex: 0 0 auto;
+  font-weight: 500;
+  padding-block: var(--form-outer-padding);
+  padding-inline-end: var(--form-outer-padding);
+  border-start-end-radius: var(--form-radius);
+  border-end-end-radius: var(--form-radius);
+  padding-inline-start: 0;
+  /* Non-clickable gap between input and toggle. */
+  margin-inline-start: 0.5em;
+
+}
+
+@media (prefers-contrast) {
+  #search-form {
+    border-color: -moz-DialogText;
+  }
+}
+
+@media not (prefers-contrast) {
+  /* On dark background */
+  :root {
+    background-color: #2C0449;
+    --focus-outline: var(--focus-outline-width) solid var(--purple-30);
+    --in-content-focus-outline: var(--focus-outline);
+  }
+
+  h1, .home-message {
+    /* Same as --in-content-page-color when "prefers-color-scheme: dark" */
+    --in-content-page-color: #fbfbfe;
+    --in-content-text-color: #fbfbfe;
+    color: var(--in-content-text-color);
+    --in-content-link-color: var(--purple-30);
+    /* FIXME: Since we have a dark background, the color should get lighter on
+     * hover, but --purple-40 and --pruple-50 are darker than --purple-30.
+     * However, we do not have a standard lighter purple in our current set of
+     * Photon colors.
+     * See tor-browser#42025 */
+    --in-content-link-color-hover: var(--purple-40);
+    --in-content-link-color-active: var(--purple-50);
+  }
+
+  #search-form {
+    border-color: transparent;
+  }
+
+  #search-form.search-input-focus-visible {
+    border-color: var(--purple-60);
+  }
+
+  #search-form.onionized-search:not(.search-input-focus-visible) {
+    box-shadow: 0 4px 40px #9400ff66, 0 4px 16px #9400ff33;
+  }
+
+  /* Light background. */
+  #search-form > * {
+    --focus-outline: var(--focus-outline-width) solid var(--purple-60);
+    --in-content-focus-outline: var(--focus-outline);
+    /* Variables used for --toggle- variables. */
+    --color-accent-primary: var(--purple-60);
+    --color-accent-primary-hover: var(--purple-70);
+    --color-accent-primary-active: var(--purple-80);
+  }
+
+  #search-form.onionized-search #onionize-toggle {
+    color: var(--purple-60);
+  }
 }
