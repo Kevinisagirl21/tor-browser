@@ -1,0 +1,234 @@
+@import url("chrome://browser/skin/browser-colors.css");
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  --form-max-width: 600px;
+  grid-template:
+    /* Start space: unfilled. */
+    ". . ." 1fr
+    "heading heading heading" auto
+    "tor-check tor-check tor-check" auto
+    ". form ." min-content
+    "message message message" auto
+    /* End space: unfilled.
+     * Reserve 150px for background image.
+     * NOTE: Since the body has "auto" height, the other "1fr" flex row will
+     * not shrink to zero, but will instead shrink to a minimum size of
+     * 75px = (150px * 1fr / 2fr) */
+    ". . ." minmax(150px, 2fr)
+    /* NOTE: "form" will be given a maximum width of --form-max-width. */
+    / 1fr minmax(max-content, var(--form-max-width)) 1fr;
+  justify-items: center;
+  padding-inline: 20px;
+  background:
+    local
+    url("chrome://browser/content/abouttor/onion-pattern.svg")
+    center bottom
+    repeat-x;
+}
+
+h1 {
+  grid-area: heading;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 40px;
+  line-height: 1.3; /* Used when wrapping. */
+  margin-block-start: 0;
+  margin-block-end: 40px;
+  margin-inline: 20px;
+}
+
+#tor-browser-logo {
+  height: 80px;
+  flex: 0 0 auto;
+}
+
+#tor-check {
+  grid-area: tor-check;
+  max-width: var(--form-max-width);
+  box-sizing: border-box;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-inline: 24px;
+  padding-block: 12px;
+  border-radius: 8px;
+  margin-block-start: 0;
+  margin-block-end: 30px;
+}
+
+body:not(.show-tor-check) #tor-check {
+  display: none;
+}
+
+#tor-check-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.home-message:not(.shown-message) {
+  display: none;
+}
+
+.home-message {
+  grid-area: message;
+  font-weight: 400;
+  /* line-height and text-align are used when wrapping. */
+  line-height: 1.5;
+  text-align: center;
+  margin-block-start: 1.6em;
+  margin-block-end: 1em;
+}
+
+.message-emoji {
+  height: 1em;
+  vertical-align: sub;
+  margin-inline-end: 0.3em;
+}
+
+:is(
+  .home-message,
+  #tor-check,
+) a {
+  /* Increase gap between the link and the rest of the text. */
+  margin-inline: 0.4em;
+}
+
+#search-form {
+  grid-area: form;
+  /* Occupy the entire "form" block. */
+  justify-self: stretch;
+  background: var(--in-content-page-background);
+  display: flex;
+  align-items: stretch;
+  /* Padding between elements. */
+  --form-padding: 12px;
+  --form-border-width: 1px;
+  /* Padding between elements and the parent's border edge. */
+  --form-outer-padding: calc(var(--form-padding) - var(--form-border-width));
+  --form-radius: 7px;
+  --logo-size: 30px;
+  border-radius: calc(var(--form-radius) + var(--form-border-width));
+  border-width: var(--form-border-width);
+  border-style: solid;
+}
+
+#search-form.search-input-focus-visible {
+  outline: var(--focus-outline);
+}
+
+#dax-logo {
+  width: var(--logo-size);
+  flex: 0 0 auto;
+  align-self: center;
+  margin-inline-start: var(--form-outer-padding);
+  /* Does not occupy any layout width. */
+  margin-inline-end: calc(-1 * (var(--logo-size) + var(--form-outer-padding)))
+}
+
+#search-input {
+  flex: 1 0 auto;
+  min-width: 200px;
+  min-height: var(--logo-size);
+  margin: 0;
+  padding-block: var(--form-outer-padding);
+  padding-inline-end: var(--form-padding);
+  padding-inline-start: calc(
+    var(--form-outer-padding) + var(--logo-size) /* logo */
+    + var(--form-padding) /* padding after logo. */
+  );
+  /* Make sure clickable area does not extend beyond the form's border. */
+  border-start-start-radius: var(--form-radius);
+  border-end-start-radius: var(--form-radius);
+  /* Focus and outline styling move to the parent. */
+  background: none;
+  border: none;
+  outline: none;
+}
+
+#onionize-toggle {
+  flex: 0 0 auto;
+  font-weight: 500;
+  padding-block: var(--form-outer-padding);
+  padding-inline-end: var(--form-outer-padding);
+  border-start-end-radius: var(--form-radius);
+  border-end-end-radius: var(--form-radius);
+  padding-inline-start: 0;
+  /* Non-clickable gap between input and toggle. */
+  margin-inline-start: 0.5em;
+
+}
+
+@media (prefers-contrast) {
+  #search-form {
+    border-color: var(--in-content-box-border-color);
+  }
+
+  #tor-check {
+    background-color: var(--in-content-box-info-background);
+  }
+}
+
+@media not (prefers-contrast) {
+  /* On dark background */
+  :root {
+    background-color: #2C0449;
+    --focus-outline-color: var(--purple-30);
+    --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
+    --in-content-focus-outline-color: var(--focus-outline-color);
+    --in-content-focus-outline: var(--focus-outline);
+  }
+
+  #tor-check {
+    background-color: #1f0333;
+  }
+
+  body > :not(#search-form) {
+    /* Same as --in-content-page-color when "prefers-color-scheme: dark" */
+    --in-content-page-color: #fbfbfe;
+    --in-content-text-color: #fbfbfe;
+    color: var(--in-content-text-color);
+    --in-content-link-color: var(--purple-30);
+    /* FIXME: Since we have a dark background, the color should get lighter on
+     * hover, but --purple-40 and --pruple-50 are darker than --purple-30.
+     * However, we do not have a standard lighter purple in our current set of
+     * Photon colors.
+     * See tor-browser#42025 */
+    --in-content-link-color-hover: var(--purple-40);
+    --in-content-link-color-active: var(--purple-50);
+  }
+
+  #search-form {
+    border-color: transparent;
+  }
+
+  #search-form.search-input-focus-visible {
+    border-color: var(--purple-60);
+  }
+
+  #search-form.onionized-search:not(.search-input-focus-visible) {
+    box-shadow: 0 4px 40px #9400ff66, 0 4px 16px #9400ff33;
+  }
+
+  /* Light background. */
+  #search-form > * {
+    --focus-outline-color: var(--purple-60);
+    --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
+    --in-content-focus-outline-color: var(--focus-outline-color);
+    --in-content-focus-outline: var(--focus-outline);
+    /* Variables used for --toggle- variables. */
+    --color-accent-primary: var(--purple-60);
+    --color-accent-primary-hover: var(--purple-70);
+    --color-accent-primary-active: var(--purple-80);
+  }
+
+  #search-form.onionized-search #onionize-toggle {
+    color: var(--purple-60);
+  }
+}
