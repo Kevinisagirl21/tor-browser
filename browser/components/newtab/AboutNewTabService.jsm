@@ -430,7 +430,7 @@ class BaseAboutNewTabService {
    * the newtab page has no effect on the result of this function.
    */
   get defaultURL() {
-    return "about:blank";
+    return "about:tor";
   }
 
   get welcomeURL() {
