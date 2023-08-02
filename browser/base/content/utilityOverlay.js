@@ -80,6 +80,7 @@ function isBlankPageURL(aURL) {
   return (
     aURL == "about:blank" ||
     aURL == "about:home" ||
+    aURL == "about:tor" ||
     aURL == BROWSER_NEW_TAB_URL ||
     aURL == "chrome://browser/content/blanktab.html"
   );
