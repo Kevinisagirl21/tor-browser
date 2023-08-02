@@ -1409,6 +1409,14 @@ var BookmarkingUI = {
     if (!uri) {
       return false;
     }
+    // If uri is "about:tor" then we return true. See tor-browser#41717.
+    // NOTE: "about:newtab", "about:welcome", "about:home" and
+    // "about:privatebrowsing" can also redirect to "about:tor".
+    // NOTE: We do not simply add "about:tor" to newTabURLs below because this
+    // would also match "about:torconnect".
+    if (uri.scheme === "about" && uri.filePath === "tor") {
+      return true;
+    }
     // Prevent loading AboutNewTab.sys.mjs during startup path if it
     // is only the newTabURL getter we are interested in.
     let newTabURL = Cu.isESModuleLoaded(
