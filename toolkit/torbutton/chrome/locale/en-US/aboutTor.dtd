@@ -3,6 +3,9 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
+
+<!-- Remove this entire file once stable reaches 13.0 -->
+
 <!ENTITY aboutTor.title "About Tor">
 
 <!ENTITY aboutTor.viewChangelog.label "View Changelog">
