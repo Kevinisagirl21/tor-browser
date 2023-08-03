@@ -4,6 +4,11 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!ENTITY aboutTBUpdate.changelogTitle "Tor Browser Changelog">
+<!ENTITY aboutTBUpdate.version "Version">
+<!ENTITY aboutTBUpdate.releaseDate "Release Date">
+<!ENTITY aboutTBUpdate.releaseNotes "Release Notes">
+
+<!-- TODO: Remove the entries below when 13.0 becomes stable -->
 <!ENTITY aboutTBUpdate.updated "Tor Browser has been updated.">
 <!-- LOCALIZATION NOTE: the following entities are used to create the link to
   -  obtain more information about the latest update.
@@ -14,6 +19,3 @@
 <!ENTITY aboutTBUpdate.linkPrefix "For the most up-to-date information about this release, ">
 <!ENTITY aboutTBUpdate.linkLabel  "visit our website">
 <!ENTITY aboutTBUpdate.linkSuffix ".">
-<!ENTITY aboutTBUpdate.version "Version">
-<!ENTITY aboutTBUpdate.releaseDate "Release Date">
-<!ENTITY aboutTBUpdate.releaseNotes "Release Notes">
