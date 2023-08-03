@@ -11,13 +11,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorProtocolService",
-  "resource://gre/modules/TorProtocolService.jsm"
-);
 
 export const TorCheckService = {
   kCheckNotInitiated: 0, // Possible values for status.
@@ -109,7 +104,7 @@ export const TorCheckService = {
 
     let listeners;
     try {
-      listeners = await lazy.TorProtocolService.getSocksListeners();
+      listeners = await lazy.TorProviderBuilder.build().getSocksListeners();
     } catch (e) {
       this._logger.error("Failed to get the SOCKS listerner addresses.", e);
       return false;
