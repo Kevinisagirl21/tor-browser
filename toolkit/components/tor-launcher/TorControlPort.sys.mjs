@@ -274,6 +274,44 @@ class AsyncSocket {
  * the command
  */
 
+/**
+ * @typedef {object} Bridge
+ * @property {string} transport The transport of the bridge, or vanilla if not
+ * specified.
+ * @property {string} addr The IP address and port of the bridge
+ * @property {string} id The fingerprint of the bridge
+ * @property {string} args Optional arguments passed to the bridge
+ */
+/**
+ * @typedef {object} PTInfo The information about a pluggable transport
+ * @property {string[]} transports An array with all the transports supported by
+ * this configuration.
+ * @property {string} type Either socks4, socks5 or exec
+ * @property {string} [ip] The IP address of the proxy (only for socks4 and
+ * socks5)
+ * @property {integer} [port] The port of the proxy (only for socks4 and socks5)
+ * @property {string} [pathToBinary] Path to the binary that is run (only for
+ * exec)
+ * @property {string} [options] Optional options passed to the binary (only for
+ * exec)
+ */
+/**
+ * @typedef {object} OnionAuthKeyInfo
+ * @property {string} address The address of the onion service
+ * @property {string} typeAndKey Onion service key and type of key, as
+ * `type:base64-private-key`
+ * @property {string} Flags Additional flags, such as Permanent
+ */
+/**
+ * @callback EventFilterCallback
+ * @param {any} data Either a raw string, or already parsed data
+ * @returns {boolean}
+ */
+/**
+ * @callback EventCallback
+ * @param {any} data Either a raw string, or already parsed data
+ */
+
 class TorError extends Error {
   constructor(command, reply) {
     super(`${command} -> ${reply}`);
@@ -584,319 +622,6 @@ class ControlSocket {
   }
 }
 
-// ## utils
-// A namespace for utility functions
-let utils = {};
-
-// __utils.identity(x)__.
-// Returns its argument unchanged.
-utils.identity = function (x) {
-  return x;
-};
-
-// __utils.capture(string, regex)__.
-// Takes a string and returns an array of capture items, where regex must have a single
-// capturing group and use the suffix /.../g to specify a global search.
-utils.capture = function (string, regex) {
-  let matches = [];
-  // Special trick to use string.replace for capturing multiple matches.
-  string.replace(regex, function (a, captured) {
-    matches.push(captured);
-  });
-  return matches;
-};
-
-// __utils.extractor(regex)__.
-// Returns a function that takes a string and returns an array of regex matches. The
-// regex must use the suffix /.../g to specify a global search.
-utils.extractor = function (regex) {
-  return function (text) {
-    return utils.capture(text, regex);
-  };
-};
-
-// __utils.splitLines(string)__.
-// Splits a string into an array of strings, each corresponding to a line.
-utils.splitLines = function (string) {
-  return string.split(/\r?\n/);
-};
-
-// __utils.splitAtSpaces(string)__.
-// Splits a string into chunks between spaces. Does not split at spaces
-// inside pairs of quotation marks.
-utils.splitAtSpaces = utils.extractor(/((\S*?"(.*?)")+\S*|\S+)/g);
-
-// __utils.splitAtFirst(string, regex)__.
-// Splits a string at the first instance of regex match. If no match is
-// found, returns the whole string.
-utils.splitAtFirst = function (string, regex) {
-  let match = string.match(regex);
-  return match
-    ? [
-        string.substring(0, match.index),
-        string.substring(match.index + match[0].length),
-      ]
-    : string;
-};
-
-// __utils.splitAtEquals(string)__.
-// Splits a string into chunks between equals. Does not split at equals
-// inside pairs of quotation marks.
-utils.splitAtEquals = utils.extractor(/(([^=]*?"(.*?)")+[^=]*|[^=]+)/g);
-
-// __utils.mergeObjects(arrayOfObjects)__.
-// Takes an array of objects like [{"a":"b"},{"c":"d"}] and merges to a single object.
-// Pure function.
-utils.mergeObjects = function (arrayOfObjects) {
-  let result = {};
-  for (let obj of arrayOfObjects) {
-    for (let key in obj) {
-      result[key] = obj[key];
-    }
-  }
-  return result;
-};
-
-// __utils.listMapData(parameterString, listNames)__.
-// Takes a list of parameters separated by spaces, of which the first several are
-// unnamed, and the remainder are named, in the form `NAME=VALUE`. Apply listNames
-// to the unnamed parameters, and combine them in a map with the named parameters.
-// Example: `40 FAILED 0 95.78.59.36:80 REASON=CANT_ATTACH`
-//
-//     utils.listMapData("40 FAILED 0 95.78.59.36:80 REASON=CANT_ATTACH",
-//                       ["streamID", "event", "circuitID", "IP"])
-//     // --> {"streamID" : "40", "event" : "FAILED", "circuitID" : "0",
-//     //      "address" : "95.78.59.36:80", "REASON" : "CANT_ATTACH"}"
-utils.listMapData = function (parameterString, listNames) {
-  // Split out the space-delimited parameters.
-  let parameters = utils.splitAtSpaces(parameterString),
-    dataMap = {};
-  // Assign listNames to the first n = listNames.length parameters.
-  for (let i = 0; i < listNames.length; ++i) {
-    dataMap[listNames[i]] = parameters[i];
-  }
-  // Read key-value pairs and copy these to the dataMap.
-  for (let i = listNames.length; i < parameters.length; ++i) {
-    let [key, value] = utils.splitAtEquals(parameters[i]);
-    if (key && value) {
-      dataMap[key] = value;
-    }
-  }
-  return dataMap;
-};
-
-// ## info
-// A namespace for functions related to tor's GETINFO and GETCONF command.
-let info = {};
-
-// __info.keyValueStringsFromMessage(messageText)__.
-// Takes a message (text) response to GETINFO or GETCONF and provides
-// a series of key-value strings, which are either multiline (with a `250+` prefix):
-//
-//     250+config/defaults=
-//     AccountingMax "0 bytes"
-//     AllowDotExit "0"
-//     .
-//
-// or single-line (with a `250-` or `250 ` prefix):
-//
-//     250-version=0.2.6.0-alpha-dev (git-b408125288ad6943)
-info.keyValueStringsFromMessage = utils.extractor(
-  /^(250\+[\s\S]+?^\.|250[- ].+?)$/gim
-);
-
-// __info.applyPerLine(transformFunction)__.
-// Returns a function that splits text into lines,
-// and applies transformFunction to each line.
-info.applyPerLine = function (transformFunction) {
-  return function (text) {
-    return utils.splitLines(text.trim()).map(transformFunction);
-  };
-};
-
-// __info.routerStatusParser(valueString)__.
-// Parses a router status entry as, described in
-// https://gitweb.torproject.org/torspec.git/tree/dir-spec.txt
-// (search for "router status entry")
-info.routerStatusParser = function (valueString) {
-  let lines = utils.splitLines(valueString),
-    objects = [];
-  for (let line of lines) {
-    // Drop first character and grab data following it.
-    let myData = line.substring(2),
-      // Accumulate more maps with data, depending on the first character in the line.
-      dataFun = {
-        r: data =>
-          utils.listMapData(data, [
-            "nickname",
-            "identity",
-            "digest",
-            "publicationDate",
-            "publicationTime",
-            "IP",
-            "ORPort",
-            "DirPort",
-          ]),
-        a: data => ({ IPv6: data }),
-        s: data => ({ statusFlags: utils.splitAtSpaces(data) }),
-        v: data => ({ version: data }),
-        w: data => utils.listMapData(data, []),
-        p: data => ({ portList: data.split(",") }),
-      }[line.charAt(0)];
-    if (dataFun !== undefined) {
-      objects.push(dataFun(myData));
-    }
-  }
-  return utils.mergeObjects(objects);
-};
-
-// __info.circuitStatusParser(line)__.
-// Parse the output of a circuit status line.
-info.circuitStatusParser = function (line) {
-  let data = utils.listMapData(line, ["id", "status", "circuit"]),
-    circuit = data.circuit;
-  // Parse out the individual circuit IDs and names.
-  if (circuit) {
-    data.circuit = circuit.split(",").map(function (x) {
-      return x.split(/~|=/);
-    });
-  }
-  return data;
-};
-
-// __info.streamStatusParser(line)__.
-// Parse the output of a stream status line.
-info.streamStatusParser = function (text) {
-  return utils.listMapData(text, [
-    "StreamID",
-    "StreamStatus",
-    "CircuitID",
-    "Target",
-  ]);
-};
-
-// TODO: fix this parsing logic to handle bridgeLine correctly
-// fingerprint/id is an optional parameter
-// __info.bridgeParser(bridgeLine)__.
-// Takes a single line from a `getconf bridge` result and returns
-// a map containing the bridge's type, address, and ID.
-info.bridgeParser = function (bridgeLine) {
-  let result = {},
-    tokens = bridgeLine.split(/\s+/);
-  // First check if we have a "vanilla" bridge:
-  if (tokens[0].match(/^\d+\.\d+\.\d+\.\d+/)) {
-    result.type = "vanilla";
-    [result.address, result.ID] = tokens;
-    // Several bridge types have a similar format:
-  } else {
-    result.type = tokens[0];
-    if (
-      [
-        "flashproxy",
-        "fte",
-        "meek",
-        "meek_lite",
-        "obfs3",
-        "obfs4",
-        "scramblesuit",
-        "snowflake",
-      ].includes(result.type)
-    ) {
-      [result.address, result.ID] = tokens.slice(1);
-    }
-  }
-  return result.type ? result : null;
-};
-
-// __info.parsers__.
-// A map of GETINFO and GETCONF keys to parsing function, which convert
-// result strings to JavaScript data.
-info.parsers = {
-  "ns/id/": info.routerStatusParser,
-  "ip-to-country/": utils.identity,
-  "circuit-status": info.applyPerLine(info.circuitStatusParser),
-  bridge: info.bridgeParser,
-  // Currently unused parsers:
-  //  "ns/name/" : info.routerStatusParser,
-  //  "stream-status" : info.applyPerLine(info.streamStatusParser),
-  //  "version" : utils.identity,
-  //  "config-file" : utils.identity,
-};
-
-// __info.getParser(key)__.
-// Takes a key and determines the parser function that should be used to
-// convert its corresponding valueString to JavaScript data.
-info.getParser = function (key) {
-  return (
-    info.parsers[key] ||
-    info.parsers[key.substring(0, key.lastIndexOf("/") + 1)]
-  );
-};
-
-// __info.stringToValue(string)__.
-// Converts a key-value string as from GETINFO or GETCONF to a value.
-info.stringToValue = function (string) {
-  // key should look something like `250+circuit-status=` or `250-circuit-status=...`
-  // or `250 circuit-status=...`
-  let matchForKey = string.match(/^250[ +-](.+?)=/),
-    key = matchForKey ? matchForKey[1] : null;
-  if (key === null) {
-    return null;
-  }
-  // matchResult finds a single-line result for `250-` or `250 `,
-  // or a multi-line one for `250+`.
-  let matchResult =
-      string.match(/^250[ -].+?=(.*)$/) ||
-      string.match(/^250\+.+?=([\s\S]*?)^\.$/m),
-    // Retrieve the captured group (the text of the value in the key-value pair)
-    valueString = matchResult ? matchResult[1] : null,
-    // Get the parser function for the key found.
-    parse = info.getParser(key.toLowerCase());
-  if (parse === undefined) {
-    throw new Error("No parser found for '" + key + "'");
-  }
-  // Return value produced by the parser.
-  return parse(valueString);
-};
-
-/**
- * @typedef {object} Bridge
- * @property {string} transport The transport of the bridge, or vanilla if not
- * specified.
- * @property {string} addr The IP address and port of the bridge
- * @property {string} id The fingerprint of the bridge
- * @property {string} args Optional arguments passed to the bridge
- */
-/**
- * @typedef {object} PTInfo The information about a pluggable transport
- * @property {string[]} transports An array with all the transports supported by
- * this configuration.
- * @property {string} type Either socks4, socks5 or exec
- * @property {string} [ip] The IP address of the proxy (only for socks4 and
- * socks5)
- * @property {integer} [port] The port of the proxy (only for socks4 and socks5)
- * @property {string} [pathToBinary] Path to the binary that is run (only for
- * exec)
- * @property {string} [options] Optional options passed to the binary (only for
- * exec)
- */
-/**
- * @typedef {object} OnionAuthKeyInfo
- * @property {string} address The address of the onion service
- * @property {string} typeAndKey Onion service key and type of key, as
- * `type:base64-private-key`
- * @property {string} Flags Additional flags, such as Permanent
- */
-/**
- * @callback EventFilterCallback
- * @param {any} data Either a raw string, or already parsed data
- * @returns {boolean}
- */
-/**
- * @callback EventCallback
- * @param {any} data Either a raw string, or already parsed data
- */
-
 class TorController {
   /**
    * The control socket
@@ -904,16 +629,6 @@ class TorController {
    * @type {ControlSocket}
    */
   #socket;
-
-  /**
-   * A map of EVENT keys to parsing functions, which convert result strings to
-   * JavaScript data.
-   */
-  #eventParsers = {
-    stream: info.streamStatusParser,
-    // Currently unused:
-    // "circ" : info.circuitStatusParser,
-  };
 
   /**
    * Builds a new TorController.
@@ -1340,28 +1055,12 @@ class TorController {
    * first.
    *
    * @param {string} type The event type to catch
-   * @param {EventFilterCallback?} filter An optional callback to filter
-   * events for which the callback will be called. If null, all events will be
-   * passed.
    * @param {EventCallback} callback The callback that will handle the event
-   * @param {boolean} raw Tell whether to ignore the data parser, even if
-   * supported
    */
-  watchEvent(type, filter, callback, raw = false) {
+  watchEvent(type, callback) {
     this.#expectString(type, "type");
     const start = `650 ${type}`;
-    this.#socket.addNotificationCallback(new RegExp(`^${start}`), message => {
-      // Remove also the initial text
-      const dataText = message.substring(start.length + 1);
-      const parser = this.#eventParsers[type.toLowerCase()];
-      const data = dataText && parser ? parser(dataText) : null;
-      // FIXME: This is the original code, but we risk of not filtering on the
-      // data, if we ask for raw data (which we always do at the moment, but we
-      // do not use a filter either...)
-      if (filter === null || filter(data)) {
-        callback(data && !raw ? data : message);
-      }
-    });
+    this.#socket.addNotificationCallback(new RegExp(`^${start}`), callback);
   }
 
   // Other helpers

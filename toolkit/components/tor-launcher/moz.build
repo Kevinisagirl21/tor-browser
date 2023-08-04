@@ -3,10 +3,9 @@ EXTRA_JS_MODULES += [
     "TorControlPort.sys.mjs",
     "TorDomainIsolator.sys.mjs",
     "TorLauncherUtil.sys.mjs",
-    "TorMonitorService.sys.mjs",
     "TorParsers.sys.mjs",
     "TorProcess.sys.mjs",
-    "TorProtocolService.sys.mjs",
+    "TorProvider.sys.mjs",
     "TorProviderBuilder.sys.mjs",
     "TorStartupService.sys.mjs",
 ]

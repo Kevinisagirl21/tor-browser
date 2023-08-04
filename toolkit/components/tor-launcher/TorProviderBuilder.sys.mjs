@@ -4,7 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+  TorProvider: "resource://gre/modules/TorProvider.sys.mjs",
 });
 
 export const TorProviderTopics = Object.freeze({
@@ -19,16 +19,25 @@ export const TorProviderTopics = Object.freeze({
 });
 
 export class TorProviderBuilder {
+  static #provider = null;
+
   static async init() {
-    await lazy.TorProtocolService.init();
+    const provider = new lazy.TorProvider();
+    await provider.init();
+    // Assign it only when initialization succeeds.
+    TorProviderBuilder.#provider = provider;
   }
 
   static uninit() {
-    lazy.TorProtocolService.uninit();
+    TorProviderBuilder.#provider.uninit();
+    TorProviderBuilder.#provider = null;
   }
 
   // TODO: Switch to an async build?
   static build() {
-    return lazy.TorProtocolService;
+    if (!TorProviderBuilder.#provider) {
+      throw new Error("TorProviderBuilder has not been initialized yet.");
+    }
+    return TorProviderBuilder.#provider;
   }
 }
