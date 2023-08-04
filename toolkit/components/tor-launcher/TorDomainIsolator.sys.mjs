@@ -12,16 +12,16 @@ import {
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+});
+
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   ProtocolProxyService: [
     "@mozilla.org/network/protocol-proxy-service;1",
     "nsIProtocolProxyService",
   ],
-});
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  TorMonitorTopics: "resource://gre/modules/TorMonitorService.sys.mjs",
-  TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
 });
 
 const logger = new ConsoleAPI({
@@ -143,7 +143,7 @@ class TorDomainIsolatorImpl {
 
     Services.prefs.addObserver(NON_TOR_PROXY_PREF, this);
     Services.obs.addObserver(this, NEW_IDENTITY_TOPIC);
-    Services.obs.addObserver(this, lazy.TorMonitorTopics.StreamSucceeded);
+    Services.obs.addObserver(this, lazy.TorProviderTopics.StreamSucceeded);
 
     this.#cleanupIntervalId = setInterval(
       this.#clearKnownCircuits.bind(this),
@@ -158,7 +158,7 @@ class TorDomainIsolatorImpl {
   uninit() {
     Services.prefs.removeObserver(NON_TOR_PROXY_PREF, this);
     Services.obs.removeObserver(this, NEW_IDENTITY_TOPIC);
-    Services.obs.removeObserver(this, lazy.TorMonitorTopics.StreamSucceeded);
+    Services.obs.removeObserver(this, lazy.TorProviderTopics.StreamSucceeded);
     clearInterval(this.#cleanupIntervalId);
     this.#cleanupIntervalId = null;
     this.clearIsolation();
@@ -257,12 +257,12 @@ class TorDomainIsolatorImpl {
       );
       this.clearIsolation();
       try {
-        await lazy.TorProtocolService.newnym();
+        await lazy.TorProviderBuilder.build().newnym();
       } catch (e) {
         logger.error("Could not send the newnym command", e);
         // TODO: What UX to use here? See tor-browser#41708
       }
-    } else if (topic === lazy.TorMonitorTopics.StreamSucceeded) {
+    } else if (topic === lazy.TorProviderTopics.StreamSucceeded) {
       const { username, password, circuit } = subject.wrappedJSObject;
       this.#updateCircuit(username, password, circuit);
     }
@@ -553,7 +553,7 @@ class TorDomainIsolatorImpl {
 
     data = await Promise.all(
       circuit.map(fingerprint =>
-        lazy.TorProtocolService.getNodeInfo(fingerprint)
+        lazy.TorProviderBuilder.build().getNodeInfo(fingerprint)
       )
     );
     this.#knownCircuits.set(id, data);
