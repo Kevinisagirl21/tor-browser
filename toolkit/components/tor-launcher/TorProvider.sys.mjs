@@ -1,4 +1,6 @@
-// Copyright (c) 2021, The Tor Project, Inc.
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
@@ -70,7 +72,7 @@ const ControlConnTimings = Object.freeze({
  * It can start a new tor instance, or connect to an existing one.
  * In the former case, it also takes its ownership by default.
  */
-class TorProvider {
+export class TorProvider {
   #inited = false;
 
   // Maintain a map of tor settings set by Tor Browser so that we don't
@@ -775,37 +777,32 @@ class TorProvider {
   _monitorEvent(type, callback) {
     logger.info(`Watching events of type ${type}.`);
     let replyObj = {};
-    this._connection.watchEvent(
-      type,
-      null,
-      line => {
-        if (!line) {
-          return;
-        }
-        logger.debug("Event response: ", line);
-        const isComplete = TorParsers.parseReplyLine(line, replyObj);
-        if (!isComplete || replyObj._parseError || !replyObj.lineArray.length) {
-          return;
-        }
-        const reply = replyObj;
-        replyObj = {};
-        if (reply.statusCode !== TorStatuses.EventNotification) {
-          logger.error("Unexpected event status code:", reply.statusCode);
-          return;
-        }
-        if (!reply.lineArray[0].startsWith(`${type} `)) {
-          logger.error("Wrong format for the first line:", reply.lineArray[0]);
-          return;
-        }
-        reply.lineArray[0] = reply.lineArray[0].substring(type.length + 1);
-        try {
-          callback(type, reply.lineArray);
-        } catch (e) {
-          logger.error("Exception while handling an event", reply, e);
-        }
-      },
-      true
-    );
+    this._connection.watchEvent(type, line => {
+      if (!line) {
+        return;
+      }
+      logger.debug("Event response: ", line);
+      const isComplete = TorParsers.parseReplyLine(line, replyObj);
+      if (!isComplete || replyObj._parseError || !replyObj.lineArray.length) {
+        return;
+      }
+      const reply = replyObj;
+      replyObj = {};
+      if (reply.statusCode !== TorStatuses.EventNotification) {
+        logger.error("Unexpected event status code:", reply.statusCode);
+        return;
+      }
+      if (!reply.lineArray[0].startsWith(`${type} `)) {
+        logger.error("Wrong format for the first line:", reply.lineArray[0]);
+        return;
+      }
+      reply.lineArray[0] = reply.lineArray[0].substring(type.length + 1);
+      try {
+        callback(type, reply.lineArray);
+      } catch (e) {
+        logger.error("Exception while handling an event", reply, e);
+      }
+    });
   }
 
   _processLog(type, lines) {
@@ -1018,7 +1015,3 @@ class TorProvider {
     this.clearBootstrapError();
   }
 }
-
-// TODO: Stop defining TorProtocolService, make the builder instance the
-// TorProvider.
-export const TorProtocolService = new TorProvider();
