@@ -4,22 +4,27 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  TorMonitorService: "resource://gre/modules/TorMonitorService.sys.mjs",
   TorProtocolService: "resource://gre/modules/TorProtocolService.sys.mjs",
+});
+
+export const TorProviderTopics = Object.freeze({
+  ProcessIsReady: "TorProcessIsReady",
+  ProcessExited: "TorProcessExited",
+  ProcessRestarted: "TorProcessRestarted",
+  BootstrapStatus: "TorBootstrapStatus",
+  BootstrapError: "TorBootstrapError",
+  HasWarnOrErr: "TorLogHasWarnOrErr",
+  BridgeChanged: "TorBridgeChanged",
+  StreamSucceeded: "TorStreamSucceeded",
 });
 
 export class TorProviderBuilder {
   static async init() {
     await lazy.TorProtocolService.init();
-    lazy.TorMonitorService.init();
   }
 
   static uninit() {
-    // Close any helper connection first...
     lazy.TorProtocolService.uninit();
-    // ... and only then closes the event monitor connection, which will cause
-    // Tor to stop.
-    lazy.TorMonitorService.uninit();
   }
 
   // TODO: Switch to an async build?
