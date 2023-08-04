@@ -23,17 +23,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   CertUtils: "resource://gre/modules/CertUtils.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
   ctypes: "resource://gre/modules/ctypes.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorMonitorService",
-  "resource://gre/modules/TorMonitorService.jsm"
-);
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
@@ -394,10 +389,11 @@ XPCOMUtils.defineLazyGetter(
 );
 
 function _shouldRegisterBootstrapObserver(errorCode) {
+  const provider = lazy.TorProviderBuilder.build();
   return (
     errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-    !lazy.TorMonitorService.isBootstrapDone &&
-    lazy.TorMonitorService.ownsTorDaemon
+    !provider.isBootstrapDone &&
+    provider.ownsTorDaemon
   );
 }
 
@@ -5833,10 +5829,7 @@ Downloader.prototype = {
       // we choose to compute these hashes.
       hash = hash.finish(false);
       digest = Array.from(hash, (c, i) =>
-        hash
-          .charCodeAt(i)
-          .toString(16)
-          .padStart(2, "0")
+        hash.charCodeAt(i).toString(16).padStart(2, "0")
       ).join("");
     } catch (e) {
       LOG(
