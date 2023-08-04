@@ -448,10 +448,6 @@ const gConnectionPane = (function () {
       const bridgeCards = prefpane.querySelector(selectors.bridges.cards);
       const bridgeMenu = prefpane.querySelector(selectors.bridges.cardMenu);
 
-      let emojiAnnotations;
-      const emojiListPromise = fetch(
-        "chrome://browser/content/torpreferences/bridgemoji/bridge-emojis.json"
-      ).then(response => response.json());
       this._addBridgeCard = bridgeString => {
         const card = bridgeTemplate.cloneNode(true);
         card.removeAttribute("id");
@@ -484,16 +480,8 @@ const gConnectionPane = (function () {
         const emojis = makeBridgeId(bridgeString).map(emojiIndex => {
           const img = document.createElement("img");
           img.classList.add("emoji");
-          emojiListPromise.then(emojiList => {
-            const emoji = emojiList[emojiIndex];
-            const cp = emoji.codePointAt(0).toString(16);
-            img.setAttribute(
-              "src",
-              `chrome://browser/content/torpreferences/bridgemoji/svgs/${cp}.svg`
-            );
-            img.setAttribute("alt", emoji);
-            img.setAttribute("title", emojiAnnotations[cp]);
-          });
+          // Image is set in _updateBridgeEmojis.
+          img.dataset.emojiIndex = emojiIndex;
           return img;
         });
         const idString = TorStrings.settings.bridgeId;
@@ -699,6 +687,9 @@ const gConnectionPane = (function () {
           shownCards--;
         }
 
+        // Newly added emojis.
+        this._updateBridgeEmojis();
+
         // And finally update the buttons
         removeAll.hidden = false;
         showAll.classList.toggle("primary", TorSettings.bridges.enabled);
@@ -729,26 +720,7 @@ const gConnectionPane = (function () {
           bridgeCards.classList.remove("list-collapsed");
         }
       };
-      // Use a promise to avoid blocking the population of the page
-      // FIXME: Stop using a JSON file, and switch to properties
-      const annotationPromise = fetch(
-        "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
-      );
-      annotationPromise.then(async res => {
-        const annotations = await res.json();
-        const bcp47 = Services.locale.appLocaleAsBCP47;
-        const dash = bcp47.indexOf("-");
-        const lang = dash !== -1 ? bcp47.substring(0, dash) : bcp47;
-        if (bcp47 in annotations) {
-          emojiAnnotations = annotations[bcp47];
-        } else if (lang in annotations) {
-          emojiAnnotations = annotations[lang];
-        } else {
-          // At the moment, nb does not have annotations!
-          emojiAnnotations = annotations.en;
-        }
-        this._populateBridgeCards();
-      });
+      this._populateBridgeCards();
       this._updateConnectedBridges = () => {
         for (const card of bridgeCards.querySelectorAll(
           ".currently-connected"
@@ -785,7 +757,7 @@ const gConnectionPane = (function () {
           this._updateConnectedBridges();
         }
       };
-      annotationPromise.then(this._checkConnectedBridge.bind(this));
+      this._checkConnectedBridge();
 
       // Add a new bridge
       prefpane.querySelector(selectors.bridges.addHeader).textContent =
@@ -879,6 +851,7 @@ const gConnectionPane = (function () {
 
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
       Services.obs.addObserver(this, TorMonitorTopics.BridgeChanged);
+      Services.obs.addObserver(this, "intl:app-locales-changed");
     },
 
     init() {
@@ -903,6 +876,7 @@ const gConnectionPane = (function () {
       Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
       Services.obs.removeObserver(this, TorConnectTopics.StateChange);
       Services.obs.removeObserver(this, TorMonitorTopics.BridgeChanged);
+      Services.obs.removeObserver(this, "intl:app-locales-changed");
     },
 
     // whether the page should be present in about:preferences
@@ -939,6 +913,60 @@ const gConnectionPane = (function () {
           }
           break;
         }
+        case "intl:app-locales-changed": {
+          this._updateBridgeEmojis();
+          break;
+        }
+      }
+    },
+
+    /**
+     * Update the bridge emojis to show their corresponding emoji with an
+     * annotation that matches the current locale.
+     */
+    async _updateBridgeEmojis() {
+      if (!this._emojiPromise) {
+        this._emojiPromise = Promise.all([
+          fetch(
+            "chrome://browser/content/torpreferences/bridgemoji/bridge-emojis.json"
+          ).then(response => response.json()),
+          fetch(
+            "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
+          ).then(response => response.json()),
+        ]);
+      }
+      const [emojiList, emojiAnnotations] = await this._emojiPromise;
+      let langCode;
+      // Find the first desired locale we have annotations for.
+      // Add "en" as a fallback.
+      for (const bcp47 of [...Services.locale.appLocalesAsBCP47, "en"]) {
+        langCode = bcp47;
+        if (langCode in emojiAnnotations) {
+          break;
+        }
+        // Remove everything after the dash, if there is one.
+        langCode = bcp47.replace(/-.*/, "");
+        if (langCode in emojiAnnotations) {
+          break;
+        }
+      }
+      for (const img of document.querySelectorAll(".emoji[data-emoji-index]")) {
+        const emoji = emojiList[img.dataset.emojiIndex];
+        if (!emoji) {
+          // Unexpected.
+          console.error(`No emoji for index ${img.dataset.emojiIndex}`);
+          img.removeAttribute("src");
+          img.removeAttribute("alt");
+          img.removeAttribute("title");
+          continue;
+        }
+        const cp = emoji.codePointAt(0).toString(16);
+        img.setAttribute(
+          "src",
+          `chrome://browser/content/torpreferences/bridgemoji/svgs/${cp}.svg`
+        );
+        img.setAttribute("alt", emoji);
+        img.setAttribute("title", emojiAnnotations[langCode][cp]);
       }
     },
 
