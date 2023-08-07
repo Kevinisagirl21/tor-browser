@@ -280,7 +280,7 @@ class TorError extends Error {
   }
 }
 
-class TorController {
+export class TorController {
   /**
    * The socket to write to the control port.
    *
@@ -1029,76 +1029,4 @@ class TorController {
       )
     );
   }
-}
-
-let controlPortInfo = {};
-
-/**
- * Sets Tor control port connection parameters to be used in future calls to
- * the controller() function.
- *
- * Example:
- *   configureControlPortModule(undefined, "127.0.0.1", 9151, "MyPassw0rd");
- *
- * @param {nsIFile?} ipcFile An optional file to use to communicate to the
- * control port on Unix platforms
- * @param {string?} host The hostname to connect to the control port. Mutually
- * exclusive with ipcFile
- * @param {integer?} port The port number of the control port. To be used only
- * with host. The default is 9151.
- * @param {string} password The password of the control port in clear text.
- */
-export function configureControlPortModule(ipcFile, host, port, password) {
-  if (ipcFile && (host || port)) {
-    throw new Error("Called both with IPC and network parameters set.");
-  }
-  if (ipcFile) {
-    controlPortInfo = { ipcFile, password };
-  } else {
-    controlPortInfo = {
-      host,
-      port: port || 9151,
-      password,
-    };
-  }
-}
-
-/**
- * Instantiates and returns a controller object that is connected and
- * authenticated to a Tor ControlPort using the connection parameters
- * provided in the most recent call to configureControlPortModule().
- *
- * Example:
- *     // Get a new controller
- *     let c = await controller();
- *     // Send command and receive a `250` reply or an error message:
- *     let replyPromise = await c.getInfo("ip-to-country/16.16.16.16");
- *     // Close the controller permanently
- *     c.close();
- */
-export async function controller() {
-  if (!controlPortInfo.ipcFile && !controlPortInfo.host) {
-    throw new Error("Please call configureControlPortModule first");
-  }
-  let controller;
-  if (controlPortInfo.ipcFile) {
-    controller = TorController.fromIpcFile(controlPortInfo.ipcFile);
-  } else {
-    controller = TorController.fromSocketAddress(
-      controlPortInfo.host,
-      controlPortInfo.port
-    );
-  }
-  try {
-    await controller.authenticate(controlPortInfo.password);
-  } catch (e) {
-    try {
-      controller.close();
-    } catch (ec) {
-      // TODO: Use a custom logger?
-      console.error("Cannot close the socket", ec);
-    }
-    throw e;
-  }
-  return controller;
 }
