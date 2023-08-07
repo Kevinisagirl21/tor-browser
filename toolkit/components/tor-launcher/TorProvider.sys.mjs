@@ -27,6 +27,12 @@ const logger = new ConsoleAPI({
 });
 
 /**
+ * @typedef {object} LogEntry An object with a log message
+ * @property {Date} date The date at which we received the message
+ * @property {string} type The message level
+ * @property {string} msg The message
+ */
+/**
  * From control-spec.txt:
  *   CircuitID = 1*16 IDChar
  *   IDChar = ALPHA / DIGIT
@@ -75,59 +81,130 @@ const ControlConnTimings = Object.freeze({
 export class TorProvider {
   #inited = false;
 
-  // Maintain a map of tor settings set by Tor Browser so that we don't
-  // repeatedly set the same key/values over and over.
-  // This map contains string keys to primitives or array values.
-  #settingsCache = new Map();
-
   #controlPort = null;
   #controlHost = null;
   #controlIPCFile = null; // An nsIFile if using IPC for control port.
   #controlPassword = null; // JS string that contains hex-encoded password.
   #SOCKSPortInfo = null; // An object that contains ipcFile, host, port.
 
-  #controlConnection = null; // This is cached and reused.
+  /**
+   * An instance of the tor controller.
+   * We take for granted that if it is not null, we connected to it and managed
+   * to authenticate.
+   * Public methods can use the #controller getter, which will throw an
+   * exception whenever the control port is not open.
+   *
+   * @type {TorController?}
+   */
+  #controlConnection = null;
+  /**
+   * A helper that can be used to get the control port connection and assert it
+   * is open and it can be used.
+   * If this is not the case, this getter will throw.
+   *
+   * @returns {TorController}
+   */
+  get #controller() {
+    if (!this.#controlConnection?.isOpen) {
+      throw new Error("Control port connection not available.");
+    }
+    return this.#controlConnection;
+  }
+
+  /**
+   * The tor process we launched.
+   *
+   * @type {TorProcess}
+   */
+  #torProcess = null;
+
+  /**
+   * The logs we received over the control port.
+   * We store a finite number of log entries which can be configured with
+   * extensions.torlauncher.max_tor_log_entries.
+   *
+   * @type {LogEntry[]}
+   */
+  #logs = [];
+
+  #isBootstrapDone = false;
+  /**
+   * Keep the last warning to avoid broadcasting an async warning if it is the
+   * same one as the last broadcast.
+   */
+  #lastWarning = {};
+
+  /**
+   * Stores the nodes of a circuit. Keys are cicuit IDs, and values are the node
+   * fingerprints.
+   *
+   * Theoretically, we could hook this map up to the new identity notification,
+   * but in practice it does not work. Tor pre-builds circuits, and the NEWNYM
+   * signal does not affect them. So, we might end up using a circuit that was
+   * built before the new identity but not yet used. If we cleaned the map, we
+   * risked of not having the data about it.
+   *
+   * @type {Map<CircuitID, NodeFingerprint[]>}
+   */
+  #circuits = new Map();
+  /**
+   * The last used bridge, or null if bridges are not in use or if it was not
+   * possible to detect the bridge. This needs the user to have specified bridge
+   * lines with fingerprints to work.
+   *
+   * @type {NodeFingerprint?}
+   */
+  #currentBridge = null;
+
+  /**
+   * Maintain a map of tor settings set by Tor Browser so that we don't
+   * repeatedly set the same key/values over and over.
+   * This map contains string keys to primitives or array values.
+   *
+   * @type {Map<string, any>}
+   */
+  #settingsCache = new Map();
 
   // Public methods
 
+  /**
+   * Starts a new tor process and connect to its control port, or connect to the
+   * control port of an existing tor daemon.
+   */
   async init() {
     if (this.#inited) {
       return;
     }
     this.#inited = true;
 
-    Services.obs.addObserver(this, TorProviderTopics.ProcessExited);
-    Services.obs.addObserver(this, TorProviderTopics.ProcessRestarted);
+    logger.debug("Initializing the Tor provider.");
 
     await this.#setSockets();
-
-    this._monitorInit();
+    this.#setupEvents();
 
     logger.debug("TorProvider initialized");
   }
 
+  /**
+   * Close the connection to the tor daemon.
+   * When Tor is started by Tor Browser, it is configured to exit when the
+   * control connection is closed. Therefore, as a matter of facts, calling this
+   * function also makes the child Tor instance stop.
+   */
   uninit() {
-    Services.obs.removeObserver(this, TorProviderTopics.ProcessExited);
-    Services.obs.removeObserver(this, TorProviderTopics.ProcessRestarted);
-    this.#closeConnection();
-    this._monitorUninit();
+    this.#forgetProcess();
+    this.#shutDownEventMonitor();
   }
 
-  observe(subject, topic, data) {
-    if (topic === TorProviderTopics.ProcessExited) {
-      this.#closeConnection();
-    } else if (topic === TorProviderTopics.ProcessRestarted) {
-      this.#reconnect();
-    }
-  }
+  // Provider API
 
-  // takes a Map containing tor settings
-  // throws on error
-  async writeSettings(aSettingsObj) {
+  async writeSettings(settingsObj) {
+    // TODO: Move the translation from settings object to settings understood by
+    // tor here.
     const entries =
-      aSettingsObj instanceof Map
-        ? Array.from(aSettingsObj.entries())
-        : Object.entries(aSettingsObj);
+      settingsObj instanceof Map
+        ? Array.from(settingsObj.entries())
+        : Object.entries(settingsObj);
     // only write settings that have changed
     const newSettings = entries.filter(([setting, value]) => {
       if (!this.#settingsCache.has(setting)) {
@@ -150,8 +227,7 @@ export class TorProvider {
 
     // only write if new setting to save
     if (newSettings.length) {
-      const conn = await this.#getConnection();
-      await conn.setConf(Object.fromEntries(newSettings));
+      await this.#controller.setConf(Object.fromEntries(newSettings));
 
       // save settings to cache after successfully writing to Tor
       for (const [setting, value] of newSettings) {
@@ -160,24 +236,19 @@ export class TorProvider {
     }
   }
 
-  // writes current tor settings to disk
   async flushSettings() {
-    const conn = await this.#getConnection();
-    await conn.flushSettings();
+    await this.#controller.flushSettings();
   }
 
   async connect() {
-    const conn = await this.#getConnection();
-    await conn.setNetworkEnabled(true);
-    this.clearBootstrapError();
+    await this.#controller.setNetworkEnabled(true);
+    this.#lastWarning = {};
     this.retrieveBootstrapStatus();
   }
 
   async stopBootstrap() {
-    // Tell tor to disable use of the network; this should stop the bootstrap
-    // process.
-    const conn = await this.#getConnection();
-    await conn.setNetworkEnabled(false);
+    // Tell tor to disable use of the network; this should stop the bootstrap.
+    await this.#controller.setNetworkEnabled(false);
     // We are not interested in waiting for this, nor in **catching its error**,
     // so we do not await this. We just want to be notified when the bootstrap
     // status is actually updated through observers.
@@ -185,24 +256,28 @@ export class TorProvider {
   }
 
   async newnym() {
-    const conn = await this.#getConnection();
-    await conn.newnym();
+    await this.#controller.newnym();
   }
 
   async getBridges() {
-    const conn = await this.#getConnection();
     // Ideally, we would not need this function, because we should be the one
     // setting them with TorSettings. However, TorSettings is not notified of
     // change of settings. So, asking tor directly with the control connection
     // is the most reliable way of getting the configured bridges, at the
     // moment. Also, we are using this for the circuit display, which should
     // work also when we are not configuring the tor daemon, but just using it.
-    return conn.getBridges();
+    return this.#controller.getBridges();
   }
 
   async getPluggableTransports() {
-    const conn = await this.#getConnection();
-    return conn.getPluggableTransports();
+    return this.#controller.getPluggableTransports();
+  }
+
+  async retrieveBootstrapStatus() {
+    this.#processBootstrapStatus(
+      await this.#controller.getBootstrapPhase(),
+      false
+    );
   }
 
   /**
@@ -212,14 +287,13 @@ export class TorProvider {
    * @returns {Promise<NodeData>}
    */
   async getNodeInfo(id) {
-    const conn = await this.#getConnection();
     const node = {
       fingerprint: id,
       ipAddrs: [],
       bridgeType: null,
       regionCode: null,
     };
-    const bridge = (await conn.getBridges())?.find(
+    const bridge = (await this.#controller.getBridges())?.find(
       foundBridge => foundBridge.id?.toUpperCase() === id.toUpperCase()
     );
     if (bridge) {
@@ -230,14 +304,14 @@ export class TorProvider {
         node.ipAddrs.push(ip);
       }
     } else {
-      node.ipAddrs = await conn.getNodeAddresses(id);
+      node.ipAddrs = await this.#controller.getNodeAddresses(id);
     }
     if (node.ipAddrs.length) {
       // Get the country code for the node's IP address.
       try {
         // Expect a 2-letter ISO3166-1 code, which should also be a valid
         // BCP47 Region subtag.
-        const regionCode = await conn.getIPCountry(node.ipAddrs[0]);
+        const regionCode = await this.#controller.getIPCountry(node.ipAddrs[0]);
         if (regionCode && regionCode !== "??") {
           node.regionCode = regionCode.toUpperCase();
         }
@@ -249,21 +323,118 @@ export class TorProvider {
   }
 
   async onionAuthAdd(address, b64PrivateKey, isPermanent) {
-    const conn = await this.#getConnection();
-    return conn.onionAuthAdd(address, b64PrivateKey, isPermanent);
+    return this.#controller.onionAuthAdd(address, b64PrivateKey, isPermanent);
   }
 
   async onionAuthRemove(address) {
-    const conn = await this.#getConnection();
-    return conn.onionAuthRemove(address);
+    return this.#controller.onionAuthRemove(address);
   }
 
   async onionAuthViewKeys() {
-    const conn = await this.#getConnection();
-    return conn.onionAuthViewKeys();
+    return this.#controller.onionAuthViewKeys();
   }
 
-  // TODO: transform the following 4 functions in getters.
+  /**
+   * Returns captured log message as a text string (one message per line).
+   */
+  getLog() {
+    return this.#logs
+      .map(logObj => {
+        const timeStr = logObj.date
+          .toISOString()
+          .replace("T", " ")
+          .replace("Z", "");
+        return `${timeStr} [${logObj.type}] ${logObj.msg}`;
+      })
+      .join(TorLauncherUtil.isWindows ? "\r\n" : "\n");
+  }
+
+  /**
+   * @returns {boolean} true if we launched and control tor, false if we are
+   * using system tor.
+   */
+  get ownsTorDaemon() {
+    return TorLauncherUtil.shouldStartAndOwnTor;
+  }
+
+  get isBootstrapDone() {
+    return this.#isBootstrapDone;
+  }
+
+  /**
+   * TODO: Rename to isReady once we remove finish the migration.
+   *
+   * @returns {boolean} true if we currently have a connection to the control
+   * port. We take for granted that if we have one, we authenticated to it, and
+   * so we have already verified we can send and receive data.
+   */
+  get isRunning() {
+    return !!this.#controlConnection;
+  }
+
+  /**
+   * Return the data about the current bridge, if any, or null.
+   * We can detect bridge only when the configured bridge lines include the
+   * fingerprints.
+   *
+   * @returns {NodeData?} The node information, or null if the first node
+   * is not a bridge, or no circuit has been opened, yet.
+   */
+  get currentBridge() {
+    return this.#currentBridge;
+  }
+
+  // Process management
+
+  async #startDaemon() {
+    // TorProcess should be instanced once, then always reused and restarted
+    // only through the prompt it exposes when the controlled process dies.
+    if (!this.#torProcess) {
+      this.#torProcess = new lazy.TorProcess(
+        this.torControlPortInfo,
+        this.torSOCKSPortInfo
+      );
+      this.#torProcess.onExit = () => {
+        this.#shutDownEventMonitor();
+        Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
+      };
+      this.#torProcess.onRestart = async () => {
+        this.#shutDownEventMonitor();
+        await this.#controlTor();
+        Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
+      };
+    }
+
+    // Already running, but we did not start it
+    if (this.#torProcess.isRunning) {
+      return false;
+    }
+
+    try {
+      await this.#torProcess.start();
+      if (this.#torProcess.isRunning) {
+        logger.info("tor started");
+        this._torProcessStartTime = Date.now();
+      }
+    } catch (e) {
+      // TorProcess already logs the error.
+      this.#lastWarning.phase = "startup";
+      this.#lastWarning.reason = e.toString();
+    }
+    return this.#torProcess.isRunning;
+  }
+
+  #forgetProcess() {
+    if (this.#torProcess) {
+      logger.trace('"Forgetting" the tor process.');
+      this.#torProcess.forget();
+      this.#torProcess.onExit = null;
+      this.#torProcess.onRestart = null;
+      this.#torProcess = null;
+    }
+  }
+
+  // Control port setup and connection
 
   // Returns Tor password string or null if an error occurs.
   torGetPassword() {
@@ -378,32 +549,71 @@ export class TorProvider {
     }
   }
 
-  async #getConnection() {
-    if (!this.#controlConnection?.isOpen) {
-      this.#controlConnection = await lazy.controller();
+  /**
+   * Try to become the primary controller. This will make tor exit when our
+   * connection is closed.
+   */
+  async #takeOwnership(conn) {
+    logger.debug("Taking the ownership of the tor process.");
+    try {
+      await conn.takeOwnership();
+    } catch (e) {
+      logger.warn("Take ownership failed", e);
+      return;
     }
-    return this.#controlConnection;
+    try {
+      await conn.resetOwningControllerProcess();
+    } catch (e) {
+      logger.warn("Clear owning controller process failed", e);
+    }
+  }
+
+  #setupEvents() {
+    // We always liten to these events, because they are needed for the circuit
+    // display.
+    this.#eventHandlers = new Map([
+      ["CIRC", this.#processCircEvent.bind(this)],
+      ["STREAM", this.#processStreamEvent.bind(this)],
+    ]);
+
+    if (this.ownsTorDaemon) {
+      // When we own the tor daemon, we listen to more events, that are used
+      // for about:torconnect or for showing the logs in the settings page.
+      this.#eventHandlers.set(
+        "STATUS_CLIENT",
+        this.#processStatusClient.bind(this)
+      );
+      this.#eventHandlers.set("NOTICE", this.#processLog.bind(this));
+      this.#eventHandlers.set("WARN", this.#processLog.bind(this));
+      this.#eventHandlers.set("ERR", this.#processLog.bind(this));
+      this.#controlTor();
+    } else {
+      this.#startEventMonitor();
+    }
   }
 
   #closeConnection() {
     if (this.#controlConnection) {
       logger.info("Closing the control connection");
-      this.#controlConnection.close();
+      try {
+        this.#controlConnection.close();
+      } catch (e) {
+        logger.error("Failed to close the control port connection", e);
+      }
       this.#controlConnection = null;
     }
   }
 
-  async #reconnect() {
-    this.#closeConnection();
-    await this.#getConnection();
-  }
+  // Authentication
 
-  async #readAuthenticationCookie(aPath) {
-    const bytes = await IOUtils.read(aPath);
+  async #readAuthenticationCookie(path) {
+    const bytes = await IOUtils.read(path);
     return Array.from(bytes, b => this.#toHex(b, 2)).join("");
   }
 
-  // Returns a random 16 character password, hex-encoded.
+  /**
+   * @returns {string} A random 16 character password, hex-encoded.
+   */
   #generateRandomPassword() {
     // Similar to Vidalia's crypto_rand_string().
     const kPasswordLen = 16;
@@ -413,12 +623,11 @@ export class TorProvider {
     for (let i = 0; i < kPasswordLen; ++i) {
       const val = this.#cryptoRandInt(kMaxCharCode - kMinCharCode + 1);
       if (val < 0) {
-        logger.error("_cryptoRandInt() failed");
+        logger.error("#cryptoRandInt() failed");
         return null;
       }
       pwd += this.#toHex(kMinCharCode + val, 2);
     }
-
     return pwd;
   }
 
@@ -447,179 +656,8 @@ export class TorProvider {
   // Former TorMonitorService implementation.
   // FIXME: Refactor and integrate more with the rest of the class.
 
-  #connection = null;
-  #eventHandlers = {};
-  #logs = []; // Array of objects with date, type, and msg properties
+  #eventHandlers = null;
   #startTimeout = null;
-
-  #isBootstrapDone = false;
-  #lastWarning = {};
-
-  #torProcess = null;
-
-  _inited = false;
-
-  /**
-   * Stores the nodes of a circuit. Keys are cicuit IDs, and values are the node
-   * fingerprints.
-   *
-   * Theoretically, we could hook this map up to the new identity notification,
-   * but in practice it does not work. Tor pre-builds circuits, and the NEWNYM
-   * signal does not affect them. So, we might end up using a circuit that was
-   * built before the new identity but not yet used. If we cleaned the map, we
-   * risked of not having the data about it.
-   *
-   * @type {Map<CircuitID, NodeFingerprint[]>}
-   */
-  #circuits = new Map();
-  /**
-   * The last used bridge, or null if bridges are not in use or if it was not
-   * possible to detect the bridge. This needs the user to have specified bridge
-   * lines with fingerprints to work.
-   *
-   * @type {NodeFingerprint?}
-   */
-  #currentBridge = null;
-
-  // Public methods
-
-  // Starts Tor, if needed, and starts monitoring for events
-  _monitorInit() {
-    if (this._inited) {
-      return;
-    }
-    this._inited = true;
-
-    // We always liten to these events, because they are needed for the circuit
-    // display.
-    this.#eventHandlers = new Map([
-      ["CIRC", this.#processCircEvent.bind(this)],
-      ["STREAM", this.#processStreamEvent.bind(this)],
-    ]);
-
-    if (this.ownsTorDaemon) {
-      // When we own the tor daemon, we listen to more events, that are used
-      // for about:torconnect or for showing the logs in the settings page.
-      this.#eventHandlers.set(
-        "STATUS_CLIENT",
-        this.#processStatusClient.bind(this)
-      );
-      this.#eventHandlers.set("NOTICE", this.#processLog.bind(this));
-      this.#eventHandlers.set("WARN", this.#processLog.bind(this));
-      this.#eventHandlers.set("ERR", this.#processLog.bind(this));
-      this.#controlTor();
-    } else {
-      this.#startEventMonitor();
-    }
-    logger.info("TorMonitorService initialized");
-  }
-
-  // Closes the connection that monitors for events.
-  // When Tor is started by Tor Browser, it is configured to exit when the
-  // control connection is closed. Therefore, as a matter of facts, calling this
-  // function also makes the child Tor instance stop.
-  _monitorUninit() {
-    if (this.#torProcess) {
-      this.#torProcess.forget();
-      this.#torProcess.onExit = null;
-      this.#torProcess.onRestart = null;
-      this.#torProcess = null;
-    }
-    this.#shutDownEventMonitor();
-  }
-
-  async retrieveBootstrapStatus() {
-    if (!this.#connection) {
-      throw new Error("Event monitor connection not available");
-    }
-
-    this.#processBootstrapStatus(
-      await this.#connection.getBootstrapPhase(),
-      true
-    );
-  }
-
-  // Returns captured log message as a text string (one message per line).
-  getLog() {
-    return this.#logs
-      .map(logObj => {
-        const timeStr = logObj.date
-          .toISOString()
-          .replace("T", " ")
-          .replace("Z", "");
-        return `${timeStr} [${logObj.type}] ${logObj.msg}`;
-      })
-      .join(TorLauncherUtil.isWindows ? "\r\n" : "\n");
-  }
-
-  // true if we launched and control tor, false if using system tor
-  get ownsTorDaemon() {
-    return TorLauncherUtil.shouldStartAndOwnTor;
-  }
-
-  get isBootstrapDone() {
-    return this.#isBootstrapDone;
-  }
-
-  clearBootstrapError() {
-    this.#lastWarning = {};
-  }
-
-  get isRunning() {
-    return !!this.#connection;
-  }
-
-  /**
-   * Return the data about the current bridge, if any, or null.
-   * We can detect bridge only when the configured bridge lines include the
-   * fingerprints.
-   *
-   * @returns {NodeData?} The node information, or null if the first node
-   * is not a bridge, or no circuit has been opened, yet.
-   */
-  get currentBridge() {
-    return this.#currentBridge;
-  }
-
-  // Private methods
-
-  async #startDaemon() {
-    // TorProcess should be instanced once, then always reused and restarted
-    // only through the prompt it exposes when the controlled process dies.
-    if (!this.#torProcess) {
-      this.#torProcess = new lazy.TorProcess(
-        this.torControlPortInfo,
-        this.torSOCKSPortInfo
-      );
-      this.#torProcess.onExit = () => {
-        this.#shutDownEventMonitor();
-        Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
-      };
-      this.#torProcess.onRestart = async () => {
-        this.#shutDownEventMonitor();
-        await this.#controlTor();
-        Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
-      };
-    }
-
-    // Already running, but we did not start it
-    if (this.#torProcess.isRunning) {
-      return false;
-    }
-
-    try {
-      await this.#torProcess.start();
-      if (this.#torProcess.isRunning) {
-        logger.info("tor started");
-        this._torProcessStartTime = Date.now();
-      }
-    } catch (e) {
-      // TorProcess already logs the error.
-      this.#lastWarning.phase = "startup";
-      this.#lastWarning.reason = e.toString();
-    }
-    return this.#torProcess.isRunning;
-  }
 
   async #controlTor() {
     if (!this.#torProcess?.isRunning && !(await this.#startDaemon())) {
@@ -679,7 +717,7 @@ export class TorProvider {
   }
 
   async #startEventMonitor() {
-    if (this.#connection) {
+    if (this.#controlConnection) {
       return true;
     }
 
@@ -721,7 +759,7 @@ export class TorProvider {
       }
     }
 
-    this.#connection = conn;
+    this.#controlConnection = conn;
 
     for (const [type, callback] of this.#eventHandlers.entries()) {
       this.#monitorEvent(type, callback);
@@ -730,7 +768,7 @@ export class TorProvider {
     // Populate the circuit map already, in case we are connecting to an
     // external tor daemon.
     try {
-      const reply = await this.#connection.sendCommand(
+      const reply = await this.#controlConnection.sendCommand(
         "GETINFO circuit-status"
       );
       const lines = reply.split(/\r?\n/);
@@ -750,25 +788,10 @@ export class TorProvider {
     return true;
   }
 
-  // Try to become the primary controller (TAKEOWNERSHIP).
-  async #takeOwnership(conn) {
-    try {
-      conn.takeOwnership();
-    } catch (e) {
-      logger.warn("Take ownership failed", e);
-      return;
-    }
-    try {
-      conn.resetOwningControllerProcess();
-    } catch (e) {
-      logger.warn("Clear owning controller process failed", e);
-    }
-  }
-
   #monitorEvent(type, callback) {
     logger.info(`Watching events of type ${type}.`);
     let replyObj = {};
-    this.#connection.watchEvent(type, line => {
+    this.#controlConnection.watchEvent(type, line => {
       if (!line) {
         return;
       }
@@ -817,15 +840,22 @@ export class TorProvider {
     logger.info(logString);
   }
 
-  // Process a bootstrap status to update the current state, and broadcast it
-  // to TorBootstrapStatus observers.
-  // If aSuppressErrors is true, errors are ignored. This is used when we
-  // are handling the response to a "GETINFO status/bootstrap-phase" command.
-  #processBootstrapStatus(statusObj, suppressErrors) {
+  // Notification handlers
+
+  /**
+   * Process a bootstrap status to update the current state, and broadcast it
+   * to TorBootstrapStatus observers.
+   *
+   * @param {object} statusObj The status object that the controller returned.
+   * Its entries depend on what Tor sent to us.
+   * @param {boolean} isNotification We broadcast warnings only when we receive
+   * them through an asynchronous notification.
+   */
+  #processBootstrapStatus(statusObj, isNotification) {
     // Notify observers
     Services.obs.notifyObservers(
       { wrappedJSObject: statusObj },
-      "TorBootstrapStatus"
+      TorProviderTopics.BootstrapStatus
     );
 
     if (statusObj.PROGRESS === 100) {
@@ -841,9 +871,9 @@ export class TorProvider {
     this.#isBootstrapDone = false;
 
     if (
+      isNotification &&
       statusObj.TYPE === "WARN" &&
-      statusObj.RECOMMENDATION !== "ignore" &&
-      !suppressErrors
+      statusObj.RECOMMENDATION !== "ignore"
     ) {
       this.#notifyBootstrapError(statusObj);
     }
@@ -855,6 +885,7 @@ export class TorProvider {
     } catch (e) {
       logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
     }
+    // TODO: Move l10n to the above layers?
     const phase = TorLauncherUtil.getLocalizedBootstrapStatus(statusObj, "TAG");
     const reason = TorLauncherUtil.getLocalizedBootstrapStatus(
       statusObj,
@@ -892,7 +923,7 @@ export class TorProvider {
       // No `BOOTSTRAP` in the line
       return;
     }
-    this.#processBootstrapStatus(statusObj, false);
+    this.#processBootstrapStatus(statusObj, true);
   }
 
   async #processCircEvent(_type, lines) {
@@ -918,7 +949,7 @@ export class TorProvider {
       // 4-hop circuit that we likely do not want to show to the user,
       // especially because it is used only temporarily, and it would need a
       // technical explaination.
-      // this._checkCredentials(lines[0], nodes);
+      // this.#checkCredentials(lines[0], nodes);
       if (this.#currentBridge?.fingerprint !== nodes[0]) {
         const nodeInfo = await this.getNodeInfo(nodes[0]);
         let notify = false;
@@ -992,17 +1023,12 @@ export class TorProvider {
   }
 
   #shutDownEventMonitor() {
-    try {
-      this.#connection?.close();
-    } catch (e) {
-      logger.error("Could not close the connection to the control port", e);
-    }
-    this.#connection = null;
+    this.#closeConnection();
     if (this.#startTimeout !== null) {
       clearTimeout(this.#startTimeout);
       this.#startTimeout = null;
     }
     this.#isBootstrapDone = false;
-    this.clearBootstrapError();
+    this.#lastWarning = {};
   }
 }
