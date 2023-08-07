@@ -447,16 +447,15 @@ export class TorProvider {
   // Former TorMonitorService implementation.
   // FIXME: Refactor and integrate more with the rest of the class.
 
-  _connection = null;
-  _eventHandlers = {};
-  _torLog = []; // Array of objects with date, type, and msg properties
-  _startTimeout = null;
+  #connection = null;
+  #eventHandlers = {};
+  #logs = []; // Array of objects with date, type, and msg properties
+  #startTimeout = null;
 
-  _isBootstrapDone = false;
-  _lastWarningPhase = null;
-  _lastWarningReason = null;
+  #isBootstrapDone = false;
+  #lastWarning = {};
 
-  _torProcess = null;
+  #torProcess = null;
 
   _inited = false;
 
@@ -472,7 +471,7 @@ export class TorProvider {
    *
    * @type {Map<CircuitID, NodeFingerprint[]>}
    */
-  _circuits = new Map();
+  #circuits = new Map();
   /**
    * The last used bridge, or null if bridges are not in use or if it was not
    * possible to detect the bridge. This needs the user to have specified bridge
@@ -480,7 +479,7 @@ export class TorProvider {
    *
    * @type {NodeFingerprint?}
    */
-  _currentBridge = null;
+  #currentBridge = null;
 
   // Public methods
 
@@ -493,24 +492,24 @@ export class TorProvider {
 
     // We always liten to these events, because they are needed for the circuit
     // display.
-    this._eventHandlers = new Map([
-      ["CIRC", this._processCircEvent.bind(this)],
-      ["STREAM", this._processStreamEvent.bind(this)],
+    this.#eventHandlers = new Map([
+      ["CIRC", this.#processCircEvent.bind(this)],
+      ["STREAM", this.#processStreamEvent.bind(this)],
     ]);
 
     if (this.ownsTorDaemon) {
       // When we own the tor daemon, we listen to more events, that are used
       // for about:torconnect or for showing the logs in the settings page.
-      this._eventHandlers.set(
+      this.#eventHandlers.set(
         "STATUS_CLIENT",
-        this._processStatusClient.bind(this)
+        this.#processStatusClient.bind(this)
       );
-      this._eventHandlers.set("NOTICE", this._processLog.bind(this));
-      this._eventHandlers.set("WARN", this._processLog.bind(this));
-      this._eventHandlers.set("ERR", this._processLog.bind(this));
-      this._controlTor();
+      this.#eventHandlers.set("NOTICE", this.#processLog.bind(this));
+      this.#eventHandlers.set("WARN", this.#processLog.bind(this));
+      this.#eventHandlers.set("ERR", this.#processLog.bind(this));
+      this.#controlTor();
     } else {
-      this._startEventMonitor();
+      this.#startEventMonitor();
     }
     logger.info("TorMonitorService initialized");
   }
@@ -520,29 +519,29 @@ export class TorProvider {
   // control connection is closed. Therefore, as a matter of facts, calling this
   // function also makes the child Tor instance stop.
   _monitorUninit() {
-    if (this._torProcess) {
-      this._torProcess.forget();
-      this._torProcess.onExit = null;
-      this._torProcess.onRestart = null;
-      this._torProcess = null;
+    if (this.#torProcess) {
+      this.#torProcess.forget();
+      this.#torProcess.onExit = null;
+      this.#torProcess.onRestart = null;
+      this.#torProcess = null;
     }
-    this._shutDownEventMonitor();
+    this.#shutDownEventMonitor();
   }
 
   async retrieveBootstrapStatus() {
-    if (!this._connection) {
+    if (!this.#connection) {
       throw new Error("Event monitor connection not available");
     }
 
-    this._processBootstrapStatus(
-      await this._connection.getBootstrapPhase(),
+    this.#processBootstrapStatus(
+      await this.#connection.getBootstrapPhase(),
       true
     );
   }
 
   // Returns captured log message as a text string (one message per line).
   getLog() {
-    return this._torLog
+    return this.#logs
       .map(logObj => {
         const timeStr = logObj.date
           .toISOString()
@@ -559,16 +558,15 @@ export class TorProvider {
   }
 
   get isBootstrapDone() {
-    return this._isBootstrapDone;
+    return this.#isBootstrapDone;
   }
 
   clearBootstrapError() {
-    this._lastWarningPhase = null;
-    this._lastWarningReason = null;
+    this.#lastWarning = {};
   }
 
   get isRunning() {
-    return !!this._connection;
+    return !!this.#connection;
   }
 
   /**
@@ -580,58 +578,58 @@ export class TorProvider {
    * is not a bridge, or no circuit has been opened, yet.
    */
   get currentBridge() {
-    return this._currentBridge;
+    return this.#currentBridge;
   }
 
   // Private methods
 
-  async _startProcess() {
+  async #startDaemon() {
     // TorProcess should be instanced once, then always reused and restarted
     // only through the prompt it exposes when the controlled process dies.
-    if (!this._torProcess) {
-      this._torProcess = new lazy.TorProcess(
+    if (!this.#torProcess) {
+      this.#torProcess = new lazy.TorProcess(
         this.torControlPortInfo,
         this.torSOCKSPortInfo
       );
-      this._torProcess.onExit = () => {
-        this._shutDownEventMonitor();
+      this.#torProcess.onExit = () => {
+        this.#shutDownEventMonitor();
         Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
       };
-      this._torProcess.onRestart = async () => {
-        this._shutDownEventMonitor();
-        await this._controlTor();
+      this.#torProcess.onRestart = async () => {
+        this.#shutDownEventMonitor();
+        await this.#controlTor();
         Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
       };
     }
 
     // Already running, but we did not start it
-    if (this._torProcess.isRunning) {
+    if (this.#torProcess.isRunning) {
       return false;
     }
 
     try {
-      await this._torProcess.start();
-      if (this._torProcess.isRunning) {
+      await this.#torProcess.start();
+      if (this.#torProcess.isRunning) {
         logger.info("tor started");
         this._torProcessStartTime = Date.now();
       }
     } catch (e) {
       // TorProcess already logs the error.
-      this._lastWarningPhase = "startup";
-      this._lastWarningReason = e.toString();
+      this.#lastWarning.phase = "startup";
+      this.#lastWarning.reason = e.toString();
     }
-    return this._torProcess.isRunning;
+    return this.#torProcess.isRunning;
   }
 
-  async _controlTor() {
-    if (!this._torProcess?.isRunning && !(await this._startProcess())) {
+  async #controlTor() {
+    if (!this.#torProcess?.isRunning && !(await this.#startDaemon())) {
       logger.error("Tor not running, not starting to monitor it.");
       return;
     }
 
     let delayMS = ControlConnTimings.initialDelayMS;
     const callback = async () => {
-      if (await this._startEventMonitor()) {
+      if (await this.#startEventMonitor()) {
         this.retrieveBootstrapStatus().catch(e => {
           logger.warn("Could not get the initial bootstrap status", e);
         });
@@ -644,28 +642,28 @@ export class TorProvider {
         // We reset this here hoping that _shutDownEventMonitor can interrupt
         // the current monitor, either by calling clearTimeout and preventing it
         // from starting, or by closing the control port connection.
-        if (this._startTimeout === null) {
-          logger.warn("Someone else reset _startTimeout!");
+        if (this.#startTimeout === null) {
+          logger.warn("Someone else reset #startTimeout!");
         }
-        this._startTimeout = null;
+        this.#startTimeout = null;
       } else if (
         Date.now() - this._torProcessStartTime >
         ControlConnTimings.timeoutMS
       ) {
         let s = TorLauncherUtil.getLocalizedString("tor_controlconn_failed");
-        this._lastWarningPhase = "startup";
-        this._lastWarningReason = s;
+        this.#lastWarning.phase = "startup";
+        this.#lastWarning.reason = s;
         logger.info(s);
-        if (this._startTimeout === null) {
-          logger.warn("Someone else reset _startTimeout!");
+        if (this.#startTimeout === null) {
+          logger.warn("Someone else reset #startTimeout!");
         }
-        this._startTimeout = null;
+        this.#startTimeout = null;
       } else {
         delayMS *= 2;
         if (delayMS > ControlConnTimings.maxRetryMS) {
           delayMS = ControlConnTimings.maxRetryMS;
         }
-        this._startTimeout = setTimeout(() => {
+        this.#startTimeout = setTimeout(() => {
           logger.debug(`Control port not ready, waiting ${delayMS / 1000}s.`);
           callback();
         }, delayMS);
@@ -673,15 +671,15 @@ export class TorProvider {
     };
     // Check again, in the unfortunate case in which the execution was alrady
     // queued, but was waiting network code.
-    if (this._startTimeout === null) {
-      this._startTimeout = setTimeout(callback, delayMS);
+    if (this.#startTimeout === null) {
+      this.#startTimeout = setTimeout(callback, delayMS);
     } else {
       logger.error("Possible race? Refusing to start the timeout again");
     }
   }
 
-  async _startEventMonitor() {
-    if (this._connection) {
+  async #startEventMonitor() {
+    if (this.#connection) {
       return true;
     }
 
@@ -705,34 +703,34 @@ export class TorProvider {
 
     // TODO: optionally monitor INFO and DEBUG log messages.
     try {
-      await conn.setEvents(Array.from(this._eventHandlers.keys()));
+      await conn.setEvents(Array.from(this.#eventHandlers.keys()));
     } catch (e) {
       logger.error("SETEVENTS failed", e);
       conn.close();
       return false;
     }
 
-    if (this._torProcess) {
-      this._torProcess.connectionWorked();
+    if (this.#torProcess) {
+      this.#torProcess.connectionWorked();
     }
     if (this.ownsTorDaemon && !TorLauncherUtil.shouldOnlyConfigureTor) {
       try {
-        await this._takeTorOwnership(conn);
+        await this.#takeOwnership(conn);
       } catch (e) {
         logger.warn("Could not take ownership of the Tor daemon", e);
       }
     }
 
-    this._connection = conn;
+    this.#connection = conn;
 
-    for (const [type, callback] of this._eventHandlers.entries()) {
-      this._monitorEvent(type, callback);
+    for (const [type, callback] of this.#eventHandlers.entries()) {
+      this.#monitorEvent(type, callback);
     }
 
     // Populate the circuit map already, in case we are connecting to an
     // external tor daemon.
     try {
-      const reply = await this._connection.sendCommand(
+      const reply = await this.#connection.sendCommand(
         "GETINFO circuit-status"
       );
       const lines = reply.split(/\r?\n/);
@@ -742,7 +740,7 @@ export class TorProvider {
             break;
           }
           // _processCircEvent processes only one line at a time
-          this._processCircEvent("CIRC", [line]);
+          this.#processCircEvent("CIRC", [line]);
         }
       }
     } catch (e) {
@@ -753,7 +751,7 @@ export class TorProvider {
   }
 
   // Try to become the primary controller (TAKEOWNERSHIP).
-  async _takeTorOwnership(conn) {
+  async #takeOwnership(conn) {
     try {
       conn.takeOwnership();
     } catch (e) {
@@ -767,10 +765,10 @@ export class TorProvider {
     }
   }
 
-  _monitorEvent(type, callback) {
+  #monitorEvent(type, callback) {
     logger.info(`Watching events of type ${type}.`);
     let replyObj = {};
-    this._connection.watchEvent(type, line => {
+    this.#connection.watchEvent(type, line => {
       if (!line) {
         return;
       }
@@ -798,7 +796,7 @@ export class TorProvider {
     });
   }
 
-  _processLog(type, lines) {
+  #processLog(type, lines) {
     if (type === "WARN" || type === "ERR") {
       // Notify so that Copy Log can be enabled.
       Services.obs.notifyObservers(null, TorProviderTopics.HasWarnOrErr);
@@ -809,12 +807,12 @@ export class TorProvider {
       "extensions.torlauncher.max_tor_log_entries",
       1000
     );
-    if (maxEntries > 0 && this._torLog.length >= maxEntries) {
-      this._torLog.splice(0, 1);
+    if (maxEntries > 0 && this.#logs.length >= maxEntries) {
+      this.#logs.splice(0, 1);
     }
 
     const msg = lines.join("\n");
-    this._torLog.push({ date, type, msg });
+    this.#logs.push({ date, type, msg });
     const logString = `Tor ${type}: ${msg}`;
     logger.info(logString);
   }
@@ -823,7 +821,7 @@ export class TorProvider {
   // to TorBootstrapStatus observers.
   // If aSuppressErrors is true, errors are ignored. This is used when we
   // are handling the response to a "GETINFO status/bootstrap-phase" command.
-  _processBootstrapStatus(statusObj, suppressErrors) {
+  #processBootstrapStatus(statusObj, suppressErrors) {
     // Notify observers
     Services.obs.notifyObservers(
       { wrappedJSObject: statusObj },
@@ -831,7 +829,7 @@ export class TorProvider {
     );
 
     if (statusObj.PROGRESS === 100) {
-      this._isBootstrapDone = true;
+      this.#isBootstrapDone = true;
       try {
         Services.prefs.setBoolPref(Preferences.PromptAtStartup, false);
       } catch (e) {
@@ -840,18 +838,18 @@ export class TorProvider {
       return;
     }
 
-    this._isBootstrapDone = false;
+    this.#isBootstrapDone = false;
 
     if (
       statusObj.TYPE === "WARN" &&
       statusObj.RECOMMENDATION !== "ignore" &&
       !suppressErrors
     ) {
-      this._notifyBootstrapError(statusObj);
+      this.#notifyBootstrapError(statusObj);
     }
   }
 
-  _notifyBootstrapError(statusObj) {
+  #notifyBootstrapError(statusObj) {
     try {
       Services.prefs.setBoolPref(Preferences.PromptAtStartup, true);
     } catch (e) {
@@ -872,11 +870,11 @@ export class TorProvider {
     );
 
     if (
-      statusObj.TAG !== this._lastWarningPhase ||
-      statusObj.REASON !== this._lastWarningReason
+      statusObj.TAG !== this.#lastWarning.phase ||
+      statusObj.REASON !== this.#lastWarning.reason
     ) {
-      this._lastWarningPhase = statusObj.TAG;
-      this._lastWarningReason = statusObj.REASON;
+      this.#lastWarning.phase = statusObj.TAG;
+      this.#lastWarning.reason = statusObj.REASON;
 
       const message = TorLauncherUtil.getLocalizedString(
         "tor_bootstrap_failed"
@@ -888,16 +886,16 @@ export class TorProvider {
     }
   }
 
-  _processStatusClient(_type, lines) {
+  #processStatusClient(_type, lines) {
     const statusObj = TorParsers.parseBootstrapStatus(lines[0]);
     if (!statusObj) {
       // No `BOOTSTRAP` in the line
       return;
     }
-    this._processBootstrapStatus(statusObj, false);
+    this.#processBootstrapStatus(statusObj, false);
   }
 
-  async _processCircEvent(_type, lines) {
+  async #processCircEvent(_type, lines) {
     const builtEvent =
       /^(?<CircuitID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(?:,?\$[0-9a-fA-F]{40}(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
         lines[0]
@@ -908,7 +906,7 @@ export class TorProvider {
       const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
         g[1].toUpperCase()
       );
-      this._circuits.set(builtEvent.groups.CircuitID, nodes);
+      this.#circuits.set(builtEvent.groups.CircuitID, nodes);
       // Ignore circuits of length 1, that are used, for example, to probe
       // bridges. So, only store them, since we might see streams that use them,
       // but then early-return.
@@ -921,32 +919,32 @@ export class TorProvider {
       // especially because it is used only temporarily, and it would need a
       // technical explaination.
       // this._checkCredentials(lines[0], nodes);
-      if (this._currentBridge?.fingerprint !== nodes[0]) {
+      if (this.#currentBridge?.fingerprint !== nodes[0]) {
         const nodeInfo = await this.getNodeInfo(nodes[0]);
         let notify = false;
         if (nodeInfo?.bridgeType) {
           logger.info(`Bridge changed to ${nodes[0]}`);
-          this._currentBridge = nodeInfo;
+          this.#currentBridge = nodeInfo;
           notify = true;
-        } else if (this._currentBridge) {
+        } else if (this.#currentBridge) {
           logger.info("Bridges disabled");
-          this._currentBridge = null;
+          this.#currentBridge = null;
           notify = true;
         }
         if (notify) {
           Services.obs.notifyObservers(
             null,
             TorProviderTopics.BridgeChanged,
-            this._currentBridge
+            this.#currentBridge
           );
         }
       }
     } else if (closedEvent) {
-      this._circuits.delete(closedEvent.groups.ID);
+      this.#circuits.delete(closedEvent.groups.ID);
     }
   }
 
-  _processStreamEvent(_type, lines) {
+  #processStreamEvent(_type, lines) {
     // The first block is the stream ID, which we do not need at the moment.
     const succeeedEvent =
       /^[a-zA-Z0-9]{1,16}\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
@@ -955,7 +953,7 @@ export class TorProvider {
     if (!succeeedEvent) {
       return;
     }
-    const circuit = this._circuits.get(succeeedEvent.groups.CircuitID);
+    const circuit = this.#circuits.get(succeeedEvent.groups.CircuitID);
     if (!circuit) {
       logger.error(
         "Seen a STREAM SUCCEEDED with an unknown circuit. Not notifying observers.",
@@ -963,7 +961,7 @@ export class TorProvider {
       );
       return;
     }
-    this._checkCredentials(lines[0], circuit);
+    this.#checkCredentials(lines[0], circuit);
   }
 
   /**
@@ -975,7 +973,7 @@ export class TorProvider {
    * @param {NodeFingerprint[]} circuit The fingerprints of the nodes in the
    * circuit.
    */
-  _checkCredentials(line, circuit) {
+  #checkCredentials(line, circuit) {
     const username = /SOCKS_USERNAME=("(?:[^"\\]|\\.)*")/.exec(line);
     const password = /SOCKS_PASSWORD=("(?:[^"\\]|\\.)*")/.exec(line);
     if (!username || !password) {
@@ -993,18 +991,18 @@ export class TorProvider {
     );
   }
 
-  _shutDownEventMonitor() {
+  #shutDownEventMonitor() {
     try {
-      this._connection?.close();
+      this.#connection?.close();
     } catch (e) {
       logger.error("Could not close the connection to the control port", e);
     }
-    this._connection = null;
-    if (this._startTimeout !== null) {
-      clearTimeout(this._startTimeout);
-      this._startTimeout = null;
+    this.#connection = null;
+    if (this.#startTimeout !== null) {
+      clearTimeout(this.#startTimeout);
+      this.#startTimeout = null;
     }
-    this._isBootstrapDone = false;
+    this.#isBootstrapDone = false;
     this.clearBootstrapError();
   }
 }
