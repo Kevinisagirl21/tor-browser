@@ -63,6 +63,7 @@ const logger = new ConsoleAPI({
  */
 
 const Preferences = Object.freeze({
+  MaxLogEntries: "extensions.torlauncher.max_tor_log_entries",
   PromptAtStartup: "extensions.torlauncher.prompt_at_startup",
 });
 
@@ -79,8 +80,6 @@ const ControlConnTimings = Object.freeze({
  * In the former case, it also takes its ownership by default.
  */
 export class TorProvider {
-  #inited = false;
-
   #controlPort = null;
   #controlHost = null;
   #controlIPCFile = null; // An nsIFile if using IPC for control port.
@@ -165,18 +164,11 @@ export class TorProvider {
    */
   #settingsCache = new Map();
 
-  // Public methods
-
   /**
    * Starts a new tor process and connect to its control port, or connect to the
    * control port of an existing tor daemon.
    */
   async init() {
-    if (this.#inited) {
-      return;
-    }
-    this.#inited = true;
-
     logger.debug("Initializing the Tor provider.");
 
     await this.#setSockets();
@@ -192,6 +184,7 @@ export class TorProvider {
    * function also makes the child Tor instance stop.
    */
   uninit() {
+    logger.debug("Uninitializing the Tor provider.");
     this.#forgetProcess();
     this.#shutDownEventMonitor();
   }
@@ -369,7 +362,7 @@ export class TorProvider {
    * so we have already verified we can send and receive data.
    */
   get isRunning() {
-    return !!this.#controlConnection;
+    return this.#controlConnection?.isOpen ?? false;
   }
 
   /**
@@ -653,6 +646,175 @@ export class TorProvider {
     return aValue.toString(16).padStart(aMinLen, "0");
   }
 
+  // Notification handlers
+
+  onBootstrapStatus(status) {
+    this.#processBootstrapStatus(status, true);
+  }
+
+  /**
+   * Process a bootstrap status to update the current state, and broadcast it
+   * to TorBootstrapStatus observers.
+   *
+   * @param {object} statusObj The status object that the controller returned.
+   * Its entries depend on what Tor sent to us.
+   * @param {boolean} isNotification We broadcast warnings only when we receive
+   * them through an asynchronous notification.
+   */
+  #processBootstrapStatus(statusObj, isNotification) {
+    // Notify observers
+    Services.obs.notifyObservers(
+      { wrappedJSObject: statusObj },
+      TorProviderTopics.BootstrapStatus
+    );
+
+    if (statusObj.PROGRESS === 100) {
+      this.#isBootstrapDone = true;
+      try {
+        Services.prefs.setBoolPref(Preferences.PromptAtStartup, false);
+      } catch (e) {
+        logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
+      }
+      return;
+    }
+
+    this.#isBootstrapDone = false;
+
+    if (
+      isNotification &&
+      statusObj.TYPE === "WARN" &&
+      statusObj.RECOMMENDATION !== "ignore"
+    ) {
+      this.#notifyBootstrapError(statusObj);
+    }
+  }
+
+  #notifyBootstrapError(statusObj) {
+    try {
+      Services.prefs.setBoolPref(Preferences.PromptAtStartup, true);
+    } catch (e) {
+      logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
+    }
+    // TODO: Move l10n to the above layers?
+    const phase = TorLauncherUtil.getLocalizedBootstrapStatus(statusObj, "TAG");
+    const reason = TorLauncherUtil.getLocalizedBootstrapStatus(
+      statusObj,
+      "REASON"
+    );
+    const details = TorLauncherUtil.getFormattedLocalizedString(
+      "tor_bootstrap_failed_details",
+      [phase, reason],
+      2
+    );
+    logger.error(
+      `Tor bootstrap error: [${statusObj.TAG}/${statusObj.REASON}] ${details}`
+    );
+
+    if (
+      statusObj.TAG !== this.#lastWarning.phase ||
+      statusObj.REASON !== this.#lastWarning.reason
+    ) {
+      this.#lastWarning.phase = statusObj.TAG;
+      this.#lastWarning.reason = statusObj.REASON;
+
+      const message = TorLauncherUtil.getLocalizedString(
+        "tor_bootstrap_failed"
+      );
+      Services.obs.notifyObservers(
+        { message, details },
+        TorProviderTopics.BootstrapError
+      );
+    }
+  }
+
+  onLogMessage(type, msg) {
+    if (type === "WARN" || type === "ERR") {
+      // Notify so that Copy Log can be enabled.
+      Services.obs.notifyObservers(null, TorProviderTopics.HasWarnOrErr);
+    }
+
+    const date = new Date();
+    const maxEntries = Services.prefs.getIntPref(
+      Preferences.MaxLogEntries,
+      1000
+    );
+    if (maxEntries > 0 && this.#logs.length >= maxEntries) {
+      this.#logs.splice(0, 1);
+    }
+
+    this.#logs.push({ date, type, msg });
+    switch (type) {
+      case "ERR":
+        logger.error(`[Tor error] ${msg}`);
+        break;
+      case "WARN":
+        logger.warn(`[Tor warning] ${msg}`);
+        break;
+      default:
+        logger.info(`[Tor ${type.toLowerCase()}] ${msg}`);
+    }
+  }
+
+  async onCircuitBuilt(id, nodes) {
+    this.#circuits.set(id, nodes);
+    // Ignore circuits of length 1, that are used, for example, to probe
+    // bridges. So, only store them, since we might see streams that use them,
+    // but then early-return.
+    if (nodes.length === 1) {
+      return;
+    }
+
+    if (this.#currentBridge?.fingerprint !== nodes[0]) {
+      const nodeInfo = await this.getNodeInfo(nodes[0]);
+      let notify = false;
+      if (nodeInfo?.bridgeType) {
+        logger.info(`Bridge changed to ${nodes[0]}`);
+        this.#currentBridge = nodeInfo;
+        notify = true;
+      } else if (this.#currentBridge) {
+        logger.info("Bridges disabled");
+        this.#currentBridge = null;
+        notify = true;
+      }
+      if (notify) {
+        Services.obs.notifyObservers(
+          null,
+          TorProviderTopics.BridgeChanged,
+          this.#currentBridge
+        );
+      }
+    }
+  }
+
+  onCircuitClosed(id) {
+    logger.debug("Circuit closed event", id);
+    this.#circuits.delete(id);
+  }
+
+  onStreamSucceeded(streamId, circuitId, username, password) {
+    if (!username || !password) {
+      return;
+    }
+    logger.debug("Stream succeeded event", username, password, circuitId);
+    const circuit = this.#circuits.get(circuitId);
+    if (!circuit) {
+      logger.error(
+        "Seen a STREAM SUCCEEDED with an unknown circuit. Not notifying observers."
+      );
+      return;
+    }
+    Services.obs.notifyObservers(
+      {
+        wrappedJSObject: {
+          username,
+          password,
+          circuit,
+        },
+      },
+      TorProviderTopics.StreamSucceeded
+    );
+  }
+
   // Former TorMonitorService implementation.
   // FIXME: Refactor and integrate more with the rest of the class.
 
@@ -765,21 +927,15 @@ export class TorProvider {
       this.#monitorEvent(type, callback);
     }
 
+    // FIXME: When we move this to TorControlPort we can make it work again.
+    // At the moment it's failing because sendCommand is not public anymore.
     // Populate the circuit map already, in case we are connecting to an
     // external tor daemon.
     try {
-      const reply = await this.#controlConnection.sendCommand(
-        "GETINFO circuit-status"
-      );
-      const lines = reply.split(/\r?\n/);
-      if (lines.shift() === "250+circuit-status=") {
-        for (const line of lines) {
-          if (line === ".") {
-            break;
-          }
-          // _processCircEvent processes only one line at a time
-          this.#processCircEvent("CIRC", [line]);
-        }
+      const lines = await this.#controlConnection.getCircuits();
+      for (const line of lines) {
+        // #processCircEvent processes only one line at a time
+        this.#processCircEvent("CIRC", [line]);
       }
     } catch (e) {
       logger.warn("Could not populate the initial circuit map", e);
@@ -819,103 +975,18 @@ export class TorProvider {
     });
   }
 
-  #processLog(type, lines) {
-    if (type === "WARN" || type === "ERR") {
-      // Notify so that Copy Log can be enabled.
-      Services.obs.notifyObservers(null, TorProviderTopics.HasWarnOrErr);
+  #shutDownEventMonitor() {
+    this.#closeConnection();
+    if (this.#startTimeout !== null) {
+      clearTimeout(this.#startTimeout);
+      this.#startTimeout = null;
     }
-
-    const date = new Date();
-    const maxEntries = Services.prefs.getIntPref(
-      "extensions.torlauncher.max_tor_log_entries",
-      1000
-    );
-    if (maxEntries > 0 && this.#logs.length >= maxEntries) {
-      this.#logs.splice(0, 1);
-    }
-
-    const msg = lines.join("\n");
-    this.#logs.push({ date, type, msg });
-    const logString = `Tor ${type}: ${msg}`;
-    logger.info(logString);
-  }
-
-  // Notification handlers
-
-  /**
-   * Process a bootstrap status to update the current state, and broadcast it
-   * to TorBootstrapStatus observers.
-   *
-   * @param {object} statusObj The status object that the controller returned.
-   * Its entries depend on what Tor sent to us.
-   * @param {boolean} isNotification We broadcast warnings only when we receive
-   * them through an asynchronous notification.
-   */
-  #processBootstrapStatus(statusObj, isNotification) {
-    // Notify observers
-    Services.obs.notifyObservers(
-      { wrappedJSObject: statusObj },
-      TorProviderTopics.BootstrapStatus
-    );
-
-    if (statusObj.PROGRESS === 100) {
-      this.#isBootstrapDone = true;
-      try {
-        Services.prefs.setBoolPref(Preferences.PromptAtStartup, false);
-      } catch (e) {
-        logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
-      }
-      return;
-    }
-
     this.#isBootstrapDone = false;
-
-    if (
-      isNotification &&
-      statusObj.TYPE === "WARN" &&
-      statusObj.RECOMMENDATION !== "ignore"
-    ) {
-      this.#notifyBootstrapError(statusObj);
-    }
+    this.#lastWarning = {};
   }
 
-  #notifyBootstrapError(statusObj) {
-    try {
-      Services.prefs.setBoolPref(Preferences.PromptAtStartup, true);
-    } catch (e) {
-      logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
-    }
-    // TODO: Move l10n to the above layers?
-    const phase = TorLauncherUtil.getLocalizedBootstrapStatus(statusObj, "TAG");
-    const reason = TorLauncherUtil.getLocalizedBootstrapStatus(
-      statusObj,
-      "REASON"
-    );
-    const details = TorLauncherUtil.getFormattedLocalizedString(
-      "tor_bootstrap_failed_details",
-      [phase, reason],
-      2
-    );
-    logger.error(
-      `Tor bootstrap error: [${statusObj.TAG}/${statusObj.REASON}] ${details}`
-    );
-
-    if (
-      statusObj.TAG !== this.#lastWarning.phase ||
-      statusObj.REASON !== this.#lastWarning.reason
-    ) {
-      this.#lastWarning.phase = statusObj.TAG;
-      this.#lastWarning.reason = statusObj.REASON;
-
-      const message = TorLauncherUtil.getLocalizedString(
-        "tor_bootstrap_failed"
-      );
-      Services.obs.notifyObservers(
-        { message, details },
-        TorProviderTopics.BootstrapError
-      );
-    }
-  }
+  // TODO: These are all parsing functions that should be moved to
+  // TorControlPort.
 
   #processStatusClient(_type, lines) {
     const statusObj = TorParsers.parseBootstrapStatus(lines[0]);
@@ -923,7 +994,11 @@ export class TorProvider {
       // No `BOOTSTRAP` in the line
       return;
     }
-    this.#processBootstrapStatus(statusObj, true);
+    this.onBootstrapStatus(statusObj);
+  }
+
+  #processLog(type, lines) {
+    this.onLogMessage(type, lines.join("\n"));
   }
 
   async #processCircEvent(_type, lines) {
@@ -937,98 +1012,52 @@ export class TorProvider {
       const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
         g[1].toUpperCase()
       );
-      this.#circuits.set(builtEvent.groups.CircuitID, nodes);
-      // Ignore circuits of length 1, that are used, for example, to probe
-      // bridges. So, only store them, since we might see streams that use them,
-      // but then early-return.
-      if (nodes.length === 1) {
-        return;
-      }
       // In some cases, we might already receive SOCKS credentials in the line.
       // However, this might be a problem with onion services: we get also a
       // 4-hop circuit that we likely do not want to show to the user,
       // especially because it is used only temporarily, and it would need a
       // technical explaination.
-      // this.#checkCredentials(lines[0], nodes);
-      if (this.#currentBridge?.fingerprint !== nodes[0]) {
-        const nodeInfo = await this.getNodeInfo(nodes[0]);
-        let notify = false;
-        if (nodeInfo?.bridgeType) {
-          logger.info(`Bridge changed to ${nodes[0]}`);
-          this.#currentBridge = nodeInfo;
-          notify = true;
-        } else if (this.#currentBridge) {
-          logger.info("Bridges disabled");
-          this.#currentBridge = null;
-          notify = true;
-        }
-        if (notify) {
-          Services.obs.notifyObservers(
-            null,
-            TorProviderTopics.BridgeChanged,
-            this.#currentBridge
-          );
-        }
-      }
+      // const credentials = this.#parseCredentials(lines[0]);
+      this.onCircuitBuilt(builtEvent.groups.CircuitID, nodes);
     } else if (closedEvent) {
-      this.#circuits.delete(closedEvent.groups.ID);
+      this.onCircuitClosed(closedEvent.groups.ID);
     }
   }
 
   #processStreamEvent(_type, lines) {
-    // The first block is the stream ID, which we do not need at the moment.
     const succeeedEvent =
-      /^[a-zA-Z0-9]{1,16}\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
+      /^(?<StreamID>[a-zA-Z0-9]){1,16}\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
         lines[0]
       );
     if (!succeeedEvent) {
       return;
     }
-    const circuit = this.#circuits.get(succeeedEvent.groups.CircuitID);
-    if (!circuit) {
-      logger.error(
-        "Seen a STREAM SUCCEEDED with an unknown circuit. Not notifying observers.",
-        lines[0]
+    const credentials = this.#parseCredentials(lines[0]);
+    if (credentials !== null) {
+      this.onStreamSucceeded(
+        succeeedEvent.groups.StreamID,
+        succeeedEvent.groups.CircuitID,
+        credentials.username,
+        credentials.password
       );
-      return;
     }
-    this.#checkCredentials(lines[0], circuit);
   }
 
   /**
    * Check if a STREAM or CIRC response line contains SOCKS_USERNAME and
-   * SOCKS_PASSWORD. In case, notify observers that we could associate a certain
-   * circuit to these credentials.
+   * SOCKS_PASSWORD.
    *
    * @param {string} line The circ or stream line to check
-   * @param {NodeFingerprint[]} circuit The fingerprints of the nodes in the
-   * circuit.
+   * @returns {object?} The credentials, or null if not found
    */
-  #checkCredentials(line, circuit) {
+  #parseCredentials(line) {
     const username = /SOCKS_USERNAME=("(?:[^"\\]|\\.)*")/.exec(line);
     const password = /SOCKS_PASSWORD=("(?:[^"\\]|\\.)*")/.exec(line);
-    if (!username || !password) {
-      return;
-    }
-    Services.obs.notifyObservers(
-      {
-        wrappedJSObject: {
+    return username && password
+      ? {
           username: TorParsers.unescapeString(username[1]),
           password: TorParsers.unescapeString(password[1]),
-          circuit,
-        },
-      },
-      TorProviderTopics.StreamSucceeded
-    );
-  }
-
-  #shutDownEventMonitor() {
-    this.#closeConnection();
-    if (this.#startTimeout !== null) {
-      clearTimeout(this.#startTimeout);
-      this.#startTimeout = null;
-    }
-    this.#isBootstrapDone = false;
-    this.#lastWarning = {};
+        }
+      : null;
   }
 }

@@ -625,7 +625,7 @@ class TorController {
     const reply = await this.#sendCommand(cmd);
     const match =
       reply.match(/^250-([^=]+)=(.*)$/m) ||
-      reply.match(/^250\+([^=]+)=([\s\S]*?)^\.\r?\n^250 OK\s*$/m);
+      reply.match(/^250\+([^=]+)=\r?\n(.*?)\r?\n^\.\r?\n^250 OK\s*$/ms);
     if (!match || match[1] !== key) {
       throw new TorError(cmd, reply);
     }
@@ -684,6 +684,17 @@ class TorController {
   async getIPCountry(ip) {
     this.#expectString(ip, "ip");
     return this.#getInfo(`ip-to-country/${ip}`);
+  }
+
+  /**
+   * Ask Tor a list of circuits.
+   *
+   * @returns {string[]} An array with a string for each line
+   */
+  async getCircuits() {
+    const circuits = await this.#getInfo("circuit-status");
+    // TODO: Do more parsing once we move the event parsing to this class!
+    return circuits.split(/\r?\n/);
   }
 
   // Configuration
