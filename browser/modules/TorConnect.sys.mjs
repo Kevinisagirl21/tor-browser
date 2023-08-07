@@ -9,7 +9,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   MoatRPC: "resource:///modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
-  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 // TODO: Should we move this to the about:torconnect actor?
@@ -19,6 +18,7 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/BrowserWindowTracker.jsm"
 );
 
+import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 import {
   TorSettings,
   TorSettingsTopics,
@@ -911,7 +911,10 @@ export const TorConnect = (() => {
      * @type {boolean}
      */
     get enabled() {
-      return lazy.TorProviderBuilder.build().ownsTorDaemon;
+      // FIXME: This is called before the TorProvider is ready.
+      // As a matter of fact, at the moment it is equivalent to the following
+      // line, but this might become a problem in the future.
+      return TorLauncherUtil.shouldStartAndOwnTor;
     },
 
     get shouldShowTorConnect() {
