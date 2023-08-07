@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
@@ -14,9 +14,8 @@ import { TorProviderTopics } from "resource://gre/modules/TorProviderBuilder.sys
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  controller: "resource://gre/modules/TorControlPort.sys.mjs",
-  configureControlPortModule: "resource://gre/modules/TorControlPort.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+  TorController: "resource://gre/modules/TorControlPort.sys.mjs",
   TorProcess: "resource://gre/modules/TorProcess.sys.mjs",
 });
 
@@ -26,6 +25,19 @@ const logger = new ConsoleAPI({
   prefix: "TorProvider",
 });
 
+/**
+ * @typedef {object} ControlPortSettings An object with the settings to use for
+ * the control port. All the entries are optional, but an authentication
+ * mechanism and a communication method must be specified.
+ * @property {string=} password The clear text password. It must always be
+ * defined, unless cookieFilePath is
+ * @property {string=} cookieFilePath The path to the cookie file to use for
+ * authentication
+ * @property {nsIFile=} ipcFile The nsIFile object with the path to a Unix
+ * socket to use for control socket
+ * @property {string=} host The host to connect for a TCP control port
+ * @property {number=} port The port number to use for a TCP control port
+ */
 /**
  * @typedef {object} LogEntry An object with a log message
  * @property {Date} date The date at which we received the message
@@ -63,14 +75,11 @@ const logger = new ConsoleAPI({
  */
 
 const Preferences = Object.freeze({
+  ControlUseIpc: "extensions.torlauncher.control_port_use_ipc",
+  ControlHost: "extensions.torlauncher.control_host",
+  ControlPort: "extensions.torlauncher.control_port",
   MaxLogEntries: "extensions.torlauncher.max_tor_log_entries",
   PromptAtStartup: "extensions.torlauncher.prompt_at_startup",
-});
-
-const ControlConnTimings = Object.freeze({
-  initialDelayMS: 25, // Wait 25ms after the process has started, before trying to connect
-  maxRetryMS: 10000, // Retry at most every 10 seconds
-  timeoutMS: 5 * 60 * 1000, // Wait at most 5 minutes for tor to start
 });
 
 /**
@@ -80,12 +89,12 @@ const ControlConnTimings = Object.freeze({
  * In the former case, it also takes its ownership by default.
  */
 export class TorProvider {
-  #controlPort = null;
-  #controlHost = null;
-  #controlIPCFile = null; // An nsIFile if using IPC for control port.
-  #controlPassword = null; // JS string that contains hex-encoded password.
-  #SOCKSPortInfo = null; // An object that contains ipcFile, host, port.
-
+  /**
+   * The control port settings.
+   *
+   * @type {ControlPortSettings?}
+   */
+  #controlPortSettings = null;
   /**
    * An instance of the tor controller.
    * We take for granted that if it is not null, we connected to it and managed
@@ -171,10 +180,45 @@ export class TorProvider {
   async init() {
     logger.debug("Initializing the Tor provider.");
 
-    await this.#setSockets();
-    this.#setupEvents();
+    const socksSettings = TorLauncherUtil.getPreferredSocksConfiguration();
+    logger.debug("Requested SOCKS configuration", socksSettings);
 
-    logger.debug("TorProvider initialized");
+    try {
+      await this.#setControlPortConfiguration();
+    } catch (e) {
+      logger.error("We do not have a control port configuration", e);
+      throw e;
+    }
+
+    if (socksSettings.transproxy) {
+      logger.info("Transparent proxy required, not starting a Tor daemon.");
+    } else if (TorLauncherUtil.shouldStartAndOwnTor) {
+      try {
+        await this.#startDaemon(socksSettings);
+      } catch (e) {
+        logger.error("Failed to start the tor daemon", e);
+        throw e;
+      }
+    } else {
+      logger.debug(
+        "Not starting a tor daemon because we were requested not to."
+      );
+    }
+
+    try {
+      await this.#firstConnection();
+    } catch (e) {
+      logger.error("Cannot connect to the control port", e);
+      throw e;
+    }
+
+    // We do not customize SOCKS settings, at least for now.
+    TorLauncherUtil.setProxyConfiguration(socksSettings);
+
+    logger.info("The Tor provider is ready.");
+
+    logger.debug(`Notifying ${TorProviderTopics.ProcessIsReady}`);
+    Services.obs.notifyObservers(null, TorProviderTopics.ProcessIsReady);
   }
 
   /**
@@ -186,7 +230,9 @@ export class TorProvider {
   uninit() {
     logger.debug("Uninitializing the Tor provider.");
     this.#forgetProcess();
-    this.#shutDownEventMonitor();
+    this.#closeConnection();
+    this.#isBootstrapDone = false;
+    this.#lastWarning = {};
   }
 
   // Provider API
@@ -379,42 +425,54 @@ export class TorProvider {
 
   // Process management
 
-  async #startDaemon() {
+  async #startDaemon(socksSettings) {
     // TorProcess should be instanced once, then always reused and restarted
     // only through the prompt it exposes when the controlled process dies.
-    if (!this.#torProcess) {
-      this.#torProcess = new lazy.TorProcess(
-        this.torControlPortInfo,
-        this.torSOCKSPortInfo
+    if (this.#torProcess) {
+      logger.warn(
+        "Ignoring a request to start a tor daemon because one is already running."
       );
-      this.#torProcess.onExit = () => {
-        this.#shutDownEventMonitor();
-        Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
-      };
-      this.#torProcess.onRestart = async () => {
-        this.#shutDownEventMonitor();
-        await this.#controlTor();
-        Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
-      };
+      return;
     }
 
-    // Already running, but we did not start it
-    if (this.#torProcess.isRunning) {
-      return false;
-    }
-
-    try {
-      await this.#torProcess.start();
-      if (this.#torProcess.isRunning) {
-        logger.info("tor started");
-        this._torProcessStartTime = Date.now();
+    this.#torProcess = new lazy.TorProcess(
+      this.#controlPortSettings,
+      socksSettings
+    );
+    this.#torProcess.onExit = exitCode => {
+      logger.info(`The tor process exited with code ${exitCode}`);
+      this.#forgetProcess();
+      this.#isBootstrapDone = false;
+      this.#lastWarning = {};
+      Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
+      this.#closeConnection();
+    };
+    this.#torProcess.onRestart = async () => {
+      logger.info("Restarting the tor process");
+      try {
+        this.#controlConnection.close();
+      } catch (e) {
+        logger.warn(
+          "Error when closing the previos control port on restart",
+          e
+        );
       }
-    } catch (e) {
-      // TorProcess already logs the error.
-      this.#lastWarning.phase = "startup";
-      this.#lastWarning.reason = e.toString();
-    }
-    return this.#torProcess.isRunning;
+      this.#isBootstrapDone = false;
+      this.#lastWarning = {};
+      this.#circuits.clear();
+      try {
+        await this.#firstConnection();
+      } catch (e) {
+        // TODO: How to make surface this?
+        logger.error("Could not reconnect after restarting the tor daemon");
+        return;
+      }
+      Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
+    };
+
+    logger.debug("Trying to start the tor process.");
+    await this.#torProcess.start();
+    logger.info("Started a tor process");
   }
 
   #forgetProcess() {
@@ -429,146 +487,122 @@ export class TorProvider {
 
   // Control port setup and connection
 
-  // Returns Tor password string or null if an error occurs.
-  torGetPassword() {
-    return this.#controlPassword;
-  }
+  async #setControlPortConfiguration() {
+    logger.debug("Reading the control port configuration");
+    const settings = {};
 
-  torGetControlIPCFile() {
-    return this.#controlIPCFile?.clone();
-  }
-
-  torGetControlPort() {
-    return this.#controlPort;
-  }
-
-  torGetSOCKSPortInfo() {
-    return this.#SOCKSPortInfo;
-  }
-
-  get torControlPortInfo() {
-    const info = {
-      password: this.#controlPassword,
-    };
-    if (this.#controlIPCFile) {
-      info.ipcFile = this.#controlIPCFile?.clone();
-    }
-    if (this.#controlPort) {
-      info.host = this.#controlHost;
-      info.port = this.#controlPort;
-    }
-    return info;
-  }
-
-  get torSOCKSPortInfo() {
-    return this.#SOCKSPortInfo;
-  }
-
-  async #setSockets() {
-    try {
-      const isWindows = TorLauncherUtil.isWindows;
-      // Determine how Tor Launcher will connect to the Tor control port.
-      // Environment variables get top priority followed by preferences.
-      if (!isWindows && Services.env.exists("TOR_CONTROL_IPC_PATH")) {
-        const ipcPath = Services.env.get("TOR_CONTROL_IPC_PATH");
-        this.#controlIPCFile = new lazy.FileUtils.File(ipcPath);
-      } else {
-        // Check for TCP host and port environment variables.
-        if (Services.env.exists("TOR_CONTROL_HOST")) {
-          this.#controlHost = Services.env.get("TOR_CONTROL_HOST");
-        }
-        if (Services.env.exists("TOR_CONTROL_PORT")) {
-          this.#controlPort = parseInt(
-            Services.env.get("TOR_CONTROL_PORT"),
-            10
-          );
-        }
-
-        const useIPC =
-          !isWindows &&
-          Services.prefs.getBoolPref(
-            "extensions.torlauncher.control_port_use_ipc",
-            false
-          );
-        if (!this.#controlHost && !this.#controlPort && useIPC) {
-          this.#controlIPCFile = TorLauncherUtil.getTorFile(
-            "control_ipc",
-            false
-          );
-        } else {
-          if (!this.#controlHost) {
-            this.#controlHost = Services.prefs.getCharPref(
-              "extensions.torlauncher.control_host",
-              "127.0.0.1"
-            );
-          }
-          if (!this.#controlPort) {
-            this.#controlPort = Services.prefs.getIntPref(
-              "extensions.torlauncher.control_port",
-              9151
-            );
-          }
+    const isWindows = Services.appinfo.OS === "WINNT";
+    // Determine how Tor Launcher will connect to the Tor control port.
+    // Environment variables get top priority followed by preferences.
+    if (!isWindows && Services.env.exists("TOR_CONTROL_IPC_PATH")) {
+      const ipcPath = Services.env.get("TOR_CONTROL_IPC_PATH");
+      settings.ipcFile = new lazy.FileUtils.File(ipcPath);
+    } else {
+      // Check for TCP host and port environment variables.
+      if (Services.env.exists("TOR_CONTROL_HOST")) {
+        settings.host = Services.env.get("TOR_CONTROL_HOST");
+      }
+      if (Services.env.exists("TOR_CONTROL_PORT")) {
+        const port = parseInt(Services.env.get("TOR_CONTROL_PORT"), 10);
+        if (Number.isInteger(port) && port > 0 && port <= 65535) {
+          settings.port = port;
         }
       }
-
-      // Populate _controlPassword so it is available when starting tor.
-      if (Services.env.exists("TOR_CONTROL_PASSWD")) {
-        this.#controlPassword = Services.env.get("TOR_CONTROL_PASSWD");
-      } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
-        // TODO: test this code path (TOR_CONTROL_COOKIE_AUTH_FILE).
-        const cookiePath = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
-        if (cookiePath) {
-          this.#controlPassword = await this.#readAuthenticationCookie(
-            cookiePath
-          );
-        }
-      }
-      if (!this.#controlPassword) {
-        this.#controlPassword = this.#generateRandomPassword();
-      }
-
-      this.#SOCKSPortInfo = TorLauncherUtil.getPreferredSocksConfiguration();
-      TorLauncherUtil.setProxyConfiguration(this.#SOCKSPortInfo);
-
-      // Set the global control port info parameters.
-      lazy.configureControlPortModule(
-        this.#controlIPCFile,
-        this.#controlHost,
-        this.#controlPort,
-        this.#controlPassword
-      );
-    } catch (e) {
-      logger.error("Failed to get environment variables", e);
     }
+
+    const useIPC =
+      !isWindows &&
+      Services.prefs.getBoolPref(Preferences.ControlUseIpc, false);
+    if (!settings.host && !settings.port && useIPC) {
+      settings.ipcFile = TorLauncherUtil.getTorFile("control_ipc", false);
+    } else {
+      if (!settings.host) {
+        settings.host = Services.prefs.getCharPref(
+          Preferences.ControlHost,
+          "127.0.0.1"
+        );
+      }
+      if (!settings.port) {
+        settings.port = Services.prefs.getIntPref(
+          Preferences.ControlPort,
+          9151
+        );
+      }
+    }
+
+    if (Services.env.exists("TOR_CONTROL_PASSWD")) {
+      settings.password = Services.env.get("TOR_CONTROL_PASSWD");
+    } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
+      const cookiePath = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
+      if (cookiePath) {
+        settings.cookieFilePath = cookiePath;
+      }
+    }
+    if (!settings.password && !settings.cookieFilePath) {
+      settings.password = this.#generateRandomPassword();
+    }
+    this.#controlPortSettings = settings;
+    logger.debug("Control port configuration read");
+  }
+
+  async #firstConnection() {
+    // FIXME: No way to cancel this connection! Do we need one?
+    const initialDelay = 5;
+    const maxDelay = 10_000;
+    let delay = initialDelay;
+    logger.debug("Connecting to the control port for the first time.");
+    await new Promise((resolve, reject) => {
+      const tryConnect = () => {
+        this.#openControlPort()
+          .then(resolve)
+          .catch(e => {
+            if (delay < maxDelay) {
+              logger.error(
+                `Failed to connect to the control port. Trying again in ${delay}ms.`,
+                e
+              );
+              setTimeout(tryConnect, delay);
+              delay *= 2;
+            } else {
+              reject(e);
+            }
+          });
+      };
+      tryConnect();
+    });
+    logger.info("Connected to the control port.");
+    if (this.ownsTorDaemon && !TorLauncherUtil.shouldOnlyConfigureTor) {
+      this.#takeOwnership();
+    }
+    this.#setupEvents();
   }
 
   /**
    * Try to become the primary controller. This will make tor exit when our
    * connection is closed.
    */
-  async #takeOwnership(conn) {
+  async #takeOwnership() {
     logger.debug("Taking the ownership of the tor process.");
     try {
-      await conn.takeOwnership();
+      await this.#controlConnection.takeOwnership();
     } catch (e) {
       logger.warn("Take ownership failed", e);
       return;
     }
     try {
-      await conn.resetOwningControllerProcess();
+      await this.#controlConnection.resetOwningControllerProcess();
     } catch (e) {
       logger.warn("Clear owning controller process failed", e);
     }
   }
 
-  #setupEvents() {
+  async #setupEvents() {
     // We always liten to these events, because they are needed for the circuit
     // display.
     this.#eventHandlers = new Map([
       ["CIRC", this.#processCircEvent.bind(this)],
       ["STREAM", this.#processStreamEvent.bind(this)],
     ]);
-
     if (this.ownsTorDaemon) {
       // When we own the tor daemon, we listen to more events, that are used
       // for about:torconnect or for showing the logs in the settings page.
@@ -579,10 +613,63 @@ export class TorProvider {
       this.#eventHandlers.set("NOTICE", this.#processLog.bind(this));
       this.#eventHandlers.set("WARN", this.#processLog.bind(this));
       this.#eventHandlers.set("ERR", this.#processLog.bind(this));
-      this.#controlTor();
-    } else {
-      this.#startEventMonitor();
     }
+    const events = Array.from(this.#eventHandlers.keys());
+    try {
+      logger.debug(`Setting events: ${events.join(" ")}`);
+      await this.#controlConnection.setEvents(events);
+    } catch (e) {
+      logger.error(
+        "We could not enable all the events we need. Tor Browser's functionalities might be reduced.",
+        e
+      );
+      return;
+    }
+    for (const [type, callback] of this.#eventHandlers.entries()) {
+      this.#monitorEvent(type, callback);
+    }
+  }
+
+  async #openControlPort() {
+    if (this.#controlConnection?.isOpen) {
+      logger.warn(
+        "Tried to open a control port connection when the previous one was already open"
+      );
+      return;
+    }
+
+    let controlPort;
+    if (this.#controlPortSettings.ipcFile) {
+      controlPort = lazy.TorController.fromIpcFile(
+        this.#controlPortSettings.ipcFile
+      );
+    } else {
+      controlPort = lazy.TorController.fromSocketAddress(
+        this.#controlPortSettings.host,
+        this.#controlPortSettings.port
+      );
+    }
+    try {
+      let password = this.#controlPortSettings.password;
+      if (password === undefined && this.#controlPortSettings.cookieFilePath) {
+        password = await this.#readAuthenticationCookie(
+          this.#controlPortSettings.cookieFilePath
+        );
+      }
+      await controlPort.authenticate(password);
+    } catch (e) {
+      try {
+        controlPort.close();
+      } catch (ec) {
+        // Tor already closes the control port when the authentication fails.
+        logger.debug(
+          "Expected exception when closing the control port for a failed authentication",
+          ec
+        );
+      }
+      throw e;
+    }
+    this.#controlConnection = controlPort;
   }
 
   #closeConnection() {
@@ -815,134 +902,10 @@ export class TorProvider {
     );
   }
 
-  // Former TorMonitorService implementation.
-  // FIXME: Refactor and integrate more with the rest of the class.
+  // TODO: These are all parsing functions that should be moved to
+  // TorControlPort.
 
   #eventHandlers = null;
-  #startTimeout = null;
-
-  async #controlTor() {
-    if (!this.#torProcess?.isRunning && !(await this.#startDaemon())) {
-      logger.error("Tor not running, not starting to monitor it.");
-      return;
-    }
-
-    let delayMS = ControlConnTimings.initialDelayMS;
-    const callback = async () => {
-      if (await this.#startEventMonitor()) {
-        this.retrieveBootstrapStatus().catch(e => {
-          logger.warn("Could not get the initial bootstrap status", e);
-        });
-
-        // FIXME: TorProcess is misleading here. We should use a topic related
-        // to having a control port connection, instead.
-        logger.info(`Notifying ${TorProviderTopics.ProcessIsReady}`);
-        Services.obs.notifyObservers(null, TorProviderTopics.ProcessIsReady);
-
-        // We reset this here hoping that _shutDownEventMonitor can interrupt
-        // the current monitor, either by calling clearTimeout and preventing it
-        // from starting, or by closing the control port connection.
-        if (this.#startTimeout === null) {
-          logger.warn("Someone else reset #startTimeout!");
-        }
-        this.#startTimeout = null;
-      } else if (
-        Date.now() - this._torProcessStartTime >
-        ControlConnTimings.timeoutMS
-      ) {
-        let s = TorLauncherUtil.getLocalizedString("tor_controlconn_failed");
-        this.#lastWarning.phase = "startup";
-        this.#lastWarning.reason = s;
-        logger.info(s);
-        if (this.#startTimeout === null) {
-          logger.warn("Someone else reset #startTimeout!");
-        }
-        this.#startTimeout = null;
-      } else {
-        delayMS *= 2;
-        if (delayMS > ControlConnTimings.maxRetryMS) {
-          delayMS = ControlConnTimings.maxRetryMS;
-        }
-        this.#startTimeout = setTimeout(() => {
-          logger.debug(`Control port not ready, waiting ${delayMS / 1000}s.`);
-          callback();
-        }, delayMS);
-      }
-    };
-    // Check again, in the unfortunate case in which the execution was alrady
-    // queued, but was waiting network code.
-    if (this.#startTimeout === null) {
-      this.#startTimeout = setTimeout(callback, delayMS);
-    } else {
-      logger.error("Possible race? Refusing to start the timeout again");
-    }
-  }
-
-  async #startEventMonitor() {
-    if (this.#controlConnection) {
-      return true;
-    }
-
-    let conn;
-    try {
-      conn = await lazy.controller();
-    } catch (e) {
-      logger.error("Cannot open a control port connection", e);
-      if (conn) {
-        try {
-          conn.close();
-        } catch (e) {
-          logger.error(
-            "Also, the connection is not null but cannot be closed",
-            e
-          );
-        }
-      }
-      return false;
-    }
-
-    // TODO: optionally monitor INFO and DEBUG log messages.
-    try {
-      await conn.setEvents(Array.from(this.#eventHandlers.keys()));
-    } catch (e) {
-      logger.error("SETEVENTS failed", e);
-      conn.close();
-      return false;
-    }
-
-    if (this.#torProcess) {
-      this.#torProcess.connectionWorked();
-    }
-    if (this.ownsTorDaemon && !TorLauncherUtil.shouldOnlyConfigureTor) {
-      try {
-        await this.#takeOwnership(conn);
-      } catch (e) {
-        logger.warn("Could not take ownership of the Tor daemon", e);
-      }
-    }
-
-    this.#controlConnection = conn;
-
-    for (const [type, callback] of this.#eventHandlers.entries()) {
-      this.#monitorEvent(type, callback);
-    }
-
-    // FIXME: When we move this to TorControlPort we can make it work again.
-    // At the moment it's failing because sendCommand is not public anymore.
-    // Populate the circuit map already, in case we are connecting to an
-    // external tor daemon.
-    try {
-      const lines = await this.#controlConnection.getCircuits();
-      for (const line of lines) {
-        // #processCircEvent processes only one line at a time
-        this.#processCircEvent("CIRC", [line]);
-      }
-    } catch (e) {
-      logger.warn("Could not populate the initial circuit map", e);
-    }
-
-    return true;
-  }
 
   #monitorEvent(type, callback) {
     logger.info(`Watching events of type ${type}.`);
@@ -974,19 +937,6 @@ export class TorProvider {
       }
     });
   }
-
-  #shutDownEventMonitor() {
-    this.#closeConnection();
-    if (this.#startTimeout !== null) {
-      clearTimeout(this.#startTimeout);
-      this.#startTimeout = null;
-    }
-    this.#isBootstrapDone = false;
-    this.#lastWarning = {};
-  }
-
-  // TODO: These are all parsing functions that should be moved to
-  // TorControlPort.
 
   #processStatusClient(_type, lines) {
     const statusObj = TorParsers.parseBootstrapStatus(lines[0]);
