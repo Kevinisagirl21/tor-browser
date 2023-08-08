@@ -1,14 +1,17 @@
 // Copyright (c) 2021, The Tor Project, Inc.
 
-var EXPORTED_SYMBOLS = ["TorConnectParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const { InternetStatus, TorConnect, TorConnectTopics, TorConnectState } =
-  ChromeUtils.import("resource:///modules/TorConnect.jsm");
-const { TorSettings, TorSettingsTopics, TorSettingsData } = ChromeUtils.import(
-  "resource:///modules/TorSettings.jsm"
-);
+import {
+  InternetStatus,
+  TorConnect,
+  TorConnectTopics,
+  TorConnectState,
+} from "resource:///modules/TorConnect.sys.mjs";
+import {
+  TorSettings,
+  TorSettingsTopics,
+  TorSettingsData,
+} from "resource:///modules/TorSettings.sys.mjs";
 
 const BroadcastTopic = "about-torconnect:broadcast";
 
@@ -17,7 +20,7 @@ This object is basically a marshalling interface between the TorConnect module
 and a particular about:torconnect page
 */
 
-class TorConnectParent extends JSWindowActorParent {
+export class TorConnectParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
 
@@ -35,9 +38,19 @@ class TorConnectParent extends JSWindowActorParent {
       DetectedLocation: TorConnect.detectedLocation,
       ShowViewLog: TorConnect.logHasWarningOrError,
       HasEverFailed: TorConnect.hasEverFailed,
-      QuickStartEnabled: TorSettings.quickstart.enabled,
       UIState: TorConnect.uiState,
     };
+
+    // Workaround for a race condition, but we should fix it asap.
+    // about:torconnect is loaded before TorSettings is actually initialized.
+    // The getter might throw and the page not loaded correctly as a result.
+    // Silence any warning for now, but we should really fix it.
+    // See also tor-browser#41921.
+    try {
+      this.state.QuickStartEnabled = TorSettings.quickstart.enabled;
+    } catch (e) {
+      this.state.QuickStartEnabled = false;
+    }
 
     // JSWindowActiveParent derived objects cannot observe directly, so create a member
     // object to do our observing for us
@@ -84,6 +97,16 @@ class TorConnectParent extends JSWindowActorParent {
             self.state.ShowViewLog = true;
             break;
           }
+          case TorSettingsTopics.Ready: {
+            if (
+              self.state.QuickStartEnabled !== TorSettings.quickstart.enabled
+            ) {
+              self.state.QuickStartEnabled = TorSettings.quickstart.enabled;
+            } else {
+              return;
+            }
+            break;
+          }
           case TorSettingsTopics.SettingChanged: {
             if (aData === TorSettingsData.QuickStartEnabled) {
               self.state.QuickStartEnabled = obj.value;
@@ -107,6 +130,7 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.addObserver(this.torConnectObserver, topic);
     }
+    Services.obs.addObserver(this.torConnectObserver, TorSettingsTopics.Ready);
     Services.obs.addObserver(
       this.torConnectObserver,
       TorSettingsTopics.SettingChanged
@@ -130,6 +154,10 @@ class TorConnectParent extends JSWindowActorParent {
       const topic = TorConnectTopics[key];
       Services.obs.removeObserver(this.torConnectObserver, topic);
     }
+    Services.obs.removeObserver(
+      this.torConnectObserver,
+      TorSettingsTopics.Ready
+    );
     Services.obs.removeObserver(
       this.torConnectObserver,
       TorSettingsTopics.SettingChanged
