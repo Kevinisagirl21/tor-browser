@@ -6,6 +6,7 @@ import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
+import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
 import { TorProviderTopics } from "resource://gre/modules/TorProviderBuilder.sys.mjs";
 
 const lazy = {};
@@ -25,8 +26,8 @@ const logger = new ConsoleAPI({
  * @typedef {object} ControlPortSettings An object with the settings to use for
  * the control port. All the entries are optional, but an authentication
  * mechanism and a communication method must be specified.
- * @property {string=} password The clear text password. It must always be
- * defined, unless cookieFilePath is
+ * @property {Array|Uint8Array=} password The clear text password as an array of
+ * bytes. It must always be defined, unless cookieFilePath is
  * @property {string=} cookieFilePath The path to the cookie file to use for
  * authentication
  * @property {nsIFile=} ipcFile The nsIFile object with the path to a Unix
@@ -520,14 +521,40 @@ export class TorProvider {
     }
 
     if (Services.env.exists("TOR_CONTROL_PASSWD")) {
-      settings.password = Services.env.get("TOR_CONTROL_PASSWD");
+      const password = Services.env.get("TOR_CONTROL_PASSWD");
+      if (
+        password.length >= 2 &&
+        password[0] === '"' &&
+        password[password.length - 1] === '"'
+      ) {
+        const encoder = new TextEncoder();
+        settings.password = encoder.encode(TorParsers.unescapeString(password));
+      } else if (password.length && (password.length % 2) === 0) {
+        settings.password = [];
+        for (let i = 0; i < password.length; i += 2) {
+          const byte = parseInt(password.substring(i, i + 2), 16);
+          if (isNaN(byte)) {
+            settings.password = undefined;
+            break;
+          }
+          settings.password.push(byte);
+        }
+      }
+      if (password && !settings.password?.length) {
+        logger.warn(
+          "Invalid password specified at TOR_CONTROL_PASSWD. " +
+            "You should put it in double quotes, or it should be a hex-encoded sequence. " +
+            "The password cannot be empty. " +
+            "A random password will be used, instead."
+        );
+      }
     } else if (Services.env.exists("TOR_CONTROL_COOKIE_AUTH_FILE")) {
       const cookiePath = Services.env.get("TOR_CONTROL_COOKIE_AUTH_FILE");
       if (cookiePath) {
         settings.cookieFilePath = cookiePath;
       }
     }
-    if (!settings.password && !settings.cookieFilePath) {
+    if (!settings.password?.length && !settings.cookieFilePath) {
       settings.password = this.#generateRandomPassword();
     }
     this.#controlPortSettings = settings;
@@ -674,46 +701,15 @@ export class TorProvider {
   // Authentication
 
   async #readAuthenticationCookie(path) {
-    const bytes = await IOUtils.read(path);
-    return Array.from(bytes, b => this.#toHex(b, 2)).join("");
+    return IOUtils.read(path);
   }
 
   /**
-   * @returns {string} A random 16 character password, hex-encoded.
+   * @returns {string} A random 16-byte password.
    */
   #generateRandomPassword() {
-    // Similar to Vidalia's crypto_rand_string().
     const kPasswordLen = 16;
-    const kMinCharCode = "!".charCodeAt(0);
-    const kMaxCharCode = "~".charCodeAt(0);
-    let pwd = "";
-    for (let i = 0; i < kPasswordLen; ++i) {
-      const val = this.#cryptoRandInt(kMaxCharCode - kMinCharCode + 1);
-      if (val < 0) {
-        logger.error("#cryptoRandInt() failed");
-        return null;
-      }
-      pwd += this.#toHex(kMinCharCode + val, 2);
-    }
-    return pwd;
-  }
-
-  // Returns -1 upon failure.
-  #cryptoRandInt(aMax) {
-    // Based on tor's crypto_rand_int().
-    const maxUInt = 0xffffffff;
-    if (aMax <= 0 || aMax > maxUInt) {
-      return -1;
-    }
-
-    const cutoff = maxUInt - (maxUInt % aMax);
-    let val = cutoff;
-    while (val >= cutoff) {
-      const uint32 = new Uint32Array(1);
-      crypto.getRandomValues(uint32);
-      val = uint32[0];
-    }
-    return val % aMax;
+    return crypto.getRandomValues(new Uint8Array(kPasswordLen));
   }
 
   #toHex(aValue, aMinLen) {
