@@ -15,6 +15,7 @@
   preview/identityCredentialNotification.ftl       (../components/credentialmanager/identityCredentialNotification.ftl)
   preview/stripOnShare.ftl                         (../components/urlbar/content/stripOnShare.ftl)
   preview/base-browser-no-translate.ftl            (../locales-preview/base-browser-no-translate.ftl)
+  preview/tor-browser-no-translate.ftl             (../locales-preview/tor-browser-no-translate.ftl)
   browser                                          (%browser/**/*.ftl)
 
 @AB_CD@.jar:
