@@ -309,20 +309,22 @@ export class TorController {
   #commandQueue = [];
 
   /**
-   * The callbacks for handling async notifications.
+   * The event handler.
    *
-   * @type {Map<string, EventCallback>}
+   * @type {TorEventHandler}
    */
-  #eventCallbacks = new Map();
+  #eventHandler;
 
   /**
    * Connect to a control port over a Unix socket.
    * Not available on Windows.
    *
    * @param {nsIFile} ipcFile The path to the Unix socket to connect to
+   * @param {TorEventHandler} eventHandler The event handler to use for
+   * asynchronous notifications
    */
-  static fromIpcFile(ipcFile) {
-    return new TorController(AsyncSocket.fromIpcFile(ipcFile));
+  static fromIpcFile(ipcFile, eventHandler) {
+    return new TorController(AsyncSocket.fromIpcFile(ipcFile), eventHandler);
   }
 
   /**
@@ -330,9 +332,14 @@ export class TorController {
    *
    * @param {string} host The hostname to connect to
    * @param {number} port The port to connect the to
+   * @param {TorEventHandler} eventHandler The event handler to use for
+   * asynchronous notifications
    */
-  static fromSocketAddress(host, port) {
-    return new TorController(AsyncSocket.fromSocketAddress(host, port));
+  static fromSocketAddress(host, port, eventHandler) {
+    return new TorController(
+      AsyncSocket.fromSocketAddress(host, port),
+      eventHandler
+    );
   }
 
   /**
@@ -343,9 +350,12 @@ export class TorController {
    *
    * @private
    * @param {AsyncSocket} socket The socket to use
+   * @param {TorEventHandler} eventHandler The event handler to use for
+   * asynchronous notifications
    */
-  constructor(socket) {
+  constructor(socket, eventHandler) {
     this.#socket = socket;
+    this.#eventHandler = eventHandler;
     this.#startMessagePump();
   }
 
@@ -450,24 +460,6 @@ export class TorController {
   }
 
   /**
-   * Re-route an event message to the notification dispatcher.
-   *
-   * @param {string} message The message received on the control port. It should
-   * starts with `"650" SP`.
-   */
-  #handleNotification(message) {
-    const maybeType = message.match(/^650\s+(?<type>\S+)/);
-    const callback = this.#eventCallbacks.get(maybeType?.groups.type);
-    if (callback) {
-      try {
-        callback(message);
-      } catch (e) {
-        console.error("An event watcher threw", e);
-      }
-    }
-  }
-
-  /**
    * Read messages on the socket and routed them to a dispatcher until the
    * socket is open or some error happens (including the underlying socket being
    * closed).
@@ -479,10 +471,17 @@ export class TorController {
       // condition becoming false.
       while (this.#socket) {
         const message = await this.#readMessage();
-        if (message.startsWith("650")) {
-          this.#handleNotification(message);
-        } else {
-          this.#handleCommandReply(message);
+        try {
+          if (message.startsWith("650")) {
+            this.#handleNotification(message);
+          } else {
+            this.#handleCommandReply(message);
+          }
+        } catch (err) {
+          // E.g., if a notification handler fails. Without this internal
+          // try/catch we risk of closing the connection while not actually
+          // needed.
+          console.error("Caught an exception while handling a message", err);
         }
       }
     } catch (err) {
@@ -955,18 +954,76 @@ export class TorController {
   }
 
   /**
-   * Watches for a particular type of asynchronous event.
-   * Notice: we only observe `"650" SP...` events, currently (no `650+...` or
-   * `650-...` events).
-   * Also, you need to enable the events in the control port with SETEVENTS,
-   * first.
+   * Parse an asynchronous event and pass the data to the relative handler.
+   * Only single-line messages are currently supported.
    *
-   * @param {string} type The event type to catch
-   * @param {EventCallback} callback The callback that will handle the event
+   * @param {string} message The message received on the control port. It should
+   * starts with `"650" SP`.
    */
-  watchEvent(type, callback) {
-    this.#expectString(type, "type");
-    this.#eventCallbacks.set(type, callback);
+  #handleNotification(message) {
+    if (!this.#eventHandler) {
+      return;
+    }
+    const data = message.match(/^650\s+(?<type>\S+)\s*(?<data>.*)?/);
+    if (!data) {
+      return;
+    }
+    switch (data.groups.type) {
+      case "STATUS_CLIENT":
+        let status;
+        try {
+          status = this.#parseBootstrapStatus(data.groups.data);
+        } catch {
+          // Probably, a non bootstrap client status
+          break;
+        }
+        this.#eventHandler.onBootstrapStatus(status);
+        break;
+      case "CIRC":
+        const builtEvent =
+          /^(?<ID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(,?\$([0-9a-fA-F]{40})(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
+            data.groups.data
+          );
+        const closedEvent = /^(?<ID>[a-zA-Z0-9]{1,16})\sCLOSED/.exec(
+          data.groups.data
+        );
+        if (builtEvent) {
+          const fp = /\$([0-9a-fA-F]{40})/g;
+          const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
+            g[1].toUpperCase()
+          );
+          // In some cases, we might already receive SOCKS credentials in the
+          // line. However, this might be a problem with onion services: we get
+          // also a 4-hop circuit that we likely do not want to show to the
+          // user, especially because it is used only temporarily, and it would
+          // need a technical explaination.
+          // const credentials = this.#parseCredentials(data.groups.data);
+          this.#eventHandler.onCircuitBuilt(builtEvent.groups.ID, nodes);
+        } else if (closedEvent) {
+          this.#eventHandler.onCircuitClosed(closedEvent.groups.ID);
+        }
+        break;
+      case "STREAM":
+        const succeeedEvent =
+          /^(?<StreamID>[a-zA-Z0-9]{1,16})\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
+            data.groups.data
+          );
+        if (succeeedEvent) {
+          const credentials = this.#parseCredentials(data.groups.data);
+          this.#eventHandler.onStreamSucceeded(
+            succeeedEvent.groups.StreamID,
+            succeeedEvent.groups.CircuitID,
+            credentials?.username ?? null,
+            credentials?.password ?? null
+          );
+        }
+        break;
+      case "NOTICE":
+      case "WARN":
+      case "ERR":
+        this.#eventHandler.onLogMessage(data.groups.type, data.groups.data);
+        break;
+    }
   }
 
   // Other helpers
@@ -1012,6 +1069,24 @@ export class TorController {
   }
 
   /**
+   * Check if a STREAM or CIRC response line contains SOCKS_USERNAME and
+   * SOCKS_PASSWORD.
+   *
+   * @param {string} line The circ or stream line to check
+   * @returns {object?} The credentials, or null if not found
+   */
+  #parseCredentials(line) {
+    const username = /SOCKS_USERNAME=("(?:[^"\\]|\\.)*")/.exec(line);
+    const password = /SOCKS_PASSWORD=("(?:[^"\\]|\\.)*")/.exec(line);
+    return username && password
+      ? {
+          username: TorParsers.unescapeString(username[1]),
+          password: TorParsers.unescapeString(password[1]),
+        }
+      : null;
+  }
+
+  /**
    * Return an object with all the matches that are in the form `key="value"` or
    * `key=value`. The values will be unescaped, but no additional parsing will
    * be done (e.g., numbers will be returned as strings).
@@ -1029,4 +1104,17 @@ export class TorController {
       )
     );
   }
+}
+
+/**
+ * The event handler interface.
+ * The controller owner can implement this methods to receive asynchronous
+ * notifications from the controller.
+ */
+export class TorEventHandler {
+  onBootstrapStatus(status) {}
+  onLogMessage(message) {}
+  onCircuitBuilt(id, nodes) {}
+  onCircuitClosed(id) {}
+  onStreamSucceeded(streamId, circuitId, username, password) {}
 }
