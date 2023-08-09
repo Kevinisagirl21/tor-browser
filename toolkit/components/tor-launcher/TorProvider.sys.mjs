@@ -6,10 +6,6 @@ import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
-import {
-  TorParsers,
-  TorStatuses,
-} from "resource://gre/modules/TorParsers.sys.mjs";
 import { TorProviderTopics } from "resource://gre/modules/TorProviderBuilder.sys.mjs";
 
 const lazy = {};
@@ -449,14 +445,7 @@ export class TorProvider {
     };
     this.#torProcess.onRestart = async () => {
       logger.info("Restarting the tor process");
-      try {
-        this.#controlConnection.close();
-      } catch (e) {
-        logger.warn(
-          "Error when closing the previos control port on restart",
-          e
-        );
-      }
+      this.#closeConnection();
       this.#isBootstrapDone = false;
       this.#lastWarning = {};
       this.#circuits.clear();
@@ -597,24 +586,20 @@ export class TorProvider {
   }
 
   async #setupEvents() {
-    // We always liten to these events, because they are needed for the circuit
+    // We always listen to these events, because they are needed for the circuit
     // display.
-    this.#eventHandlers = new Map([
-      ["CIRC", this.#processCircEvent.bind(this)],
-      ["STREAM", this.#processStreamEvent.bind(this)],
-    ]);
+    const events = ["CIRC", "STREAM"];
     if (this.ownsTorDaemon) {
-      // When we own the tor daemon, we listen to more events, that are used
-      // for about:torconnect or for showing the logs in the settings page.
-      this.#eventHandlers.set(
-        "STATUS_CLIENT",
-        this.#processStatusClient.bind(this)
-      );
-      this.#eventHandlers.set("NOTICE", this.#processLog.bind(this));
-      this.#eventHandlers.set("WARN", this.#processLog.bind(this));
-      this.#eventHandlers.set("ERR", this.#processLog.bind(this));
+      events.push("STATUS_CLIENT", "NOTICE", "WARN", "ERR");
+      // Do not await on the first bootstrap status retrieval, and do not
+      // propagate its errors.
+      this.#controlConnection
+        .getBootstrapPhase()
+        .then(status => this.#processBootstrapStatus(status, false))
+        .catch(e =>
+          logger.error("Failed to get the first bootstrap status", e)
+        );
     }
-    const events = Array.from(this.#eventHandlers.keys());
     try {
       logger.debug(`Setting events: ${events.join(" ")}`);
       await this.#controlConnection.setEvents(events);
@@ -623,10 +608,6 @@ export class TorProvider {
         "We could not enable all the events we need. Tor Browser's functionalities might be reduced.",
         e
       );
-      return;
-    }
-    for (const [type, callback] of this.#eventHandlers.entries()) {
-      this.#monitorEvent(type, callback);
     }
   }
 
@@ -641,12 +622,14 @@ export class TorProvider {
     let controlPort;
     if (this.#controlPortSettings.ipcFile) {
       controlPort = lazy.TorController.fromIpcFile(
-        this.#controlPortSettings.ipcFile
+        this.#controlPortSettings.ipcFile,
+        this
       );
     } else {
       controlPort = lazy.TorController.fromSocketAddress(
         this.#controlPortSettings.host,
-        this.#controlPortSettings.port
+        this.#controlPortSettings.port,
+        this
       );
     }
     try {
@@ -681,6 +664,10 @@ export class TorProvider {
         logger.error("Failed to close the control port connection", e);
       }
       this.#controlConnection = null;
+    } else {
+      logger.trace(
+        "Requested to close an already closed control port connection"
+      );
     }
   }
 
@@ -900,114 +887,5 @@ export class TorProvider {
       },
       TorProviderTopics.StreamSucceeded
     );
-  }
-
-  // TODO: These are all parsing functions that should be moved to
-  // TorControlPort.
-
-  #eventHandlers = null;
-
-  #monitorEvent(type, callback) {
-    logger.info(`Watching events of type ${type}.`);
-    let replyObj = {};
-    this.#controlConnection.watchEvent(type, line => {
-      if (!line) {
-        return;
-      }
-      logger.debug("Event response: ", line);
-      const isComplete = TorParsers.parseReplyLine(line, replyObj);
-      if (!isComplete || replyObj._parseError || !replyObj.lineArray.length) {
-        return;
-      }
-      const reply = replyObj;
-      replyObj = {};
-      if (reply.statusCode !== TorStatuses.EventNotification) {
-        logger.error("Unexpected event status code:", reply.statusCode);
-        return;
-      }
-      if (!reply.lineArray[0].startsWith(`${type} `)) {
-        logger.error("Wrong format for the first line:", reply.lineArray[0]);
-        return;
-      }
-      reply.lineArray[0] = reply.lineArray[0].substring(type.length + 1);
-      try {
-        callback(type, reply.lineArray);
-      } catch (e) {
-        logger.error("Exception while handling an event", reply, e);
-      }
-    });
-  }
-
-  #processStatusClient(_type, lines) {
-    const statusObj = TorParsers.parseBootstrapStatus(lines[0]);
-    if (!statusObj) {
-      // No `BOOTSTRAP` in the line
-      return;
-    }
-    this.onBootstrapStatus(statusObj);
-  }
-
-  #processLog(type, lines) {
-    this.onLogMessage(type, lines.join("\n"));
-  }
-
-  async #processCircEvent(_type, lines) {
-    const builtEvent =
-      /^(?<CircuitID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(?:,?\$[0-9a-fA-F]{40}(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
-        lines[0]
-      );
-    const closedEvent = /^(?<ID>[a-zA-Z0-9]{1,16})\sCLOSED/.exec(lines[0]);
-    if (builtEvent) {
-      const fp = /\$([0-9a-fA-F]{40})/g;
-      const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
-        g[1].toUpperCase()
-      );
-      // In some cases, we might already receive SOCKS credentials in the line.
-      // However, this might be a problem with onion services: we get also a
-      // 4-hop circuit that we likely do not want to show to the user,
-      // especially because it is used only temporarily, and it would need a
-      // technical explaination.
-      // const credentials = this.#parseCredentials(lines[0]);
-      this.onCircuitBuilt(builtEvent.groups.CircuitID, nodes);
-    } else if (closedEvent) {
-      this.onCircuitClosed(closedEvent.groups.ID);
-    }
-  }
-
-  #processStreamEvent(_type, lines) {
-    const succeeedEvent =
-      /^(?<StreamID>[a-zA-Z0-9]){1,16}\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
-        lines[0]
-      );
-    if (!succeeedEvent) {
-      return;
-    }
-    const credentials = this.#parseCredentials(lines[0]);
-    if (credentials !== null) {
-      this.onStreamSucceeded(
-        succeeedEvent.groups.StreamID,
-        succeeedEvent.groups.CircuitID,
-        credentials.username,
-        credentials.password
-      );
-    }
-  }
-
-  /**
-   * Check if a STREAM or CIRC response line contains SOCKS_USERNAME and
-   * SOCKS_PASSWORD.
-   *
-   * @param {string} line The circ or stream line to check
-   * @returns {object?} The credentials, or null if not found
-   */
-  #parseCredentials(line) {
-    const username = /SOCKS_USERNAME=("(?:[^"\\]|\\.)*")/.exec(line);
-    const password = /SOCKS_PASSWORD=("(?:[^"\\]|\\.)*")/.exec(line);
-    return username && password
-      ? {
-          username: TorParsers.unescapeString(username[1]),
-          password: TorParsers.unescapeString(password[1]),
-        }
-      : null;
   }
 }
