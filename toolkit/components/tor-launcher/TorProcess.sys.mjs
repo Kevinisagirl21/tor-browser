@@ -42,7 +42,7 @@ export class TorProcess {
   constructor(controlSettings, socksSettings) {
     if (
       controlSettings &&
-      !controlSettings.password &&
+      !controlSettings.password?.length &&
       !controlSettings.cookieFilePath
     ) {
       throw new Error("Unauthenticated control port is not supported");
@@ -318,7 +318,7 @@ export class TorProcess {
       this.#args.push("+__ControlPort", controlPortArg);
     }
 
-    if (this.#controlSettings.password) {
+    if (this.#controlSettings.password?.length) {
       this.#args.push(
         "HashedControlPassword",
         this.#hashPassword(this.#controlSettings.password)
@@ -357,36 +357,43 @@ export class TorProcess {
     }
   }
 
-  // Based on Vidalia's TorSettings::hashPassword().
-  #hashPassword(aHexPassword) {
-    if (!aHexPassword) {
-      return null;
-    }
+  /**
+   * Hash a password to then pass it to Tor as a command line argument.
+   * Based on Vidalia's TorSettings::hashPassword().
+   *
+   * @param {Array|Uint8Array} password The password, as an array of bytes
+   */
+  #hashPassword(password) {
+    // The password has already been checked by the caller.
 
     // Generate a random, 8 byte salt value.
     const salt = Array.from(crypto.getRandomValues(new Uint8Array(8)));
-
-    // Convert hex-encoded password to an array of bytes.
-    const password = [];
-    for (let i = 0; i < aHexPassword.length; i += 2) {
-      password.push(parseInt(aHexPassword.substring(i, i + 2), 16));
-    }
 
     // Run through the S2K algorithm and convert to a string.
     const toHex = v => v.toString(16).padStart(2, "0");
     const arrayToHex = aArray => aArray.map(toHex).join("");
     const kCodedCount = 96;
-    const hashVal = this.#cryptoSecretToKey(password, salt, kCodedCount);
+    const hashVal = this.#cryptoSecretToKey(
+      Array.from(password),
+      salt,
+      kCodedCount
+    );
     return "16:" + arrayToHex(salt) + toHex(kCodedCount) + arrayToHex(hashVal);
   }
 
-  // #cryptoSecretToKey() is similar to Vidalia's crypto_secret_to_key().
-  // It generates and returns a hash of aPassword by following the iterated
-  // and salted S2K algorithm (see RFC 2440 section 3.6.1.3).
-  // See also https://gitlab.torproject.org/tpo/core/torspec/-/blob/main/control-spec.txt#L3824.
-  // Returns an array of bytes.
-  #cryptoSecretToKey(aPassword, aSalt, aCodedCount) {
-    const inputArray = aSalt.concat(aPassword);
+  /**
+   * Generates and return a hash of a password by following the iterated and
+   * salted S2K algorithm (see RFC 2440 section 3.6.1.3).
+   * See also https://gitlab.torproject.org/tpo/core/torspec/-/blob/main/control-spec.txt#L3824.
+   * #cryptoSecretToKey() is similar to Vidalia's crypto_secret_to_key().
+   *
+   * @param {Array} password The password to hash, as an array of bytes
+   * @param {Array} salt The salt to use for the hash, as an array of bytes
+   * @param {number} codedCount The counter, coded as specified in RFC 2440
+   * @returns {Array} The hash of the password, as an array of bytes
+   */
+  #cryptoSecretToKey(password, salt, codedCount) {
+    const inputArray = salt.concat(password);
 
     // Subtle crypto only has the final digest, and does not allow incremental
     // updates.
@@ -395,7 +402,7 @@ export class TorProcess {
     );
     hasher.init(hasher.SHA1);
     const kEXPBIAS = 6;
-    let count = (16 + (aCodedCount & 15)) << ((aCodedCount >> 4) + kEXPBIAS);
+    let count = (16 + (codedCount & 15)) << ((codedCount >> 4) + kEXPBIAS);
     while (count > 0) {
       if (count > inputArray.length) {
         hasher.update(inputArray, inputArray.length);
