@@ -1,4 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
+
 import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
+
+const logger = new ConsoleAPI({
+  maxLogLevel: "warn",
+  maxLogLevelPref: "browser.tor_provider.cp_log_level",
+  prefix: "TorControlPort",
+});
 
 /**
  * A wrapper around XPCOM sockets and buffers to handle streams in a standard
@@ -481,14 +493,15 @@ export class TorController {
           // E.g., if a notification handler fails. Without this internal
           // try/catch we risk of closing the connection while not actually
           // needed.
-          console.error("Caught an exception while handling a message", err);
+          logger.error("Caught an exception while handling a message", err);
         }
       }
     } catch (err) {
+      logger.debug("Caught an exception, closing the control port", err);
       try {
         this.#close(err);
       } catch (ec) {
-        console.error(
+        logger.error(
           "Caught another error while closing the control socket.",
           ec
         );
@@ -559,6 +572,7 @@ export class TorController {
    * rejection reason to the commands that are still queued.
    */
   #close(reason) {
+    logger.info("Closing the control port", reason);
     const error = new Error(
       "The control socket has been closed" +
         (reason ? `: ${reason.message}` : "")
@@ -974,8 +988,9 @@ export class TorController {
         let status;
         try {
           status = this.#parseBootstrapStatus(data.groups.data);
-        } catch {
+        } catch (e) {
           // Probably, a non bootstrap client status
+          logger.debug(`Failed to parse STATUS_CLIENT: ${data.groups.data}`);
           break;
         }
         this.#eventHandler.onBootstrapStatus(status);

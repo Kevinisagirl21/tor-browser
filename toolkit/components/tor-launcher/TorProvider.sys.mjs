@@ -522,6 +522,18 @@ export class TorProvider {
 
     if (Services.env.exists("TOR_CONTROL_PASSWD")) {
       const password = Services.env.get("TOR_CONTROL_PASSWD");
+      // As per 3.5 of control-spec.txt, AUTHENTICATE can use either a quoted
+      // string, or a sequence of hex characters.
+      // However, the password is hashed byte by byte, so we need to convert the
+      // string to its character codes, or the hex digits to actual bytes.
+      // Notice that Tor requires at least one hex character, without an upper
+      // limit, but it does not explicitly tell how to pad an odd number of hex
+      // characters, so we require the user to hand an even number of hex
+      // digits.
+      // We also want to enforce the authentication if we start the daemon.
+      // So, if a password is not valid (not a hex sequence and not a quoted
+      // string), or if it is empty (including the quoted empty string), we
+      // force a random password.
       if (
         password.length >= 2 &&
         password[0] === '"' &&
@@ -529,15 +541,10 @@ export class TorProvider {
       ) {
         const encoder = new TextEncoder();
         settings.password = encoder.encode(TorParsers.unescapeString(password));
-      } else if (password.length && (password.length % 2) === 0) {
+      } else if (/^([0-9a-fA-F]{2})+$/.test(password)) {
         settings.password = [];
         for (let i = 0; i < password.length; i += 2) {
-          const byte = parseInt(password.substring(i, i + 2), 16);
-          if (isNaN(byte)) {
-            settings.password = undefined;
-            break;
-          }
-          settings.password.push(byte);
+          settings.password.push(parseInt(password.substring(i, i + 2), 16));
         }
       }
       if (password && !settings.password?.length) {
@@ -554,7 +561,11 @@ export class TorProvider {
         settings.cookieFilePath = cookiePath;
       }
     }
-    if (!settings.password?.length && !settings.cookieFilePath) {
+    if (
+      TorLauncherUtil.shouldStartAndOwnTor &&
+      !settings.password?.length &&
+      !settings.cookieFilePath
+    ) {
       settings.password = this.#generateRandomPassword();
     }
     this.#controlPortSettings = settings;
