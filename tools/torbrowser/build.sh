@@ -4,4 +4,12 @@ DEV_ROOT=$1
 
 cd $DEV_ROOT
 ./mach build
-./mach build stage-package
+
+if [ -z "$LOCALES" ]; then
+  ./mach build stage-package
+else
+  export MOZ_CHROME_MULTILOCALE=$LOCALES
+  # No quotes on purpose
+  ./mach package-multi-locale --locales en-US $MOZ_CHROME_MULTILOCALE
+  AB_CD=multi ./mach build stage-package
+fi
