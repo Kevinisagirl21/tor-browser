@@ -2706,6 +2706,7 @@ export class SearchService {
     };
 
     let engines = [];
+    let revert = false;
     for (let locale of locales) {
       lazy.logConsole.debug(
         "addEnginesFromExtension: installing:",
@@ -2713,7 +2714,28 @@ export class SearchService {
         ":",
         locale
       );
-      engines.push(await installLocale(locale));
+      try {
+        engines.push(await installLocale(locale));
+      } catch (err) {
+        lazy.logConsole.error(
+          `Could not install the search engine of ${extension.id}`,
+          err
+        );
+        revert = true;
+        break;
+      }
+    }
+    if (revert) {
+      for (let engine of engines) {
+        try {
+          this.removeEngine(engine);
+        } catch (err) {
+          lazy.logConsole.warn(
+            "Failed to revert the addition of a search engine",
+            err
+          );
+        }
+      }
     }
     return engines;
   }
