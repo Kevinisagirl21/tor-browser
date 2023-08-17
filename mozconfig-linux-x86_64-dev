@@ -5,6 +5,7 @@
 # during development.
 
 export MOZILLA_OFFICIAL=
+export MOZ_APP_REMOTINGNAME="Tor Browser Dev"
 ac_add_options --with-branding=browser/branding/tb-nightly
 
 ac_add_options --enable-default-toolkit=cairo-gtk3
