@@ -1,6 +1,12 @@
 . $topsrcdir/browser/config/mozconfigs/base-browser
 
 mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
+# If building outside tor-browser-build, you might want to customize this value.
+# On Linux, it influences the WM_CLASS value, which is shown on GNOME's ALT-TAB,
+# for example.
+# We customize it in tor-browser-build because we include the channel name, just
+# like Firefox does.
+# export MOZ_APP_REMOTINGNAME="Tor Browser"
 
 ac_add_options --with-relative-data-dir=TorBrowser/Data/Browser
 # This is not needed with the relative data directory, but it is when you
