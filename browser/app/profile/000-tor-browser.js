@@ -45,12 +45,7 @@ pref("network.http.connection-retry-timeout", 0);
 
 #expand pref("torbrowser.version", __BASE_BROWSER_VERSION_QUOTED__);
 
-// Old torbutton prefs
-
-// Tor check and proxy prefs
-pref("extensions.torbutton.test_enabled", true);
-pref("extensions.torbutton.test_url", "https://check.torproject.org/?TorButton=true");
-pref("extensions.torbutton.local_tor_check", true);
+// Old torbutton pref
 pref("extensions.torbutton.use_nontor_proxy", false);
 
 // Browser home page:
