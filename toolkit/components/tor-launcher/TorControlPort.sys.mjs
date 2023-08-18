@@ -777,19 +777,6 @@ class TorController {
     return this.#getInfo(`ip-to-country/${ip}`);
   }
 
-  /**
-   * Ask tor which ports it is listening to for SOCKS connections.
-   *
-   * @returns {Promise<string[]>} An array of addresses. It might be empty
-   * (e.g., when DisableNetwork is set)
-   */
-  async getSocksListeners() {
-    const listeners = await this.#getInfo("net/listeners/socks");
-    return Array.from(listeners.matchAll(/\s*("(?:[^"\\]|\\.)*"|\S+)\s*/g), m =>
-      TorParsers.unescapeString(m[1])
-    );
-  }
-
   // Configuration
 
   /**
