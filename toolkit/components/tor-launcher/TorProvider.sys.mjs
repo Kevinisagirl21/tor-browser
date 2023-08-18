@@ -189,13 +189,6 @@ export class TorProvider {
     await conn.newnym();
   }
 
-  // Ask tor which ports it is listening to for SOCKS connections.
-  // At the moment this is used only in TorCheckService.
-  async getSocksListeners() {
-    const conn = await this.#getConnection();
-    return conn.getSocksListeners();
-  }
-
   async getBridges() {
     const conn = await this.#getConnection();
     // Ideally, we would not need this function, because we should be the one
