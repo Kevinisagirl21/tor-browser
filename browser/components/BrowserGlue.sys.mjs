@@ -2065,6 +2065,7 @@ BrowserGlue.prototype = {
           lazy.UpdateListener.reset();
         }
       },
+      () => ClipboardPrivacy.emptyPrivate(), // tor-browser#42019
     ];
 
     for (let task of tasks) {
