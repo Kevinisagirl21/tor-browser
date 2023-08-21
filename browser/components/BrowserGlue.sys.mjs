@@ -2007,6 +2007,7 @@ BrowserGlue.prototype = {
         }
       },
       () => lazy.OnionAliasStore.uninit(),
+      () => Services.clipboard.emptyClipboard(Ci.nsIClipboard.kGlobalClipboard) // tor-browser#42019
     ];
 
     for (let task of tasks) {
