@@ -276,7 +276,18 @@ var gTorCircuitPanel = {
     // will match up with the domain.
     // In contrast, documentURI corresponds to the shown page. E.g. it could
     // point to "about:certerror".
-    const scheme = browser.currentURI?.scheme;
+    let scheme = browser.currentURI?.scheme;
+    if (scheme === "about" && browser.currentURI?.filePath === "reader") {
+      const searchParams = new URLSearchParams(browser.currentURI.query);
+      if (searchParams.has("url")) {
+        try {
+          const uri = Services.io.newURI(searchParams.get("url"));
+          scheme = uri.scheme;
+        } catch (err) {
+          this._log.error(err);
+        }
+      }
+    }
 
     if (
       this._currentBrowserData &&
