@@ -453,7 +453,7 @@ class TorDomainIsolatorImpl {
    */
   #getBrowserForChannel(channel) {
     const browsers =
-      channel.loadInfo.browsingContext?.topChromeWindow?.gBrowser.browsers;
+      channel.loadInfo.browsingContext?.topChromeWindow?.gBrowser?.browsers;
     if (!browsers || !channel.loadInfo.browsingContext?.browserId) {
       return null;
     }
