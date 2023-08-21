@@ -1,4 +1,0 @@
-#filter substitution
-
-torbutton.jar:
-% resource torbutton %

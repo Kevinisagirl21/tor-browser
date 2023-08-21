@@ -22,7 +22,6 @@ DIRS += [
     "mozapps/preferences",
     "profile",
     "themes",
-    "torbutton",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
