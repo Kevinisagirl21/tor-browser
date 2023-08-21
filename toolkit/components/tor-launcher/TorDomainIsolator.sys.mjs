@@ -300,6 +300,17 @@ class TorDomainIsolatorImpl {
       const channel = aChannel.QueryInterface(Ci.nsIChannel);
       let firstPartyDomain = channel.loadInfo.originAttributes.firstPartyDomain;
       const userContextId = channel.loadInfo.originAttributes.userContextId;
+      const loadingPrincipalURI = channel.loadInfo.loadingPrincipal?.URI;
+      if (loadingPrincipalURI?.spec.startsWith("about:reader")) {
+        try {
+          const searchParams = new URLSearchParams(loadingPrincipalURI.query);
+          if (searchParams.has("url")) {
+            firstPartyDomain = Services.eTLD.getSchemelessSite(Services.io.newURI(searchParams.get("url")));
+          }
+        } catch (e) {
+          logger.error("Failed to get first party domain for about:reader", e);
+        }
+      }
       if (!firstPartyDomain) {
         firstPartyDomain = CATCHALL_DOMAIN;
         if (Date.now() - this.#catchallDirtySince > CATCHALL_MAX_LIFETIME) {
@@ -629,36 +640,43 @@ class TorDomainIsolatorImpl {
 function getDomainForBrowser(browser) {
   let fpd = browser.contentPrincipal.originAttributes.firstPartyDomain;
 
-  // Bug 31562: For neterror or certerror, get the original URL from
-  // browser.currentURI and use it to calculate the firstPartyDomain.
-  const knownErrors = [
-    "about:neterror",
-    "about:certerror",
-    "about:httpsonlyerror",
-  ];
   const { documentURI } = browser;
-  if (
-    documentURI &&
-    documentURI.schemeIs("about") &&
-    knownErrors.some(x => documentURI.spec.startsWith(x))
-  ) {
-    const knownSchemes = ["http", "https"];
-    const currentURI = browser.currentURI;
-    if (currentURI && knownSchemes.some(x => currentURI.schemeIs(x))) {
-      try {
-        fpd = Services.eTLD.getBaseDomainFromHost(currentURI.host);
-      } catch (e) {
-        if (
-          e.result === Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
-          e.result === Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
-        ) {
-          fpd = currentURI.host;
-        } else {
-          logger.error(
-            `Failed to get first party domain for host ${currentURI.host}`,
-            e
-          );
+  if (documentURI && documentURI.schemeIs("about")) {
+    // Bug 31562: For neterror or certerror, get the original URL from
+    // browser.currentURI and use it to calculate the firstPartyDomain.
+    const knownErrors = [
+      "about:neterror",
+      "about:certerror",
+      "about:httpsonlyerror",
+    ];
+    if (knownErrors.some(x => documentURI.spec.startsWith(x))) {
+      const knownSchemes = ["http", "https"];
+      const currentURI = browser.currentURI;
+      if (currentURI && knownSchemes.some(x => currentURI.schemeIs(x))) {
+        try {
+          fpd = Services.eTLD.getBaseDomainFromHost(currentURI.host);
+        } catch (e) {
+          if (
+            e.result === Cr.NS_ERROR_HOST_IS_IP_ADDRESS ||
+            e.result === Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
+          ) {
+            fpd = currentURI.host;
+          } else {
+            logger.error(
+              `Failed to get first party domain for host ${currentURI.host}`,
+              e
+            );
+          }
         }
+      }
+    } else if (documentURI.spec.startsWith("about:reader")) {
+      try {
+        const searchParams = new URLSearchParams(documentURI.query);
+        if (searchParams.has("url")) {
+          fpd = Services.eTLD.getSchemelessSite(Services.io.newURI(searchParams.get("url")));
+        }
+      } catch (e) {
+        logger.error("Failed to get first party domain for about:reader", e);
       }
     }
   }
