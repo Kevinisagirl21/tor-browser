@@ -172,7 +172,7 @@ var DownloadsPanel = {
       ).textContent = this._getTorString("torbutton.download.warning.title");
 
       const tailsLink = document.createElement("a");
-      tailsLink.href = "https://tails.boum.org/";
+      tailsLink.href = "https://tails.net";
       tailsLink.textContent = this._getTorString(
         "torbutton.download.warning.tails_brand_name"
       );
