@@ -34,6 +34,8 @@ export default class MozToggle extends MozLitElement {
     description: { type: String },
     ariaLabel: { type: String, attribute: "aria-label" },
     accessKey: { type: String, attribute: "accesskey" },
+    // Extension for tor-browser. Used for tor-browser#41333.
+    title: { type: String, attribute: "title" },
   };
 
   static get queries() {
@@ -111,6 +113,12 @@ export default class MozToggle extends MozLitElement {
 
   render() {
     const { pressed, disabled, description, ariaLabel, handleClick } = this;
+    // For tor-browser, if we have a title we use it as the aria-description.
+    // Used for tor-browser#41333.
+    // Only set the description using the title if it differs from the
+    // accessible name derived from the label.
+    const label = ariaLabel || this.label;
+    const ariaDescription = label === this.title ? undefined : this.title;
     return html`
       <link rel="stylesheet" href=${this.constructor.stylesheetUrl} />
       ${this.labelTemplate()}
@@ -122,6 +130,7 @@ export default class MozToggle extends MozLitElement {
         ?disabled=${disabled}
         aria-pressed=${pressed}
         aria-label=${ifDefined(ariaLabel ?? undefined)}
+        aria-description=${ifDefined(ariaDescription ?? undefined)}
         aria-describedby=${ifDefined(
           description ? "moz-toggle-description" : undefined
         )}
