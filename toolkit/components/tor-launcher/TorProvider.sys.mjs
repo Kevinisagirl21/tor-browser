@@ -26,7 +26,7 @@ const logger = new ConsoleAPI({
  * @typedef {object} ControlPortSettings An object with the settings to use for
  * the control port. All the entries are optional, but an authentication
  * mechanism and a communication method must be specified.
- * @property {Array|Uint8Array=} password The clear text password as an array of
+ * @property {Uint8Array=} password The clear text password as an array of
  * bytes. It must always be defined, unless cookieFilePath is
  * @property {string=} cookieFilePath The path to the cookie file to use for
  * authentication
@@ -40,22 +40,6 @@ const logger = new ConsoleAPI({
  * @property {Date} date The date at which we received the message
  * @property {string} type The message level
  * @property {string} msg The message
- */
-/**
- * From control-spec.txt:
- *   CircuitID = 1*16 IDChar
- *   IDChar = ALPHA / DIGIT
- *   Currently, Tor only uses digits, but this may change.
- *
- * @typedef {string} CircuitID
- */
-/**
- * The fingerprint of a node.
- * From control-spec.txt:
- *   Fingerprint = "$" 40*HEXDIG
- * However, we do not keep the $ in our structures.
- *
- * @typedef {string} NodeFingerprint
  */
 /**
  * Stores the data associated with a circuit node.
@@ -189,7 +173,7 @@ export class TorProvider {
 
     if (socksSettings.transproxy) {
       logger.info("Transparent proxy required, not starting a Tor daemon.");
-    } else if (TorLauncherUtil.shouldStartAndOwnTor) {
+    } else if (this.ownsTorDaemon) {
       try {
         await this.#startDaemon(socksSettings);
       } catch (e) {
@@ -228,8 +212,6 @@ export class TorProvider {
     logger.debug("Uninitializing the Tor provider.");
     this.#forgetProcess();
     this.#closeConnection();
-    this.#isBootstrapDone = false;
-    this.#lastWarning = {};
   }
 
   // Provider API
@@ -439,16 +421,12 @@ export class TorProvider {
     this.#torProcess.onExit = exitCode => {
       logger.info(`The tor process exited with code ${exitCode}`);
       this.#forgetProcess();
-      this.#isBootstrapDone = false;
-      this.#lastWarning = {};
-      Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
       this.#closeConnection();
+      Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
     };
     this.#torProcess.onRestart = async () => {
       logger.info("Restarting the tor process");
       this.#closeConnection();
-      this.#isBootstrapDone = false;
-      this.#lastWarning = {};
       this.#circuits.clear();
       try {
         await this.#firstConnection();
@@ -469,8 +447,8 @@ export class TorProvider {
     if (this.#torProcess) {
       logger.trace('"Forgetting" the tor process.');
       this.#torProcess.forget();
-      this.#torProcess.onExit = null;
-      this.#torProcess.onRestart = null;
+      this.#torProcess.onExit = () => {};
+      this.#torProcess.onRestart = () => {};
       this.#torProcess = null;
     }
   }
@@ -542,9 +520,9 @@ export class TorProvider {
         const encoder = new TextEncoder();
         settings.password = encoder.encode(TorParsers.unescapeString(password));
       } else if (/^([0-9a-fA-F]{2})+$/.test(password)) {
-        settings.password = [];
-        for (let i = 0; i < password.length; i += 2) {
-          settings.password.push(parseInt(password.substring(i, i + 2), 16));
+        settings.password = new Uint8Array(password.length / 2);
+        for (let i = 0, j = 0; i < settings.password.length; i++, j += 2) {
+          settings.password[i] = parseInt(password.substring(j, j + 2), 16);
         }
       }
       if (password && !settings.password?.length) {
@@ -562,7 +540,7 @@ export class TorProvider {
       }
     }
     if (
-      TorLauncherUtil.shouldStartAndOwnTor &&
+      this.ownsTorDaemon &&
       !settings.password?.length &&
       !settings.cookieFilePath
     ) {
@@ -574,17 +552,19 @@ export class TorProvider {
 
   async #firstConnection() {
     // FIXME: No way to cancel this connection! Do we need one?
-    const initialDelay = 5;
     const maxDelay = 10_000;
-    let delay = initialDelay;
+    let delay = 5;
     logger.debug("Connecting to the control port for the first time.");
     await new Promise((resolve, reject) => {
       const tryConnect = () => {
         this.#openControlPort()
-          .then(resolve)
+          .then(() => {
+            this.#torProcess?.connectionWorked();
+            resolve();
+          })
           .catch(e => {
             if (delay < maxDelay) {
-              logger.error(
+              logger.info(
                 `Failed to connect to the control port. Trying again in ${delay}ms.`,
                 e
               );
@@ -707,6 +687,8 @@ export class TorProvider {
         "Requested to close an already closed control port connection"
       );
     }
+    this.#isBootstrapDone = false;
+    this.#lastWarning = {};
   }
 
   // Authentication
@@ -716,15 +698,11 @@ export class TorProvider {
   }
 
   /**
-   * @returns {string} A random 16-byte password.
+   * @returns {Uint8Array} A random 16-byte password.
    */
   #generateRandomPassword() {
     const kPasswordLen = 16;
     return crypto.getRandomValues(new Uint8Array(kPasswordLen));
-  }
-
-  #toHex(aValue, aMinLen) {
-    return aValue.toString(16).padStart(aMinLen, "0");
   }
 
   // Notification handlers

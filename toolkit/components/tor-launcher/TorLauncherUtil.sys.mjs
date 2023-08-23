@@ -503,10 +503,6 @@ export const TorLauncherUtil = Object.freeze({
    */
   getPreferredSocksConfiguration() {
     if (Services.env.exists("TOR_TRANSPROXY")) {
-      Services.prefs.setBoolPref("network.proxy.socks_remote_dns", false);
-      Services.prefs.setIntPref("network.proxy.type", 0);
-      Services.prefs.setIntPref("network.proxy.socks_port", 0);
-      Services.prefs.setCharPref("network.proxy.socks", "");
       return { transproxy: true };
     }
 
@@ -576,6 +572,10 @@ export const TorLauncherUtil = Object.freeze({
 
   setProxyConfiguration(socksPortInfo) {
     if (socksPortInfo.transproxy) {
+      Services.prefs.setBoolPref("network.proxy.socks_remote_dns", false);
+      Services.prefs.setIntPref("network.proxy.type", 0);
+      Services.prefs.setIntPref("network.proxy.socks_port", 0);
+      Services.prefs.setCharPref("network.proxy.socks", "");
       return;
     }
 

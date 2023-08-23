@@ -361,7 +361,7 @@ export class TorProcess {
    * Hash a password to then pass it to Tor as a command line argument.
    * Based on Vidalia's TorSettings::hashPassword().
    *
-   * @param {Array|Uint8Array} password The password, as an array of bytes
+   * @param {Uint8Array} password The password, as an array of bytes
    */
   #hashPassword(password) {
     // The password has already been checked by the caller.

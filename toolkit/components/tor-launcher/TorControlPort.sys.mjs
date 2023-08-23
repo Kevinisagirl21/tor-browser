@@ -247,11 +247,37 @@ class AsyncSocket {
  * the command
  */
 /**
+ * The ID of a circuit.
+ * From control-spec.txt:
+ *   CircuitID = 1*16 IDChar
+ *   IDChar = ALPHA / DIGIT
+ *   Currently, Tor only uses digits, but this may change.
+ *
+ * @typedef {string} CircuitID
+ */
+/**
+ * The ID of a stream.
+ * From control-spec.txt:
+ *   CircuitID = 1*16 IDChar
+ *   IDChar = ALPHA / DIGIT
+ *   Currently, Tor only uses digits, but this may change.
+ *
+ * @typedef {string} StreamID
+ */
+/**
+ * The fingerprint of a node.
+ * From control-spec.txt:
+ *   Fingerprint = "$" 40*HEXDIG
+ * However, we do not keep the $ in our structures.
+ *
+ * @typedef {string} NodeFingerprint
+ */
+/**
  * @typedef {object} Bridge
  * @property {string} transport The transport of the bridge, or vanilla if not
  * specified.
  * @property {string} addr The IP address and port of the bridge
- * @property {string} id The fingerprint of the bridge
+ * @property {NodeFingerprint} id The fingerprint of the bridge
  * @property {string} args Optional arguments passed to the bridge
  */
 /**
@@ -990,7 +1016,7 @@ export class TorController {
           status = this.#parseBootstrapStatus(data.groups.data);
         } catch (e) {
           // Probably, a non bootstrap client status
-          logger.debug(`Failed to parse STATUS_CLIENT: ${data.groups.data}`);
+          logger.debug(`Failed to parse STATUS_CLIENT: ${data.groups.data}`, e);
           break;
         }
         this.#eventHandler.onBootstrapStatus(status);
@@ -1123,14 +1149,53 @@ export class TorController {
 }
 
 /**
+ * @typedef {object} TorEventHandler
  * The event handler interface.
  * The controller owner can implement this methods to receive asynchronous
  * notifications from the controller.
+ *
+ * @property {OnBootstrapStatus} onBootstrapStatus Called when a bootstrap
+ * status is received (i.e., a STATUS_CLIENT event with a BOOTSTRAP action)
+ * @property {OnLogMessage} onLogMessage Called when a log message is received
+ * (i.e., a NOTICE, WARN or ERR notification)
+ * @property {OnCircuitBuilt} onCircuitBuilt Called when a circuit is built
+ * (i.e., a CIRC event with a BUILT status)
+ * @property {OnCircuitClosed} onCircuitClosed Called when a circuit is closed
+ * (i.e., a CIRC event with a CLOSED status)
+ * @property {OnStreamSucceeded} onStreamSucceeded Called when a stream receives
+ * a reply (i.e., a STREAM event with a SUCCEEDED status)
  */
-export class TorEventHandler {
-  onBootstrapStatus(status) {}
-  onLogMessage(message) {}
-  onCircuitBuilt(id, nodes) {}
-  onCircuitClosed(id) {}
-  onStreamSucceeded(streamId, circuitId, username, password) {}
-}
+/**
+ * @callback OnBootstrapStatus
+ *
+ * @param {object} status An object with the bootstrap information. Its keys
+ * depend on what the arguments sent by the tor daemon
+ */
+/**
+ * @callback OnLogMessage
+ *
+ * @param {string} type The type of message (NOTICE, WARNING, ERR, etc...)
+ * @param {string} message The actual log message
+ */
+/**
+ * @callback OnCircuitBuilt
+ *
+ * @param {CircuitID} id The id of the circuit that has been built
+ * @param {NodeFingerprint[]} nodes The onion routers composing the circuit
+ */
+/**
+ * @callback OnCircuitClosed
+ *
+ * @param {CircuitID} id The id of the circuit that has been closed
+ */
+/**
+ * @callback OnStreamSucceeded
+ *
+ * @param {StreamID} streamId The id of the stream that switched to the succeeded
+ * state
+ * @param {CircuitID} circuitId The id of the circuit the stream is using
+ * @param {string?} username The SOCKS username associated to the stream, or
+ * null if not available
+ * @param {string?} username The SOCKS password associated to the stream, or
+ * null if not available
+ */
