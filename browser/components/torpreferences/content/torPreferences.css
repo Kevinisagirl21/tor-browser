@@ -378,6 +378,10 @@ button#torPreferences-requestBridge-refreshCaptchaButton {
   fill: currentColor;
 }
 
+#torPreferences-requestBridge-captchaTextbox {
+  flex: 1 0 auto;
+}
+
 dialog#torPreferences-requestBridge-dialog > hbox {
   margin-bottom: 1em;
 }
@@ -519,7 +523,7 @@ groupbox#torPreferences-bridges-group textarea {
 #torPreferences-localProxy-textboxUsername,
 #torPreferences-localProxy-textboxPassword,
 #torPreferences-connection-textboxAllowedPorts {
-  -moz-box-flex: 1;
+  flex: 1 0 auto;
 }
 
 #torPreferences-connection-firewall {
@@ -532,7 +536,7 @@ groupbox#torPreferences-bridges-group textarea {
 
 /* Tor logs dialog */
 textarea#torPreferences-torDialog-textarea {
-  -moz-box-flex: 1;
+  flex: 1 0 auto;
   font-family: monospace;
   font-size: 0.8em;
   white-space: pre;
