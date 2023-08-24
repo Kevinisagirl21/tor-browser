@@ -93,6 +93,9 @@
   font: caption;
   min-width: 37em;
   padding: 0.62em;
+  /* If we don't set a width, #downloadsPanelTorWarningDescription will request
+   * its max-content width. */
+  width: 37em;
 }
 
 #downloadsPanel-mainView {
@@ -147,12 +150,6 @@
   padding-inline: 8px;
   margin-block-start: 8px;
   margin-block-end: 0;
-}
-
-#downloadsPanelTorWarningDescription {
-  /* Make sure we wrap the text rather than request the default max-content
-   * width from the parent XUL -moz-box. */
-  width: 0;
 }
 
 #downloadsHistory,
