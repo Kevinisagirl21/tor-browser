@@ -69,16 +69,15 @@
 }
 
 #tor-circuit-panel-body {
-  /* xul:vbox with display: block will be correctly measured in size by the
-   * parent xul:panel, and allocated the required space. */
-  display: block;
   /* May grow larger than 480px if we have a long domain name or ip address. */
-  width: 480px;
+  min-width: 480px;
+  padding: 1em;
+  gap: 1em;
 }
 
 #tor-circuit-node-list-name,
 #tor-circuit-node-list {
-  margin: 1em;
+  margin: 0;
 }
 
 #tor-circuit-node-list {
