@@ -24,8 +24,10 @@
           "use strict";
 
           let provideBridgeDialog = window.arguments[0];
-          let dialog = document.getElementById("torPreferences-provideBridge-dialog");
-          provideBridgeDialog.init(window, dialog);
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialog = document.getElementById("torPreferences-provideBridge-dialog");
+            provideBridgeDialog.init(window, dialog);
+          });
         ]]>
     </script>
   </dialog>

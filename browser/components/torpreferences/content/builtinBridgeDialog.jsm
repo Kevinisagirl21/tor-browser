@@ -95,10 +95,6 @@ class BuiltinBridgeDialog {
       );
     });
 
-    // Hack: see the CSS
-    dialog.style.minWidth = "0";
-    dialog.style.minHeight = "0";
-
     this._acceptButton = dialog.getButton("accept");
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
@@ -129,10 +125,7 @@ class BuiltinBridgeDialog {
   }
 
   init(window, aDialog) {
-    // defer to later until firefox has populated the dialog with all our elements
-    window.setTimeout(() => {
-      this._populateXUL(window, aDialog);
-    }, 0);
+    this._populateXUL(window, aDialog);
   }
 
   close() {

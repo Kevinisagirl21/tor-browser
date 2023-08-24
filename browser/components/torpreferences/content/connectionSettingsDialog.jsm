@@ -213,10 +213,6 @@ class ConnectionSettingsDialog {
     this._dialog.addEventListener("dialogaccept", e => {
       this._applySettings();
     });
-
-    // Hack: see the CSS
-    this._dialog.style.minWidth = "0";
-    this._dialog.style.minHeight = "0";
   }
 
   // callback when proxy is toggled
@@ -380,10 +376,7 @@ class ConnectionSettingsDialog {
   }
 
   init(window, aDialog) {
-    // defer to later until firefox has populated the dialog with all our elements
-    window.setTimeout(() => {
-      this._populateXUL(window, aDialog);
-    }, 0);
+    this._populateXUL(window, aDialog);
   }
 
   openDialog(gSubDialog) {

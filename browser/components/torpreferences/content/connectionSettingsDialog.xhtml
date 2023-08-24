@@ -83,8 +83,10 @@
           "use strict";
 
           let connectionSettingsDialog = window.arguments[0];
-          let dialog = document.getElementById("torPreferences-connection-dialog");
-          connectionSettingsDialog.init(window, dialog);
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialog = document.getElementById("torPreferences-connection-dialog");
+            connectionSettingsDialog.init(window, dialog);
+          });
         ]]>
     </script>
   </dialog>

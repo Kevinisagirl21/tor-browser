@@ -83,8 +83,10 @@
           "use strict";
 
           let builtinBridgeDialog = window.arguments[0];
-          let dialog = document.getElementById("torPreferences-builtinBridge-dialog");
-          builtinBridgeDialog.init(window, dialog);
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialog = document.getElementById("torPreferences-builtinBridge-dialog");
+            builtinBridgeDialog.init(window, dialog);
+          });
         ]]>
     </script>
   </dialog>
