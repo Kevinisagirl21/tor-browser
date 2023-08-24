@@ -21,8 +21,10 @@
           "use strict";
 
           let dialogObject = window.arguments[0];
-          let dialogElement = document.getElementById("bridgeQr-dialog");
-          dialogObject.init(window, dialogElement);
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialogElement = document.getElementById("bridgeQr-dialog");
+            dialogObject.init(window, dialogElement);
+          });
         ]]>
     </script>
   </dialog>

@@ -441,22 +441,6 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 }
 
 /* Builtin bridge dialog */
-#torPreferences-builtinBridge-dialog {
-  /* Hack: ask XUL to load with a lot of space, then we will remove the minimum
-  sizes after we populate the string. Users with high resolutions should see a
-  big dialog, but with all the needed buttons, users with small resolutions
-  should see scrollbars.
-  Known problems:
-  1) the hack works only if a window is *already* small: if it is big, and then
-     it is resized, the dialog will not shrink;
-  2) horizontal scrollbars are never added.
-  The proper solution for this will be loading the localized string with
-  Mozilla's way.
-  See also https://gitlab.torproject.org/tpo/applications/tor-browser/-/issues/41044 */
-  min-width: 700px;
-  min-height: 550px;
-}
-
 #torPreferences-builtinBridge-header {
   margin: 8px 0 10px 0;
 }
@@ -504,12 +488,6 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 /* Connection settings dialog */
-#torPreferences-connection-dialog {
-  /* Hack: like the built-in dialog */
-  min-width: 700px;
-  min-height: 550px;
-}
-
 #torPreferences-connection-header {
   margin: 4px 0 14px 0;
 }

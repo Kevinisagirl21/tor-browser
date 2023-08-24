@@ -60,10 +60,7 @@ class TorLogDialog {
   }
 
   init(window, aDialog) {
-    // defer to later until firefox has populated the dialog with all our elements
-    window.setTimeout(() => {
-      this._populateXUL(aDialog);
-    }, 0);
+    this._populateXUL(aDialog);
   }
 
   copyTorLog() {
