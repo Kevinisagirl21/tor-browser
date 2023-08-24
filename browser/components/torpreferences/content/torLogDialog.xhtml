@@ -19,8 +19,10 @@
           "use strict";
 
           let torLogDialog = window.arguments[0];
-          let dialog = document.getElementById("torPreferences-torLog-dialog");
-          torLogDialog.init(window, dialog);
+          document.addEventListener("DOMContentLoaded", () => {
+            let dialog = document.getElementById("torPreferences-torLog-dialog");
+            torLogDialog.init(window, dialog);
+          });
         ]]>
     </script>
   </dialog>
