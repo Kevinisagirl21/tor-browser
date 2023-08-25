@@ -46,9 +46,8 @@ class MeekTransport {
     try {
       // figure out which pluggable transport to use
       const supportedTransports = ["meek", "meek_lite"];
-      const proxy = (
-        await lazy.TorProviderBuilder.build().getPluggableTransports()
-      ).find(
+      const provider = await lazy.TorProviderBuilder.build();
+      const proxy = (await provider.getPluggableTransports()).find(
         pt =>
           pt.type === "exec" &&
           supportedTransports.some(t => pt.transports.includes(t))
