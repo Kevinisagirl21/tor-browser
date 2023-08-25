@@ -39,7 +39,7 @@ export class TorStartupService {
     // block there, instead.
     lazy.TorProviderBuilder.init();
 
-    lazy.TorSettings.init();
+    await lazy.TorSettings.init();
     lazy.TorConnect.init();
 
     lazy.TorDomainIsolator.init();

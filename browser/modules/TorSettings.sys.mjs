@@ -5,6 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
@@ -273,9 +274,10 @@ export const TorSettings = (() => {
     },
 
     /* load or init our settings, and register observers */
-    init() {
-      const provider = lazy.TorProviderBuilder.build();
-      if (provider.ownsTorDaemon) {
+    async init() {
+      // TODO: We could use a shared promise, and wait for it to be fullfilled
+      // instead of Service.obs.
+      if (lazy.TorLauncherUtil.shouldStartAndOwnTor) {
         // if the settings branch exists, load settings from prefs
         if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
           this.loadFromPrefs();
@@ -285,9 +287,12 @@ export const TorSettings = (() => {
         }
         Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
 
-        if (provider.isRunning) {
-          this.handleProcessReady();
-        }
+        try {
+          const provider = await lazy.TorProviderBuilder.build();
+          if (provider.isRunning) {
+            this.handleProcessReady();
+          }
+        } catch {}
       }
     },
 
@@ -559,7 +564,8 @@ export const TorSettings = (() => {
       }
 
       /* Push to Tor */
-      await lazy.TorProviderBuilder.build().writeSettings(settingsMap);
+      const provider = await lazy.TorProviderBuilder.build();
+      await provider.writeSettings(settingsMap);
 
       return this;
     },
