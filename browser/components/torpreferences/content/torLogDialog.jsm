@@ -26,7 +26,7 @@ class TorLogDialog {
     };
   }
 
-  _populateXUL(aDialog) {
+  async _populateXUL(aDialog) {
     this._dialog = aDialog;
     const dialogWin = this._dialog.parentElement;
     dialogWin.setAttribute("title", TorStrings.settings.torLogDialogTitle);
@@ -56,7 +56,12 @@ class TorLogDialog {
       }, RESTORE_TIME);
     });
 
-    this._logTextarea.value = TorProviderBuilder.build().getLog();
+    // A waiting state should not be needed at this point.
+    // Also, we probably cannot even arrive here if the provider failed to
+    // initialize, otherwise we could use a try/catch, and write the exception
+    // text in the logs, instead.
+    const provider = await TorProviderBuilder.build();
+    this._logTextarea.value = provider.getLog();
   }
 
   init(window, aDialog) {
