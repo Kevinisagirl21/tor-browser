@@ -204,39 +204,22 @@ export class TorProcess {
   #processExitedUnexpectedly(exitCode) {
     this.#subprocess = null;
     this.#status = TorProcessStatus.Exited;
-
-    // TODO: Move this logic somewhere else?
-    let s;
+    // FIXME: We can probably drop #didConnectToTorControlPort and use only one
+    // callback. Then we can let the provider actually distinguish between the
+    // cases.
     if (!this.#didConnectToTorControlPort) {
-      // tor might be misconfigured, becauser we could never connect to it
-      const key = "tor_exited_during_startup";
-      s = lazy.TorLauncherUtil.getLocalizedString(key);
-    } else {
-      // tor exited suddenly, so configuration should be okay
-      s =
-        lazy.TorLauncherUtil.getLocalizedString("tor_exited") +
-        "\n\n" +
-        lazy.TorLauncherUtil.getLocalizedString("tor_exited2");
+      logger.warn("Tor exited before we could connect to its control port.");
+      // tor might be misconfigured, because we could never connect to it.
+      // Two instances of Tor Browser trying to use the same port numbers is
+      // also a typical scenario for this.
+      // This might happen very early, before the browser UI is actually
+      // available. So, we will tell the process owner that the process exited,
+      // without trying to restart it.
+      this.onExit(exitCode);
+      return;
     }
-    logger.info(s);
-    const defaultBtnLabel =
-      lazy.TorLauncherUtil.getLocalizedString("restart_tor");
-    let cancelBtnLabel = "OK";
-    try {
-      const kSysBundleURI = "chrome://global/locale/commonDialogs.properties";
-      const sysBundle = Services.strings.createBundle(kSysBundleURI);
-      cancelBtnLabel = sysBundle.GetStringFromName(cancelBtnLabel);
-    } catch (e) {
-      logger.warn("Could not localize the cancel button", e);
-    }
-
-    const restart = lazy.TorLauncherUtil.showConfirm(
-      null,
-      s,
-      defaultBtnLabel,
-      cancelBtnLabel
-    );
-    if (restart) {
+    logger.warn("Tor exited suddenly.");
+    if (lazy.TorLauncherUtil.showRestartPrompt(false)) {
       this.start().then(this.onRestart);
     } else {
       this.onExit(exitCode);

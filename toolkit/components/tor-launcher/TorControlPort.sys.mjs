@@ -633,11 +633,11 @@ export class TorController {
    * Authenticate to the tor daemon.
    * Notice that a failure in the authentication makes the connection close.
    *
-   * @param {Array|Uint8Array} password The password for the control port, as an
-   * array of bytes
+   * @param {Uint8Array} password The password for the control port, as an array
+   * of bytes
    */
   async authenticate(password) {
-    const passwordString = Array.from(password, b =>
+    const passwordString = Array.from(password ?? [], b =>
       b.toString(16).padStart(2, "0")
     ).join("");
     await this.#sendCommandSimple(`authenticate ${passwordString}`);

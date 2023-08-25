@@ -4,6 +4,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProvider: "resource://gre/modules/TorProvider.sys.mjs",
 });
 
@@ -18,26 +19,75 @@ export const TorProviderTopics = Object.freeze({
   StreamSucceeded: "TorStreamSucceeded",
 });
 
+/**
+ * The factory to get a Tor provider.
+ * Currently we support only TorProvider, i.e., the one that interacts with
+ * C-tor through the control port protocol.
+ */
 export class TorProviderBuilder {
+  /**
+   * A promise with the instance of the provider that we are using.
+   *
+   * @type {Promise<TorProvider>?}
+   */
   static #provider = null;
 
-  static async init() {
-    const provider = new lazy.TorProvider();
-    await provider.init();
-    // Assign it only when initialization succeeds.
-    TorProviderBuilder.#provider = provider;
+  /**
+   * Initialize the provider of choice.
+   * Even though initialization is asynchronous, we do not expect the caller to
+   * await this method. The reason is that any call to build() will wait the
+   * initialization anyway (and re-throw any initialization error).
+   */
+  static init() {
+    this.#provider = new Promise((resolve, reject) => {
+      const provider = new lazy.TorProvider();
+      provider
+        .init()
+        .then(() => resolve(provider))
+        .catch(reject);
+    });
   }
 
   static uninit() {
-    TorProviderBuilder.#provider.uninit();
-    TorProviderBuilder.#provider = null;
+    this.#provider?.then(provider => {
+      provider.uninit();
+      this.#provider = null;
+    });
   }
 
-  // TODO: Switch to an async build?
-  static build() {
-    if (!TorProviderBuilder.#provider) {
-      throw new Error("TorProviderBuilder has not been initialized yet.");
+  /**
+   * Build a provider.
+   * This method will wait for the system to be initialized, and allows you to
+   * catch also any initialization errors.
+   */
+  static async build() {
+    if (!this.#provider) {
+      throw new Error(
+        "The provider has not been initialized or already uninitialized."
+      );
     }
-    return TorProviderBuilder.#provider;
+    return this.#provider;
+  }
+
+  /**
+   * Check if the provider has been succesfully initialized when the first
+   * browser window is shown.
+   * This is a workaround we need because ideally we would like the tor process
+   * to start as soon as possible, to avoid delays in the about:torconnect page,
+   * but we should modify TorConnect and about:torconnect to handle this case
+   * there with a better UX.
+   */
+  static async firstWindowLoaded() {
+    // FIXME: Just integrate this with the about:torconnect or about:tor UI.
+    try {
+      await this.#provider;
+    } catch {
+      while (lazy.TorLauncherUtil.showRestartPrompt(true)) {
+        try {
+          await this.init();
+          break;
+        } catch {}
+      }
+    }
   }
 }

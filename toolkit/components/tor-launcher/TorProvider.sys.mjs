@@ -432,7 +432,7 @@ export class TorProvider {
         await this.#firstConnection();
       } catch (e) {
         // TODO: How to make surface this?
-        logger.error("Could not reconnect after restarting the tor daemon");
+        logger.error("Could not reconnect after restarting the tor daemon", e);
         return;
       }
       Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
@@ -557,6 +557,10 @@ export class TorProvider {
     logger.debug("Connecting to the control port for the first time.");
     await new Promise((resolve, reject) => {
       const tryConnect = () => {
+        if (this.ownsTorDaemon && !this.#torProcess?.isRunning) {
+          reject(new Error("The controlled tor daemon is not running."));
+          return;
+        }
         this.#openControlPort()
           .then(() => {
             this.#torProcess?.connectionWorked();
