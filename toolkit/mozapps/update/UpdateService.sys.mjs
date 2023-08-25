@@ -388,13 +388,13 @@ XPCOMUtils.defineLazyGetter(
   }
 );
 
-function _shouldRegisterBootstrapObserver(errorCode) {
-  const provider = lazy.TorProviderBuilder.build();
-  return (
-    errorCode == PROXY_SERVER_CONNECTION_REFUSED &&
-    !provider.isBootstrapDone &&
-    provider.ownsTorDaemon
-  );
+async function _shouldRegisterBootstrapObserver(errorCode) {
+  try {
+    const provider = await lazy.TorProviderBuilder.build();
+    return !provider.isBootstrapDone && provider.ownsTorDaemon;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -3332,7 +3332,10 @@ UpdateService.prototype = {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
       return;
-    } else if (_shouldRegisterBootstrapObserver(update.errorCode)) {
+    } else if (
+      update.errorCode === PROXY_SERVER_CONNECTION_REFUSED &&
+      (await _shouldRegisterBootstrapObserver())
+    ) {
       // Register boostrap observer to try again, but only when we own the
       // tor process.
       this._registerBootstrapObserver();
@@ -6674,7 +6677,10 @@ Downloader.prototype = {
       );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
-    } else if (_shouldRegisterBootstrapObserver(status)) {
+    } else if (
+      status === PROXY_SERVER_CONNECTION_REFUSED &&
+      (await _shouldRegisterBootstrapObserver())
+    ) {
       // Register a bootstrap observer to try again.
       // The bootstrap observer will continue the incremental download by
       // calling downloadUpdate on the active update which continues
