@@ -34,7 +34,10 @@ export class TorStartupService {
   async #init() {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
 
-    await lazy.TorProviderBuilder.init();
+    // Do not await on this init. build() is expected to await the
+    // initialization, so anything that should need the Tor Provider should
+    // block there, instead.
+    lazy.TorProviderBuilder.init();
 
     lazy.TorSettings.init();
     lazy.TorConnect.init();

@@ -366,6 +366,38 @@ export const TorLauncherUtil = Object.freeze({
     return btnIndex === 0;
   },
 
+  /**
+   * Ask the user whether they desire to restart tor.
+   *
+   * @param {boolean} initError If we could connect to the control port at
+   * least once and we are showing this prompt because the tor process exited
+   * suddenly, we will display a different message
+   * @returns {boolean} true if the user asked to restart tor
+   */
+  showRestartPrompt(initError) {
+    let s;
+    if (initError) {
+      const key = "tor_exited_during_startup";
+      s = this.getLocalizedString(key);
+    } else {
+      // tor exited suddenly, so configuration should be okay
+      s =
+        this.getLocalizedString("tor_exited") +
+        "\n\n" +
+        this.getLocalizedString("tor_exited2");
+    }
+    const defaultBtnLabel = this.getLocalizedString("restart_tor");
+    let cancelBtnLabel = "OK";
+    try {
+      const kSysBundleURI = "chrome://global/locale/commonDialogs.properties";
+      const sysBundle = Services.strings.createBundle(kSysBundleURI);
+      cancelBtnLabel = sysBundle.GetStringFromName(cancelBtnLabel);
+    } catch (e) {
+      console.warn("Could not localize the cancel button", e);
+    }
+    return this.showConfirm(null, s, defaultBtnLabel, cancelBtnLabel);
+  },
+
   // Localized Strings
   // TODO: Switch to fluent also these ones.
 
