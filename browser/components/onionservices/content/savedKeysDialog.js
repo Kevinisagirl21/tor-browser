@@ -73,9 +73,11 @@ var gOnionServicesSavedKeysDialog = {
     const haveSelection = this._tree.view.selection.getRangeCount() > 0;
     const dialog = document.querySelector(this.selector.dialog);
     const removeSelectedBtn = dialog.querySelector(this.selector.removeButton);
-    removeSelectedBtn.disabled = this._isBusy || !haveSelection;
+    removeSelectedBtn.disabled =
+      !this._provider || this._isBusy || !haveSelection;
     const removeAllBtn = dialog.querySelector(this.selector.removeAllButton);
-    removeAllBtn.disabled = this._isBusy || this.rowCount === 0;
+    removeAllBtn.disabled =
+      !this._provider || this._isBusy || this.rowCount === 0;
   },
 
   // Private functions.
@@ -84,16 +86,26 @@ var gOnionServicesSavedKeysDialog = {
   },
 
   async _init() {
-    await this._populateXUL();
+    this._populateXUL();
 
     window.addEventListener("keypress", this._onWindowKeyPress.bind(this));
 
-    // We don't use await here because we want _loadSavedKeys() to run
-    // in the background and not block loading of this dialog.
+    this._setBusyState(true);
+    try {
+      this._provider = await TorProviderBuilder.build();
+    } catch (e) {
+      // FIXME: This will not be localized. Do we want to add another sentence
+      // before it? Or maybe show a generic one and maybe just log the
+      // exception? (Even though this exception should already be everywhere :))
+      this._showError(e.message);
+      return;
+    } finally {
+      this._setBusyState(false);
+    }
     this._loadSavedKeys();
   },
 
-  async _populateXUL() {
+  _populateXUL() {
     const dialog = document.querySelector(this.selector.dialog);
     const authPrefStrings = TorStrings.onionServices.authPreferences;
     dialog.setAttribute("title", authPrefStrings.dialogTitle);
@@ -124,7 +136,7 @@ var gOnionServicesSavedKeysDialog = {
     try {
       this._tree.view = this;
 
-      const keyInfoList = await TorProviderBuilder.build().onionAuthViewKeys();
+      const keyInfoList = await this._provider.onionAuthViewKeys();
       if (keyInfoList) {
         // Filter out temporary keys.
         this._keyInfoList = keyInfoList.filter(aKeyInfo =>
@@ -157,7 +169,7 @@ var gOnionServicesSavedKeysDialog = {
   // This method may throw; callers should catch errors.
   async _deleteOneKey(aIndex) {
     const keyInfoObj = this._keyInfoList[aIndex];
-    await TorProviderBuilder.build().onionAuthRemove(keyInfoObj.address);
+    await this._provider.onionAuthRemove(keyInfoObj.address);
     this._tree.view.selection.clearRange(aIndex, aIndex);
     this._keyInfoList.splice(aIndex, 1);
     this._tree.rowCountChanged(aIndex + 1, -1);

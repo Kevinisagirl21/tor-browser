@@ -179,12 +179,12 @@ const OnionAuthPrompt = (function () {
     },
 
     async _onDone() {
-      let keyElem = this._getKeyElement();
+      const keyElem = this._getKeyElement();
       if (!keyElem) {
         return;
       }
 
-      let base64key = this._keyToBase64(keyElem.value);
+      const base64key = this._keyToBase64(keyElem.value);
       if (!base64key) {
         this._showWarning(TorStrings.onionServices.authPrompt.invalidKey);
         return;
@@ -192,8 +192,7 @@ const OnionAuthPrompt = (function () {
 
       this._prompt.remove();
 
-      // Use Torbutton's controller module to add the private key to Tor.
-      let controllerFailureMsg =
+      const controllerFailureMsg =
         TorStrings.onionServices.authPrompt.failedToSetKey;
       try {
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
@@ -204,29 +203,19 @@ const OnionAuthPrompt = (function () {
           .match(onionServiceIdRegExp)
           .groups.onionServiceId.toLowerCase();
 
-        let checkboxElem = this._getCheckboxElement();
-        let isPermanent = checkboxElem && checkboxElem.checked;
-        TorProviderBuilder.build()
-          .onionAuthAdd(onionServiceId, base64key, isPermanent)
-          .then(aResponse => {
-            // Success! Reload the page.
-            this._browser.sendMessageToActor(
-              "Browser:Reload",
-              {},
-              "BrowserTab"
-            );
-          })
-          .catch(aError => {
-            if (aError.torMessage) {
-              this.show(aError.torMessage);
-            } else {
-              console.error(controllerFailureMsg, aError);
-              this.show(controllerFailureMsg);
-            }
-          });
+        const checkboxElem = this._getCheckboxElement();
+        const isPermanent = checkboxElem && checkboxElem.checked;
+        const provider = await TorProviderBuilder.build();
+        await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
+        // Success! Reload the page.
+        this._browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
       } catch (e) {
-        console.error(controllerFailureMsg, e);
-        this.show(controllerFailureMsg);
+        if (e.torMessage) {
+          this.show(e.torMessage);
+        } else {
+          console.error(controllerFailureMsg, e);
+          this.show(controllerFailureMsg);
+        }
       }
     },
 
