@@ -136,8 +136,11 @@ class TorDomainIsolatorImpl {
   init() {
     logger.info("Setup circuit isolation by domain and user context");
 
-    if (Services.prefs.getBoolPref(NON_TOR_PROXY_PREF)) {
+    if (Services.prefs.getBoolPref(NON_TOR_PROXY_PREF, false)) {
       this.#isolationEnabled = false;
+      logger.info(
+        `The domain isolation will not be enabled because of ${NON_TOR_PROXY_PREF}.`
+      );
     }
     this.#setupProxyFilter();
 
@@ -257,7 +260,8 @@ class TorDomainIsolatorImpl {
       );
       this.clearIsolation();
       try {
-        await lazy.TorProviderBuilder.build().newnym();
+        const provider = await lazy.TorProviderBuilder.build();
+        await provider.newnym();
       } catch (e) {
         logger.error("Could not send the newnym command", e);
         // TODO: What UX to use here? See tor-browser#41708
@@ -305,7 +309,9 @@ class TorDomainIsolatorImpl {
         try {
           const searchParams = new URLSearchParams(loadingPrincipalURI.query);
           if (searchParams.has("url")) {
-            firstPartyDomain = Services.eTLD.getSchemelessSite(Services.io.newURI(searchParams.get("url")));
+            firstPartyDomain = Services.eTLD.getSchemelessSite(
+              Services.io.newURI(searchParams.get("url"))
+            );
           }
         } catch (e) {
           logger.error("Failed to get first party domain for about:reader", e);
@@ -562,10 +568,9 @@ class TorDomainIsolatorImpl {
       return;
     }
 
+    const provider = await lazy.TorProviderBuilder.build();
     data = await Promise.all(
-      circuit.map(fingerprint =>
-        lazy.TorProviderBuilder.build().getNodeInfo(fingerprint)
-      )
+      circuit.map(fingerprint => provider.getNodeInfo(fingerprint))
     );
     this.#knownCircuits.set(id, data);
     // We know that something changed, but we cannot know if anyone is
@@ -673,7 +678,9 @@ function getDomainForBrowser(browser) {
       try {
         const searchParams = new URLSearchParams(documentURI.query);
         if (searchParams.has("url")) {
-          fpd = Services.eTLD.getSchemelessSite(Services.io.newURI(searchParams.get("url")));
+          fpd = Services.eTLD.getSchemelessSite(
+            Services.io.newURI(searchParams.get("url"))
+          );
         }
       } catch (e) {
         logger.error("Failed to get first party domain for about:reader", e);
