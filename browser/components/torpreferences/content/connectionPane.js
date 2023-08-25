@@ -153,8 +153,16 @@ const gConnectionPane = (function () {
     // populate xul with strings and cache the relevant elements
     _populateXUL() {
       // saves tor settings to disk when navigate away from about:preferences
-      window.addEventListener("blur", val => {
-        TorProviderBuilder.build().flushSettings();
+      window.addEventListener("blur", async () => {
+        try {
+          // Build a new provider each time because this might be called also
+          // when closing the browser (if about:preferences was open), maybe
+          // when the provider was already uninitialized.
+          const provider = await TorProviderBuilder.build();
+          provider.flushSettings();
+        } catch (e) {
+          logger.warn("Could not save the tor settings.", e);
+        }
       });
 
       document
@@ -746,11 +754,12 @@ const gConnectionPane = (function () {
         placeholder.replaceWith(...cards);
         this._checkBridgeCardsHeight();
       };
-      this._checkConnectedBridge = () => {
+      this._checkConnectedBridge = async () => {
         // TODO: We could make sure TorSettings is in sync by monitoring also
         // changes of settings. At that point, we could query it, instead of
         // doing a query over the control port.
-        const bridge = TorProviderBuilder.build().currentBridge;
+        const provider = await TorProviderBuilder.build();
+        const bridge = provider.currentBridge;
         if (bridge?.fingerprint !== this._currentBridgeId) {
           this._currentBridgeId = bridge?.fingerprint ?? null;
           this._updateConnectedBridges();
