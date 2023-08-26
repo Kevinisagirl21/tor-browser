@@ -164,7 +164,7 @@
   flex: 1;
   margin: 0 8px;
   overflow: hidden;
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
