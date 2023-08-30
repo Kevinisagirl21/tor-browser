@@ -26,42 +26,44 @@ var gOnionServicesSavedKeysDialog = {
   },
 
   _tree: undefined,
-  _isBusy: false, // true when loading data, deleting a key, etc.
+  _busyCount: 0,
+  get _isBusy() {
+    // true when loading data, deleting a key, etc.
+    return this._busyCount > 0;
+  },
 
   // Public functions (called from outside this file).
   async deleteSelectedKeys() {
-    this._setBusyState(true);
-
-    const indexesToDelete = [];
-    const count = this._tree.view.selection.getRangeCount();
-    for (let i = 0; i < count; ++i) {
-      const minObj = {};
-      const maxObj = {};
-      this._tree.view.selection.getRangeAt(i, minObj, maxObj);
-      for (let idx = minObj.value; idx <= maxObj.value; ++idx) {
-        indexesToDelete.push(idx);
-      }
-    }
-
-    if (indexesToDelete.length) {
-      const controllerFailureMsg =
-        TorStrings.onionServices.authPreferences.failedToRemoveKey;
-      try {
-        // Remove in reverse index order to avoid issues caused by index changes.
-        for (let i = indexesToDelete.length - 1; i >= 0; --i) {
-          await this._deleteOneKey(indexesToDelete[i]);
-        }
-      } catch (e) {
-        console.error("Removing a saved key failed", e);
-        if (e.torMessage) {
-          this._showError(e.torMessage);
-        } else {
-          this._showError(controllerFailureMsg);
+    this._withBusy(async () => {
+      const indexesToDelete = [];
+      const count = this._tree.view.selection.getRangeCount();
+      for (let i = 0; i < count; ++i) {
+        const minObj = {};
+        const maxObj = {};
+        this._tree.view.selection.getRangeAt(i, minObj, maxObj);
+        for (let idx = minObj.value; idx <= maxObj.value; ++idx) {
+          indexesToDelete.push(idx);
         }
       }
-    }
 
-    this._setBusyState(false);
+      if (indexesToDelete.length) {
+        const controllerFailureMsg =
+          TorStrings.onionServices.authPreferences.failedToRemoveKey;
+        try {
+          // Remove in reverse index order to avoid issues caused by index changes.
+          for (let i = indexesToDelete.length - 1; i >= 0; --i) {
+            await this._deleteOneKey(indexesToDelete[i]);
+          }
+        } catch (e) {
+          console.error("Removing a saved key failed", e);
+          if (e.torMessage) {
+            this._showError(e.torMessage);
+          } else {
+            this._showError(controllerFailureMsg);
+          }
+        }
+      }
+    });
   },
 
   async deleteAllKeys() {
@@ -90,19 +92,19 @@ var gOnionServicesSavedKeysDialog = {
 
     window.addEventListener("keypress", this._onWindowKeyPress.bind(this));
 
-    this._setBusyState(true);
-    try {
-      this._provider = await TorProviderBuilder.build();
-    } catch (e) {
-      // FIXME: This will not be localized. Do we want to add another sentence
-      // before it? Or maybe show a generic one and maybe just log the
-      // exception? (Even though this exception should already be everywhere :))
-      this._showError(e.message);
-      return;
-    } finally {
-      this._setBusyState(false);
+    await this._withBusy(async () => {
+      try {
+        this._provider = await TorProviderBuilder.build();
+      } catch (e) {
+        // FIXME: This will not be localized. Do we want to add another sentence
+        // before it? Or maybe show a generic one and maybe just log the
+        // exception? (Even though this exception should already be everywhere)
+        this._showError(e.message);
+      }
+    });
+    if (this._provider) {
+      this._loadSavedKeys();
     }
-    this._loadSavedKeys();
   },
 
   _populateXUL() {
@@ -131,39 +133,37 @@ var gOnionServicesSavedKeysDialog = {
   async _loadSavedKeys() {
     const controllerFailureMsg =
       TorStrings.onionServices.authPreferences.failedToGetKeys;
-    this._setBusyState(true);
+    this._withBusy(async () => {
+      try {
+        this._tree.view = this;
 
-    try {
-      this._tree.view = this;
+        const keyInfoList = await this._provider.onionAuthViewKeys();
+        if (keyInfoList) {
+          // Filter out temporary keys.
+          this._keyInfoList = keyInfoList.filter(aKeyInfo =>
+            aKeyInfo.flags?.includes("Permanent")
+          );
+          // Sort by the .onion address.
+          this._keyInfoList.sort((aObj1, aObj2) => {
+            const hsAddr1 = aObj1.address.toLowerCase();
+            const hsAddr2 = aObj2.address.toLowerCase();
+            if (hsAddr1 < hsAddr2) {
+              return -1;
+            }
+            return hsAddr1 > hsAddr2 ? 1 : 0;
+          });
+        }
 
-      const keyInfoList = await this._provider.onionAuthViewKeys();
-      if (keyInfoList) {
-        // Filter out temporary keys.
-        this._keyInfoList = keyInfoList.filter(aKeyInfo =>
-          aKeyInfo.flags?.includes("Permanent")
-        );
-        // Sort by the .onion address.
-        this._keyInfoList.sort((aObj1, aObj2) => {
-          const hsAddr1 = aObj1.address.toLowerCase();
-          const hsAddr2 = aObj2.address.toLowerCase();
-          if (hsAddr1 < hsAddr2) {
-            return -1;
-          }
-          return hsAddr1 > hsAddr2 ? 1 : 0;
-        });
+        // Render the tree content.
+        this._tree.rowCountChanged(0, this.rowCount);
+      } catch (e) {
+        if (e.torMessage) {
+          this._showError(e.torMessage);
+        } else {
+          this._showError(controllerFailureMsg);
+        }
       }
-
-      // Render the tree content.
-      this._tree.rowCountChanged(0, this.rowCount);
-    } catch (e) {
-      if (e.torMessage) {
-        this._showError(e.torMessage);
-      } else {
-        this._showError(controllerFailureMsg);
-      }
-    }
-
-    this._setBusyState(false);
+    });
   },
 
   // This method may throw; callers should catch errors.
@@ -175,12 +175,25 @@ var gOnionServicesSavedKeysDialog = {
     this._tree.rowCountChanged(aIndex + 1, -1);
   },
 
-  _setBusyState(aIsBusy) {
-    this._isBusy = aIsBusy;
-    this.updateButtonsState();
+  async _withBusy(func) {
+    this._busyCount++;
+    if (this._busyCount === 1) {
+      this.updateButtonsState();
+    }
+    try {
+      await func();
+    } finally {
+      this._busyCount--;
+      if (this._busyCount === 0) {
+        this.updateButtonsState();
+      }
+    }
   },
 
   _onWindowKeyPress(event) {
+    if (this._isBusy) {
+      return;
+    }
     if (event.keyCode === KeyEvent.DOM_VK_ESCAPE) {
       window.close();
     } else if (event.keyCode === KeyEvent.DOM_VK_DELETE) {
