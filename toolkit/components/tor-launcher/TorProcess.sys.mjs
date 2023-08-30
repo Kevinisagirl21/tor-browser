@@ -37,6 +37,7 @@ export class TorProcess {
   #didConnectToTorControlPort = false;
 
   onExit = exitCode => {};
+  onRestartRequested = () => {};
   onRestart = () => {};
 
   constructor(controlSettings, socksSettings) {
@@ -220,6 +221,7 @@ export class TorProcess {
     }
     logger.warn("Tor exited suddenly.");
     if (lazy.TorLauncherUtil.showRestartPrompt(false)) {
+      this.onRestartRequested();
       this.start().then(this.onRestart);
     } else {
       this.onExit(exitCode);

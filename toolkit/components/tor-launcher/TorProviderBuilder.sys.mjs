@@ -84,7 +84,8 @@ export class TorProviderBuilder {
     } catch {
       while (lazy.TorLauncherUtil.showRestartPrompt(true)) {
         try {
-          await this.init();
+          this.init();
+          await this.#provider;
           break;
         } catch {}
       }
