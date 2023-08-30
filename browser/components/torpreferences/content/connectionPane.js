@@ -99,7 +99,6 @@ const gConnectionPane = (function () {
       currentHeader: "#torPreferences-currentBridges-header",
       currentDescription: "#torPreferences-currentBridges-description",
       currentDescriptionText: "#torPreferences-currentBridges-descriptionText",
-      switchLabel: "#torPreferences-currentBridges-enableAll-label",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -391,11 +390,10 @@ const gConnectionPane = (function () {
         selectors.bridges.currentHeader
       );
       bridgeHeader.textContent = TorStrings.settings.bridgeCurrent;
-      prefpane.querySelector(selectors.bridges.switchLabel).textContent =
-        TorStrings.settings.allBridgesEnabled;
       const bridgeSwitch = prefpane.querySelector(selectors.bridges.switch);
-      bridgeSwitch.addEventListener("change", () => {
-        TorSettings.bridges.enabled = bridgeSwitch.checked;
+      bridgeSwitch.setAttribute("label", TorStrings.settings.allBridgesEnabled);
+      bridgeSwitch.addEventListener("toggle", () => {
+        TorSettings.bridges.enabled = bridgeSwitch.pressed;
         TorSettings.saveToPrefs();
         TorSettings.applySettings().then(result => {
           this._populateBridgeCards();
@@ -525,7 +523,7 @@ const gConnectionPane = (function () {
                 strings.splice(index, 1);
               }
               TorSettings.bridges.enabled =
-                bridgeSwitch.checked && !!strings.length;
+                bridgeSwitch.pressed && !!strings.length;
               TorSettings.bridges.bridge_strings = strings.join("\n");
               TorSettings.saveToPrefs();
               TorSettings.applySettings().then(result => {
@@ -642,7 +640,9 @@ const gConnectionPane = (function () {
         bridgeHeader.hidden = false;
         bridgeDescription.hidden = false;
         bridgeCards.hidden = false;
-        bridgeSwitch.checked = TorSettings.bridges.enabled;
+        // Changing the pressed property on moz-toggle should not trigger its
+        // "toggle" event.
+        bridgeSwitch.pressed = TorSettings.bridges.enabled;
         bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
         bridgeCards.classList.toggle("single-card", numBridges === 1);
 
