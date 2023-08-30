@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
@@ -99,6 +99,10 @@ export class TorProvider {
     }
     return this.#controlConnection;
   }
+  /**
+   * A function that can be called to cancel the current connection attempt.
+   */
+  #cancelConnection = () => {};
 
   /**
    * The tor process we launched.
@@ -424,10 +428,12 @@ export class TorProvider {
       this.#closeConnection();
       Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
     };
-    this.#torProcess.onRestart = async () => {
-      logger.info("Restarting the tor process");
+    this.#torProcess.onRestartRequested = () => {
       this.#closeConnection();
       this.#circuits.clear();
+      logger.info("Restarting the tor process");
+    };
+    this.#torProcess.onRestart = async () => {
       try {
         await this.#firstConnection();
       } catch (e) {
@@ -448,6 +454,7 @@ export class TorProvider {
       logger.trace('"Forgetting" the tor process.');
       this.#torProcess.forget();
       this.#torProcess.onExit = () => {};
+      this.#torProcess.onRestartRequested = () => {};
       this.#torProcess.onRestart = () => {};
       this.#torProcess = null;
     }
@@ -551,28 +558,38 @@ export class TorProvider {
   }
 
   async #firstConnection() {
-    // FIXME: No way to cancel this connection! Do we need one?
+    let canceled = false;
+    let timeout = 0;
     const maxDelay = 10_000;
     let delay = 5;
     logger.debug("Connecting to the control port for the first time.");
-    await new Promise((resolve, reject) => {
+    this.#controlConnection = await new Promise((resolve, reject) => {
+      this.#cancelConnection = () => {
+        canceled = true;
+        clearTimeout(timeout);
+        reject(new Error("Connection canceled."));
+      };
       const tryConnect = () => {
         if (this.ownsTorDaemon && !this.#torProcess?.isRunning) {
           reject(new Error("The controlled tor daemon is not running."));
           return;
         }
         this.#openControlPort()
-          .then(() => {
+          .then(controller => {
             this.#torProcess?.connectionWorked();
-            resolve();
+            this.#cancelConnection = () => {};
+            // The cancel function should have already called reject.
+            if (!canceled) {
+              resolve(controller);
+            }
           })
           .catch(e => {
-            if (delay < maxDelay) {
+            if (delay < maxDelay && !canceled) {
               logger.info(
                 `Failed to connect to the control port. Trying again in ${delay}ms.`,
                 e
               );
-              setTimeout(tryConnect, delay);
+              timeout = setTimeout(tryConnect, delay);
               delay *= 2;
             } else {
               reject(e);
@@ -674,10 +691,11 @@ export class TorProvider {
       }
       throw e;
     }
-    this.#controlConnection = controlPort;
+    return controlPort;
   }
 
   #closeConnection() {
+    this.#cancelConnection();
     if (this.#controlConnection) {
       logger.info("Closing the control connection");
       try {
