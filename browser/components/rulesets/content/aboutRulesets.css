@@ -43,7 +43,7 @@ select, option {
 dt {
   margin: var(--ruleset-vmargin) 0 0 0;
   padding: 0;
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
   font-size: 85%;
 }
 
@@ -220,7 +220,7 @@ aside {
 
 #ruleset-list .description {
   font-size: 85%;
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
 }
 
 #ruleset-list .selected {
@@ -280,7 +280,7 @@ aside {
 
 #ruleset-updated {
   margin-top: 24px;
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
   font-size: 85%;
 }
 
@@ -291,7 +291,7 @@ aside {
 }
 
 #edit-ruleset label {
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
   display: block;
 }
 
