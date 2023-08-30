@@ -5,11 +5,6 @@
   list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
 }
 
-html:dir(rtl) input[type="checkbox"].toggle-button::before {
-  /* For some reason, the rule from toggle-button.css is not applied... */
-  scale: -1;
-}
-
 /* Status */
 
 #torPreferences-status-box {
@@ -81,12 +76,6 @@ html:dir(rtl) input[type="checkbox"].toggle-button::before {
 #torPreferences-bridges-location menuitem[disabled="true"] {
   color: var(--in-content-button-text-color, inherit);
   font-weight: 700;
-}
-
-#torPreferences-currentBridges-enableAll-label {
-  /* Block display to work with parent's xul box layout. */
-  display: block;
-  margin-inline: 6px;
 }
 
 /* Bridge cards */
