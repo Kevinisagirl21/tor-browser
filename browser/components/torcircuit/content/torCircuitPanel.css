@@ -39,12 +39,24 @@
 }
 
 #tor-circuit-panel .panel-header {
-  /* .panel-header already has display: flex from panelUI-shared.css, but the
-   * direction is the default "row". */
+  /* .panel-header already inherits these same rules from panelUI-shared.css and
+   * xul.css. But .panel-header is normally "flex-direction: row", but we are
+   * using a vbox (i.e flex-direction: column) so that the heading is placed
+   * vertically above the #tor-circuit-alias when it is shown.  We want to
+   * ensure the layout rules we need for our different case so we are less
+   * vulnerable to changes in panelUI-shared.css. */
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
+}
+
+.panel-header > h1#tor-circuit-heading {
+  /* Overwrite rule from panelUI-shared.css which gives this "flex: auto".
+   * Otherwise the heading will be stretched vertically and not be
+   * center-aligned. */
+  flex: 0 0 auto;
 }
 
 #tor-circuit-alias:not([hidden]) {
