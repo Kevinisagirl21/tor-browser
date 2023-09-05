@@ -214,8 +214,14 @@ export class TorProvider {
    */
   uninit() {
     logger.debug("Uninitializing the Tor provider.");
-    this.#forgetProcess();
-    this.#closeConnection();
+
+    if (this.#torProcess) {
+      this.#torProcess.forget();
+      this.#torProcess.onExit = () => {};
+      this.#torProcess = null;
+    }
+
+    this.#closeConnection("Uninitializing the provider.");
   }
 
   // Provider API
@@ -422,42 +428,21 @@ export class TorProvider {
       this.#controlPortSettings,
       socksSettings
     );
-    this.#torProcess.onExit = exitCode => {
-      logger.info(`The tor process exited with code ${exitCode}`);
-      this.#forgetProcess();
-      this.#closeConnection();
-      Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
-    };
-    this.#torProcess.onRestartRequested = () => {
-      this.#closeConnection();
-      this.#circuits.clear();
-      logger.info("Restarting the tor process");
-    };
-    this.#torProcess.onRestart = async () => {
-      try {
-        await this.#firstConnection();
-      } catch (e) {
-        // TODO: How to make surface this?
-        logger.error("Could not reconnect after restarting the tor daemon", e);
-        return;
-      }
-      Services.obs.notifyObservers(null, TorProviderTopics.ProcessRestarted);
+    // Use a closure instead of bind because we reassign #cancelConnection.
+    // Also, we now assign an exit handler that cancels the first connection,
+    // so that a sudden exit before the first connection is completed might
+    // still be handled as an initialization failure.
+    // But after the first connection is created successfully, we will change
+    // the exit handler to broadcast a notification instead.
+    this.#torProcess.onExit = () => {
+      this.#cancelConnection(
+        "The tor process exited before the first connection"
+      );
     };
 
     logger.debug("Trying to start the tor process.");
     await this.#torProcess.start();
     logger.info("Started a tor process");
-  }
-
-  #forgetProcess() {
-    if (this.#torProcess) {
-      logger.trace('"Forgetting" the tor process.');
-      this.#torProcess.forget();
-      this.#torProcess.onExit = () => {};
-      this.#torProcess.onRestartRequested = () => {};
-      this.#torProcess.onRestart = () => {};
-      this.#torProcess = null;
-    }
   }
 
   // Control port setup and connection
@@ -564,10 +549,10 @@ export class TorProvider {
     let delay = 5;
     logger.debug("Connecting to the control port for the first time.");
     this.#controlConnection = await new Promise((resolve, reject) => {
-      this.#cancelConnection = () => {
+      this.#cancelConnection = reason => {
         canceled = true;
         clearTimeout(timeout);
-        reject(new Error("Connection canceled."));
+        reject(new Error(reason));
       };
       const tryConnect = () => {
         if (this.ownsTorDaemon && !this.#torProcess?.isRunning) {
@@ -580,6 +565,7 @@ export class TorProvider {
             this.#cancelConnection = () => {};
             // The cancel function should have already called reject.
             if (!canceled) {
+              logger.info("Connected to the control port.");
               resolve(controller);
             }
           })
@@ -598,16 +584,31 @@ export class TorProvider {
       };
       tryConnect();
     });
-    logger.info("Connected to the control port.");
-    if (this.ownsTorDaemon && !TorLauncherUtil.shouldOnlyConfigureTor) {
-      this.#takeOwnership();
+
+    // The following code will never throw, but we still want to wait for it
+    // before marking the provider as initialized.
+
+    if (this.ownsTorDaemon) {
+      // The first connection cannot be canceled anymore, and the rest of the
+      // code is supposed not to fail. If the tor process exits, from now on we
+      // can only close the connection and broadcast a notification.
+      this.#torProcess.onExit = exitCode => {
+        logger.info(`The tor process exited with code ${exitCode}`);
+        this.#closeConnection("The tor process exited suddenly");
+        Services.obs.notifyObservers(null, TorProviderTopics.ProcessExited);
+      };
+      if (!TorLauncherUtil.shouldOnlyConfigureTor) {
+        await this.#takeOwnership();
+      }
     }
-    this.#setupEvents();
+    await this.#setupEvents();
   }
 
   /**
    * Try to become the primary controller. This will make tor exit when our
    * connection is closed.
+   * This function cannot fail or throw (any exception will be treated as a
+   * warning and just logged).
    */
   async #takeOwnership() {
     logger.debug("Taking the ownership of the tor process.");
@@ -624,6 +625,11 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Tells the Tor daemon which events we want to receive.
+   * This function will never throw. Any failure will be treated as a warning of
+   * a possibly degraded experience, not as an error.
+   */
   async #setupEvents() {
     // We always listen to these events, because they are needed for the circuit
     // display.
@@ -694,10 +700,10 @@ export class TorProvider {
     return controlPort;
   }
 
-  #closeConnection() {
-    this.#cancelConnection();
+  #closeConnection(reason) {
+    this.#cancelConnection(reason);
     if (this.#controlConnection) {
-      logger.info("Closing the control connection");
+      logger.info("Closing the control connection", reason);
       try {
         this.#controlConnection.close();
       } catch (e) {
