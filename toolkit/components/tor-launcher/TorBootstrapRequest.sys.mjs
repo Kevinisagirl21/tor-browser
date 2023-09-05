@@ -26,11 +26,6 @@ export class TorBootstrapRequest {
   #bootstrapPromiseResolve = null;
   #bootstrapPromise = null;
   #timeoutID = null;
-  #provider;
-
-  constructor() {
-    this.#provider = TorProviderBuilder.build();
-  }
 
   observe(subject, topic, data) {
     const obj = subject?.wrappedJSObject;
@@ -88,7 +83,7 @@ export class TorBootstrapRequest {
       // Wait for bootstrapping to begin and maybe handle error.
       // Notice that we do not resolve the promise here in case of success, but
       // we do it from the BootstrapStatus observer.
-      this.#provider
+      TorProviderBuilder.build()
         .then(provider => provider.connect())
         .catch(err => {
           this.#stop(err.message, err.torMessage);
@@ -117,7 +112,7 @@ export class TorBootstrapRequest {
 
     let provider;
     try {
-      provider = await this.#provider;
+      provider = await TorProviderBuilder.build();
     } catch {
       // This was probably the error that lead to stop in the first place.
       // No need to continue propagating it.

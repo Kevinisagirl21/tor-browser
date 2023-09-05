@@ -11,7 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 export const TorProviderTopics = Object.freeze({
   ProcessIsReady: "TorProcessIsReady",
   ProcessExited: "TorProcessExited",
-  ProcessRestarted: "TorProcessRestarted",
   BootstrapStatus: "TorBootstrapStatus",
   BootstrapError: "TorBootstrapError",
   HasWarnOrErr: "TorLogHasWarnOrErr",
@@ -33,12 +32,47 @@ export class TorProviderBuilder {
   static #provider = null;
 
   /**
+   * The observer that checks when the tor process exits, and reinitializes the
+   * provider.
+   *
+   * @type {nsIObserver?}
+   */
+  static #observer = null;
+
+  /**
+   * Tell whether the browser UI is ready.
+   * We ignore any errors until it is because we cannot show them.
+   *
+   * @type {boolean}
+   */
+  static #uiReady = false;
+
+  /**
    * Initialize the provider of choice.
    * Even though initialization is asynchronous, we do not expect the caller to
    * await this method. The reason is that any call to build() will wait the
    * initialization anyway (and re-throw any initialization error).
    */
-  static init() {
+  static async init() {
+    this.#observer = {
+      observe(subject, topic, data) {
+        if (topic !== TorProviderTopics.ProcessExited) {
+          return;
+        }
+        if (!TorProviderBuilder.#uiReady) {
+          console.warn(
+            `Seen ${TorProviderTopics.ProcessExited}, but not doing anything because the UI is not ready yet.`
+          );
+          return;
+        }
+        TorProviderBuilder.#torExited();
+      },
+    };
+    Services.obs.addObserver(this.#observer, TorProviderTopics.ProcessExited);
+    await this.#initProvider();
+  }
+
+  static async #initProvider() {
     this.#provider = new Promise((resolve, reject) => {
       const provider = new lazy.TorProvider();
       provider
@@ -46,6 +80,7 @@ export class TorProviderBuilder {
         .then(() => resolve(provider))
         .catch(reject);
     });
+    await this.#provider;
   }
 
   static uninit() {
@@ -53,6 +88,13 @@ export class TorProviderBuilder {
       provider.uninit();
       this.#provider = null;
     });
+    if (this.#observer) {
+      Services.obs.removeObserver(
+        this.#observer,
+        TorProviderTopics.ProcessExited
+      );
+      this.#observer = null;
+    }
   }
 
   /**
@@ -80,15 +122,33 @@ export class TorProviderBuilder {
   static async firstWindowLoaded() {
     // FIXME: Just integrate this with the about:torconnect or about:tor UI.
     try {
-      await this.#provider;
-    } catch {
-      while (lazy.TorLauncherUtil.showRestartPrompt(true)) {
-        try {
-          this.init();
-          await this.#provider;
-          break;
-        } catch {}
+      const provider = await this.#provider;
+      if (provider.isRunning) {
+        this.#uiReady = true;
+        return;
       }
+      provider.uninit();
+    } catch {}
+    while (lazy.TorLauncherUtil.showRestartPrompt(true)) {
+      try {
+        await this.#initProvider();
+        break;
+      } catch {}
+    }
+    this.#uiReady = true;
+  }
+
+  static async #torExited() {
+    while (lazy.TorLauncherUtil.showRestartPrompt(false)) {
+      try {
+        const old = await this.#provider;
+        old?.uninit();
+        this.#provider = null;
+      } catch {}
+      try {
+        await this.#initProvider();
+        break;
+      } catch {}
     }
   }
 }
