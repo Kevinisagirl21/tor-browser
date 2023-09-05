@@ -91,15 +91,15 @@ export const TorConnectState = Object.freeze({
   │ │       │                                                          │  │
   └─┼─────▶ │                                                          │  │
     │       └──────────────────────────────────────────────────────────┘  │
-    │         │                        ▲                                  │
-    │         │ beginAutoBootstrap()   │ cancelBootstrap()                │
-    │         ▼                        │                                  │
-    │       ┌───────────────────────┐  │                                  │
-    └────── │   AutoBootstrapping   │ ─┘                                  │
-            └───────────────────────┘                                     │
-              │                                                           │
-              │                                                           │
-              ▼                                                           │
+    │         │                        ▲                       ▲          │
+    │         │ beginAutoBootstrap()   │ cancelBootstrap()     │          │
+    │         ▼                        │                       │          │
+    │       ┌───────────────────────┐  │                       │          │
+    └────── │   AutoBootstrapping   │ ─┘                       │          │
+            └───────────────────────┘                          │          │
+              │                                                │          │
+              │               ┌────────────────────────────────┘          │
+              ▼               │                                           │
             ┌───────────────────────┐                                     │
             │     Bootstrapped      │ ◀───────────────────────────────────┘
             └───────────────────────┘
@@ -145,8 +145,8 @@ const TorConnectStateTransitions = Object.freeze(
       ],
     ],
     [TorConnectState.Error, [TorConnectState.Configuring]],
+    [TorConnectState.Bootstrapped, [TorConnectState.Configuring]],
     // terminal states
-    [TorConnectState.Bootstrapped, []],
     [TorConnectState.Disabled, []],
   ])
 );
@@ -703,8 +703,13 @@ export const TorConnect = (() => {
 
                   // bootstrapped failed for all potential settings, so reset daemon to use original
                   TorSettings.setSettings(this.originalSettings);
-                  await TorSettings.applySettings();
+                  // The original settings should be good, so we save them to
+                  // preferences before trying to apply them, as it might fail
+                  // if the actual problem is with the connection to the control
+                  // port.
+                  // FIXME: We should handle this case in a better way.
                   TorSettings.saveToPrefs();
+                  await TorSettings.applySettings();
 
                   // only explicitly change state here if something else has not transitioned us
                   if (!this.transitioning) {
@@ -718,6 +723,8 @@ export const TorConnect = (() => {
                   // restore original settings in case of error
                   try {
                     TorSettings.setSettings(this.originalSettings);
+                    // As above
+                    TorSettings.saveToPrefs();
                     await TorSettings.applySettings();
                   } catch (errRestore) {
                     console.log(
@@ -733,12 +740,19 @@ export const TorConnect = (() => {
                   TorConnect._countryCodes =
                     await this.mrpc.circumvention_countries();
                 }
-                TorConnect._changeState(
-                  TorConnectState.Error,
-                  err?.message,
-                  err?.details,
-                  true
-                );
+                if (!this.transitioning) {
+                  TorConnect._changeState(
+                    TorConnectState.Error,
+                    err?.message,
+                    err?.details,
+                    true
+                  );
+                } else {
+                  console.error(
+                    "TorConnect: Received AutoBootstrapping error after transitioning",
+                    err
+                  );
+                }
               } finally {
                 // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
                 this.mrpc?.uninit();
@@ -751,7 +765,11 @@ export const TorConnect = (() => {
           TorConnectState.Bootstrapped,
           new StateCallback(TorConnectState.Bootstrapped, async function () {
             await new Promise((resolve, reject) => {
-              // on_transition not defined because no way to leave Bootstrapped state
+              // We may need to leave the bootstrapped state if the tor daemon
+              // exits (if it is restarted, we will have to bootstrap again).
+              this.on_transition = nextState => {
+                resolve();
+              };
               // notify observers of bootstrap completion
               Services.obs.notifyObservers(
                 null,
@@ -893,6 +911,25 @@ export const TorConnect = (() => {
         }
         case TorTopics.LogHasWarnOrErr: {
           this._logHasWarningOrError = true;
+          break;
+        }
+        case TorTopics.ProcessExited: {
+          // Treat a failure as a possibly broken configuration.
+          // So, prevent quickstart at the next start.
+          Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
+          switch (this._state) {
+            case TorConnectState.Bootstrapping:
+            case TorConnectState.AutoBootstrapping:
+            case TorConnectState.Bootstrapped:
+              // If we are in the bootstrap or auto bootstrap, we could go
+              // through the error phase (and eventually we might do it, if some
+              // transition calls fail). However, this would start the
+              // connection assist, so we go directly to configuring.
+              // FIXME: Find a better way to handle this.
+              this._changeState(TorConnectState.Configuring);
+              break;
+            // Other states naturally resolve in configuration.
+          }
           break;
         }
         default:
