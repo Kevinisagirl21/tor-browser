@@ -73,6 +73,10 @@ export class TorProviderBuilder {
   }
 
   static async #initProvider() {
+    try {
+      const old = await this.#provider;
+      old?.uninit();
+    } catch {}
     this.#provider = new Promise((resolve, reject) => {
       const provider = new lazy.TorProvider();
       provider
@@ -121,30 +125,30 @@ export class TorProviderBuilder {
    */
   static async firstWindowLoaded() {
     // FIXME: Just integrate this with the about:torconnect or about:tor UI.
+    let running = false;
     try {
       const provider = await this.#provider;
-      if (provider.isRunning) {
-        this.#uiReady = true;
-        return;
-      }
-      provider.uninit();
-    } catch {}
-    while (lazy.TorLauncherUtil.showRestartPrompt(true)) {
+      // The initialization might have succeeded, but so far we have ignored any
+      // error notification. So, check that the process has not exited after the
+      // provider has been initialized successfully, but the UI was not ready
+      // yet.
+      running = provider.isRunning;
+    } catch {
+      // Not even initialized, running is already false.
+    }
+    while (!running && lazy.TorLauncherUtil.showRestartPrompt(true)) {
       try {
         await this.#initProvider();
-        break;
+        running = true;
       } catch {}
     }
+    // The user might have canceled the restart, but at this point the UI is
+    // ready in any case.
     this.#uiReady = true;
   }
 
   static async #torExited() {
     while (lazy.TorLauncherUtil.showRestartPrompt(false)) {
-      try {
-        const old = await this.#provider;
-        old?.uninit();
-        this.#provider = null;
-      } catch {}
       try {
         await this.#initProvider();
         break;
