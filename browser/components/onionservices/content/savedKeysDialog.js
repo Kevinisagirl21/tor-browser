@@ -49,10 +49,12 @@ var gOnionServicesSavedKeysDialog = {
       if (indexesToDelete.length) {
         const controllerFailureMsg =
           TorStrings.onionServices.authPreferences.failedToRemoveKey;
+        const provider = await TorProviderBuilder.build();
         try {
-          // Remove in reverse index order to avoid issues caused by index changes.
+          // Remove in reverse index order to avoid issues caused by index
+          // changes.
           for (let i = indexesToDelete.length - 1; i >= 0; --i) {
-            await this._deleteOneKey(indexesToDelete[i]);
+            await this._deleteOneKey(provider, indexesToDelete[i]);
           }
         } catch (e) {
           console.error("Removing a saved key failed", e);
@@ -75,11 +77,9 @@ var gOnionServicesSavedKeysDialog = {
     const haveSelection = this._tree.view.selection.getRangeCount() > 0;
     const dialog = document.querySelector(this.selector.dialog);
     const removeSelectedBtn = dialog.querySelector(this.selector.removeButton);
-    removeSelectedBtn.disabled =
-      !this._provider || this._isBusy || !haveSelection;
+    removeSelectedBtn.disabled = this._isBusy || !haveSelection;
     const removeAllBtn = dialog.querySelector(this.selector.removeAllButton);
-    removeAllBtn.disabled =
-      !this._provider || this._isBusy || this.rowCount === 0;
+    removeAllBtn.disabled = this._isBusy || this.rowCount === 0;
   },
 
   // Private functions.
@@ -89,22 +89,8 @@ var gOnionServicesSavedKeysDialog = {
 
   async _init() {
     this._populateXUL();
-
     window.addEventListener("keypress", this._onWindowKeyPress.bind(this));
-
-    await this._withBusy(async () => {
-      try {
-        this._provider = await TorProviderBuilder.build();
-      } catch (e) {
-        // FIXME: This will not be localized. Do we want to add another sentence
-        // before it? Or maybe show a generic one and maybe just log the
-        // exception? (Even though this exception should already be everywhere)
-        this._showError(e.message);
-      }
-    });
-    if (this._provider) {
-      this._loadSavedKeys();
-    }
+    this._loadSavedKeys();
   },
 
   _populateXUL() {
@@ -137,7 +123,8 @@ var gOnionServicesSavedKeysDialog = {
       try {
         this._tree.view = this;
 
-        const keyInfoList = await this._provider.onionAuthViewKeys();
+        const provider = await TorProviderBuilder.build();
+        const keyInfoList = await provider.onionAuthViewKeys();
         if (keyInfoList) {
           // Filter out temporary keys.
           this._keyInfoList = keyInfoList.filter(aKeyInfo =>
@@ -167,9 +154,9 @@ var gOnionServicesSavedKeysDialog = {
   },
 
   // This method may throw; callers should catch errors.
-  async _deleteOneKey(aIndex) {
+  async _deleteOneKey(provider, aIndex) {
     const keyInfoObj = this._keyInfoList[aIndex];
-    await this._provider.onionAuthRemove(keyInfoObj.address);
+    await provider.onionAuthRemove(keyInfoObj.address);
     this._tree.view.selection.clearRange(aIndex, aIndex);
     this._keyInfoList.splice(aIndex, 1);
     this._tree.rowCountChanged(aIndex + 1, -1);
