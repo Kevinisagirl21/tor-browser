@@ -17,6 +17,11 @@ export class AboutTorParent extends JSWindowActorParent {
           messageData: lazy.AboutTorMessage.getNext(),
           isStable: AppConstants.MOZ_UPDATE_CHANNEL === "release",
           searchOnionize: Services.prefs.getBoolPref(onionizePref, false),
+          // Locale for YEC 2023. See tor-browser#42072.
+          appLocale:
+            Services.locale.appLocaleAsBCP47 === "ja-JP-macos"
+              ? "ja"
+              : Services.locale.appLocaleAsBCP47,
         });
       case "AboutTor:SetSearchOnionize":
         Services.prefs.setBoolPref(onionizePref, message.data);
