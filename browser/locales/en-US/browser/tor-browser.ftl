@@ -44,3 +44,21 @@ tor-browser-home-message-testing = This is an unstable version of Tor Browser fo
 # Shown in Home settings, corresponds to the default about:tor home page.
 home-mode-choice-tor =
     .label = Tor Browser Home
+
+
+## 2023 year-end-campaign.
+
+# Large introduction text.
+yec-2023-introduction = Right now, Tor Browser is protecting your privacy and the privacy of millions of people like you!
+# Follows directly below yec-2023-introduction.
+# The <span data-l10n-name="attention"> tag is meant to bring some styling attention to the first phrase, but doesn't have any semantic meaning.
+yec-2023-please-donate = <span data-l10n-name="attention">This is possible because of donations from our community.</span> If you value the privacy that Tor Browser offers yourself and others, please make a donation today. You’ll ensure Tor Browser continues to provide online privacy to everyone who needs it.
+# Shown only during a period where donations will be matched. The end date should match the end of the year.
+# $amount (Number) - The donation limit. This will be a whole-number and will be automatically formatted according to the language/locale: using the language's numeral symbols and thousand-separators.
+# NOTE: The amount should be shown as USD (United States dollar) currency. In the original English string, the first "$" is the literal USD currency symbol, and this can be changed or removed when translating to whatever is most appropriate for USD currency in the locale. In contrast, the "$" at the start of "$amount" is part of the Fluent format's syntax and should not be changed when translating.
+# For example, "${ $amount }" for English would eventually be shown as "$5,000", whilst "{ $amount } US$" for Arabic would be shown as "٥٬٠٠٠ US$".
+# Translators: If you need any help or clarification, feel free to ask a question on weblate or in IRC (#tor-l10n).
+yec-2023-matched-donation = From now until December 31, donations to the Tor Project will be matched one-to-one, up to ${ $amount }!
+yec-2023-close-button =
+    .title = Close
+yec-2023-donate-button = Donate now

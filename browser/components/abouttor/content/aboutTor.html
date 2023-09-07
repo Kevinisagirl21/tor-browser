@@ -29,6 +29,39 @@
     <script src="chrome://browser/content/abouttor/aboutTor.js"></script>
   </head>
   <body>
+    <!-- YEC 2023. See tor-browser#42072. -->
+    <article id="yec-2023-banner">
+      <img
+        id="yec-2023-image"
+        alt=""
+        src="chrome://browser/content/abouttor/yec-2023-image.svg"
+      />
+      <!-- TODO: Set "amount" to final USD matching amount. -->
+      <p
+        id="yec-2023-matching"
+        data-l10n-id="yec-2023-matched-donation"
+        data-l10n-args='{ "amount": 0 }'
+      ></p>
+      <h2 id="yec-2023-heading" data-l10n-id="yec-2023-introduction"></h2>
+      <p id="yec-2023-body" data-l10n-id="yec-2023-please-donate">
+        <span class="yec-2023-attention" data-l10n-name="attention"></span>
+      </p>
+      <a id="yec-2023-donate-link">
+        <span data-l10n-id="yec-2023-donate-button"></span>
+        <img
+          class="yec-2023-icon"
+          alt=""
+          src="chrome://browser/content/abouttor/yec-2023-heart.svg"
+        />
+      </a>
+      <button id="yec-2023-close" data-l10n-id="yec-2023-close-button">
+        <img
+          class="yec-2023-icon"
+          alt=""
+          src="chrome://global/skin/icons/close.svg"
+        />
+      </button>
+    </article>
     <h1>
       <img
         id="tor-browser-logo"
