@@ -161,7 +161,7 @@ const gConnectionPane = (function () {
           const provider = await TorProviderBuilder.build();
           provider.flushSettings();
         } catch (e) {
-          logger.warn("Could not save the tor settings.", e);
+          console.warn("Could not save the tor settings.", e);
         }
       });
 
@@ -758,8 +758,13 @@ const gConnectionPane = (function () {
         // TODO: We could make sure TorSettings is in sync by monitoring also
         // changes of settings. At that point, we could query it, instead of
         // doing a query over the control port.
-        const provider = await TorProviderBuilder.build();
-        const bridge = provider.currentBridge;
+        let bridge = null;
+        try {
+          const provider = await TorProviderBuilder.build();
+          bridge = provider.currentBridge;
+        } catch (e) {
+          console.warn("Could not get current bridge", e);
+       }
         if (bridge?.fingerprint !== this._currentBridgeId) {
           this._currentBridgeId = bridge?.fingerprint ?? null;
           this._updateConnectedBridges();
