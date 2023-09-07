@@ -181,3 +181,120 @@ window.addEventListener("InitialData", event => {
   SearchWidget.setOnionizeState(!!searchOnionize);
   MessageArea.setMessageData(messageData, !!isStable, !!torConnectEnabled);
 });
+
+// YEC 2023 (year end campaign).
+// See tor-browser#42072
+const YecWidget = {
+  _initialized: false,
+  _locale: null,
+
+  /**
+   * Initialize the widget.
+   */
+  init() {
+    this._initialized = true;
+
+    const now = Date.now();
+    const yecStart = Date.UTC(2023, 9, 16); // October 16th
+    const yecEnd = Date.UTC(2024); // 2024 January 1st
+
+    this.isActive = now >= yecStart && now < yecEnd;
+    document.getElementById("yec-2023-close").addEventListener("click", () => {
+      this.isOpen = false;
+    });
+
+    // TODO: Uncomment once we have a final donation matching amount.
+    //const donateMatchStart = Date.UTC(2023, 10, 13); // November 13th
+    //document.body.classList.toggle(
+    //  "yec-2023-is-donation-matching",
+    //  now >= donateMatchStart
+    //);
+
+    this._updateDonateLocale();
+  },
+
+  _isStable: false,
+  _isActive: false,
+  _isOpen: true,
+
+  /**
+   * Whether this is a stable release.
+   *
+   * @type {boolean}
+   */
+  get isStable() {
+    return this._isStable;
+  },
+
+  set isStable(isStable) {
+    this._isStable = isStable;
+    this._updateShown();
+  },
+
+  /**
+   * Whether the year end campaign is active.
+   *
+   * @type {boolean}
+   */
+  get isActive() {
+    return this._isActive;
+  },
+
+  set isActive(isActive) {
+    this._isActive = isActive;
+    this._updateShown();
+  },
+
+  /**
+   * Whether the banner is open or has been closed by the user.
+   *
+   * @type {boolean}
+   */
+  get isOpen() {
+    return this._isOpen;
+  },
+
+  set isOpen(isOpen) {
+    this._isOpen = isOpen;
+    this._updateShown();
+  },
+
+  _updateShown() {
+    if (!this._initialized) {
+      return;
+    }
+    document.body.classList.toggle(
+      "yec-2023-is-shown",
+      this.isActive && this.isOpen && this.isStable
+    );
+  },
+
+  _updateDonateLocale() {
+    if (!this._initialized) {
+      return;
+    }
+    const donateLink = document.getElementById("yec-2023-donate-link");
+    const base = "https://www.torproject.org/donate";
+    donateLink.href = this._locale ? `${base}/2023yec-${this._locale}` : base;
+  },
+
+  /**
+   * Set the locale to use for the donation link.
+   *
+   * @param {string} locale - The new locale, as BCP47.
+   */
+  setDonateLocale(locale) {
+    this._locale = locale;
+    this._updateDonateLocale();
+  },
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  YecWidget.init();
+});
+
+window.addEventListener("InitialData", event => {
+  const { appLocale, isStable } = event.detail;
+  YecWidget.setDonateLocale(appLocale);
+  YecWidget.isStable = isStable;
+});
