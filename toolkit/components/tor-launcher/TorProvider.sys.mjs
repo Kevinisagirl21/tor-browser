@@ -268,12 +268,18 @@ export class TorProvider {
     await this.#controller.flushSettings();
   }
 
+  /**
+   * Start the bootstrap process.
+   */
   async connect() {
     await this.#controller.setNetworkEnabled(true);
     this.#lastWarning = {};
     this.retrieveBootstrapStatus();
   }
 
+  /**
+   * Stop the bootstrap process.
+   */
   async stopBootstrap() {
     // Tell tor to disable use of the network; this should stop the bootstrap.
     await this.#controller.setNetworkEnabled(false);
@@ -283,10 +289,18 @@ export class TorProvider {
     this.retrieveBootstrapStatus();
   }
 
+  /**
+   * Ask Tor to swtich to new circuits and clear the DNS cache.
+   */
   async newnym() {
     await this.#controller.newnym();
   }
 
+  /**
+   * Get the bridges Tor has been configured with.
+   *
+   * @returns {Bridge[]} The configured bridges
+   */
   async getBridges() {
     // Ideally, we would not need this function, because we should be the one
     // setting them with TorSettings. However, TorSettings is not notified of
@@ -297,10 +311,24 @@ export class TorProvider {
     return this.#controller.getBridges();
   }
 
+  /**
+   * Get the configured pluggable transports.
+   *
+   * @returns {PTInfo[]} An array with the info of all the configured pluggable
+   * transports.
+   */
   async getPluggableTransports() {
     return this.#controller.getPluggableTransports();
   }
 
+  /**
+   * Ask Tor its bootstrap phase.
+   * This function will also update the internal state when using an external
+   * tor daemon.
+   *
+   * @returns {object} An object with the bootstrap information received from
+   * Tor. Its keys might vary, depending on the input
+   */
   async retrieveBootstrapStatus() {
     this.#processBootstrapStatus(
       await this.#controller.getBootstrapPhase(),
@@ -350,14 +378,31 @@ export class TorProvider {
     return node;
   }
 
+  /**
+   * Add a private key to the Tor configuration.
+   *
+   * @param {string} address The address of the onion service
+   * @param {string} b64PrivateKey The private key of the service, in base64
+   * @param {boolean} isPermanent Tell whether the key should be saved forever
+   */
   async onionAuthAdd(address, b64PrivateKey, isPermanent) {
     return this.#controller.onionAuthAdd(address, b64PrivateKey, isPermanent);
   }
 
+  /**
+   * Remove a private key from the Tor configuration.
+   *
+   * @param {string} address The address of the onion service
+   */
   async onionAuthRemove(address) {
     return this.#controller.onionAuthRemove(address);
   }
 
+  /**
+   * Retrieve the list of private keys.
+   *
+   * @returns {OnionAuthKeyInfo[]}
+   */
   async onionAuthViewKeys() {
     return this.#controller.onionAuthViewKeys();
   }
@@ -447,6 +492,10 @@ export class TorProvider {
 
   // Control port setup and connection
 
+  /**
+   * Read the control port settings from environment variables and from
+   * preferences.
+   */
   async #setControlPortConfiguration() {
     logger.debug("Reading the control port configuration");
     const settings = {};
@@ -542,6 +591,10 @@ export class TorProvider {
     logger.debug("Control port configuration read");
   }
 
+  /**
+   * Start the first connection to the Tor daemon.
+   * This function should be called only once during the initialization.
+   */
   async #firstConnection() {
     let canceled = false;
     let timeout = 0;
@@ -656,14 +709,14 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Open a connection to the control port and authenticate to it.
+   * #setControlPortConfiguration must have been called before, as this function
+   * will follow the configuration set by it.
+   *
+   * @returns {Promise<TorController>} An authenticated TorController
+   */
   async #openControlPort() {
-    if (this.#controlConnection?.isOpen) {
-      logger.warn(
-        "Tried to open a control port connection when the previous one was already open"
-      );
-      return;
-    }
-
     let controlPort;
     if (this.#controlPortSettings.ipcFile) {
       controlPort = lazy.TorController.fromIpcFile(
@@ -700,6 +753,13 @@ export class TorProvider {
     return controlPort;
   }
 
+  /**
+   * Close the connection to the control port.
+   *
+   * @param {string} reason The reason for which we are closing the connection
+   * (used for logging and in case this ends up canceling the current connection
+   * attempt)
+   */
   #closeConnection(reason) {
     this.#cancelConnection(reason);
     if (this.#controlConnection) {
@@ -721,6 +781,12 @@ export class TorProvider {
 
   // Authentication
 
+  /**
+   * Read a cookie file to perform cookie-based authentication.
+   *
+   * @param {string} path The path to the cookie file
+   * @returns {Uint8Array} The content of the file in bytes
+   */
   async #readAuthenticationCookie(path) {
     return IOUtils.read(path);
   }
@@ -735,6 +801,11 @@ export class TorProvider {
 
   // Notification handlers
 
+  /**
+   * Receive and process a notification with the bootstrap status.
+   *
+   * @param {object} status The status object
+   */
   onBootstrapStatus(status) {
     this.#processBootstrapStatus(status, true);
   }
@@ -776,6 +847,11 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Broadcast a bootstrap warning or error.
+   *
+   * @param {object} statusObj The bootstrap status object with the error
+   */
   #notifyBootstrapError(statusObj) {
     try {
       Services.prefs.setBoolPref(Preferences.PromptAtStartup, true);
@@ -814,6 +890,13 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Handle a log message from the tor daemon. It will be added to the internal
+   * logs. If it is a warning or an error, a notification will be broadcast.
+   *
+   * @param {string} type The message type
+   * @param {string} msg The message
+   */
   onLogMessage(type, msg) {
     if (type === "WARN" || type === "ERR") {
       // Notify so that Copy Log can be enabled.
@@ -842,6 +925,14 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Handle a notification that a new circuit has been built.
+   * If a change of bridge is detected (including a change from bridge to a
+   * normal guard), a notification is broadcast.
+   *
+   * @param {CircuitID} id The circuit ID
+   * @param {NodeFingerprint[]} nodes The nodes that compose the circuit
+   */
   async onCircuitBuilt(id, nodes) {
     this.#circuits.set(id, nodes);
     // Ignore circuits of length 1, that are used, for example, to probe
@@ -873,11 +964,27 @@ export class TorProvider {
     }
   }
 
+  /**
+   * Handle a notification of a circuit being closed. We use it to clean the
+   * internal data.
+   *
+   * @param {CircuitID} id The circuit id
+   */
   onCircuitClosed(id) {
     logger.debug("Circuit closed event", id);
     this.#circuits.delete(id);
   }
 
+  /**
+   * Handle a notification about a stream switching to the succeeded state.
+   *
+   * @param {StreamID} streamId The ID of the stream that switched to the
+   * succeeded state.
+   * @param {CircuitID} circuitId The ID of the circuit used by the stream
+   * @param {string} username The SOCKS username
+   * @param {string} password The SOCKS password
+   * @returns
+   */
   onStreamSucceeded(streamId, circuitId, username, password) {
     if (!username || !password) {
       return;
