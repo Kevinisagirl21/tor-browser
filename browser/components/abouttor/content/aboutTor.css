@@ -232,3 +232,210 @@ body:not(.show-tor-check) #tor-check {
     color: var(--purple-60);
   }
 }
+
+/* YEC 2023.
+ * See tor-browser#42072 */
+body:not(.yec-2023-is-shown) #yec-2023-banner {
+  display: none;
+}
+
+body.yec-2023-is-shown h1 {
+  /* Text of heading is still available to screen readers, but it does not
+   * contribute visually to the page or the body grid layout. */
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+#yec-2023-banner {
+  grid-area: heading;
+  border-radius: 8px;
+  border-width: 1px;
+  border-style: solid;
+  display: grid;
+  grid-template:
+    "yec-image yec-matching" auto
+    "yec-image yec-heading" auto
+    "yec-image yec-body" auto
+    "yec-image yec-donate" min-content
+    / min-content 1fr;
+  --yec-image-background: #1f0333;
+  gap: 16px 32px;
+  /* Remove 1px from padding for border. */
+  padding-block: 39px 47px;
+  padding-inline: 31px 55px;
+  box-sizing: border-box;
+  max-width: 860px;
+  margin-block-end: 40px;
+  /* Position for the close button. */
+  position: relative;
+}
+
+#yec-2023-banner > * {
+  margin: 0;
+}
+
+#yec-2023-image {
+  grid-area: yec-image;
+  align-self: center;
+  /* Center horizontally for small width layout. */
+  justify-self: center;
+  /* background color and border radius only stands out when using a high
+   * contrast theme. */
+  background: var(--yec-image-background);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  /* Remove border from layout size. */
+  margin: -1px;
+}
+
+#yec-2023-matching {
+  grid-area: yec-matching;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+body:not(.yec-2023-is-donation-matching) #yec-2023-matching {
+  display: none;
+}
+
+#yec-2023-heading {
+  grid-area: yec-heading;
+  font-size: 1.7em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+#yec-2023-body {
+  grid-area: yec-body;
+  line-height: 1.5;
+  margin-block-end: 8px;
+}
+
+#yec-2023-body .yec-2023-attention {
+  font-weight: 600;
+}
+
+#yec-2023-donate-link {
+  grid-area: yec-donate;
+  justify-self: start;
+  font-weight: 700;
+  /* Style like a button. */
+  color: var(--in-content-button-text-color);
+  border: 1px solid var(--in-content-button-border-color);
+  border-radius: 4px;
+  background-color: var(--in-content-button-background);
+  line-height: 1.2;
+  padding-block: 12px;
+  padding-inline: 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#yec-2023-donate-link > * {
+  flex: 0 0 auto;
+}
+
+#yec-2023-donate-link:hover {
+  background-color: var(--in-content-button-background-hover);
+  color: var(--in-content-button-text-color-hover);
+  border-color: var(--in-content-button-border-color-hover);
+}
+
+#yec-2023-donate-link:hover:active {
+  background-color: var(--in-content-button-background-active);
+  color: var(--in-content-button-text-color-active);
+  border-color: var(--in-content-button-border-color-active);
+}
+
+#yec-2023-close {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-end: 12px;
+  padding: 8px;
+  min-width: auto;
+  min-height: auto;
+  width: 16px;
+  height: 16px;
+  box-sizing: content-box;
+  /* Transparent background when neither hover nor active. */
+  background-color: transparent;
+  border-color: transparent;
+}
+
+#yec-2023-close:hover {
+  background-color: var(--in-content-button-background-hover);
+  border-color: var(--in-content-button-border-color-hover);
+}
+
+#yec-2023-close:hover:active {
+  background-color: var(--in-content-button-background-active);
+  border-color: var(--in-content-button-border-color-active);
+}
+
+.yec-2023-icon {
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+@media (max-width: 750px) {
+  /* Small width layout. */
+  #yec-2023-banner {
+    grid-template:
+      "yec-image" min-content
+      "yec-matching" auto
+      "yec-heading" auto
+      "yec-body" auto
+      "yec-donate" min-content
+      / 1fr;
+    padding-inline: 32px;
+    /* Match max-width of the form. */
+    max-width: 600px;
+  }
+
+  #yec-2023-donate-link {
+    justify-self: center;
+  }
+}
+
+@media (prefers-contrast) {
+  #yec-2023-banner {
+    border-color: -moz-DialogText;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    #yec-2023-image {
+      /* Give the dark image a border to separate from background. */
+      border-color: -moz-DialogText;
+    }
+  }
+}
+
+@media not (prefers-contrast) {
+  #yec-2023-banner {
+    background-color: var(--yec-image-background);
+    border-color: transparent;
+    --acorn-yellow-40: #ffbd4f;
+    --acorn-yellow-50: #ffa436;
+    --acorn-yellow-60: #e27f2e;
+    --acorn-dark-grey-80: #1c1b22;
+    /* Rules for #yec-2023-close */
+    --in-content-button-text-color: var(--in-content-text-color);
+    --in-content-button-text-color-hover: var(--in-content-text-color);
+    --in-content-button-text-color-active: var(--in-content-text-color);
+  }
+
+  #yec-2023-matching {
+    color: var(--acorn-yellow-40);
+  }
+
+  #yec-2023-donate-link {
+    --in-content-button-text-color: var(--acorn-dark-grey-80);
+    --in-content-button-text-color-hover: var(--acorn-dark-grey-80);
+    --in-content-button-text-color-active: var(--acorn-dark-grey-80);
+    --in-content-button-background: var(--acorn-yellow-40);
+    --in-content-button-background-hover: var(--acorn-yellow-50);
+    --in-content-button-background-active: var(--acorn-yellow-60);
+  }
+}

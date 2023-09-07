@@ -26,6 +26,11 @@ export class AboutTorChild extends JSWindowActorChild {
       case "SubmitSearchOnionize":
         this.sendAsyncMessage("AboutTor:SetSearchOnionize", !!event.detail);
         break;
+      case "YECHidden":
+        // YEC 2023 banner was closed. Persist this for the rest of this
+        // session. See tor-browser#42188.
+        this.sendAsyncMessage("AboutTor:HideYEC");
+        break;
     }
   }
 }

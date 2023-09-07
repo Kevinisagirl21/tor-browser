@@ -491,6 +491,7 @@ let JSWINDOWACTORS = {
       events: {
         DOMContentLoaded: {},
         SubmitSearchOnionize: { wantUntrusted: true },
+        YECHidden: { wantUntrusted: true },
       },
     },
 
