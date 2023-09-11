@@ -56,6 +56,12 @@ h1 {
 .message-emoji {
   height: 1em;
   vertical-align: sub;
+  margin-inline-end: 0.3em;
+}
+
+.home-message a {
+  /* Increase gap between the link and the rest of the text. */
+  margin-inline: 0.4em;
 }
 
 #search-form {
