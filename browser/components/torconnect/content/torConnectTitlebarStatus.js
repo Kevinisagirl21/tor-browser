@@ -72,7 +72,6 @@ var gTorConnectTitlebarStatus = {
         this.node.hidden = true;
         return;
       case TorConnectState.Bootstrapped:
-        this._startHiding();
         textId = "titlebarStatusConnected";
         connected = true;
         break;
@@ -114,6 +113,14 @@ var gTorConnectTitlebarStatus = {
       );
       this.node.classList.toggle("tor-connect-status-connected", connected);
       this.connected = connected;
+      if (connected) {
+        this._startHiding();
+      } else {
+        // We can leave the connected state when we are no longer Bootstrapped
+        // because the underlying tor process exited early and needs a
+        // restart. In this case we want to re-show the status.
+        this._stopHiding();
+      }
     }
     this.node.classList.toggle(
       "tor-connect-status-potentially-blocked",
@@ -125,8 +132,23 @@ var gTorConnectTitlebarStatus = {
    * Mark the component to be hidden after some delay.
    */
   _startHiding() {
-    setTimeout(() => {
+    if (this._hidingTimeout) {
+      // Already hiding.
+      return;
+    }
+    this._hidingTimeout = setTimeout(() => {
       this.node.hidden = true;
     }, 5000);
+  },
+
+  /**
+   * Re-show the component immediately.
+   */
+  _stopHiding() {
+    if (this._hidingTimeout) {
+      clearTimeout(this._hidingTimeout);
+      this._hidingTimeout = 0;
+    }
+    this.node.hidden = false;
   },
 };
