@@ -112,10 +112,10 @@ var gTorConnectUrlbarButton = {
    * Callback for when the TorConnect state changes.
    */
   _torConnectStateChanged() {
-    if (
-      TorConnect.state === TorConnectState.Bootstrapped ||
-      TorConnect.state === TorConnectState.Disabled
-    ) {
+    if (TorConnect.state === TorConnectState.Disabled) {
+      // NOTE: We do not uninit early when we reach the
+      // TorConnectState.Bootstrapped state because we can still leave the
+      // Bootstrapped state if the tor process exists early and needs a restart.
       this.uninit();
       return;
     }
