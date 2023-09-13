@@ -729,7 +729,15 @@ var gIdentityHandler = {
       host = this._uri.specIgnoringRef;
     }
 
-    return host;
+    // For tor browser we want to shorten onion addresses for the site identity
+    // panel (gIdentityHandler) to match the circuit display and the onion
+    // authorization panel.
+    // See tor-browser#42091 and tor-browser#41600.
+    // This will also shorten addresses for other consumers of this method,
+    // which includes the permissions panel (gPermissionPanel) and the
+    // protections panel (gProtectionsHandler), although the latter is hidden in
+    // tor browser.
+    return TorUIUtils.shortenOnionAddress(host);
   },
 
   /**
