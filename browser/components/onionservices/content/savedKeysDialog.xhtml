@@ -9,7 +9,6 @@
   id="onionservices-savedkeys-dialog"
   windowtype="OnionServices:SavedKeys"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-  style="width: 45em"
 >
   <script src="chrome://browser/content/onionservices/savedKeysDialog.js" />
 
@@ -23,8 +22,6 @@
       id="onionservices-savedkeys-tree"
       flex="1"
       hidecolumnpicker="true"
-      width="750"
-      style="height: 20em"
       onselect="gOnionServicesSavedKeysDialog.updateButtonsState();"
     >
       <treecols>
@@ -38,7 +35,7 @@
       </treecols>
       <treechildren />
     </tree>
-    <hbox id="onionservices-savedkeys-errorContainer" align="baseline" flex="1">
+    <hbox id="onionservices-savedkeys-errorContainer" align="center">
       <image id="onionservices-savedkeys-errorIcon" />
       <description id="onionservices-savedkeys-errorMessage" flex="1" />
     </hbox>
