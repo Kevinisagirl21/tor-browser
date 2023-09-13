@@ -300,7 +300,6 @@ const Loader = {
 
     const retval = {
       learnMore: getString("learnMore", "Learn more"),
-      learnMoreURL: "about:manual#onion-services_onion-service-authentication",
       errorPage: {
         browser: getString("errorPage.browser", "Browser"),
         network: getString("errorPage.network", "Network"),
