@@ -409,21 +409,6 @@ var gTorCircuitPanel = {
   },
 
   /**
-   * Shorten the given address if it is an onion address.
-   *
-   * @param {string} address - The address to shorten.
-   *
-   * @returns {string} The shortened form of the address, or the address itself
-   *   if it was not shortened.
-   */
-  _shortenOnionAddress(address) {
-    if (!address.endsWith(".onion") || address.length <= 22) {
-      return address;
-    }
-    return `${address.slice(0, 7)}…${address.slice(-12)}`;
-  },
-
-  /**
    * Updates the circuit display in the panel to show the current browser data.
    */
   _updateCircuitPanel() {
@@ -465,12 +450,12 @@ var gTorCircuitPanel = {
     this._panelElements.heading.textContent = this._getString(
       "torbutton.circuit_display.heading",
       // Only shorten the onion domain if it has no alias.
-      [onionAlias ? domain : this._shortenOnionAddress(domain)]
+      [TorUIUtils.shortenOnionAddress(domain)]
     );
 
     if (onionAlias) {
       this._panelElements.aliasLink.textContent =
-        this._shortenOnionAddress(onionAlias);
+        TorUIUtils.shortenOnionAddress(onionAlias);
       if (scheme === "http" || scheme === "https") {
         // We assume the same scheme as the current page for the alias, which we
         // expect to be either http or https.
@@ -521,7 +506,8 @@ var gTorCircuitPanel = {
     );
 
     // Set the address that we want to copy.
-    this._panelElements.endItem.textContent = this._shortenOnionAddress(domain);
+    this._panelElements.endItem.textContent =
+      TorUIUtils.shortenOnionAddress(domain);
 
     // Button description text, depending on whether our first node was a
     // bridge, or otherwise a guard.
