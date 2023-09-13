@@ -39,10 +39,21 @@
     - **Allowed to merge**: `Maintainers`
     - **Allowed to push and merge**: `Maintainers`
     - **Allowed to force push**: `false`
+    - If you copied and pasted from old rules, double check you didn't add spaces at the end, as GitLab will not trim them!
 
 ### **Create New Branches**
 
-- [ ] Create new alpha `base-browser` branch from Firefox mercurial tag (found during the stable rebase)
+- [ ] Find the Firefox mercurial tag `$(ESR_TAG)`
+  - If `$(BROWSER_MINOR)` is 5, the tag should already exist from the stable release
+  - Otherwise:
+    - [ ] Go to `https://hg.mozilla.org/releases/mozilla-esr$(ESR_MAJOR)/tags`
+    - [ ] Find and inspect the commit tagged with `$(ESR_TAG)`
+      - Tags are in yellow in the Mercurial web UI
+    - [ ] Find the equivalent commit in `https://github.com/mozilla/gecko-dev/commits/esr$(ESR_MAJOR)`
+      - The tag should be very close to `HEAD` (usually the second, before a `No bug - Tagging $(HG_HASH) with $(ESR_TAG)`)
+      - **Notice**: GitHub sorts commits by time, you might want to use `git log gecko-dev/esr$(ESR_MAJOR)` locally, instead
+    - [ ] Sign/Tag the `gecko-dev` commit: `git tag -as $(ESR_TAG) $(GIT_HASH) -m "Hg tag $(ESR_TAG)"`
+- [ ] Create new alpha `base-browser` branch from Firefox mercurial tag
   - Branch name in the form: `base-browser-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1`
   - **Example**: `base-browser-102.8.0esr-12.5-1`
 - [ ] Create new alpha `tor-browser` branch from Firefox mercurial tag
@@ -111,6 +122,11 @@
 - Update and push `base-browser` branch
   - [ ] Reset the new `base-browser` branch to the appropriate commit in this new `tor-browser` branch
   - [ ] Push these commits to `upstream`
+- [ ] Set `$(TOR_BROWSER_BRANCH)` as the default GitLab branch
+  - [ ] Go to [Repository Settings](https://gitlab.torproject.org/tpo/applications/tor-browser/-/settings/repository)
+  - [ ] Expand `Branch defaults`
+  - [ ] Set the branch and leave the `Auto-close` checkbox unchecked
+  - [ ] Save changes
 
 ### **Sign and Tag**
 
