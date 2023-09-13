@@ -94,7 +94,9 @@ const OnionAuthPrompt = (function () {
 
         const domainEl = xulDoc.createElement("span");
         domainEl.id = "tor-clientauth-notification-onionname";
-        domainEl.textContent = this._onionHostname;
+        domainEl.textContent = TorUIUtils.shortenOnionAddress(
+          this._onionHostname
+        );
 
         descElem.replaceChildren(prefix, domainEl, suffix);
       }
