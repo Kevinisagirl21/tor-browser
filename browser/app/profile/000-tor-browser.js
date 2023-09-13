@@ -29,6 +29,9 @@ pref("network.proxy.failover_direct", false);
 pref("network.security.ports.banned", "", locked);
 pref("network.dns.disabled", true); // This should cover the #5741 patch for DNS leaks
 pref("network.http.max-persistent-connections-per-proxy", 256);
+// Disable DNS over HTTPS. Set to explicitly off MODE_TRROFF = 5.
+// See tor-browser#41906.
+pref("network.trr.mode", 5, locked);
 
 // Treat .onions as secure
 pref("dom.securecontext.allowlist_onions", true);
