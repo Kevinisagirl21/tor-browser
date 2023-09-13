@@ -152,6 +152,7 @@ EXTRA_JS_MODULES += [
     "TorConnect.sys.mjs",
     "TorSettings.sys.mjs",
     "TorStrings.jsm",
+    "TorUIUtils.sys.mjs",
     "TransientPrefs.jsm",
     "URILoadingHelper.sys.mjs",
     "webrtcUI.jsm",
