@@ -189,10 +189,10 @@ var gOnionServicesSavedKeysDialog = {
   },
 
   _showError(aMessage) {
-    const dialog = document.querySelector(this.selector.dialog);
-    const errorIcon = dialog.querySelector(this.selector.errorIcon);
-    errorIcon.style.visibility = aMessage ? "visible" : "hidden";
-    const errorDesc = dialog.querySelector(this.selector.errorMessage);
+    document
+      .getElementById("onionservices-savedkeys-errorContainer")
+      .classList.toggle("show-error", !!aMessage);
+    const errorDesc = document.querySelector(this.selector.errorMessage);
     errorDesc.textContent = aMessage ? aMessage : "";
   },
 
