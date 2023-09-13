@@ -1,20 +1,19 @@
-// Copyright (c) 2020, The Tor Project, Inc.
+/* eslint-env mozilla/browser-window */
 
 "use strict";
 
-/* globals gBrowser, PopupNotifications, Services, XPCOMUtils */
-
-ChromeUtils.defineESModuleGetters(this, {
-  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
-});
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  OnionAuthUtil: "chrome://browser/content/onionservices/authUtil.jsm",
-  CommonUtils: "resource://services-common/utils.js",
-  TorStrings: "resource:///modules/TorStrings.jsm",
-});
-
 const OnionAuthPrompt = (function () {
+  // Only import to our internal scope, rather than the global scope of
+  // browser.xhtml.
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
+    TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+    CommonUtils: "resource://services-common/utils.sys.mjs",
+  });
+  XPCOMUtils.defineLazyModuleGetters(lazy, {
+    TorStrings: "resource:///modules/TorStrings.jsm",
+  });
+
   // OnionServicesAuthPrompt objects run within the main/chrome process.
   // aReason is the topic passed within the observer notification that is
   // causing this auth prompt to be displayed.
@@ -25,11 +24,16 @@ const OnionAuthPrompt = (function () {
     this._onionHostname = aOnionName;
   }
 
+  const topics = {
+    clientAuthMissing: "tor-onion-services-clientauth-missing",
+    clientAuthIncorrect: "tor-onion-services-clientauth-incorrect",
+  };
+
   OnionServicesAuthPrompt.prototype = {
     show(aWarningMessage) {
       let mainAction = {
-        label: TorStrings.onionServices.authPrompt.done,
-        accessKey: TorStrings.onionServices.authPrompt.doneAccessKey,
+        label: lazy.TorStrings.onionServices.authPrompt.done,
+        accessKey: lazy.TorStrings.onionServices.authPrompt.doneAccessKey,
         leaveOpen: true, // Callback is responsible for closing the notification.
         callback: this._onDone.bind(this),
       };
@@ -68,9 +72,9 @@ const OnionAuthPrompt = (function () {
 
       this._prompt = PopupNotifications.show(
         this._browser,
-        OnionAuthUtil.domid.notification,
+        "tor-clientauth",
         "",
-        OnionAuthUtil.domid.anchor,
+        "tor-clientauth-notification-icon",
         mainAction,
         [cancelAction],
         options
@@ -79,52 +83,36 @@ const OnionAuthPrompt = (function () {
 
     _onPromptShowing(aWarningMessage) {
       let xulDoc = this._browser.ownerDocument;
-      let descElem = xulDoc.getElementById(OnionAuthUtil.domid.description);
+      let descElem = xulDoc.getElementById("tor-clientauth-notification-desc");
       if (descElem) {
         // Handle replacement of the onion name within the localized
         // string ourselves so we can show the onion name as bold text.
         // We do this by splitting the localized string and creating
         // several HTML <span> elements.
-        while (descElem.firstChild) {
-          descElem.firstChild.remove();
-        }
+        const fmtString = lazy.TorStrings.onionServices.authPrompt.description;
+        const [prefix, suffix] = fmtString.split("%S");
 
-        let fmtString = TorStrings.onionServices.authPrompt.description;
-        let prefix = "";
-        let suffix = "";
-        const kToReplace = "%S";
-        let idx = fmtString.indexOf(kToReplace);
-        if (idx < 0) {
-          prefix = fmtString;
-        } else {
-          prefix = fmtString.substring(0, idx);
-          suffix = fmtString.substring(idx + kToReplace.length);
-        }
+        const domainEl = xulDoc.createElement("span");
+        domainEl.id = "tor-clientauth-notification-onionname";
+        domainEl.textContent = this._onionHostname;
 
-        const kHTMLNS = "http://www.w3.org/1999/xhtml";
-        let span = xulDoc.createElementNS(kHTMLNS, "span");
-        span.textContent = prefix;
-        descElem.appendChild(span);
-        span = xulDoc.createElementNS(kHTMLNS, "span");
-        span.id = OnionAuthUtil.domid.onionNameSpan;
-        span.textContent = this._onionHostname;
-        descElem.appendChild(span);
-        span = xulDoc.createElementNS(kHTMLNS, "span");
-        span.textContent = suffix;
-        descElem.appendChild(span);
+        descElem.replaceChildren(prefix, domainEl, suffix);
       }
 
       // Set "Learn More" label and href.
-      let learnMoreElem = xulDoc.getElementById(OnionAuthUtil.domid.learnMore);
+      let learnMoreElem = xulDoc.getElementById(
+        "tor-clientauth-notification-learnmore"
+      );
       if (learnMoreElem) {
-        learnMoreElem.setAttribute("value", TorStrings.onionServices.learnMore);
+        learnMoreElem.setAttribute(
+          "value",
+          lazy.TorStrings.onionServices.learnMore
+        );
         learnMoreElem.setAttribute(
           "href",
-          TorStrings.onionServices.learnMoreURL
+          "about:manual#onion-services_onion-service-authentication"
         );
-        if (TorStrings.onionServices.learnMoreURL.startsWith("about:")) {
-          learnMoreElem.setAttribute("useoriginprincipal", "true");
-        }
+        learnMoreElem.setAttribute("useoriginprincipal", "true");
       }
 
       this._showWarning(aWarningMessage);
@@ -139,7 +127,7 @@ const OnionAuthPrompt = (function () {
       if (keyElem) {
         keyElem.setAttribute(
           "placeholder",
-          TorStrings.onionServices.authPrompt.keyPlaceholder
+          lazy.TorStrings.onionServices.authPrompt.keyPlaceholder
         );
         this._boundOnKeyFieldKeyPress = this._onKeyFieldKeyPress.bind(this);
         this._boundOnKeyFieldInput = this._onKeyFieldInput.bind(this);
@@ -186,14 +174,14 @@ const OnionAuthPrompt = (function () {
 
       const base64key = this._keyToBase64(keyElem.value);
       if (!base64key) {
-        this._showWarning(TorStrings.onionServices.authPrompt.invalidKey);
+        this._showWarning(lazy.TorStrings.onionServices.authPrompt.invalidKey);
         return;
       }
 
       this._prompt.remove();
 
       const controllerFailureMsg =
-        TorStrings.onionServices.authPrompt.failedToSetKey;
+        lazy.TorStrings.onionServices.authPrompt.failedToSetKey;
       try {
         // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
         const onionServiceIdRegExp =
@@ -205,7 +193,7 @@ const OnionAuthPrompt = (function () {
 
         const checkboxElem = this._getCheckboxElement();
         const isPermanent = checkboxElem && checkboxElem.checked;
-        const provider = await TorProviderBuilder.build();
+        const provider = await lazy.TorProviderBuilder.build();
         await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
         // Success! Reload the page.
         this._browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
@@ -227,7 +215,7 @@ const OnionAuthPrompt = (function () {
       // this authentication prompt.
       const failedURI = this._failedURI.spec;
       const errorCode =
-        this._reasonForPrompt === OnionAuthUtil.topic.clientAuthMissing
+        this._reasonForPrompt === topics.clientAuthMissing
           ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
           : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
       const io =
@@ -245,19 +233,17 @@ const OnionAuthPrompt = (function () {
 
     _getKeyElement() {
       let xulDoc = this._browser.ownerDocument;
-      return xulDoc.getElementById(OnionAuthUtil.domid.keyElement);
+      return xulDoc.getElementById("tor-clientauth-notification-key");
     },
 
     _getCheckboxElement() {
       let xulDoc = this._browser.ownerDocument;
-      return xulDoc.getElementById(OnionAuthUtil.domid.checkboxElement);
+      return xulDoc.getElementById("tor-clientauth-persistkey-checkbox");
     },
 
     _showWarning(aWarningMessage) {
       let xulDoc = this._browser.ownerDocument;
-      let warningElem = xulDoc.getElementById(
-        OnionAuthUtil.domid.warningElement
-      );
+      let warningElem = xulDoc.getElementById("tor-clientauth-warning");
       let keyElem = this._getKeyElement();
       if (warningElem) {
         if (aWarningMessage) {
@@ -289,7 +275,7 @@ const OnionAuthPrompt = (function () {
         // a tor onion-auth file (which uses lowercase).
         let rawKey;
         try {
-          rawKey = CommonUtils.decodeBase32(aKeyString.toUpperCase());
+          rawKey = lazy.CommonUtils.decodeBase32(aKeyString.toUpperCase());
         } catch (e) {}
 
         if (rawKey) {
@@ -313,24 +299,21 @@ const OnionAuthPrompt = (function () {
 
   let retval = {
     init() {
-      Services.obs.addObserver(this, OnionAuthUtil.topic.clientAuthMissing);
-      Services.obs.addObserver(this, OnionAuthUtil.topic.clientAuthIncorrect);
+      Services.obs.addObserver(this, topics.clientAuthMissing);
+      Services.obs.addObserver(this, topics.clientAuthIncorrect);
     },
 
     uninit() {
-      Services.obs.removeObserver(this, OnionAuthUtil.topic.clientAuthMissing);
-      Services.obs.removeObserver(
-        this,
-        OnionAuthUtil.topic.clientAuthIncorrect
-      );
+      Services.obs.removeObserver(this, topics.clientAuthMissing);
+      Services.obs.removeObserver(this, topics.clientAuthIncorrect);
     },
 
     // aSubject is the DOM Window or browser where the prompt should be shown.
     // aData contains the .onion name.
     observe(aSubject, aTopic, aData) {
       if (
-        aTopic != OnionAuthUtil.topic.clientAuthMissing &&
-        aTopic != OnionAuthUtil.topic.clientAuthIncorrect
+        aTopic != topics.clientAuthMissing &&
+        aTopic != topics.clientAuthIncorrect
       ) {
         return;
       }
