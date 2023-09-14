@@ -53,7 +53,7 @@ yec-2023-please-donate = <span data-l10n-name="attention">This is possible becau
 # NOTE: The amount should be shown as USD (United States dollar) currency. In the original English string, the first "$" is the literal USD currency symbol, and this can be changed or removed when translating to whatever is most appropriate for USD currency in the locale. In contrast, the "$" at the start of "$amount" is part of the Fluent format's syntax and should not be changed when translating.
 # For example, "${ $amount }" for English would eventually be shown as "$5,000", whilst "{ $amount } US$" for Arabic would be shown as "٥٬٠٠٠ US$".
 # Translators: If you need any help or clarification, feel free to ask a question on weblate or in IRC (#tor-l10n).
-yec-2023-matched-donation = From now until December 31, your gift will be matched one-to-one, up to ${ $amount }!
+yec-2023-matched-donation = From now until December 31, donations to the Tor Project will be matched one-to-one, up to ${ $amount }!
 yec-2023-close-button =
     .title = Close
 yec-2023-donate-button = Donate now
