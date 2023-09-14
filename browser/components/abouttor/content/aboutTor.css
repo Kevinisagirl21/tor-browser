@@ -20,6 +20,11 @@ body {
     / 1fr minmax(max-content, 600px) 1fr;
   justify-items: center;
   padding-inline: 20px;
+  background:
+    local
+    url("chrome://browser/content/abouttor/onion-pattern.svg")
+    center bottom
+    repeat-x;
 }
 
 h1 {
