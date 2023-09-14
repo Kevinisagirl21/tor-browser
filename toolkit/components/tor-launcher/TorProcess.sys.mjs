@@ -49,9 +49,7 @@ export class TorProcess {
 
     const checkPort = port =>
       port === undefined ||
-      (Number.isInteger(controlSettings.port) &&
-        controlSettings.port > 0 &&
-        controlSettings.port < 65535);
+      (Number.isInteger(port) && port > 0 && port < 65535);
     if (!checkPort(controlSettings?.port)) {
       throw new Error("Invalid control port");
     }
