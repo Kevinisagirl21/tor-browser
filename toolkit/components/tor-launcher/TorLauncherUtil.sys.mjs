@@ -8,7 +8,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  FileUtils: "resource://gre/modules/FileUtils.sys.jsm",
+  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
 });
 
 const kPropBundleURI = "chrome://torbutton/locale/torlauncher.properties";
@@ -565,7 +565,7 @@ export const TorLauncherUtil = Object.freeze({
     }
 
     if (useIPC === undefined) {
-      socksPortInfo.useIPC =
+      useIPC =
         !this.isWindows &&
         Services.prefs.getBoolPref(
           "extensions.torlauncher.socks_port_use_ipc",
@@ -574,7 +574,7 @@ export const TorLauncherUtil = Object.freeze({
     }
 
     // Fill in missing SOCKS info from prefs.
-    if (socksPortInfo.useIPC) {
+    if (useIPC) {
       if (!socksPortInfo.ipcFile) {
         socksPortInfo.ipcFile = TorLauncherUtil.getTorFile("socks_ipc", false);
       }
@@ -611,7 +611,7 @@ export const TorLauncherUtil = Object.freeze({
       return;
     }
 
-    if (socksPortInfo.useIPC) {
+    if (socksPortInfo.ipcFile) {
       const fph = Services.io
         .getProtocolHandler("file")
         .QueryInterface(Ci.nsIFileProtocolHandler);
