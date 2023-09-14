@@ -1,31 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="512px" height="512px" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <defs>
-        <linearGradient x1="50%" y1="100%" x2="50%" y2="0%" id="linearGradient-1">
-            <stop stop-color="#420C5D" offset="0%"></stop>
-            <stop stop-color="#951AD1" offset="100%"></stop>
-        </linearGradient>
-        <path d="M25,29 C152.577777,29 256,131.974508 256,259 C256,386.025492 152.577777,489 25,489 L25,29 Z" id="path-2"></path>
-        <filter x="-18.2%" y="-7.4%" width="129.4%" height="114.8%" filterUnits="objectBoundingBox" id="filter-3">
-            <feOffset dx="-8" dy="0" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
-            <feGaussianBlur stdDeviation="10" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
-            <feColorMatrix values="0 0 0 0 0.250980392   0 0 0 0 0.250980392   0 0 0 0 0.250980392  0 0 0 0.2 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
-        </filter>
-    </defs>
-    <g id="Assets" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="icon_512x512">
-            <g id="Group">
-                <g id="tb_icon/Stable">
-                    <g id="Stable">
-                        <circle id="background" fill="#F2E4FF" fill-rule="nonzero" cx="256" cy="256" r="246"></circle>
-                        <path d="M256.525143,465.439707 L256.525143,434.406609 C354.826191,434.122748 434.420802,354.364917 434.420802,255.992903 C434.420802,157.627987 354.826191,77.8701558 256.525143,77.5862948 L256.525143,46.5531962 C371.964296,46.8441537 465.446804,140.489882 465.446804,255.992903 C465.446804,371.503022 371.964296,465.155846 256.525143,465.439707 Z M256.525143,356.820314 C311.970283,356.529356 356.8487,311.516106 356.8487,255.992903 C356.8487,200.476798 311.970283,155.463547 256.525143,155.17259 L256.525143,124.146588 C329.115485,124.430449 387.881799,183.338693 387.881799,255.992903 C387.881799,328.654211 329.115485,387.562455 256.525143,387.846316 L256.525143,356.820314 Z M256.525143,201.718689 C286.266674,202.00255 310.3026,226.180407 310.3026,255.992903 C310.3026,285.812497 286.266674,309.990353 256.525143,310.274214 L256.525143,201.718689 Z M0,255.992903 C0,397.384044 114.60886,512 256,512 C397.384044,512 512,397.384044 512,255.992903 C512,114.60886 397.384044,0 256,0 C114.60886,0 0,114.60886 0,255.992903 Z" id="center" fill="url(#linearGradient-1)"></path>
-                        <g id="half" transform="translate(140.500000, 259.000000) scale(-1, 1) translate(-140.500000, -259.000000) ">
-                            <use fill="black" fill-opacity="1" filter="url(#filter-3)" xlink:href="#path-2"></use>
-                            <use fill="url(#linearGradient-1)" fill-rule="evenodd" xlink:href="#path-2"></use>
-                        </g>
-                    </g>
-                </g>
-            </g>
-        </g>
-    </g>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 46.5C36.4264 46.5 46.5 36.4264 46.5 24C46.5 11.5736 36.4264 1.5 24 1.5C11.5736 1.5 1.5 11.5736 1.5 24C1.5 36.4264 11.5736 46.5 24 46.5Z" fill="url(#paint0_linear_1920_3864)"/>
+<path d="M24 5.54297C34.1935 5.54297 42.457 13.8065 42.457 24C42.457 34.1935 34.1935 42.457 24 42.457V39.6445C32.6402 39.6445 39.6445 32.6402 39.6445 24C39.6445 15.3598 32.6402 8.35547 24 8.35547V5.54297Z" fill="#EACCFF"/>
+<path d="M24 12.4424C30.3831 12.4424 35.5576 17.6169 35.5576 24C35.5576 30.3831 30.3831 35.5576 24 35.5576V32.7451C28.8298 32.7451 32.7451 28.8298 32.7451 24C32.7451 19.1702 28.8298 15.2549 24 15.2549V12.4424Z" fill="#EACCFF"/>
+<path d="M24 19.21C26.6455 19.21 28.79 21.3545 28.79 24C28.79 26.6455 26.6455 28.79 24 28.79V19.21Z" fill="#EACCFF"/>
+<path d="M24 1.5C12.7386 1.5 3.60938 10.6685 3.60938 21.9785C3.60938 33.2885 12.7386 42.457 24 42.457V1.5Z" fill="#BE6EF7" fill-opacity="0.4"/>
+<path d="M24 1.5C32.2194 1.5 39.4094 5.90728 43.3357 12.4875V21.9785C43.3892 33.2884 34.6788 42.457 24 42.457L24 1.5Z" fill="url(#paint1_linear_1920_3864)"/>
+<defs>
+<linearGradient id="paint0_linear_1920_3864" x1="24" y1="46.5" x2="24" y2="1.5" gradientUnits="userSpaceOnUse">
+<stop offset="0.333333" stop-color="#730BDA"/>
+<stop offset="1" stop-color="#B83DF5"/>
+</linearGradient>
+<linearGradient id="paint1_linear_1920_3864" x1="24" y1="21.9785" x2="43.3357" y2="21.9785" gradientUnits="userSpaceOnUse">
+<stop stop-color="#550080" stop-opacity="0.4"/>
+<stop offset="0.166667" stop-color="#550080" stop-opacity="0.4"/>
+<stop offset="0.333333" stop-color="#550080" stop-opacity="0.2"/>
+<stop offset="0.5" stop-color="#550080" stop-opacity="0"/>
+</linearGradient>
+</defs>
 </svg>
