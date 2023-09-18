@@ -1737,7 +1737,8 @@ var gMainPane = {
       let defaultBrowserBox = document.getElementById("defaultBrowserBox");
       let isInFlatpak = gGIOService?.isRunningUnderFlatpak;
       // Flatpak does not support setting nor detection of default browser
-      if (!shellSvc || isInFlatpak) {
+      // tor-browser#41822 disable making Tor Browser the default browser
+      if (shellSvc || isInFlatpak || true) {
         defaultBrowserBox.hidden = true;
         return;
       }
