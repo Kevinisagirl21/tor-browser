@@ -5,8 +5,8 @@
 }
 
 #rightBox {
-  background-image: url('chrome://global/skin/illustrations/about-wordmark.png');
-  background-position: left top;
+  background-size: auto;
+  padding-top: 32px;
 }
 
 #contributeDesc {
