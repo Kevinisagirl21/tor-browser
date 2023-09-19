@@ -37,7 +37,6 @@ DIRS += [
     "downloads",
     "enterprisepolicies",
     "extensions",
-    "firefoxview",
     "messagepreview",
     "migration",
     "newidentity",
