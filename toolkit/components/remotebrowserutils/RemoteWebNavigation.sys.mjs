@@ -86,13 +86,24 @@ export class RemoteWebNavigation {
           this._browser
         );
         let principal = loadURIOptions.triggeringPrincipal;
+        let fpi = Services.prefs.getBoolPref(
+          "privacy.firstparty.isolate",
+          false
+        );
+        let firstPartyDomain = fpi ? Services.eTLD.getSchemelessSite(uri) : "";
         // We usually have a triggeringPrincipal assigned, but in case we
         // don't have one or if it's a SystemPrincipal, let's create it with OA
         // inferred from the current context.
-        if (!principal || principal.isSystemPrincipal) {
+        if (
+          !principal ||
+          principal.isSystemPrincipal ||
+          (fpi &&
+            principal.originAttributes?.firstPartyDomain != firstPartyDomain)
+        ) {
           let attrs = {
             userContextId: this._browser.getAttribute("usercontextid") || 0,
             privateBrowsingId: isBrowserPrivate ? 1 : 0,
+            firstPartyDomain,
           };
           principal = Services.scriptSecurityManager.createContentPrincipal(
             uri,
