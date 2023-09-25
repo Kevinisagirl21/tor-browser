@@ -144,11 +144,13 @@ h1 {
   /* On dark background */
   :root {
     background-color: #2C0449;
-    --focus-outline: var(--focus-outline-width) solid var(--purple-30);
+    --focus-outline-color: var(--purple-30);
+    --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
+    --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
   }
 
-  h1, .home-message {
+  body > :not(#search-form) {
     /* Same as --in-content-page-color when "prefers-color-scheme: dark" */
     --in-content-page-color: #fbfbfe;
     --in-content-text-color: #fbfbfe;
@@ -177,7 +179,9 @@ h1 {
 
   /* Light background. */
   #search-form > * {
-    --focus-outline: var(--focus-outline-width) solid var(--purple-60);
+    --focus-outline-color: var(--purple-60);
+    --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
+    --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
     /* Variables used for --toggle- variables. */
     --color-accent-primary: var(--purple-60);
