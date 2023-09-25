@@ -187,7 +187,6 @@ form#locationDropdown {
 
 form#locationDropdown select {
   max-width: 100%;
-  padding-block: 0;
   margin-inline: 0;
   font-weight: 700;
 }
