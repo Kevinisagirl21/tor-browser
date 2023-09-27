@@ -137,7 +137,7 @@ export class TorProvider {
    * built before the new identity but not yet used. If we cleaned the map, we
    * risked of not having the data about it.
    *
-   * @type {Map<CircuitID, NodeFingerprint[]>}
+   * @type {Map<CircuitID, Promise<NodeFingerprint[]>>}
    */
   #circuits = new Map();
   /**
@@ -999,16 +999,34 @@ export class TorProvider {
    * @param {string} username The SOCKS username
    * @param {string} password The SOCKS password
    */
-  onStreamSucceeded(streamId, circuitId, username, password) {
+  async onStreamSucceeded(streamId, circuitId, username, password) {
     if (!username || !password) {
       return;
     }
     logger.debug("Stream succeeded event", username, password, circuitId);
-    const circuit = this.#circuits.get(circuitId);
+    let circuit = this.#circuits.get(circuitId);
     if (!circuit) {
-      logger.error(
-        "Seen a STREAM SUCCEEDED with an unknown circuit. Not notifying observers."
-      );
+      circuit = new Promise((resolve, reject) => {
+        this.#controlConnection.getCircuits().then(circuits => {
+          for (const { id, nodes } of circuits) {
+            if (id === circuitId) {
+              resolve(nodes);
+              return;
+            }
+            // Opportunistically collect circuits, since we are iterating them.
+            this.#circuits.set(id, nodes);
+          }
+          logger.error(
+            `Seen a STREAM SUCCEEDED with circuit ${circuitId}, but Tor did not send information about it.`
+          );
+          reject();
+        });
+      });
+      this.#circuits.set(circuitId, circuit);
+    }
+    try {
+      circuit = await circuit;
+    } catch {
       return;
     }
     Services.obs.notifyObservers(
