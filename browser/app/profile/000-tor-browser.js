@@ -41,14 +41,19 @@ pref("dom.security.https_only_mode.upgrade_onion", false);
 
 // Bug 40423/41137: Disable http/3
 // We should re-enable it as soon as Tor gets UDP support
-pref("network.http.http3.enabled", false);
+pref("network.http.http3.enable", false);
 
 // 0 = do not use a second connection, see all.js and #7656
 pref("network.http.connection-retry-timeout", 0);
 
 #expand pref("torbrowser.version", __BASE_BROWSER_VERSION_QUOTED__);
 
-// Old torbutton pref
+// Tor Browser used to be compatible with non-Tor proxies. This feature is not
+// available anymore, but this legacy preference can be still used to disable
+// first-party domain circuit isolation.
+// In general, it should not be used. This use-case is still supported only for
+// sites that break with this isolation (and even in that case, its use should
+// be reduced to the strictly required time).
 pref("extensions.torbutton.use_nontor_proxy", false);
 
 // Browser home page:
@@ -61,8 +66,6 @@ pref("browser.download.showTorWarning", true);
 pref("extensions.torbutton.pref_fixup_version", 0);
 
 // Formerly tor-launcher defaults
-// When presenting the setup wizard, first prompt for locale.
-pref("intl.locale.matchOS", true);
 
 pref("extensions.torlauncher.start_tor", true);
 pref("extensions.torlauncher.prompt_at_startup", true);
@@ -112,7 +115,7 @@ pref("extensions.torlauncher.bridgedb_reflector", "https://moat.torproject.org.g
 pref("extensions.torlauncher.moat_service", "https://bridges.torproject.org/moat");
 pref("extensions.torlauncher.bridgedb_bridge_type", "obfs4");
 
-// Recommended default bridge type (can be set per localized bundle).
+// Recommended default bridge type.
 // pref("extensions.torlauncher.default_bridge_recommended_type", "obfs3");
 
 // Default bridges.
