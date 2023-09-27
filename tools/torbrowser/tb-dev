@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 """
 Useful tools for working on tor-browser repository.
@@ -148,12 +148,28 @@ def get_firefox_ref(search_from):
     return get_nearest_ref("tag", "FIREFOX_", search_from)
 
 
-def get_upstream_commit(search_from):
+def get_upstream_tracking_branch(search_from):
+    return git_get(["rev-parse", "--abbrev-ref", f"{search_from}@{{upstream}}"])[0]
+
+
+def get_upstream_basis_commit(search_from):
     """
     Get the first common ancestor of search_from that is also in its upstream
     branch.
     """
-    return git_get(["merge-base", search_from, f"{search_from}@{{upstream}}"])[0]
+    upstream_branch = get_upstream_tracking_branch(search_from)
+    commit = git_get(["merge-base", search_from, upstream_branch])[0]
+    # Verify that the upstream commit shares the same firefox basis. Otherwise,
+    # this would indicate that the upstream is on an early or later FIREFOX
+    # base.
+    upstream_firefox = get_firefox_ref(upstream_branch).commit
+    search_firefox = get_firefox_ref(search_from).commit
+    if upstream_firefox != search_firefox:
+        raise Exception(
+            f"Upstream of {search_from} has a different FIREFOX base. "
+            "You might want to set the upstream tracking branch to a new value."
+        )
+    return commit
 
 
 def get_changed_files(from_commit, staged=False):
@@ -239,11 +255,11 @@ def show_firefox_commit(_args):
     print(ref.commit)
 
 
-def show_upstream_commit(_args):
+def show_upstream_basis_commit(_args):
     """
     Print the last upstream commit for the current HEAD.
     """
-    print(get_upstream_commit("HEAD"))
+    print(get_upstream_basis_commit("HEAD"))
 
 
 def show_log(args):
@@ -278,7 +294,7 @@ def show_changed_files(_args):
     """
     List all the files that have been modified relative to upstream.
     """
-    for filename in get_changed_files(get_upstream_commit("HEAD")):
+    for filename in get_changed_files(get_upstream_basis_commit("HEAD")):
         print(filename)
 
 
@@ -289,7 +305,7 @@ def lint_changed_files(args):
     os.chdir(get_local_root())
     file_list = [
         f
-        for f in get_changed_files(get_upstream_commit("HEAD"))
+        for f in get_changed_files(get_upstream_basis_commit("HEAD"))
         if os.path.isfile(f)  # Not deleted
     ]
     command_base = ["./mach", "lint"]
@@ -495,25 +511,49 @@ def branch_from_default(args):
     git_run(["switch", "--create", args.branchname, "--track", default_branch])
 
 
-def rebase_on_default(_args):
+def move_to_default(args):
     """
-    Fetch the default gitlab branch from upstream and rebase the current branch
-    on top.
+    Fetch the default gitlab branch from upstream and move the specified
+    branch's commits on top. A new branch will be created tracking the default
+    branch, and the old branch will be renamed with a suffix for the old
+    tracking branch. This method will switch to the new branch, but will avoid
+    switching to the old branch to prevent triggering a CLOBBER build.
     """
-    try:
-        branch_name = git_get(["branch", "--show-current"])[0]
-    except IndexError:
-        raise Exception("No current branch")
+    branch_name = args.branch
+    if branch_name is None:
+        # Use current branch as default.
+        try:
+            branch_name = git_get(["branch", "--show-current"])[0]
+        except IndexError:
+            raise Exception("No current branch")
 
-    current_upstream = get_upstream_commit("HEAD")
+    current_upstream_branch = get_upstream_tracking_branch(branch_name)
     default_branch = get_gitlab_default()
 
     git_run(["fetch"], get_upstream_name())
-    # We set the new upstream before the rebase in case there are conflicts.
-    git_run(["branch", f"--set-upstream-to={default_branch}"])
-    git_run(
-        ["rebase", "--onto", default_branch, current_upstream, branch_name], check=False
-    )
+
+    if current_upstream_branch == default_branch:
+        print(f"{branch_name} is already set to track the default branch {default_branch}.")
+        return
+
+    # We want to avoid checking out the old branch because this can cause
+    # mozilla ./mach to do a CLOBBER build.
+    # Instead we create a new branch with the same name and cherry pick.
+    current_basis = get_upstream_basis_commit(branch_name)
+    old_branch_name = branch_name + "-" + get_firefox_ref(branch_name).name
+
+    print(f"Moving old branch {branch_name} to {old_branch_name}")
+    git_run(["branch", "-m", branch_name, old_branch_name])
+
+    try:
+        git_run(["switch", "--create", branch_name, "--track", default_branch])
+    except subprocess.CalledProcessError as err:
+        print(f"Moving {old_branch_name} back to {branch_name}")
+        git_run(["branch", "-m", old_branch_name, branch_name])
+        raise err
+
+    # Set check to False since cherry-pick might fail due to a merge conflict.
+    git_run(["cherry-pick", f"{current_basis}..{old_branch_name}"], check=False)
 
 
 def show_range_diff(args):
@@ -608,8 +648,8 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(required=True)
 
 for name, details in {
-    "show-upstream-commit": {
-        "func": show_upstream_commit,
+    "show-upstream-basis-commit": {
+        "func": show_upstream_basis_commit,
     },
     "changed-files": {
         "func": show_changed_files,
@@ -641,8 +681,16 @@ for name, details in {
             },
         },
     },
-    "rebase-on-default": {
-        "func": rebase_on_default,
+    "move-to-default": {
+        "func": move_to_default,
+        "args": {
+            "branch": {
+                "help": "the branch to move, else uses the current branch",
+                "metavar": "<branch>",
+                "nargs": "?",
+                "completer": branch_complete,
+            },
+        },
     },
     "show-firefox-commit": {
         "func": show_firefox_commit,
