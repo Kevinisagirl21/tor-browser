@@ -273,6 +273,11 @@ class AsyncSocket {
  * @typedef {string} NodeFingerprint
  */
 /**
+ * @typedef {object} CircuitInfo
+ * @property {CircuitID} id
+ * @property {NodeFingerprint[]} nodes
+ */
+/**
  * @typedef {object} Bridge
  * @property {string} transport The transport of the bridge, or vanilla if not
  * specified.
@@ -729,12 +734,14 @@ export class TorController {
   /**
    * Ask Tor a list of circuits.
    *
-   * @returns {string[]} An array with a string for each line
+   * @returns {CircuitInfo[]} An array with a string for each line
    */
   async getCircuits() {
     const circuits = await this.#getInfo("circuit-status");
-    // TODO: Do more parsing once we move the event parsing to this class!
-    return circuits.split(/\r?\n/);
+    return circuits
+      .split(/\r?\n/)
+      .map(this.#parseCircBuilt.bind(this))
+      .filter(circ => circ);
   }
 
   // Configuration
@@ -1022,25 +1029,15 @@ export class TorController {
         this.#eventHandler.onBootstrapStatus(status);
         break;
       case "CIRC":
-        const builtEvent =
-          /^(?<ID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(,?\$([0-9a-fA-F]{40})(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
-            data.groups.data
-          );
+        const maybeCircuit = this.#parseCircBuilt(data.groups.data);
         const closedEvent = /^(?<ID>[a-zA-Z0-9]{1,16})\sCLOSED/.exec(
           data.groups.data
         );
-        if (builtEvent) {
-          const fp = /\$([0-9a-fA-F]{40})/g;
-          const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
-            g[1].toUpperCase()
+        if (maybeCircuit) {
+          this.#eventHandler.onCircuitBuilt(
+            maybeCircuit.id,
+            maybeCircuit.nodes
           );
-          // In some cases, we might already receive SOCKS credentials in the
-          // line. However, this might be a problem with onion services: we get
-          // also a 4-hop circuit that we likely do not want to show to the
-          // user, especially because it is used only temporarily, and it would
-          // need a technical explaination.
-          // const credentials = this.#parseCredentials(data.groups.data);
-          this.#eventHandler.onCircuitBuilt(builtEvent.groups.ID, nodes);
         } else if (closedEvent) {
           this.#eventHandler.onCircuitClosed(closedEvent.groups.ID);
         }
@@ -1068,7 +1065,7 @@ export class TorController {
     }
   }
 
-  // Other helpers
+  // Parsers
 
   /**
    * Parse a bootstrap status line.
@@ -1099,15 +1096,32 @@ export class TorController {
   }
 
   /**
-   * Throw an exception when value is not a string.
+   * Parse a CIRC BUILT event or a GETINFO circuit-status.
    *
-   * @param {any} value The value to check
-   * @param {string} name The name of the `value` argument
+   * @param {string} line The line to parse
+   * @returns {CircuitInfo?} The ID and nodes of the circuit, or null if the
+   * parsing failed.
    */
-  #expectString(value, name) {
-    if (typeof value !== "string" && !(value instanceof String)) {
-      throw new Error(`The ${name} argument is expected to be a string.`);
+  #parseCircBuilt(line) {
+    const builtEvent =
+      /^(?<ID>[a-zA-Z0-9]{1,16})\sBUILT\s(?<Path>(,?\$([0-9a-fA-F]{40})(?:~[a-zA-Z0-9]{1,19})?)+)/.exec(
+        line
+      );
+    if (!builtEvent) {
+      return null;
     }
+    const fp = /\$([0-9a-fA-F]{40})/g;
+    const nodes = Array.from(builtEvent.groups.Path.matchAll(fp), g =>
+      g[1].toUpperCase()
+    );
+    // In some cases, we might already receive SOCKS credentials in the
+    // line. However, this might be a problem with Onion services: we get
+    // also a 4-hop circuit that we likely do not want to show to the
+    // user, especially because it is used only temporarily, and it would
+    // need a technical explaination.
+    // So we do not try to extract them for now. Otherwise, we could do
+    // const credentials = this.#parseCredentials(line);
+    return { id: builtEvent.groups.ID, nodes };
   }
 
   /**
@@ -1145,6 +1159,20 @@ export class TorController {
         pair => [pair[1], TorParsers.unescapeString(pair[2])]
       )
     );
+  }
+
+  // Other helpers
+
+  /**
+   * Throw an exception when value is not a string.
+   *
+   * @param {any} value The value to check
+   * @param {string} name The name of the `value` argument
+   */
+  #expectString(value, name) {
+    if (typeof value !== "string" && !(value instanceof String)) {
+      throw new Error(`The ${name} argument is expected to be a string.`);
+    }
   }
 }
 

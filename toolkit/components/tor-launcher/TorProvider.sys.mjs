@@ -204,6 +204,11 @@ export class TorProvider {
 
     logger.debug(`Notifying ${TorProviderTopics.ProcessIsReady}`);
     Services.obs.notifyObservers(null, TorProviderTopics.ProcessIsReady);
+
+    // If we are using an external Tor daemon, we might need to fetch circuits
+    // already, in case streams use them. Do not await because we do not want to
+    // block the intialization on this (it should not fail anyway...).
+    this.#fetchCircuits();
   }
 
   /**
@@ -799,6 +804,16 @@ export class TorProvider {
     return crypto.getRandomValues(new Uint8Array(kPasswordLen));
   }
 
+  /**
+   * Ask Tor the circuits it already knows to populate our circuit map with the
+   * circuits that were already open before we started listening for events.
+   */
+  async #fetchCircuits() {
+    for (const { id, nodes } of await this.#controller.getCircuits()) {
+      this.onCircuitBuilt(id, nodes);
+    }
+  }
+
   // Notification handlers
 
   /**
@@ -983,7 +998,6 @@ export class TorProvider {
    * @param {CircuitID} circuitId The ID of the circuit used by the stream
    * @param {string} username The SOCKS username
    * @param {string} password The SOCKS password
-   * @returns
    */
   onStreamSucceeded(streamId, circuitId, username, password) {
     if (!username || !password) {
