@@ -4,6 +4,9 @@ const SearchWidget = {
   _initialized: false,
   _initialOnionize: false,
 
+  /**
+   * Initialize the search form elements.
+   */
   init() {
     this._initialized = true;
 
@@ -74,6 +77,12 @@ const SearchWidget = {
     );
   },
 
+  /**
+   * Set what the "Onionize" toggle state.
+   *
+   * @param {boolean} state - Whether the "Onionize" toggle should be switched
+   *   on.
+   */
   setOnionizeState(state) {
     if (!this._initialized) {
       this._initialOnionize = state;
@@ -84,32 +93,84 @@ const SearchWidget = {
   },
 };
 
+const MessageArea = {
+  _initialized: false,
+  _messageData: null,
+  _isStable: null,
+
+  /**
+   * Initialize the message area and heading once elements are available.
+   */
+  init() {
+    this._initialized = true;
+    this._update();
+  },
+
+  /**
+   * Set the message data and stable release flag.
+   *
+   * @param {MessageData} messageData - The message data, indicating which
+   *   message to show.
+   * @param {boolean} isStable - Whether this is the stable release version.
+   */
+  setMessageData(messageData, isStable) {
+    this._messageData = messageData;
+    this._isStable = isStable;
+    this._update();
+  },
+
+  _update() {
+    if (!this._initialized) {
+      return;
+    }
+
+    document
+      .querySelector(".home-message.shown-message")
+      ?.classList.remove("shown-message");
+
+    if (!this._messageData) {
+      return;
+    }
+
+    // Set heading.
+    document.l10n.setAttributes(
+      document.getElementById("tor-browser-home-heading-text"),
+      this._isStable
+        ? "tor-browser-home-heading-stable"
+        : "tor-browser-home-heading-testing"
+    );
+
+    const { updateVersion, updateURL, number } = this._messageData;
+
+    if (updateVersion) {
+      const updatedElement = document.getElementById("home-message-updated");
+      updatedElement.querySelector("a").href = updateURL;
+      document.l10n.setAttributes(
+        updatedElement.querySelector("span"),
+        "tor-browser-home-message-updated",
+        { version: updateVersion }
+      );
+      updatedElement.classList.add("shown-message");
+    } else {
+      const messageElements = document.querySelectorAll(
+        this._isStable
+          ? ".home-message-rotating-stable"
+          : ".home-message-rotating-testing"
+      );
+      messageElements[number % messageElements.length].classList.add(
+        "shown-message"
+      );
+    }
+  },
+};
+
 window.addEventListener("DOMContentLoaded", () => {
   SearchWidget.init();
+  MessageArea.init();
 });
 
-window.addEventListener("InitialSearchOnionize", event => {
-  SearchWidget.setOnionizeState(!!event.detail);
-});
-
-window.addEventListener("MessageData", event => {
-  const updatedElement = document.getElementById("home-message-updated");
-  const { updateVersion, updateURL, number } = event.detail;
-  document
-    .querySelector(".home-message.shown-message")
-    ?.classList.remove("shown-message");
-  if (updateVersion) {
-    updatedElement.querySelector("a").href = updateURL;
-    document.l10n.setAttributes(
-      updatedElement.querySelector("span"),
-      "tor-browser-home-message-updated",
-      { version: updateVersion }
-    );
-    updatedElement.classList.add("shown-message");
-  } else {
-    const messageElements = document.querySelectorAll(".home-message-rotating");
-    messageElements[number % messageElements.length].classList.add(
-      "shown-message"
-    );
-  }
+window.addEventListener("InitialData", event => {
+  const { isStable, searchOnionize, messageData } = event.detail;
+  SearchWidget.setOnionizeState(!!searchOnionize);
+  MessageArea.setMessageData(messageData, !!isStable);
 });

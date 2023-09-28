@@ -35,11 +35,7 @@
         alt=""
         src="chrome://branding/content/tor-browser-logo.svg"
       />
-      #if MOZ_UPDATE_CHANNEL == release
-      <span data-l10n-id="tor-browser-home-heading-stable"></span>
-      #else
-      <span data-l10n-id="tor-browser-home-heading-testing"></span>
-      #endif
+      <span id="tor-browser-home-heading-text"></span>
     </h1>
     <form id="search-form" method="get" rel="noreferrer">
       <img
@@ -70,11 +66,10 @@
         <a data-l10n-name="update-link" target="_blank"></a>
       </span>
     </p>
-    #if MOZ_UPDATE_CHANNEL == release
-    <p class="home-message home-message-rotating">
+    <p class="home-message home-message-rotating-stable">
       <span data-l10n-id="tor-browser-home-message-introduction"></span>
     </p>
-    <p class="home-message home-message-rotating">
+    <p class="home-message home-message-rotating-stable">
       <img
         class="message-emoji"
         alt=""
@@ -88,7 +83,7 @@
         ></a>
       </span>
     </p>
-    <p class="home-message home-message-rotating">
+    <p class="home-message home-message-rotating-stable">
       <img
         class="message-emoji"
         alt=""
@@ -102,8 +97,7 @@
         ></a>
       </span>
     </p>
-    #else
-    <p class="home-message home-message-rotating">
+    <p class="home-message home-message-rotating-testing">
       <img
         class="message-emoji"
         alt=""
@@ -117,6 +111,5 @@
         ></a>
       </span>
     </p>
-    #endif
   </body>
 </html>

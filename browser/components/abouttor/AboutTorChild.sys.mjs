@@ -15,24 +15,12 @@ export class AboutTorChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "DOMContentLoaded":
-        this.sendQuery("AboutTor:GetSearchOnionize").then(searchOnionize => {
-          const onionizeEvent = new this.contentWindow.CustomEvent(
-            "InitialSearchOnionize",
-            {
-              detail: Cu.cloneInto(searchOnionize, this.contentWindow),
-            }
+        this.sendQuery("AboutTor:GetInitialData").then(data => {
+          const initialDataEvent = new this.contentWindow.CustomEvent(
+            "InitialData",
+            { detail: Cu.cloneInto(data, this.contentWindow) }
           );
-          this.contentWindow.dispatchEvent(onionizeEvent);
-        });
-
-        this.sendQuery("AboutTor:GetMessage").then(messageData => {
-          const messageEvent = new this.contentWindow.CustomEvent(
-            "MessageData",
-            {
-              detail: Cu.cloneInto(messageData, this.contentWindow),
-            }
-          );
-          this.contentWindow.dispatchEvent(messageEvent);
+          this.contentWindow.dispatchEvent(initialDataEvent);
         });
         break;
       case "SubmitSearchOnionize":
