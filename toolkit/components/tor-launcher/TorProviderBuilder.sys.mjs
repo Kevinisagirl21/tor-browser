@@ -125,6 +125,11 @@ export class TorProviderBuilder {
    */
   static async firstWindowLoaded() {
     // FIXME: Just integrate this with the about:torconnect or about:tor UI.
+    if (!lazy.TorLauncherUtil.shouldStartAndOwnTor) {
+      // If we are not managing the Tor daemon we cannot restart it, so just
+      // early return.
+      return;
+    }
     let running = false;
     try {
       const provider = await this.#provider;
