@@ -97,6 +97,7 @@ const MessageArea = {
   _initialized: false,
   _messageData: null,
   _isStable: null,
+  _torConnectEnabled: null,
 
   /**
    * Initialize the message area and heading once elements are available.
@@ -112,10 +113,13 @@ const MessageArea = {
    * @param {MessageData} messageData - The message data, indicating which
    *   message to show.
    * @param {boolean} isStable - Whether this is the stable release version.
+   * @param {boolean} torConnectEnabled - Whether TorConnect is enabled, and
+   *   therefore the Tor process was configured with about:torconnect.
    */
-  setMessageData(messageData, isStable) {
+  setMessageData(messageData, isStable, torConnectEnabled) {
     this._messageData = messageData;
     this._isStable = isStable;
+    this._torConnectEnabled = torConnectEnabled;
     this._update();
   },
 
@@ -139,6 +143,8 @@ const MessageArea = {
         ? "tor-browser-home-heading-stable"
         : "tor-browser-home-heading-testing"
     );
+
+    document.body.classList.toggle("show-tor-check", !this._torConnectEnabled);
 
     const { updateVersion, updateURL, number } = this._messageData;
 
@@ -170,7 +176,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("InitialData", event => {
-  const { isStable, searchOnionize, messageData } = event.detail;
+  const { torConnectEnabled, isStable, searchOnionize, messageData } =
+    event.detail;
   SearchWidget.setOnionizeState(!!searchOnionize);
-  MessageArea.setMessageData(messageData, !!isStable);
+  MessageArea.setMessageData(messageData, !!isStable, !!torConnectEnabled);
 });

@@ -4,10 +4,12 @@ body {
   margin: 0;
   min-height: 100vh;
   display: grid;
+  --form-max-width: 600px;
   grid-template:
     /* Start space: unfilled. */
     ". . ." 1fr
     "heading heading heading" auto
+    "tor-check tor-check tor-check" auto
     ". form ." min-content
     "message message message" auto
     /* End space: unfilled.
@@ -16,8 +18,8 @@ body {
      * not shrink to zero, but will instead shrink to a minimum size of
      * 75px = (150px * 1fr / 2fr) */
     ". . ." minmax(150px, 2fr)
-    /* NOTE: "form" will be given a maximum width of 600px. */
-    / 1fr minmax(max-content, 600px) 1fr;
+    /* NOTE: "form" will be given a maximum width of --form-max-width. */
+    / 1fr minmax(max-content, var(--form-max-width)) 1fr;
   justify-items: center;
   padding-inline: 20px;
   background:
@@ -44,6 +46,32 @@ h1 {
   flex: 0 0 auto;
 }
 
+#tor-check {
+  grid-area: tor-check;
+  max-width: var(--form-max-width);
+  box-sizing: border-box;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-inline: 24px;
+  padding-block: 12px;
+  border-radius: 8px;
+  margin-block-start: 0;
+  margin-block-end: 30px;
+}
+
+body:not(.show-tor-check) #tor-check {
+  display: none;
+}
+
+#tor-check-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
 .home-message:not(.shown-message) {
   display: none;
 }
@@ -64,7 +92,10 @@ h1 {
   margin-inline-end: 0.3em;
 }
 
-.home-message a {
+:is(
+  .home-message,
+  #tor-check,
+) a {
   /* Increase gap between the link and the rest of the text. */
   margin-inline: 0.4em;
 }
@@ -136,7 +167,11 @@ h1 {
 
 @media (prefers-contrast) {
   #search-form {
-    border-color: -moz-DialogText;
+    border-color: var(--in-content-box-border-color);
+  }
+
+  #tor-check {
+    background-color: var(--in-content-box-info-background);
   }
 }
 
@@ -148,6 +183,10 @@ h1 {
     --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
     --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
+  }
+
+  #tor-check {
+    background-color: #1f0333;
   }
 
   body > :not(#search-form) {

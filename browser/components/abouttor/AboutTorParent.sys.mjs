@@ -4,6 +4,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutTorMessage: "resource:///modules/AboutTorMessage.sys.mjs",
+  TorConnect: "resource:///modules/TorConnect.sys.mjs",
 });
 
 export class AboutTorParent extends JSWindowActorParent {
@@ -12,6 +13,7 @@ export class AboutTorParent extends JSWindowActorParent {
     switch (message.name) {
       case "AboutTor:GetInitialData":
         return Promise.resolve({
+          torConnectEnabled: lazy.TorConnect.enabled,
           messageData: lazy.AboutTorMessage.getNext(),
           isStable: AppConstants.MOZ_UPDATE_CHANNEL === "release",
           searchOnionize: Services.prefs.getBoolPref(onionizePref, false),
