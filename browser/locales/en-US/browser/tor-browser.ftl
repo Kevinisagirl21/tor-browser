@@ -14,6 +14,11 @@ appmenu-open-tor-manual =
 tor-browser-home-heading-stable = Explore. Privately.
 tor-browser-home-heading-testing = Test. Thoroughly.
 
+# Only shown when underlying Tor process was not started by Tor Browser.
+# "Tails" refers to the operating system, and should be translated as a brand name.
+# <a data-l10n-name="tor-check-link"> should contain the link text and close with </a>.
+tor-browser-home-tor-check-warning = Your connection to Tor is not being managed by Tor Browser. Some operating systems (like Tails) will manage this for you, or you could have set up a custom configuration. <a data-l10n-name="tor-check-link">Test your connection</a>
+
 tor-browser-home-duck-duck-go-input =
     .placeholder = Search with DuckDuckGo
 # Toggle to switch from DuckDuckGo's plain ".com" domain to its ".onion" domain.
