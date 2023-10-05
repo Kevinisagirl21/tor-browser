@@ -332,7 +332,7 @@
 
 input.torPreferences-bridgeCard-addr {
   width: 100%;
-  color: var(--in-content-deemphasized-text);
+  color: var(--text-color-deemphasized);
 }
 
 .torPreferences-bridgeCard-leranMoreBox {
