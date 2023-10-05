@@ -822,15 +822,21 @@ class AboutTorConnect {
   }
 
   async init() {
+    // if the user gets here manually or via the button in the urlbar
+    // then we will redirect to about:tor
+    this.redirect = "about:tor";
+
     // see if a user has a final destination after bootstrapping
     let params = new URLSearchParams(new URL(document.location.href).search);
     if (params.has("redirect")) {
-      const encodedRedirect = params.get("redirect");
-      this.redirect = decodeURIComponent(encodedRedirect);
-    } else {
-      // if the user gets here manually or via the button in the urlbar
-      // then we will redirect to about:tor
-      this.redirect = "about:tor";
+      try {
+        const redirect = new URL(decodeURIComponent(params.get("redirect")));
+        if (/^(?:https?|about):$/.test(redirect.protocol)) {
+          this.redirect = redirect.href;
+        }
+      } catch (e) {
+        console.error(e, `Invalid redirect URL "${params.get("redirect")}"!`);
+      }
     }
 
     let args = await RPMSendQuery("torconnect:get-init-args");
