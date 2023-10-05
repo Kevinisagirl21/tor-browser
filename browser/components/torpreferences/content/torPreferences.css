@@ -298,13 +298,13 @@
   'bridge-qr bridge-share bridge-share'
   'bridge-qr bridge-address bridge-address'
   'bridge-qr bridge-learn-more bridge-copy';
-  padding-top: 12px;
   visibility: hidden;
 }
 
 .expanded .torPreferences-bridgeCard-grid,
 .currently-connected .torPreferences-bridgeCard-grid,
 .single-card .torPreferences-bridgeCard-grid {
+  padding-top: 12px;
   visibility: visible;
 }
 
