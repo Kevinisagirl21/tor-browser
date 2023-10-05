@@ -125,13 +125,6 @@ const gConnectionPane = (function () {
       requestButton: "#torPreferences-addBridge-buttonRequestBridge",
       enterLabel: "#torPreferences-addBridge-labelEnterBridge",
       enterButton: "#torPreferences-addBridge-buttonEnterBridge",
-      removeOverlay: "#bridge-remove-overlay",
-      removeModal: "#bridge-remove-modal",
-      removeDismiss: "#bridge-remove-dismiss",
-      removeQuestion: "#bridge-remove-question",
-      removeWarning: "#bridge-remove-warning",
-      removeConfirm: "#bridge-remove-confirm",
-      removeCancel: "#bridge-remove-cancel",
     },
     advanced: {
       header: "h1#torPreferences-advanced-header",
