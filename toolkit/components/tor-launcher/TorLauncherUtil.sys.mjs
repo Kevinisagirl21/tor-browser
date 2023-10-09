@@ -644,12 +644,19 @@ export const TorLauncherUtil = Object.freeze({
     try {
       const kBrowserToolboxPort = "MOZ_BROWSER_TOOLBOX_PORT";
       const kEnvSkipLaunch = "TOR_SKIP_LAUNCH";
+      const kEnvProvider = "TOR_PROVIDER";
       if (Services.env.exists(kBrowserToolboxPort)) {
         return false;
       }
       if (Services.env.exists(kEnvSkipLaunch)) {
         const value = parseInt(Services.env.get(kEnvSkipLaunch));
         return isNaN(value) || !value;
+      }
+      if (
+        Services.env.exists(kEnvProvider) &&
+        Services.env.get(kEnvProvider) === "none"
+      ) {
+        return false;
       }
     } catch (e) {}
     return Services.prefs.getBoolPref(kPrefStartTor, true);
