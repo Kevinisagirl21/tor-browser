@@ -18,6 +18,11 @@ export const TorProviderTopics = Object.freeze({
   StreamSucceeded: "TorStreamSucceeded",
 });
 
+export const TorProviders = Object.freeze({
+  none: 0,
+  tor: 1,
+});
+
 /**
  * The factory to get a Tor provider.
  * Currently we support only TorProvider, i.e., the one that interacts with
@@ -35,9 +40,9 @@ export class TorProviderBuilder {
    * The observer that checks when the tor process exits, and reinitializes the
    * provider.
    *
-   * @type {nsIObserver?}
+   * @type {Function}
    */
-  static #observer = null;
+  static #exitObserver = null;
 
   /**
    * Tell whether the browser UI is ready.
@@ -54,25 +59,30 @@ export class TorProviderBuilder {
    * initialization anyway (and re-throw any initialization error).
    */
   static async init() {
-    this.#observer = {
-      observe(subject, topic, data) {
-        if (topic !== TorProviderTopics.ProcessExited) {
-          return;
-        }
-        if (!TorProviderBuilder.#uiReady) {
-          console.warn(
-            `Seen ${TorProviderTopics.ProcessExited}, but not doing anything because the UI is not ready yet.`
-          );
-          return;
-        }
-        TorProviderBuilder.#torExited();
-      },
-    };
-    Services.obs.addObserver(this.#observer, TorProviderTopics.ProcessExited);
-    await this.#initProvider();
+    switch (this.providerType) {
+      case TorProviders.tor:
+        await this.#initTorProvider();
+        break;
+      case TorProviders.none:
+        lazy.TorLauncherUtil.setProxyConfiguration(
+          lazy.TorLauncherUtil.getPreferredSocksConfiguration()
+        );
+        break;
+      default:
+        console.error(`Unknown tor provider ${this.providerType}.`);
+        break;
+    }
   }
 
-  static async #initProvider() {
+  static async #initTorProvider() {
+    if (!this.#exitObserver) {
+      this.#exitObserver = this.#torExited.bind(this);
+      Services.obs.addObserver(
+        this.#exitObserver,
+        TorProviderTopics.ProcessExited
+      );
+    }
+
     try {
       const old = await this.#provider;
       old?.uninit();
@@ -92,12 +102,12 @@ export class TorProviderBuilder {
       provider.uninit();
       this.#provider = null;
     });
-    if (this.#observer) {
+    if (this.#exitObserver) {
       Services.obs.removeObserver(
-        this.#observer,
+        this.#exitObserver,
         TorProviderTopics.ProcessExited
       );
-      this.#observer = null;
+      this.#exitObserver = null;
     }
   }
 
@@ -107,7 +117,11 @@ export class TorProviderBuilder {
    * catch also any initialization errors.
    */
   static async build() {
-    if (!this.#provider) {
+    if (!this.#provider && this.providerType === TorProviders.none) {
+      throw new Error(
+        "Tor Browser has been configured to use only the proxy functionalities."
+      );
+    } else if (!this.#provider) {
       throw new Error(
         "The provider has not been initialized or already uninitialized."
       );
@@ -125,7 +139,10 @@ export class TorProviderBuilder {
    */
   static async firstWindowLoaded() {
     // FIXME: Just integrate this with the about:torconnect or about:tor UI.
-    if (!lazy.TorLauncherUtil.shouldStartAndOwnTor) {
+    if (
+      !lazy.TorLauncherUtil.shouldStartAndOwnTor ||
+      this.providerType !== TorProviders.tor
+    ) {
       // If we are not managing the Tor daemon we cannot restart it, so just
       // early return.
       return;
@@ -143,7 +160,7 @@ export class TorProviderBuilder {
     }
     while (!running && lazy.TorLauncherUtil.showRestartPrompt(true)) {
       try {
-        await this.#initProvider();
+        await this.#initTorProvider();
         running = true;
       } catch {}
     }
@@ -153,11 +170,40 @@ export class TorProviderBuilder {
   }
 
   static async #torExited() {
+    if (!this.#uiReady) {
+      console.warn(
+        `Seen ${TorProviderTopics.ProcessExited}, but not doing anything because the UI is not ready yet.`
+      );
+      return;
+    }
     while (lazy.TorLauncherUtil.showRestartPrompt(false)) {
       try {
-        await this.#initProvider();
+        await this.#initTorProvider();
         break;
       } catch {}
     }
+  }
+
+  /**
+   * Return the provider chosen by the user.
+   * This function checks the TOR_PROVIDER environment variable and if it is a
+   * known provider, it returns its associated value.
+   * Otherwise, if it is not valid, the C tor implementation is chosen as the
+   * default one.
+   *
+   * @returns {number} An entry from TorProviders
+   */
+  static get providerType() {
+    // TODO: Add a preference to permanently save this without and avoid always
+    // using an environment variable.
+    let provider = TorProviders.tor;
+    const kEnvName = "TOR_PROVIDER";
+    if (
+      Services.env.exists(kEnvName) &&
+      Services.env.get(kEnvName) in TorProviders
+    ) {
+      provider = TorProviders[Services.env.get(kEnvName)];
+    }
+    return provider;
   }
 }
