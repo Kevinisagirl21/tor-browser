@@ -99,6 +99,7 @@ const gConnectionPane = (function () {
       currentHeader: "#torPreferences-currentBridges-header",
       currentDescription: "#torPreferences-currentBridges-description",
       currentDescriptionText: "#torPreferences-currentBridges-descriptionText",
+      controls: "#torPreferences-currentBridges-controls",
       switch: "#torPreferences-currentBridges-switch",
       cards: "#torPreferences-currentBridges-cards",
       cardTemplate: "#torPreferences-bridgeCard-template",
@@ -391,6 +392,7 @@ const gConnectionPane = (function () {
         selectors.bridges.currentHeader
       );
       bridgeHeader.textContent = TorStrings.settings.bridgeCurrent;
+      const bridgeControls = prefpane.querySelector(selectors.bridges.controls);
       const bridgeSwitch = prefpane.querySelector(selectors.bridges.switch);
       bridgeSwitch.setAttribute("label", TorStrings.settings.allBridgesEnabled);
       bridgeSwitch.addEventListener("toggle", () => {
@@ -629,18 +631,17 @@ const gConnectionPane = (function () {
 
         const newStrings = new Set(TorSettings.bridges.bridge_strings);
         const numBridges = newStrings.size;
-        if (!newStrings.size) {
-          bridgeHeader.hidden = true;
-          bridgeDescription.hidden = true;
-          bridgeCards.hidden = true;
+        const noBridges = !numBridges;
+        bridgeHeader.hidden = noBridges;
+        bridgeDescription.hidden = noBridges;
+        bridgeControls.hidden = noBridges;
+        bridgeCards.hidden = noBridges;
+        if (noBridges) {
           showAll.hidden = true;
           removeAll.hidden = true;
           bridgeCards.textContent = "";
           return;
         }
-        bridgeHeader.hidden = false;
-        bridgeDescription.hidden = false;
-        bridgeCards.hidden = false;
         // Changing the pressed property on moz-toggle should not trigger its
         // "toggle" event.
         bridgeSwitch.pressed = TorSettings.bridges.enabled;
@@ -757,7 +758,7 @@ const gConnectionPane = (function () {
           bridge = provider.currentBridge;
         } catch (e) {
           console.warn("Could not get current bridge", e);
-       }
+        }
         if (bridge?.fingerprint !== this._currentBridgeId) {
           this._currentBridgeId = bridge?.fingerprint ?? null;
           this._updateConnectedBridges();
