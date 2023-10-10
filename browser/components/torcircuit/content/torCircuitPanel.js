@@ -221,7 +221,7 @@ var gTorCircuitPanel = {
    * This should only be called if the toolbar button is visible.
    */
   show() {
-    this.panel.openPopup(this.toolbarButton, "bottomcenter topleft", 0, 0);
+    this.panel.openPopup(this.toolbarButton, "bottomleft topleft", 0, 0);
   },
 
   /**
