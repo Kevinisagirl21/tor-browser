@@ -15,7 +15,7 @@ export const TorProviderTopics = Object.freeze({
   BootstrapError: "TorBootstrapError",
   HasWarnOrErr: "TorLogHasWarnOrErr",
   BridgeChanged: "TorBridgeChanged",
-  StreamSucceeded: "TorStreamSucceeded",
+  CircuitCredentialsMatched: "TorCircuitCredentialsMatched",
 });
 
 export const TorProviders = Object.freeze({
