@@ -146,7 +146,10 @@ class TorDomainIsolatorImpl {
 
     Services.prefs.addObserver(NON_TOR_PROXY_PREF, this);
     Services.obs.addObserver(this, NEW_IDENTITY_TOPIC);
-    Services.obs.addObserver(this, lazy.TorProviderTopics.StreamSucceeded);
+    Services.obs.addObserver(
+      this,
+      lazy.TorProviderTopics.CircuitCredentialsMatched
+    );
 
     this.#cleanupIntervalId = setInterval(
       this.#clearKnownCircuits.bind(this),
@@ -161,7 +164,10 @@ class TorDomainIsolatorImpl {
   uninit() {
     Services.prefs.removeObserver(NON_TOR_PROXY_PREF, this);
     Services.obs.removeObserver(this, NEW_IDENTITY_TOPIC);
-    Services.obs.removeObserver(this, lazy.TorProviderTopics.StreamSucceeded);
+    Services.obs.removeObserver(
+      this,
+      lazy.TorProviderTopics.CircuitCredentialsMatched
+    );
     clearInterval(this.#cleanupIntervalId);
     this.#cleanupIntervalId = null;
     this.clearIsolation();
@@ -266,7 +272,7 @@ class TorDomainIsolatorImpl {
         logger.error("Could not send the newnym command", e);
         // TODO: What UX to use here? See tor-browser#41708
       }
-    } else if (topic === lazy.TorProviderTopics.StreamSucceeded) {
+    } else if (topic === lazy.TorProviderTopics.CircuitCredentialsMatched) {
       const { username, password, circuit } = subject.wrappedJSObject;
       this.#updateCircuit(username, password, circuit);
     }
