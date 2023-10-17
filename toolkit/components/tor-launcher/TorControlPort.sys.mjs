@@ -1043,15 +1043,15 @@ export class TorController {
         }
         break;
       case "STREAM":
-        const succeeedEvent =
-          /^(?<StreamID>[a-zA-Z0-9]{1,16})\sSUCCEEDED\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
+        const sentConnectEvent =
+          /^(?<StreamID>[a-zA-Z0-9]{1,16})\sSENTCONNECT\s(?<CircuitID>[a-zA-Z0-9]{1,16})/.exec(
             data.groups.data
           );
-        if (succeeedEvent) {
+        if (sentConnectEvent) {
           const credentials = this.#parseCredentials(data.groups.data);
-          this.#eventHandler.onStreamSucceeded(
-            succeeedEvent.groups.StreamID,
-            succeeedEvent.groups.CircuitID,
+          this.#eventHandler.onStreamSentConnect(
+            sentConnectEvent.groups.StreamID,
+            sentConnectEvent.groups.CircuitID,
             credentials?.username ?? null,
             credentials?.password ?? null
           );
@@ -1190,8 +1190,9 @@ export class TorController {
  * (i.e., a CIRC event with a BUILT status)
  * @property {OnCircuitClosed} onCircuitClosed Called when a circuit is closed
  * (i.e., a CIRC event with a CLOSED status)
- * @property {OnStreamSucceeded} onStreamSucceeded Called when a stream receives
- * a reply (i.e., a STREAM event with a SUCCEEDED status)
+ * @property {OnStreamSentConnect} onStreamSentConnect Called when a stream sent
+ * a connect cell along a circuit (i.e., a STREAM event with a SENTCONNECT
+ * status)
  */
 /**
  * @callback OnBootstrapStatus
@@ -1217,7 +1218,7 @@ export class TorController {
  * @param {CircuitID} id The id of the circuit that has been closed
  */
 /**
- * @callback OnStreamSucceeded
+ * @callback OnStreamSentConnect
  *
  * @param {StreamID} streamId The id of the stream that switched to the succeeded
  * state
