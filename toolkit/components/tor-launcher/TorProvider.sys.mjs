@@ -991,19 +991,19 @@ export class TorProvider {
   }
 
   /**
-   * Handle a notification about a stream switching to the succeeded state.
+   * Handle a notification about a stream switching to the sentconnect status.
    *
    * @param {StreamID} streamId The ID of the stream that switched to the
-   * succeeded state.
+   * sentconnect status.
    * @param {CircuitID} circuitId The ID of the circuit used by the stream
    * @param {string} username The SOCKS username
    * @param {string} password The SOCKS password
    */
-  async onStreamSucceeded(streamId, circuitId, username, password) {
+  async onStreamSentConnect(streamId, circuitId, username, password) {
     if (!username || !password) {
       return;
     }
-    logger.debug("Stream succeeded event", username, password, circuitId);
+    logger.debug("Stream sentconnect event", username, password, circuitId);
     let circuit = this.#circuits.get(circuitId);
     if (!circuit) {
       circuit = new Promise((resolve, reject) => {
@@ -1017,7 +1017,7 @@ export class TorProvider {
             this.#circuits.set(id, nodes);
           }
           logger.error(
-            `Seen a STREAM SUCCEEDED with circuit ${circuitId}, but Tor did not send information about it.`
+            `Seen a STREAM SENTCONNECT with circuit ${circuitId}, but Tor did not send information about it.`
           );
           reject();
         });
@@ -1037,7 +1037,7 @@ export class TorProvider {
           circuit,
         },
       },
-      TorProviderTopics.StreamSucceeded
+      TorProviderTopics.CircuitCredentialsMatched
     );
   }
 }
