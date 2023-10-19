@@ -1156,67 +1156,54 @@ export const TorConnect = (() => {
       return `about:torconnect?redirect=${encodeURIComponent(url)}`;
     },
 
+    /**
+     * Convert the given object into a list of valid URIs.
+     *
+     * The object is either from the user's homepage preference (which may
+     * contain multiple domains separated by "|") or uris passed to the browser
+     * via command-line.
+     *
+     * @param {string|string[]} uriVariant - The string to extract uris from.
+     *
+     * @return {string[]} - The array of uris found.
+     */
+    fixupURIs(uriVariant) {
+      let uriArray;
+      if (typeof uriVariant === "string") {
+        uriArray = uriVariant.split("|");
+      } else if (
+        Array.isArray(uriVariant) &&
+        uriVariant.every(entry => typeof entry === "string")
+      ) {
+        uriArray = uriVariant;
+      } else {
+        // about:tor as safe fallback
+        console.error(
+          `TorConnect: received unknown variant '${JSON.stringify(uriVariant)}'`
+        );
+        uriArray = ["about:tor"];
+      }
+
+      // Attempt to convert user-supplied string to a uri, fallback to
+      // about:tor if cannot convert to valid uri object
+      return uriArray.map(
+        uriString =>
+          Services.uriFixup.getFixupURIInfo(
+            uriString,
+            Ci.nsIURIFixup.FIXUP_FLAG_NONE
+          ).preferredURI?.spec ?? "about:tor"
+      );
+    },
+
     // called from browser.js on browser startup, passed in either the user's homepage(s)
     // or uris passed via command-line; we want to replace them with about:torconnect uris
     // which redirect after bootstrapping
     getURIsToLoad(uriVariant) {
-      // convert the object we get from browser.js
-      let uriStrings = (v => {
-        // an interop array
-        if (v instanceof Ci.nsIArray) {
-          // Transform the nsIArray of nsISupportsString's into a JS Array of
-          // JS strings.
-          return Array.from(
-            v.enumerate(Ci.nsISupportsString),
-            supportStr => supportStr.data
-          );
-          // an interop string
-        } else if (v instanceof Ci.nsISupportsString) {
-          return [v.data];
-          // a js string
-        } else if (typeof v === "string") {
-          return v.split("|");
-          // a js array of js strings
-        } else if (
-          Array.isArray(v) &&
-          v.reduce((allStrings, entry) => {
-            return allStrings && typeof entry === "string";
-          }, true)
-        ) {
-          return v;
-        }
-        // about:tor as safe fallback
-        console.log(
-          `TorConnect: getURIsToLoad() received unknown variant '${JSON.stringify(
-            v
-          )}'`
-        );
-        return ["about:tor"];
-      })(uriVariant);
-
-      // will attempt to convert user-supplied string to a uri, fallback to about:tor if cannot convert
-      // to valid uri object
-      let uriStringToUri = uriString => {
-        const fixupFlags = Ci.nsIURIFixup.FIXUP_FLAG_NONE;
-        let uri = Services.uriFixup.getFixupURIInfo(
-          uriString,
-          fixupFlags
-        ).preferredURI;
-        return uri ? uri : Services.io.newURI("about:tor");
-      };
-      let uris = uriStrings.map(uriStringToUri);
-
-      // assume we have a valid uri and generate an about:torconnect redirect uri
-      let redirectUrls = uris.map(uri => this.getRedirectURL(uri.spec));
-
+      const uris = this.fixupURIs(uriVariant);
       console.log(
-        `TorConnect: Will load after bootstrap => [${uris
-          .map(uri => {
-            return uri.spec;
-          })
-          .join(", ")}]`
+        `TorConnect: Will load after bootstrap => [${uris.join(", ")}]`
       );
-      return redirectUrls;
+      return uris.map(uri => this.getRedirectURL(uri));
     },
   };
   return retval;
