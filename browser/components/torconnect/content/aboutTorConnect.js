@@ -136,10 +136,6 @@ class AboutTorConnect {
     tryBridgeButton: document.querySelector(this.selectors.buttons.tryBridge),
   });
 
-  // a redirect url can be passed as a query parameter for the page to
-  // forward us to once bootstrap completes (otherwise the window will just close)
-  redirect = null;
-
   uiState = {
     currentState: UIStates.ConnectToTor,
     allowAutomaticLocation: true,
@@ -425,11 +421,6 @@ class AboutTorConnect {
     this.setLongText(TorStrings.settings.torPreferencesDescription);
     this.setProgress("", showProgressbar, 100);
     this.hideButtons();
-
-    // redirects page to the requested redirect url, removes about:torconnect
-    // from the page stack, so users cannot accidentally go 'back' to the
-    // now unresponsive page
-    window.location.replace(this.redirect);
   }
 
   update_Disabled(state) {
@@ -822,23 +813,6 @@ class AboutTorConnect {
   }
 
   async init() {
-    // if the user gets here manually or via the button in the urlbar
-    // then we will redirect to about:tor
-    this.redirect = "about:tor";
-
-    // see if a user has a final destination after bootstrapping
-    let params = new URLSearchParams(new URL(document.location.href).search);
-    if (params.has("redirect")) {
-      try {
-        const redirect = new URL(decodeURIComponent(params.get("redirect")));
-        if (/^(?:https?|about):$/.test(redirect.protocol)) {
-          this.redirect = redirect.href;
-        }
-      } catch (e) {
-        console.error(e, `Invalid redirect URL "${params.get("redirect")}"!`);
-      }
-    }
-
     let args = await RPMSendQuery("torconnect:get-init-args");
 
     // various constants

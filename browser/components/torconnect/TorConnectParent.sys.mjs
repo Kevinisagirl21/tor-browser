@@ -1,5 +1,7 @@
 // Copyright (c) 2021, The Tor Project, Inc.
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 import {
   InternetStatus,
@@ -14,6 +16,12 @@ import {
 } from "resource:///modules/TorSettings.sys.mjs";
 
 const BroadcastTopic = "about-torconnect:broadcast";
+
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  HomePage: "resource:///modules/HomePage.jsm",
+});
 
 /*
 This object is basically a marshalling interface between the TorConnect module
@@ -167,6 +175,11 @@ export class TorConnectParent extends JSWindowActorParent {
 
   async receiveMessage(message) {
     switch (message.name) {
+      case "torconnect:should-show":
+        return Promise.resolve(TorConnect.shouldShowTorConnect);
+      case "torconnect:home-page":
+        // If there are multiple home pages, just load the first one.
+        return Promise.resolve(TorConnect.fixupURIs(lazy.HomePage.get())[0]);
       case "torconnect:set-quickstart":
         TorSettings.quickstart.enabled = message.data;
         TorSettings.saveToPrefs().applySettings();
