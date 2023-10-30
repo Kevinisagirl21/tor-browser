@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   TorController: "resource://gre/modules/TorControlPort.sys.mjs",
   TorProcess: "resource://gre/modules/TorProcess.sys.mjs",
+  TorProcessAndroid: "resource://gre/modules/TorProcessAndroid.sys.mjs",
 });
 
 const logger = new ConsoleAPI({
@@ -182,8 +183,12 @@ export class TorProvider {
     logger.debug("Initializing the Tor provider.");
 
     // These settings might be customized in the following steps.
-    this.#socksSettings = TorLauncherUtil.getPreferredSocksConfiguration();
-    logger.debug("Requested SOCKS configuration", this.#socksSettings);
+    if (TorLauncherUtil.isAndroid) {
+      this.#socksSettings = { transproxy: false };
+    } else {
+      this.#socksSettings = TorLauncherUtil.getPreferredSocksConfiguration();
+      logger.debug("Requested SOCKS configuration", this.#socksSettings);
+    }
 
     try {
       await this.#setControlPortConfiguration();
@@ -490,10 +495,14 @@ export class TorProvider {
       return;
     }
 
-    this.#torProcess = new lazy.TorProcess(
-      this.#controlPortSettings,
-      this.#socksSettings
-    );
+    if (TorLauncherUtil.isAndroid) {
+      this.#torProcess = new lazy.TorProcessAndroid();
+    } else {
+      this.#torProcess = new lazy.TorProcess(
+        this.#controlPortSettings,
+        this.#socksSettings
+      );
+    }
     // Use a closure instead of bind because we reassign #cancelConnection.
     // Also, we now assign an exit handler that cancels the first connection,
     // so that a sudden exit before the first connection is completed might
@@ -507,7 +516,17 @@ export class TorProvider {
     };
 
     logger.debug("Trying to start the tor process.");
-    await this.#torProcess.start();
+    const res = await this.#torProcess.start();
+    if (TorLauncherUtil.isAndroid) {
+      this.#controlPortSettings = {
+        ipcFile: new lazy.FileUtils.File(res.controlPortPath),
+        cookieFilePath: res.cookieFilePath,
+      };
+      this.#socksSettings = {
+        transproxy: false,
+        ipcFile: new lazy.FileUtils.File(res.socksPath),
+      };
+    }
     logger.info("Started a tor process");
   }
 
@@ -520,6 +539,11 @@ export class TorProvider {
   async #setControlPortConfiguration() {
     logger.debug("Reading the control port configuration");
     const settings = {};
+
+    if (TorLauncherUtil.isAndroid) {
+      // We will populate the settings after having started the daemon.
+      return;
+    }
 
     const isWindows = Services.appinfo.OS === "WINNT";
     // Determine how Tor Launcher will connect to the Tor control port.
