@@ -5,6 +5,7 @@ EXTRA_JS_MODULES += [
     "TorLauncherUtil.sys.mjs",
     "TorParsers.sys.mjs",
     "TorProcess.sys.mjs",
+    "TorProcessAndroid.sys.mjs",
     "TorProvider.sys.mjs",
     "TorProviderBuilder.sys.mjs",
     "TorStartupService.sys.mjs",

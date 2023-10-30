@@ -5,6 +5,10 @@
 
 var EXPORTED_SYMBOLS = ["GeckoViewStartup"];
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const { GeckoViewUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/GeckoViewUtils.sys.mjs"
 );
@@ -17,7 +21,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
@@ -260,6 +267,18 @@ class GeckoViewStartup {
         ]);
 
         lazy.TorDomainIsolator.init();
+
+        if (
+          AppConstants.MOZ_UPDATE_CHANNEL !== "release" &&
+          AppConstants.MOZ_UPDATE_CHANNEL !== "alpha"
+        ) {
+          lazy.TorProviderBuilder.init().finally(() => {
+            lazy.TorProviderBuilder.firstWindowLoaded();
+          });
+          lazy.TorSettings.init().then(() => {
+            lazy.TorConnect.init();
+          });
+        }
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
