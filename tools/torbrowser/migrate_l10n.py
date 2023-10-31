@@ -103,10 +103,10 @@ class WeblateMetadata:
         # Expect the final structure to be:
         # {
         #   template: {
-        #     "component-name": str,       # Used for API translations query.
+        #     "translations-url": str,     # Used for API translations query.
         #     "translations": {
         #        filename: {
-        #          "language-code": str,   # Used for API units query.
+        #          "units-url": str,       # Used for API units query.
         #          "units": {
         #            context: {
         #              "translated": bool,
@@ -130,9 +130,8 @@ class WeblateMetadata:
         with urllib.request.urlopen(weblate_request, timeout=20) as response:
             return json.load(response)
 
-    def _get_from_weblate(self, request):
+    def _get_from_weblate(self, url):
         ret = []
-        url = "https://hosted.weblate.org/api/" + request
         while url:
             response = self._get_weblate_response(url)
             # Continue to fetch the next page, if it is present.
@@ -146,10 +145,12 @@ class WeblateMetadata:
         if self._components is None:
             self._components = {
                 comp["template"]: {
-                    "name": comp["slug"],
                     "translations": None,
+                    "translations-url": comp["translations_url"],
                 }
-                for comp in self._get_from_weblate("projects/tor/components/")
+                for comp in self._get_from_weblate(
+                    "https://hosted.weblate.org/api/projects/tor/components/"
+                )
                 if comp["template"]
             }
         return self._components
@@ -160,16 +161,12 @@ class WeblateMetadata:
             self.logger.warning(f"No component in weblate for {template}.")
             return None
         if component["translations"] is None:
-            comp_name = component["name"]
             component["translations"] = {
                 trans["filename"]: {
-                    "component-name": comp_name,
-                    "language-code": trans["language"]["code"],
                     "units": None,
+                    "units-url": trans["units_list_url"],
                 }
-                for trans in self._get_from_weblate(
-                    f"components/tor/{comp_name}/translations/"
-                )
+                for trans in self._get_from_weblate(component["translations-url"])
             }
         return component["translations"]
 
@@ -182,15 +179,11 @@ class WeblateMetadata:
             self.logger.warning(f"No translation in weblate for {file}.")
             return None
         if translation["units"] is None:
-            comp_name = translation["component-name"]
-            lang_code = translation["language-code"]
             translation["units"] = {
                 unit["context"]: {
                     "translated": unit["translated"],
                 }
-                for unit in self._get_from_weblate(
-                    f"translations/tor/{comp_name}/{lang_code}/units/"
-                )
+                for unit in self._get_from_weblate(translation["units-url"])
             }
         return translation["units"]
 
