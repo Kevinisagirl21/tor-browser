@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
+  TorAndroidIntegration: "resource://gre/modules/TorAndroidIntegration.sys.mjs",
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
 });
 
@@ -259,6 +260,7 @@ class GeckoViewStartup {
           "GeckoView:SetLocale",
         ]);
 
+        lazy.TorAndroidIntegration.init();
         lazy.TorDomainIsolator.init();
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
