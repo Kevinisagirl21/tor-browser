@@ -10,6 +10,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShoppingProduct: "chrome://global/content/shopping/ShoppingProduct.mjs",
 });
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
+});
+
 export class GeckoViewContent extends GeckoViewModule {
   onInit() {
     this.registerListener([
@@ -38,6 +44,7 @@ export class GeckoViewContent extends GeckoViewModule {
       "GeckoView:UpdateInitData",
       "GeckoView:ZoomToInput",
       "GeckoView:IsPdfJs",
+      "GeckoView:GetTorCircuit",
     ]);
   }
 
@@ -307,6 +314,21 @@ export class GeckoViewContent extends GeckoViewModule {
         break;
       case "GeckoView:HasCookieBannerRuleForBrowsingContextTree":
         this._hasCookieBannerRuleForBrowsingContextTree(aCallback);
+        break;
+      case "GeckoView:GetTorCircuit":
+        if (this.browser && aCallback) {
+          const domain = lazy.TorDomainIsolator.getDomainForBrowser(
+            this.browser
+          );
+          const nodes = lazy.TorDomainIsolator.getCircuit(
+            this.browser,
+            domain,
+            this.browser.contentPrincipal.originAttributes.userContextId
+          );
+          aCallback?.onSuccess({ domain, nodes });
+        } else {
+          aCallback?.onSuccess(null);
+        }
         break;
     }
   }
