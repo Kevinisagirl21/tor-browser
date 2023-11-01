@@ -33,5 +33,4 @@
     locale/browser/safebrowsing/safebrowsing.properties   (%chrome/browser/safebrowsing/safebrowsing.properties)
     locale/browser/feeds/subscribe.properties       (%chrome/browser/feeds/subscribe.properties)
     locale/browser/syncSetup.properties         (%chrome/browser/syncSetup.properties)
-    locale/browser/cryptoSafetyPrompt.properties    (%chrome/browser/cryptoSafetyPrompt.properties)
 % locale browser-region @AB_CD@ %locale/browser-region/

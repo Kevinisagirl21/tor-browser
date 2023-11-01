@@ -20,17 +20,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/TorDomainIsolator.jsm"
 );
 
-XPCOMUtils.defineLazyGetter(lazy, "cryptoSafetyBundle", () => {
-  return Services.strings.createBundle(
-    "chrome://browser/locale/cryptoSafetyPrompt.properties"
-  );
-});
-
-// en-US fallback in case a locale is missing a string.
-XPCOMUtils.defineLazyGetter(lazy, "fallbackCryptoSafetyBundle", () => {
-  return Services.strings.createBundle(
-    "resource:///chrome/en-US/locale/browser/cryptoSafetyPrompt.properties"
-  );
+ChromeUtils.defineLazyGetter(lazy, "CryptoStrings", function () {
+  return new Localization(["browser/tor-browser.ftl"]);
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -40,26 +31,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true // Defaults to true.
 );
 
-/**
- * Get a formatted string from the locale's bundle, or the en-US bundle if the
- * string is missing.
- *
- * @param {string} name - The string's name.
- * @param {string[]} [args] - Positional arguments to pass to the format string,
- *   or leave empty if none are needed.
- *
- * @returns {string} - The formatted string.
- */
-function getString(name, args = []) {
-  try {
-    return lazy.cryptoSafetyBundle.formatStringFromName(name, args);
-  } catch {
-    return lazy.fallbackCryptoSafetyBundle.formatStringFromName(name, args);
-  }
-}
-
 class CryptoSafetyParent extends JSWindowActorParent {
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     if (
       !lazy.isCryptoSafetyEnabled ||
       aMessage.name !== "CryptoSafety:CopiedText"
@@ -72,14 +45,25 @@ class CryptoSafetyParent extends JSWindowActorParent {
       address = `${address.substring(0, 32)}…`;
     }
 
+    const [titleText, bodyText, reloadText, dismissText] =
+      await lazy.CryptoStrings.formatValues([
+        { id: "crypto-safety-prompt-title" },
+        {
+          id: "crypto-safety-prompt-body",
+          args: { address, host: aMessage.data.host },
+        },
+        { id: "crypto-safety-prompt-reload-button" },
+        { id: "crypto-safety-prompt-dismiss-button" },
+      ]);
+
     const buttonPressed = Services.prompt.confirmEx(
       this.browsingContext.topChromeWindow,
-      getString("cryptoSafetyPrompt.cryptoTitle"),
-      getString("cryptoSafetyPrompt.cryptoBody", [address, aMessage.data.host]),
+      titleText,
+      bodyText,
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
         Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_1,
-      getString("cryptoSafetyPrompt.primaryAction"),
-      getString("cryptoSafetyPrompt.secondaryAction"),
+      reloadText,
+      dismissText,
       null,
       null,
       {}
