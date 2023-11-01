@@ -167,38 +167,29 @@ var DownloadsPanel = {
     );
 
     if (!this._torWarningInitialized) {
-      torWarningMessage.querySelector(
-        ".downloads-tor-warning-title"
-      ).textContent = this._getTorString("torbutton.download.warning.title");
-
-      const tailsLink = document.createElement("a");
-      tailsLink.href = "https://tails.net";
-      tailsLink.textContent = this._getTorString(
-        "torbutton.download.warning.tails_brand_name"
-      );
-      tailsLink.addEventListener("click", event => {
-        event.preventDefault();
-        this.hidePanel();
-        openWebLinkIn(tailsLink.href, "tab");
-      });
-
-      const [beforeLink, afterLink] = this._getTorString(
-        "torbutton.download.warning.description"
-      ).split("%S");
-
+      // Intercept clicks on the tails link.
+      // NOTE: We listen for clicks on the parent instead of the
+      // <a data-l10n-name="tails-link"> element because the latter may be
+      // swapped for a new instance by Fluent when refreshing the parent.
       torWarningMessage
         .querySelector(".downloads-tor-warning-description")
-        .append(beforeLink, tailsLink, afterLink);
+        .addEventListener("click", event => {
+          const tailsLink = event.target.closest(
+            ".downloads-tor-warning-tails-link"
+          );
+          if (!tailsLink) {
+            return;
+          }
+          event.preventDefault();
+          this.hidePanel();
+          openWebLinkIn(tailsLink.href, "tab");
+        });
 
-      let dismissButton = torWarningMessage.querySelector(
-        ".downloads-tor-warning-dismiss-button"
-      );
-      dismissButton.textContent = this._getTorString(
-        "torbutton.download.warning.dismiss"
-      );
-      dismissButton.addEventListener("click", event => {
-        Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
-      });
+      torWarningMessage
+        .querySelector(".downloads-tor-warning-dismiss-button")
+        .addEventListener("click", event => {
+          Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
+        });
       this._torWarningInitialized = true;
     }
 
@@ -724,30 +715,6 @@ var DownloadsPanel = {
         this._delayPopupItems();
       }
     }, 0);
-  },
-
-  /**
-   * Get a string from the properties bundle.
-   *
-   * @param {string} name - The string name.
-   *
-   * @return {string} The string.
-   */
-  _getTorString(name) {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(
-        "chrome://torbutton/locale/torbutton.properties"
-      );
-    }
-    try {
-      return this._stringBundle.GetStringFromName(name);
-    } catch {}
-    if (!this._fallbackStringBundle) {
-      this._fallbackStringBundle = Services.strings.createBundle(
-        "resource://torbutton/locale/en-US/torbutton.properties"
-      );
-    }
-    return this._fallbackStringBundle.GetStringFromName(name);
   },
 };
 

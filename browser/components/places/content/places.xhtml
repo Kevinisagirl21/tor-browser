@@ -40,6 +40,7 @@
     <html:link rel="localization" href="browser/places.ftl"/>
     <html:link rel="localization" href="browser/downloads.ftl"/>
     <html:link rel="localization" href="browser/editBookmarkOverlay.ftl"/>
+    <html:link rel="localization" href="browser/tor-browser.ftl"/>
   </linkset>
 
   <script src="chrome://browser/content/places/places.js"/>
@@ -338,19 +339,33 @@
     </tree>
     <splitter collapse="none" persist="state"></splitter>
     <vbox id="contentView">
-      <html:message-bar id="placesDownloadsTorWarning"
-                        role="alert"
-                        aria-labelledby="placesDownloadsTorWarningTitle"
-                        aria-describedby="placesDownloadsTorWarningDescription">
+      <html:message-bar
+        id="placesDownloadsTorWarning"
+        role="alert"
+        aria-labelledby="placesDownloadsTorWarningTitle"
+        aria-describedby="placesDownloadsTorWarningDescription"
+      >
         <html:div class="downloads-tor-warning-grid">
-          <html:p id="placesDownloadsTorWarningTitle"
-                  class="downloads-tor-warning-title">
+          <html:p
+            id="placesDownloadsTorWarningTitle"
+            class="downloads-tor-warning-title"
+            data-l10n-id="downloads-tor-warning-title"
+          ></html:p>
+          <html:p
+            id="placesDownloadsTorWarningDescription"
+            class="downloads-tor-warning-description"
+            data-l10n-id="downloads-tor-warning-description"
+          >
+            <html:a
+              href="https://tails.net/"
+              class="downloads-tor-warning-tails-link"
+              data-l10n-name="tails-link"
+            ></html:a>
           </html:p>
-          <html:p id="placesDownloadsTorWarningDescription"
-                  class="downloads-tor-warning-description">
-          </html:p>
-          <html:button class="downloads-tor-warning-dismiss-button">
-          </html:button>
+          <html:button
+            class="downloads-tor-warning-dismiss-button"
+            data-l10n-id="downloads-tor-warning-dismiss-button"
+          ></html:button>
         </html:div>
       </html:message-bar>
       <vbox id="placesViewsBox" flex="1">
