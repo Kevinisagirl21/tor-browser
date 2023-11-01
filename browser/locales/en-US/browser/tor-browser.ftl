@@ -382,3 +382,12 @@ tor-circuit-panel-new-button = New Tor circuit for this site
 tor-circuit-panel-new-button-description-guard = Your guard node may not change
 # Shown when the first node in the circuit is a bridge node.
 tor-circuit-panel-new-button-description-bridge = Your bridge may not change
+
+## This dialog is shown when copying a suspected cryptocurrency address from a plain HTTP website.
+
+crypto-safety-prompt-title = Cryptocurrency address copied from an insecure website
+# $address (String) - The cryptocurrency address, possibly truncated.
+# $host (String) - The website host the address was copied from.
+crypto-safety-prompt-body = The copied text ({ $address }) appears to be a cryptocurrency address. Since the connection to { $host } is not secure, the address may have been modified and should not be trusted. You can try establishing a secure connection by reconnecting with a new circuit.
+crypto-safety-prompt-reload-button = Reload Tab with a New Circuit
+crypto-safety-prompt-dismiss-button = Dismiss Warning
