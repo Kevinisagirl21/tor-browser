@@ -548,3 +548,12 @@ crypto-safety-prompt-title = Cryptocurrency address copied from an insecure webs
 crypto-safety-prompt-body = The copied text ({ $address }) appears to be a cryptocurrency address. Since the connection to { $host } is not secure, the address may have been modified and should not be trusted. You can try establishing a secure connection by reconnecting with a new circuit.
 crypto-safety-prompt-reload-button = Reload Tab with a New Circuit
 crypto-safety-prompt-dismiss-button = Dismiss Warning
+
+## Downloads warning.
+## Shown in downloads panel, about:downloads and Library window.
+
+downloads-tor-warning-title = Be careful opening downloads
+# "Tails" is the brand name for the Tails operating system and should be localized appropriately, and will be a link to its website. The name should be wrapped in '<a data-l10n-name="tails-link">' and '</a>'.
+downloads-tor-warning-description = Some files may connect to the internet when opened without using Tor. To be safe, open the files while offline or use a portable operating system like <a data-l10n-name="tails-link">Tails</a>.
+# Button to dismiss the warning forever.
+downloads-tor-warning-dismiss-button = Got it
