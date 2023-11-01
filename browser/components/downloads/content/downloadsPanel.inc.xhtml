@@ -125,19 +125,32 @@
 
     <panelview id="downloadsPanel-mainView">
       <vbox id="downloadsPanelTorWarning">
-        <vbox role="alert"
-              aria-labelledby="downloadsPanelTorWarningTitle"
-              aria-describedby="downloadsPanelTorWarningDescription">
-          <html:p id="downloadsPanelTorWarningTitle"
-                  class="downloads-tor-warning-title">
+        <vbox
+          role="alert"
+          aria-labelledby="downloadsPanelTorWarningTitle"
+          aria-describedby="downloadsPanelTorWarningDescription"
+        >
+          <html:p
+            id="downloadsPanelTorWarningTitle"
+            class="downloads-tor-warning-title"
+            data-l10n-id="downloads-tor-warning-title"
+          ></html:p>
+          <html:p
+            id="downloadsPanelTorWarningDescription"
+            class="downloads-tor-warning-description"
+            data-l10n-id="downloads-tor-warning-description"
+          >
+            <html:a
+              href="https://tails.net/"
+              data-l10n-name="tails-link"
+              class="downloads-tor-warning-tails-link"
+            ></html:a>
           </html:p>
-          <html:p id="downloadsPanelTorWarningDescription"
-                  class="downloads-tor-warning-description">
-          </html:p>
-
           <html:div class="panel-footer">
-            <html:button class="downloads-tor-warning-dismiss-button">
-            </html:button>
+            <html:button
+              class="downloads-tor-warning-dismiss-button"
+              data-l10n-id="downloads-tor-warning-dismiss-button"
+            ></html:button>
           </html:div>
         </vbox>
         <toolbarseparator />

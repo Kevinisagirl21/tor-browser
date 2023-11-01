@@ -21,6 +21,7 @@
   <linkset>
     <html:link rel="localization" href="toolkit/global/textActions.ftl"/>
     <html:link rel="localization" href="browser/downloads.ftl" />
+    <html:link rel="localization" href="browser/tor-browser.ftl" />
   </linkset>
 
   <script src="chrome://global/content/globalOverlay.js"/>
@@ -36,20 +37,34 @@
   </keyset>
 #endif
 
-  <html:message-bar id="aboutDownloadsTorWarning"
-                    class="downloads-tor-warning-message-bar"
-                    role="alert"
-                    aria-labelledby="aboutDownloadsTorWarningTitle"
-                    aria-describedby="aboutDownloadsTorWarningDescription">
+  <html:message-bar
+    id="aboutDownloadsTorWarning"
+    class="downloads-tor-warning-message-bar"
+    role="alert"
+    aria-labelledby="aboutDownloadsTorWarningTitle"
+    aria-describedby="aboutDownloadsTorWarningDescription"
+  >
     <html:div class="downloads-tor-warning-grid">
-      <html:p id="aboutDownloadsTorWarningTitle"
-              class="downloads-tor-warning-title">
+      <html:p
+        id="aboutDownloadsTorWarningTitle"
+        class="downloads-tor-warning-title"
+        data-l10n-id="downloads-tor-warning-title"
+      ></html:p>
+      <html:p
+        id="aboutDownloadsTorWarningDescription"
+        class="downloads-tor-warning-description"
+        data-l10n-id="downloads-tor-warning-description"
+      >
+        <html:a
+          href="https://tails.net/"
+          target="_blank"
+          data-l10n-name="tails-link"
+        ></html:a>
       </html:p>
-      <html:p id="aboutDownloadsTorWarningDescription"
-              class="downloads-tor-warning-description">
-      </html:p>
-      <html:button class="downloads-tor-warning-dismiss-button">
-      </html:button>
+      <html:button
+        class="downloads-tor-warning-dismiss-button"
+        data-l10n-id="downloads-tor-warning-dismiss-button"
+      ></html:button>
     </html:div>
   </html:message-bar>
 

@@ -176,32 +176,22 @@ var PlacesOrganizer = {
       }
     );
 
-    // Initialize tor warning text content.
-    torWarningMessage.querySelector(
-      ".downloads-tor-warning-title"
-    ).textContent = this._getTorString("torbutton.download.warning.title");
-
-    const tailsLink = document.createElement("a");
-    tailsLink.href = "https://tails.net/";
-    tailsLink.textContent = this._getTorString(
-      "torbutton.download.warning.tails_brand_name"
-    );
-    tailsLink.addEventListener("click", event => {
-      event.preventDefault();
-      openWebLinkIn(tailsLink.href, "tab");
-    });
-
-    const [beforeLink, afterLink] = this._getTorString(
-      "torbutton.download.warning.description"
-    ).split("%S");
-
-    torWarningMessage
+    // Intercept clicks on the tor warning tails link.
+    // NOTE: We listen for clicks on the parent instead of the
+    // <a data-l10n-name="tails-link"> element because the latter may be
+    // swapped for a new instance by Fluent when refreshing the parent.
+    document
       .querySelector(".downloads-tor-warning-description")
-      .append(beforeLink, tailsLink, afterLink);
-
-    torWarningMessage.querySelector(
-      ".downloads-tor-warning-dismiss-button"
-    ).textContent = this._getTorString("torbutton.download.warning.dismiss");
+      .addEventListener("click", event => {
+        const tailsLink = event.target.closest(
+          ".downloads-tor-warning-tails-link"
+        );
+        if (!tailsLink) {
+          return;
+        }
+        event.preventDefault();
+        openWebLinkIn(tailsLink.href, "tab");
+      });
 
     ContentArea.init();
 
@@ -272,30 +262,6 @@ var PlacesOrganizer = {
     }
 
     ContentArea.focus();
-  },
-
-  /**
-   * Get a string from the properties bundle.
-   *
-   * @param {string} name - The string name.
-   *
-   * @returns {string} The string.
-   */
-  _getTorString(name) {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(
-        "chrome://torbutton/locale/torbutton.properties"
-      );
-    }
-    try {
-      return this._stringBundle.GetStringFromName(name);
-    } catch {}
-    if (!this._fallbackStringBundle) {
-      this._fallbackStringBundle = Services.strings.createBundle(
-        "resource://torbutton/locale/en-US/torbutton.properties"
-      );
-    }
-    return this._fallbackStringBundle.GetStringFromName(name);
   },
 
   QueryInterface: ChromeUtils.generateQI([]),

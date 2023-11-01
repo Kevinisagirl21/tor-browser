@@ -62,53 +62,6 @@ var ContentAreaDownloadsView = {
     if (!PrivateBrowsingUtils.isContentWindowPrivate(window)) {
       view.place = "place:transition=7&sort=4";
     }
-
-    torWarningMessage.querySelector(
-      ".downloads-tor-warning-title"
-    ).textContent = this._getTorString("torbutton.download.warning.title");
-
-    const tailsLink = document.createElement("a");
-    tailsLink.href = "https://tails.net/";
-    tailsLink.target = "_blank";
-    tailsLink.textContent = this._getTorString(
-      "torbutton.download.warning.tails_brand_name"
-    );
-
-    const [beforeLink, afterLink] = this._getTorString(
-      "torbutton.download.warning.description"
-    ).split("%S");
-
-    torWarningMessage
-      .querySelector(".downloads-tor-warning-description")
-      .append(beforeLink, tailsLink, afterLink);
-
-    torWarningMessage.querySelector(
-      ".downloads-tor-warning-dismiss-button"
-    ).textContent = this._getTorString("torbutton.download.warning.dismiss");
-  },
-
-  /**
-   * Get a string from the properties bundle.
-   *
-   * @param {string} name - The string name.
-   *
-   * @return {string} The string.
-   */
-  _getTorString(name) {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(
-        "chrome://torbutton/locale/torbutton.properties"
-      );
-    }
-    try {
-      return this._stringBundle.GetStringFromName(name);
-    } catch {}
-    if (!this._fallbackStringBundle) {
-      this._fallbackStringBundle = Services.strings.createBundle(
-        "resource://torbutton/locale/en-US/torbutton.properties"
-      );
-    }
-    return this._fallbackStringBundle.GetStringFromName(name);
   },
 };
 
