@@ -7,9 +7,6 @@
 <!ENTITY aboutTBUpdate.version "Version">
 <!ENTITY aboutTBUpdate.releaseDate "Release Date">
 <!ENTITY aboutTBUpdate.releaseNotes "Release Notes">
-
-<!-- TODO: Remove the entries below when 13.0 becomes stable -->
-<!ENTITY aboutTBUpdate.updated "Tor Browser has been updated.">
 <!-- LOCALIZATION NOTE: the following entities are used to create the link to
   -  obtain more information about the latest update.
   -  The markup on the page looks like this:
