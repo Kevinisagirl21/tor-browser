@@ -596,9 +596,6 @@ export var NetworkHelper = {
 
     // The request did not contain any security info.
     if (!securityInfo) {
-      if (httpActivity.hostname && httpActivity.hostname.endsWith(".onion")) {
-        info.state = "secure";
-      }
       return info;
     }
 
@@ -650,11 +647,7 @@ export var NetworkHelper = {
         // schemes other than https and wss are subject to
         // downgrade/etc at the scheme level and should always be
         // considered insecure
-        if (httpActivity.hostname && httpActivity.hostname.endsWith(".onion")) {
-          info.state = "secure";
-        } else {
-          info.state = "insecure";
-        }
+        info.state = "insecure";
       } else if (state & wpl.STATE_IS_SECURE) {
         // The connection is secure if the scheme is sufficient
         info.state = "secure";
