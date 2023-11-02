@@ -429,54 +429,6 @@ const Loader = {
       learnMoreURLNotification: `https://tb-manual.torproject.org/${getLocale()}/onion-services/`,
     };
   } /* OnionLocation */,
-
-  /*
-    Rulesets
-  */
-  rulesets() {
-    const strings = {
-      // Initial warning
-      warningTitle: "Proceed with Caution",
-      warningDescription:
-        "Adding or modifying rulesets can cause attackers to hijack your browser. Proceed only if you know what you are doing.",
-      warningEnable: "Warn me when I attempt to access these preferences",
-      warningButton: "Accept the Risk and Continue",
-      // Ruleset list
-      rulesets: "Rulesets",
-      noRulesets: "No rulesets found",
-      noRulesetsDescr:
-        "When you save a ruleset in Tor Browser, it will show up here.",
-      lastUpdated: "Last updated %S",
-      neverUpdated: "Never updated, or last update failed",
-      enabled: "Enabled",
-      disabled: "Disabled",
-      // Ruleset details
-      edit: "Edit",
-      name: "Name",
-      jwk: "JWK",
-      pathPrefix: "Path Prefix",
-      scope: "Scope",
-      enable: "Enable this ruleset",
-      checkUpdates: "Check for Updates",
-      // Add ruleset
-      jwkPlaceholder:
-        "The key used to sign this ruleset in the JWK (JSON Web Key) format",
-      jwkInvalid: "The JWK could not be parsed, or it is not a valid key",
-      pathPrefixPlaceholder:
-        "URL prefix that contains the files needed by the ruleset",
-      pathPrefixInvalid: "The path prefix is not a valid HTTP(S) URL",
-      scopePlaceholder: "Regular expression for the scope of the rules",
-      scopeInvalid: "The scope could not be parsed as a regular expression",
-      save: "Save",
-      cancel: "Cancel",
-    };
-
-    const tsb = new TorPropertyStringBundle(
-      ["chrome://torbutton/locale/rulesets.properties"],
-      "rulesets."
-    );
-    return tsb.getStrings(strings);
-  } /* Rulesets */,
 };
 
 export const TorStrings = {
@@ -506,12 +458,5 @@ export const TorStrings = {
       this._onionLocation = Loader.onionLocation();
     }
     return this._onionLocation;
-  },
-
-  get rulesets() {
-    if (!this._rulesets) {
-      this._rulesets = Loader.rulesets();
-    }
-    return this._rulesets;
   },
 };
