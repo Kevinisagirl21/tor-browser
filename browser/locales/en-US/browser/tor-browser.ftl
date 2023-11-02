@@ -557,3 +557,53 @@ downloads-tor-warning-title = Be careful opening downloads
 downloads-tor-warning-description = Some files may connect to the internet when opened without using Tor. To be safe, open the files while offline or use a portable operating system like <a data-l10n-name="tails-link">Tails</a>.
 # Button to dismiss the warning forever.
 downloads-tor-warning-dismiss-button = Got it
+
+## Initial warning page in about:rulesets. In Tor Browser, each ruleset is a set of rules for converting a ".tor.onion" address to a normal ".onion" address (used by SecureDrop). The feature is taken from the discontinued "HTTPS Everywhere".
+
+rulesets-warning-heading = Proceed with Caution
+rulesets-warning-description = Adding or modifying rulesets can cause attackers to hijack your browser. Proceed only if you know what you are doing.
+rulesets-warning-checkbox = Warn me when I attempt to access these preferences
+rulesets-warning-continue-button = Accept the Risk and Continue
+
+## Side panel in about:rulesets. In Tor Browser, each ruleset is a set of rules for converting a ".tor.onion" address to a normal ".onion" address (used by SecureDrop). The feature is taken from the discontinued "HTTPS Everywhere".
+
+rulesets-side-panel-heading = Rulesets
+rulesets-side-panel-no-rules = No rulesets found
+# -brand-short-name refers to 'Tor Browser', localized.
+rulesets-side-panel-no-rules-description = When you save a ruleset in { -brand-short-name }, it will show up here.
+
+## Ruleset update date in about:rulesets.
+
+# $date (Date) - The update date. The DATETIME function will format the $date according to the locale, using a "long" style. E.g. "January 1, 2000" for English (US), "١ يناير ٢٠٠٠" for Arabic, "2000년 1월 1일" in Korean, and "1 января 2000 г." in Russian.
+rulesets-update-last = Last updated { DATETIME($date, dateStyle: "long") }
+rulesets-update-never = Never updated, or last update failed
+# Shown when the ruleset is disabled.
+rulesets-update-rule-disabled = Disabled
+
+## Ruleset details in about:rulesets. In Tor Browser, each ruleset is a set of rules for converting a ".tor.onion" address to a normal ".onion" address (used by SecureDrop). The feature is taken from the discontinued "HTTPS Everywhere".
+
+rulesets-details-edit-button = Edit
+rulesets-details-enable-checkbox = Enable this ruleset
+rulesets-details-update-button = Check for Updates
+rulesets-details-save-button = Save
+rulesets-details-cancel-button = Cancel
+# "JWK" refers to "JSON Web Key" and likely should not be translated.
+rulesets-details-jwk = JWK
+# "JWK" refers to "JSON Web Key" and likely should not be translated.
+rulesets-details-jwk-input =
+    .placeholder = The key used to sign this ruleset in the JWK (JSON Web Key) format
+# "JWK" refers to "JSON Web Key" and likely should not be translated.
+rulesets-details-jwk-input-invalid = The JWK could not be parsed, or it is not a valid key
+# "Path" refers to the URL domain this rule applies to.
+rulesets-details-path = Path Prefix
+rulesets-details-path-input =
+    .placeholder = URL prefix that contains the files needed by the ruleset
+# "HTTP(S)" refers to "HTTP or HTTPS".
+rulesets-details-path-input-invalid = The path prefix is not a valid HTTP(S) URL
+# "Scope" refers to the breadth of URLs this rule applies to (as a regular expression).
+rulesets-details-scope = Scope
+# "Regular expression" refers to the computing term for a special pattern used for matching: https://en.wikipedia.org/wiki/Regular_expression.
+rulesets-details-scope-input =
+    .placeholder = Regular expression for the scope of the rules
+# "Regular expression" refers to the computing term for a special pattern used for matching: https://en.wikipedia.org/wiki/Regular_expression.
+rulesets-details-scope-input-invalid = The scope could not be parsed as a regular expression
