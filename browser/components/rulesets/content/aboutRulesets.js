@@ -2,8 +2,6 @@
 
 /* globals RPMAddMessageListener, RPMSendQuery, RPMSendAsyncMessage */
 
-let TorStrings;
-
 const Orders = Object.freeze({
   Name: "name",
   NameDesc: "name-desc",
@@ -19,55 +17,35 @@ const States = Object.freeze({
 
 function setUpdateDate(ruleset, element) {
   if (!ruleset.enabled) {
-    element.textContent = TorStrings.rulesets.disabled;
+    document.l10n.setAttributes(element, "rulesets-update-rule-disabled");
     return;
   }
   if (!ruleset.currentTimestamp) {
-    element.textContent = TorStrings.rulesets.neverUpdated;
+    document.l10n.setAttributes(element, "rulesets-update-never");
     return;
   }
 
-  const formatter = new Intl.DateTimeFormat(navigator.languages, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  document.l10n.setAttributes(element, "rulesets-update-last", {
+    date: ruleset.currentTimestamp * 1000,
   });
-  element.textContent = TorStrings.rulesets.lastUpdated.replace(
-    "%S",
-    formatter.format(new Date(ruleset.currentTimestamp * 1000))
-  );
 }
 
 class WarningState {
-  selectors = Object.freeze({
-    wrapper: "#warning-wrapper",
-    title: "#warning-title",
-    description: "#warning-description",
-    enableCheckbox: "#warning-enable-checkbox",
-    enableLabel: "#warning-enable-label",
-    button: "#warning-button",
-  });
-
-  elements = Object.freeze({
-    wrapper: document.querySelector(this.selectors.wrapper),
-    title: document.querySelector(this.selectors.title),
-    description: document.querySelector(this.selectors.description),
-    enableCheckbox: document.querySelector(this.selectors.enableCheckbox),
-    enableLabel: document.querySelector(this.selectors.enableLabel),
-    button: document.querySelector(this.selectors.button),
-  });
+  elements = {
+    enableCheckbox: document.getElementById("warning-enable-checkbox"),
+    button: document.getElementById("warning-button"),
+  };
 
   constructor() {
-    const elements = this.elements;
-    elements.title.textContent = TorStrings.rulesets.warningTitle;
-    elements.description.textContent = TorStrings.rulesets.warningDescription;
-    elements.enableLabel.textContent = TorStrings.rulesets.warningEnable;
-    elements.button.textContent = TorStrings.rulesets.warningButton;
-    elements.enableCheckbox.addEventListener(
+    this.elements.enableCheckbox.addEventListener(
       "change",
       this.onEnableChange.bind(this)
     );
-    elements.button.addEventListener("click", this.onButtonClick.bind(this));
+
+    this.elements.button.addEventListener(
+      "click",
+      this.onButtonClick.bind(this)
+    );
   }
 
   show() {
@@ -89,50 +67,28 @@ class WarningState {
 }
 
 class DetailsState {
-  selectors = Object.freeze({
-    title: "#ruleset-title",
-    edit: "#ruleset-edit",
-    jwkLabel: "#ruleset-jwk-label",
-    jwkValue: "#ruleset-jwk-value",
-    pathPrefixLabel: "#ruleset-path-prefix-label",
-    pathPrefixValue: "#ruleset-path-prefix-value",
-    scopeLabel: "#ruleset-scope-label",
-    scopeValue: "#ruleset-scope-value",
-    enableCheckbox: "#ruleset-enable-checkbox",
-    enableLabel: "#ruleset-enable-label",
-    updateButton: "#ruleset-update-button",
-    updated: "#ruleset-updated",
-  });
-
-  elements = Object.freeze({
-    title: document.querySelector(this.selectors.title),
-    edit: document.querySelector(this.selectors.edit),
-    jwkLabel: document.querySelector(this.selectors.jwkLabel),
-    jwkValue: document.querySelector(this.selectors.jwkValue),
-    pathPrefixLabel: document.querySelector(this.selectors.pathPrefixLabel),
-    pathPrefixValue: document.querySelector(this.selectors.pathPrefixValue),
-    scopeLabel: document.querySelector(this.selectors.scopeLabel),
-    scopeValue: document.querySelector(this.selectors.scopeValue),
-    enableCheckbox: document.querySelector(this.selectors.enableCheckbox),
-    enableLabel: document.querySelector(this.selectors.enableLabel),
-    updateButton: document.querySelector(this.selectors.updateButton),
-    updated: document.querySelector(this.selectors.updated),
-  });
+  elements = {
+    title: document.getElementById("ruleset-title"),
+    jwkValue: document.getElementById("ruleset-jwk-value"),
+    pathPrefixValue: document.getElementById("ruleset-path-prefix-value"),
+    scopeValue: document.getElementById("ruleset-scope-value"),
+    enableCheckbox: document.getElementById("ruleset-enable-checkbox"),
+    updateButton: document.getElementById("ruleset-update-button"),
+    updated: document.getElementById("ruleset-updated"),
+  };
 
   constructor() {
-    const elements = this.elements;
-    elements.edit.textContent = TorStrings.rulesets.edit;
-    elements.edit.addEventListener("click", this.onEdit.bind(this));
-    elements.jwkLabel.textContent = TorStrings.rulesets.jwk;
-    elements.pathPrefixLabel.textContent = TorStrings.rulesets.pathPrefix;
-    elements.scopeLabel.textContent = TorStrings.rulesets.scope;
-    elements.enableCheckbox.addEventListener(
+    document
+      .getElementById("ruleset-edit")
+      .addEventListener("click", this.onEdit.bind(this));
+    this.elements.enableCheckbox.addEventListener(
       "change",
       this.onEnable.bind(this)
     );
-    elements.enableLabel.textContent = TorStrings.rulesets.enable;
-    elements.updateButton.textContent = TorStrings.rulesets.checkUpdates;
-    elements.updateButton.addEventListener("click", this.onUpdate.bind(this));
+    this.elements.updateButton.addEventListener(
+      "click",
+      this.onUpdate.bind(this)
+    );
   }
 
   show(ruleset) {
@@ -179,61 +135,22 @@ class DetailsState {
 }
 
 class EditState {
-  selectors = Object.freeze({
-    form: "#edit-ruleset-form",
-    title: "#edit-title",
-    nameGroup: "#edit-name-group",
-    nameLabel: "#edit-name-label",
-    nameInput: "#edit-name-input",
-    jwkLabel: "#edit-jwk-label",
-    jwkTextarea: "#edit-jwk-textarea",
-    pathPrefixLabel: "#edit-path-prefix-label",
-    pathPrefixInput: "#edit-path-prefix-input",
-    scopeLabel: "#edit-scope-label",
-    scopeInput: "#edit-scope-input",
-    enableCheckbox: "#edit-enable-checkbox",
-    enableLabel: "#edit-enable-label",
-    save: "#edit-save",
-    cancel: "#edit-cancel",
-  });
-
-  elements = Object.freeze({
-    form: document.querySelector(this.selectors.form),
-    title: document.querySelector(this.selectors.title),
-    jwkLabel: document.querySelector(this.selectors.jwkLabel),
-    jwkTextarea: document.querySelector(this.selectors.jwkTextarea),
-    pathPrefixLabel: document.querySelector(this.selectors.pathPrefixLabel),
-    pathPrefixInput: document.querySelector(this.selectors.pathPrefixInput),
-    scopeLabel: document.querySelector(this.selectors.scopeLabel),
-    scopeInput: document.querySelector(this.selectors.scopeInput),
-    enableCheckbox: document.querySelector(this.selectors.enableCheckbox),
-    enableLabel: document.querySelector(this.selectors.enableLabel),
-    save: document.querySelector(this.selectors.save),
-    cancel: document.querySelector(this.selectors.cancel),
-  });
+  elements = {
+    form: document.getElementById("edit-ruleset-form"),
+    title: document.getElementById("edit-title"),
+    jwkTextarea: document.getElementById("edit-jwk-textarea"),
+    pathPrefixInput: document.getElementById("edit-path-prefix-input"),
+    scopeInput: document.getElementById("edit-scope-input"),
+    enableCheckbox: document.getElementById("edit-enable-checkbox"),
+  };
 
   constructor() {
-    const elements = this.elements;
-    elements.jwkLabel.textContent = TorStrings.rulesets.jwk;
-    elements.jwkTextarea.setAttribute(
-      "placeholder",
-      TorStrings.rulesets.jwkPlaceholder
-    );
-    elements.pathPrefixLabel.textContent = TorStrings.rulesets.pathPrefix;
-    elements.pathPrefixInput.setAttribute(
-      "placeholder",
-      TorStrings.rulesets.pathPrefixPlaceholder
-    );
-    elements.scopeLabel.textContent = TorStrings.rulesets.scope;
-    elements.scopeInput.setAttribute(
-      "placeholder",
-      TorStrings.rulesets.scopePlaceholder
-    );
-    elements.enableLabel.textContent = TorStrings.rulesets.enable;
-    elements.save.textContent = TorStrings.rulesets.save;
-    elements.save.addEventListener("click", this.onSave.bind(this));
-    elements.cancel.textContent = TorStrings.rulesets.cancel;
-    elements.cancel.addEventListener("click", this.onCancel.bind(this));
+    document
+      .getElementById("edit-save")
+      .addEventListener("click", this.onSave.bind(this));
+    document
+      .getElementById("edit-cancel")
+      .addEventListener("click", this.onCancel.bind(this));
   }
 
   show(ruleset) {
@@ -276,7 +193,9 @@ class EditState {
       elements.jwkTextarea.setCustomValidity("");
     } catch (err) {
       console.error("Invalid JSON or invalid JWK", err);
-      elements.jwkTextarea.setCustomValidity(TorStrings.rulesets.jwkInvalid);
+      elements.jwkTextarea.setCustomValidity(
+        await document.l10n.formatValue("rulesets-details-jwk-input-invalid")
+      );
       valid = false;
     }
 
@@ -285,7 +204,7 @@ class EditState {
       const url = new URL(pathPrefix);
       if (url.protocol !== "http:" && url.protocol !== "https:") {
         elements.pathPrefixInput.setCustomValidity(
-          TorStrings.rulesets.pathPrefixInvalid
+          await document.l10n.formatValue("rulesets-details-path-input-invalid")
         );
         valid = false;
       } else {
@@ -294,7 +213,7 @@ class EditState {
     } catch (err) {
       console.error("The path prefix is not a valid URL", err);
       elements.pathPrefixInput.setCustomValidity(
-        TorStrings.rulesets.pathPrefixInvalid
+        await document.l10n.formatValue("rulesets-details-path-input-invalid")
       );
       valid = false;
     }
@@ -304,7 +223,9 @@ class EditState {
       scope = new RegExp(elements.scopeInput.value.trim());
       elements.scopeInput.setCustomValidity("");
     } catch (err) {
-      elements.scopeInput.setCustomValidity(TorStrings.rulesets.scopeInvalid);
+      elements.scopeInput.setCustomValidity(
+        await document.l10n.formatValue("rulesets-details-scope-input-invalid")
+      );
       valid = false;
     }
 
@@ -342,39 +263,17 @@ class NoRulesetsState {
 }
 
 class RulesetList {
-  selectors = Object.freeze({
-    heading: "#ruleset-heading",
-    list: "#ruleset-list",
-    emptyContainer: "#ruleset-list-empty",
-    emptyTitle: "#ruleset-list-empty-title",
-    emptyDescription: "#ruleset-list-empty-description",
-    itemTemplate: "#ruleset-template",
-    itemName: ".name",
-    itemDescr: ".description",
-  });
-
-  elements = Object.freeze({
-    heading: document.querySelector(this.selectors.heading),
-    list: document.querySelector(this.selectors.list),
-    emptyContainer: document.querySelector(this.selectors.emptyContainer),
-    emptyTitle: document.querySelector(this.selectors.emptyTitle),
-    emptyDescription: document.querySelector(this.selectors.emptyDescription),
-    itemTemplate: document.querySelector(this.selectors.itemTemplate),
-  });
+  elements = {
+    list: document.getElementById("ruleset-list"),
+    emptyContainer: document.getElementById("ruleset-list-empty"),
+    itemTemplate: document.getElementById("ruleset-template"),
+  };
 
   nameAttribute = "data-name";
 
   rulesets = [];
 
   constructor() {
-    const elements = this.elements;
-
-    // Header
-    elements.heading.textContent = TorStrings.rulesets.rulesets;
-    // Empty
-    elements.emptyTitle.textContent = TorStrings.rulesets.noRulesets;
-    elements.emptyDescription.textContent = TorStrings.rulesets.noRulesetsDescr;
-
     RPMAddMessageListener(
       "rulesets:channels-change",
       this.onRulesetsChanged.bind(this)
@@ -438,14 +337,10 @@ class RulesetList {
     const item = this.elements.itemTemplate.cloneNode(true);
     item.removeAttribute("id");
     item.classList.add("item");
-    item.querySelector(this.selectors.itemName).textContent = ruleset.name;
-    const descr = item.querySelector(this.selectors.itemDescr);
-    if (ruleset.enabled) {
-      setUpdateDate(ruleset, descr);
-    } else {
-      descr.textContent = TorStrings.rulesets.disabled;
-      item.classList.add("disabled");
-    }
+    item.querySelector(".name").textContent = ruleset.name;
+    const descr = item.querySelector(".description");
+    setUpdateDate(ruleset, descr);
+    item.classList.toggle("disabled", !ruleset.enabled);
     item.setAttribute(this.nameAttribute, ruleset.name);
     item.addEventListener("click", () => {
       this.onRulesetClick(ruleset);
@@ -478,7 +373,6 @@ class AboutRulesets {
 
   async init() {
     const args = await RPMSendQuery("rulesets:get-init-args");
-    TorStrings = args.TorStrings;
     const showWarning = args.showWarning;
 
     this.list = new RulesetList();

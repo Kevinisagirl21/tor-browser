@@ -1,6 +1,5 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
-import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 import {
   OnionAliasStore,
   OnionAliasStoreTopics,
@@ -8,8 +7,8 @@ import {
 
 const kShowWarningPref = "torbrowser.rulesets.show_warning";
 
-// This class allows about:rulesets to get TorStrings and to load/save the
-// preference for skipping the warning
+// This class allows about:rulesets to load/save the preference for skipping the
+// warning
 export class RulesetsParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
@@ -53,7 +52,6 @@ export class RulesetsParent extends JSWindowActorParent {
         return OnionAliasStore.getChannels();
       case "rulesets:get-init-args":
         return {
-          TorStrings,
           showWarning: Services.prefs.getBoolPref(kShowWarningPref, true),
         };
       case "rulesets:set-channel":
