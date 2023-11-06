@@ -120,6 +120,15 @@
   background-repeat: no-repeat;
 }
 
+.tor-circuit-node-item:not([hidden]) {
+  display: flex;
+  align-items: baseline;
+}
+
+.tor-circuit-node-item > * {
+  flex: 0 0 auto;
+}
+
 @media (prefers-color-scheme: dark) {
   .tor-circuit-node-item {
     /* Light Gray 90 */
@@ -146,9 +155,9 @@
 .tor-circuit-region-flag {
   margin-inline-end: 0.5em;
   height: 16px;
-  vertical-align: sub;
+  align-self: center;
   /* Don't occupy any vertical height. */
-  margin-block-start: -16px;
+  margin-block: -8px;
 }
 
 .tor-circuit-region-flag.no-region-flag-src {
@@ -158,7 +167,7 @@
 .tor-circuit-addresses {
   font-size: smaller;
   font-family: monospace;
-  margin-inline-start: 0.25em;
+  margin-inline-start: 0.75em;
 }
 
 /* Footer buttons */

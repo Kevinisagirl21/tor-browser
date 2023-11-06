@@ -34,6 +34,12 @@ var gTorCircuitPanel = {
    * @type {bool}
    */
   _isActive: false,
+  /**
+   * The template element for circuit nodes.
+   *
+   * @type {HTMLTemplateElement?}
+   */
+  _nodeItemTemplate: null,
 
   /**
    * The topic on which circuit changes are broadcast.
@@ -62,7 +68,6 @@ var gTorCircuitPanel = {
       heading: document.getElementById("tor-circuit-heading"),
       alias: document.getElementById("tor-circuit-alias"),
       aliasLabel: document.getElementById("tor-circuit-alias-label"),
-      aliasLink: document.querySelector("#tor-circuit-alias-label a"),
       aliasMenu: document.getElementById("tor-circuit-panel-alias-menu"),
       list: document.getElementById("tor-circuit-node-list"),
       relaysItem: document.getElementById("tor-circuit-relays-item"),
@@ -73,30 +78,24 @@ var gTorCircuitPanel = {
     };
     this.toolbarButton = document.getElementById("tor-circuit-button");
 
-    // TODO: These strings should be set in the HTML markup with fluent.
-
-    // NOTE: There is already whitespace before and after the link from the
-    // XHTML markup.
-    const [aliasBefore, aliasAfter] = this._getString(
-      "torbutton.circuit_display.connected-to-alias",
-      // Placeholder is replaced with the same placeholder. This is a bit of a
-      // hack since we want the inserted address to be the rich anchor
-      // element already in the DOM, rather than a plain address.
-      // We won't have to do this with fluent by using data-l10n-name on the
-      // anchor element.
-      ["%S"]
-    ).split("%S");
-    this._panelElements.aliasLabel.prepend(aliasBefore);
-    this._panelElements.aliasLabel.append(aliasAfter);
-
-    this._panelElements.aliasLink.addEventListener("click", event => {
+    // We add listeners for the .tor-circuit-alias-link.
+    // NOTE: We have to add the listeners to the parent element because the
+    // link (with data-l10n-name="alias-link") will be replaced with a new
+    // cloned instance every time the parent gets re-translated.
+    this._panelElements.aliasLabel.addEventListener("click", event => {
+      if (!this._aliasLink.contains(event.target)) {
+        return;
+      }
       event.preventDefault();
       if (event.button !== 0) {
         return;
       }
       this._openAlias("tab");
     });
-    this._panelElements.aliasLink.addEventListener("contextmenu", event => {
+    this._panelElements.aliasLabel.addEventListener("contextmenu", event => {
+      if (!this._aliasLink.contains(event.target)) {
+        return;
+      }
       event.preventDefault();
       this._panelElements.aliasMenu.openPopupAtScreen(
         event.screenX,
@@ -119,20 +118,14 @@ var gTorCircuitPanel = {
     document
       .getElementById("tor-circuit-panel-alias-menu-copy")
       .addEventListener("command", () => {
-        if (!this._panelElements.aliasLink.href) {
+        const alias = this._aliasLink?.href;
+        if (!alias) {
           return;
         }
         Cc["@mozilla.org/widget/clipboardhelper;1"]
           .getService(Ci.nsIClipboardHelper)
-          .copyString(this._panelElements.aliasLink.href);
+          .copyString(alias);
       });
-
-    document.getElementById("tor-circuit-start-item").textContent =
-      this._getString("torbutton.circuit_display.this_browser");
-
-    this._panelElements.relaysItem.textContent = this._getString(
-      "torbutton.circuit_display.onion-site-relays"
-    );
 
     // Button is a xul:toolbarbutton, so we use "command" rather than "click".
     document
@@ -176,6 +169,13 @@ var gTorCircuitPanel = {
       this.show();
     });
 
+    this._nodeItemTemplate = document.getElementById(
+      "tor-circuit-node-item-template"
+    );
+    // Prepare the unknown region name for the current locale.
+    // NOTE: We expect this to complete before the first call to _updateBody.
+    this._localeChanged();
+
     this._locationListener = {
       onLocationChange: (webProgress, request, locationURI, flags) => {
         if (
@@ -194,6 +194,7 @@ var gTorCircuitPanel = {
 
     // Get notifications for circuit changes.
     Services.obs.addObserver(this, this.TOR_CIRCUIT_TOPIC);
+    Services.obs.addObserver(this, "intl:app-locales-changed");
   },
 
   /**
@@ -203,15 +204,21 @@ var gTorCircuitPanel = {
     this._isActive = false;
     gBrowser.removeProgressListener(this._locationListener);
     Services.obs.removeObserver(this, this.TOR_CIRCUIT_TOPIC);
+    Services.obs.removeObserver(this, "intl:app-locales-changed");
   },
 
   /**
    * Observe circuit changes.
    */
   observe(subject, topic, data) {
-    if (topic === this.TOR_CIRCUIT_TOPIC) {
-      // TODO: Maybe check if we actually need to do something earlier.
-      this._updateCurrentBrowser();
+    switch (topic) {
+      case this.TOR_CIRCUIT_TOPIC:
+        // TODO: Maybe check if we actually need to do something earlier.
+        this._updateCurrentBrowser();
+        break;
+      case "intl:app-locales-changed":
+        this._localeChanged();
+        break;
     }
   },
 
@@ -232,18 +239,32 @@ var gTorCircuitPanel = {
   },
 
   /**
+   * Get the current alias link instance.
+   *
+   * Note that this element instance may change whenever its parent element
+   * (#tor-circuit-alias-label) is re-translated. Attributes should be copied to
+   * the new instance.
+   */
+  get _aliasLink() {
+    return this._panelElements.aliasLabel.querySelector(
+      ".tor-circuit-alias-link"
+    );
+  },
+
+  /**
    * Open the onion alias present in the alias link.
    *
    * @param {"window"|"tab"} where - Whether to open in a new tab or a new
    *   window.
    */
   _openAlias(where) {
-    if (!this._panelElements.aliasLink.href) {
+    const url = this._aliasLink?.href;
+    if (!url) {
       return;
     }
     // We hide the panel before opening the link.
     this.hide();
-    window.openWebLinkIn(this._panelElements.aliasLink.href, where);
+    window.openWebLinkIn(url, where);
   },
 
   /**
@@ -351,11 +372,6 @@ var gTorCircuitPanel = {
 
     this.toolbarButton.hidden = false;
 
-    if (this.panel.state !== "open" && this.panel.state !== "showing") {
-      // Don't update the panel content if it is not open or about to open.
-      return;
-    }
-
     this._updateCircuitPanel();
   },
 
@@ -384,34 +400,14 @@ var gTorCircuitPanel = {
   },
 
   /**
-   * Get a string from the properties bundle.
-   *
-   * @param {string} name - The string name.
-   * @param {string[]} args - The arguments to pass to the string.
-   *
-   * @returns {string} The string.
-   */
-  _getString(name, args = []) {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(
-        "chrome://torbutton/locale/torbutton.properties"
-      );
-    }
-    try {
-      return this._stringBundle.formatStringFromName(name, args);
-    } catch {}
-    if (!this._fallbackStringBundle) {
-      this._fallbackStringBundle = Services.strings.createBundle(
-        "resource://torbutton/locale/en-US/torbutton.properties"
-      );
-    }
-    return this._fallbackStringBundle.formatStringFromName(name, args);
-  },
-
-  /**
    * Updates the circuit display in the panel to show the current browser data.
    */
   _updateCircuitPanel() {
+    if (this.panel.state !== "open" && this.panel.state !== "showing") {
+      // Don't update the panel content if it is not open or about to open.
+      return;
+    }
+
     // NOTE: The _currentBrowserData.nodes data may be stale. In particular, the
     // circuit may have expired already, or we're still waiting on the new
     // circuit.
@@ -426,6 +422,9 @@ var gTorCircuitPanel = {
       this.hide();
       return;
     }
+
+    this._log.debug("Updating circuit panel");
+
     let domain = this._currentBrowserData.domain;
     const onionAlias = this._getOnionAlias(domain);
 
@@ -447,24 +446,31 @@ var gTorCircuitPanel = {
    * @param {string?} scheme - The scheme in use for the current domain.
    */
   _updateHeading(domain, onionAlias, scheme) {
-    this._panelElements.heading.textContent = this._getString(
-      "torbutton.circuit_display.heading",
+    document.l10n.setAttributes(
+      this._panelElements.heading,
+      "tor-circuit-panel-heading",
       // Only shorten the onion domain if it has no alias.
-      [TorUIUtils.shortenOnionAddress(domain)]
+      { host: TorUIUtils.shortenOnionAddress(domain) }
     );
 
     if (onionAlias) {
-      this._panelElements.aliasLink.textContent =
-        TorUIUtils.shortenOnionAddress(onionAlias);
       if (scheme === "http" || scheme === "https") {
         // We assume the same scheme as the current page for the alias, which we
         // expect to be either http or https.
         // NOTE: The href property is partially presentational so that the link
         // location appears on hover.
-        this._panelElements.aliasLink.href = `${scheme}://${onionAlias}`;
+        // NOTE: The href attribute should be copied to any new instances of
+        // .tor-circuit-alias-link (with data-l10n-name="alias-link") when the
+        // parent _panelElements.aliasLabel gets re-translated.
+        this._aliasLink.href = `${scheme}://${onionAlias}`;
       } else {
-        this._panelElements.aliasLink.removeAttribute("href");
+        this._aliasLink.removeAttribute("href");
       }
+      document.l10n.setAttributes(
+        this._panelElements.aliasLabel,
+        "tor-circuit-panel-alias",
+        { alias: TorUIUtils.shortenOnionAddress(onionAlias) }
+      );
       this._showPanelElement(this._panelElements.alias, true);
     } else {
       this._showPanelElement(this._panelElements.alias, false);
@@ -485,20 +491,40 @@ var gTorCircuitPanel = {
    * @param {string} domain - The domain to show for the last node.
    */
   _updateBody(nodes, domain) {
-    // Clean up old items.
-    // NOTE: We do not expect focus within a removed node.
-    for (const nodeItem of this._nodeItems) {
-      nodeItem.remove();
+    // NOTE: Rather than re-creating the <li> nodes from scratch, we prefer
+    // updating existing <li> nodes so that the display does not "flicker" in
+    // width as we wait for Fluent DOM to fill the nodes with text content. I.e.
+    // the existing node and text will remain in place, occupying the same
+    // width, up until it is replaced by Fluent DOM.
+    for (let index = 0; index < nodes.length; index++) {
+      if (index >= this._nodeItems.length) {
+        const newItem =
+          this._nodeItemTemplate.content.children[0].cloneNode(true);
+        const flagEl = newItem.querySelector(".tor-circuit-region-flag");
+        // Hide region flag whenever the flag src does not exist.
+        flagEl.addEventListener("error", () => {
+          flagEl.classList.add("no-region-flag-src");
+          flagEl.removeAttribute("src");
+        });
+        this._panelElements.list.insertBefore(
+          newItem,
+          this._panelElements.relaysItem
+        );
+
+        this._nodeItems.push(newItem);
+      }
+      this._updateCircuitNodeItem(
+        this._nodeItems[index],
+        nodes[index],
+        index === 0
+      );
     }
 
-    this._nodeItems = nodes.map((nodeData, index) => {
-      const nodeItem = this._createCircuitNodeItem(nodeData, index === 0);
-      this._panelElements.list.insertBefore(
-        nodeItem,
-        this._panelElements.relaysItem
-      );
-      return nodeItem;
-    });
+    // Remove excess items.
+    // NOTE: We do not expect focus within a removed node.
+    while (nodes.length < this._nodeItems.length) {
+      this._nodeItems.pop().remove();
+    }
 
     this._showPanelElement(
       this._panelElements.relaysItem,
@@ -511,40 +537,49 @@ var gTorCircuitPanel = {
 
     // Button description text, depending on whether our first node was a
     // bridge, or otherwise a guard.
-    this._panelElements.newCircuitDescription.value = this._getString(
+    document.l10n.setAttributes(
+      this._panelElements.newCircuitDescription,
       nodes[0].bridgeType === null
-        ? "torbutton.circuit_display.new-circuit-guard-description"
-        : "torbutton.circuit_display.new-circuit-bridge-description"
+        ? "tor-circuit-panel-new-button-description-guard"
+        : "tor-circuit-panel-new-button-description-bridge"
     );
   },
 
   /**
-   * Create a node item for the given circuit node data.
+   * Update a node item for the given circuit node data.
    *
+   * @param {Element} nodeItem - The item to update.
    * @param {NodeData} node - The circuit node data to create an item for.
    * @param {bool} isCircuitStart - Whether this is the first node in the
    *   circuit.
    */
-  _createCircuitNodeItem(node, isCircuitStart) {
-    let nodeName;
-    // We do not show a flag for bridge nodes.
-    let regionCode = null;
+  _updateCircuitNodeItem(nodeItem, node, isCircuitStart) {
+    const nameEl = nodeItem.querySelector(".tor-circuit-node-name");
+    let flagSrc = null;
+
     if (node.bridgeType === null) {
-      regionCode = node.regionCode;
-      if (!regionCode) {
-        nodeName = this._getString("torbutton.circuit_display.unknown_region");
-      } else {
-        nodeName = Services.intl.getRegionDisplayNames(undefined, [
-          regionCode,
-        ])[0];
-      }
+      const regionCode = node.regionCode;
+      flagSrc = this._regionFlagSrc(regionCode);
+
+      const regionName = regionCode
+        ? Services.intl.getRegionDisplayNames(undefined, [regionCode])[0]
+        : this._unknownRegionName;
+
       if (isCircuitStart) {
-        nodeName = this._getString(
-          "torbutton.circuit_display.region-guard-node",
-          [nodeName]
+        document.l10n.setAttributes(
+          nameEl,
+          "tor-circuit-panel-node-region-guard",
+          { region: regionName }
         );
+      } else {
+        // Set the text content directly, rather than using Fluent.
+        nameEl.removeAttribute("data-l10n-id");
+        nameEl.removeAttribute("data-l10n-args");
+        nameEl.textContent = regionName;
       }
     } else {
+      // Do not show a flag for bridges.
+
       let bridgeType = node.bridgeType;
       if (bridgeType === "meek_lite") {
         bridgeType = "meek";
@@ -552,55 +587,72 @@ var gTorCircuitPanel = {
         bridgeType = "";
       }
       if (bridgeType) {
-        nodeName = this._getString(
-          "torbutton.circuit_display.tor_typed_bridge",
-          [bridgeType]
+        document.l10n.setAttributes(
+          nameEl,
+          "tor-circuit-panel-node-typed-bridge",
+          { "bridge-type": bridgeType }
         );
       } else {
-        nodeName = this._getString("torbutton.circuit_display.tor_bridge");
+        document.l10n.setAttributes(nameEl, "tor-circuit-panel-node-bridge");
       }
     }
-    const nodeItem = document.createElement("li");
-    nodeItem.classList.add("tor-circuit-node-item");
-
-    const regionFlagEl = this._regionFlag(regionCode);
-    if (regionFlagEl) {
-      nodeItem.append(regionFlagEl);
+    const flagEl = nodeItem.querySelector(".tor-circuit-region-flag");
+    flagEl.classList.toggle("no-region-flag-src", !flagSrc);
+    if (flagSrc) {
+      flagEl.setAttribute("src", flagSrc);
+    } else {
+      flagEl.removeAttribute("src");
     }
 
-    // Add whitespace after name for the addresses.
-    nodeItem.append(nodeName + " ");
-
-    if (node.ipAddrs) {
-      const addressesEl = document.createElement("span");
-      addressesEl.classList.add("tor-circuit-addresses");
-      let firstAddr = true;
-      for (const ip of node.ipAddrs) {
-        if (firstAddr) {
-          firstAddr = false;
-        } else {
-          addressesEl.append(", ");
-        }
-        // We use a <code> element to give screen readers a hint that
-        // punctuation is different for IP addresses.
-        const ipEl = document.createElement("code");
-        // TODO: Current HTML-aam 1.0 specs map the <code> element to the "code"
-        // role.
-        // However, mozilla-central commented out this mapping in
-        // accessible/base/HTMLMarkupMap.h because the HTML-aam specs at the
-        // time did not do this.
-        // See hg.mozilla.org/mozilla-central/rev/51eebe7d6199#l2.12
-        // For now we explicitly add the role="code", but once this is fixed
-        // from mozilla-central we should remove this.
-        ipEl.setAttribute("role", "code");
-        ipEl.classList.add("tor-circuit-ip-address");
-        ipEl.textContent = ip;
-        addressesEl.append(ipEl);
+    const addressesEl = nodeItem.querySelector(".tor-circuit-addresses");
+    // Empty children.
+    addressesEl.replaceChildren();
+    let firstAddr = true;
+    for (const ip of node.ipAddrs) {
+      if (firstAddr) {
+        firstAddr = false;
+      } else {
+        addressesEl.append(", ");
       }
-      nodeItem.append(addressesEl);
+      const ipEl = document.createElement("code");
+      // TODO: Current HTML-aam 1.0 specs map the <code> element to the "code"
+      // role.
+      // However, mozilla-central commented out this mapping in
+      // accessible/base/HTMLMarkupMap.h because the HTML-aam specs at the
+      // time did not do this.
+      // See hg.mozilla.org/mozilla-central/rev/51eebe7d6199#l2.12
+      //
+      // This was updated in mozilla bug 1834931, for ESR 128
+      //
+      // For now we explicitly add the role="code", but once this is fixed
+      // from mozilla-central we should remove this.
+      ipEl.setAttribute("role", "code");
+      ipEl.classList.add("tor-circuit-ip-address");
+      ipEl.textContent = ip;
+      addressesEl.append(ipEl);
     }
+  },
 
-    return nodeItem;
+  /**
+   * The string to use for unknown region names.
+   *
+   * Will be updated to match the current locale.
+   *
+   * @type {string}
+   */
+  _unknownRegionName: "Unknown region",
+
+  /**
+   * Update the name for regions to match the current locale.
+   */
+  _localeChanged() {
+    document.l10n
+      .formatValue("tor-circuit-panel-node-unknown-region")
+      .then(name => {
+        this._unknownRegionName = name;
+        // Update the panel for the new region names, if it is shown.
+        this._updateCircuitPanel();
+      });
   },
 
   /**
@@ -609,9 +661,9 @@ var gTorCircuitPanel = {
    * @param {string?} regionCode - The code to convert. It should be an upper
    *   case 2-letter BCP47 Region subtag to be converted into a flag.
    *
-   * @returns {HTMLImgElement?} The emoji flag img, or null if there is no flag.
+   * @returns {src?} The emoji flag img src, or null if there is no flag.
    */
-  _regionFlag(regionCode) {
+  _regionFlagSrc(regionCode) {
     if (!regionCode?.match(/^[A-Z]{2}$/)) {
       return null;
     }
@@ -624,20 +676,7 @@ var gTorCircuitPanel = {
       .map(cp => cp.toString(16))
       .join("-");
 
-    const flagEl = document.createElement("img");
-    // Decorative.
-    flagEl.alt = "";
-    flagEl.classList.add("tor-circuit-region-flag");
-    // Remove self if there is no matching flag found.
-    flagEl.addEventListener(
-      "error",
-      () => {
-        flagEl.classList.add("no-region-flag-src");
-      },
-      { once: true }
-    );
-    flagEl.src = `chrome://browser/content/tor-circuit-flags/${flagName}.svg`;
-    return flagEl;
+    return `chrome://browser/content/tor-circuit-flags/${flagName}.svg`;
   },
 
   /**
