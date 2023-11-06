@@ -326,3 +326,63 @@ about-dialog-browser-license-link = Licensing Information
 # "Tor" and "The Onion Logo" are trademark names, so should not be translated (not including the quote marks, which can be localized).
 # "The Tor Project, Inc." is an organisation name.
 about-dialog-trademark-statement = “Tor” and “The Onion Logo” are registered trademarks of The Tor Project, Inc.
+
+## New tor circuit.
+
+# Shown in the File menu.
+# Uses title case for English (US).
+menu-new-tor-circuit =
+    .label = New Tor Circuit for this Site
+    .accesskey = C
+
+# Shown in the application menu (hamburger menu).
+# Uses sentence case for English (US).
+appmenuitem-new-tor-circuit =
+    .label = New Tor circuit for this site
+
+# Toolbar button to trigger a new circuit, available through toolbar customization.
+# Uses sentence case for English (US).
+# ".label" is the accessible name, and is visible in the overflow menu and when
+# customizing the toolbar.
+# ".tooltiptext" will be identical to the label.
+toolbar-new-tor-circuit =
+    .label = New Tor circuit for this site
+    .tooltiptext = { toolbar-new-tor-circuit.label }
+
+## Tor circuit URL bar button.
+
+# The tooltip also acts as the accessible name.
+tor-circuit-urlbar-button =
+    .tooltiptext = Tor Circuit
+
+## Tor circuit panel.
+
+# $host (String) - The host name shown in the URL bar, potentially shortened.
+tor-circuit-panel-heading = Circuit for { $host }
+# Shown when the current address is a ".tor.onion" alias.
+# $alias (String) - The alias onion address. This should be wrapped in '<a data-l10n-name="alias-link">' and '</a>', which will link to the corresponding address.
+tor-circuit-panel-alias = Connected to <a data-l10n-name="alias-link">{ $alias }</a>
+
+# Text just before the list of circuit nodes.
+tor-circuit-panel-node-list-introduction = Tor Circuit
+# First node in the list of circuit nodes. Refers to Tor Browser.
+tor-circuit-panel-node-browser = This browser
+# Represents a number of unknown relays that complete a connection to an ".onion" site.
+tor-circuit-panel-node-onion-relays = Onion site relays
+# Represents the bridge node used to connect to the Tor network.
+# $bridge-type (String) - The name for the type of bridge used: meek, obfs4, snowflake, etc.
+tor-circuit-panel-node-typed-bridge = Bridge: { $bridge-type }
+# Represents the bridge node used to connect to the Tor network when the bridge type is unknown.
+tor-circuit-panel-node-bridge = Bridge
+# Represents the initial guard node used for a tor circuit.
+# $region (String) - The region name for the guard node, already localized.
+tor-circuit-panel-node-region-guard = { $region } (guard)
+# Represents a circuit node with an unknown regional location.
+tor-circuit-panel-node-unknown-region = Unknown region
+
+# Uses sentence case for English (US).
+tor-circuit-panel-new-button = New Tor circuit for this site
+# Shown when the first node in the circuit is a guard node, rather than a bridge.
+tor-circuit-panel-new-button-description-guard = Your guard node may not change
+# Shown when the first node in the circuit is a bridge node.
+tor-circuit-panel-new-button-description-bridge = Your bridge may not change
