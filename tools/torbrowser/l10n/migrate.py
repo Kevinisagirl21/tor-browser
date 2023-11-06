@@ -253,16 +253,13 @@ class TorBrowserMigrationContext(MigrationContext):
             if path not in self.localization_resources
         )
 
-    def tb_get_transformed(self, target_path, transform_id):
+    def tb_get_transform(self, target_path, transform_id):
         """
         Find the transformation node with the given id for the given path.
-
-        The node will be evaluated (converted to regular fluent.ast) before it
-        is returned.
         """
         for node in self.transforms[target_path]:
             if node.id.name == transform_id:
-                return self.evaluate(node)
+                return node
         return None
 
     def tb_get_reference_entry(self, target_path, entry_id):
@@ -330,6 +327,21 @@ class TorBrowserMigrator:
 
         ctx = self._get_migration_context(locale, locale_dir)
 
+        # NOTE: We do not use the existing ctx.serialize_changeset method.
+        # The problem with this approach was that it would re-shuffle the order
+        # of already existing strings to match the en-US locale.
+        # But Weblate currently does not preserve the order of translated
+        # strings: https://github.com/WeblateOrg/weblate/issues/11134
+        # so this created extra noise in the diff.
+        # Instead, we just always append transformations to the end of the
+        # existing file.
+        # Moreover, it would inject group comments into the translated files,
+        # which Weblate does not handle well. Instead, we just do not add any
+        # comments.
+        #
+        # In case we want to use it again in the future, here is a reference
+        # to how it works:
+        #
         # ctx.serialize_changeset expects a set of (path, identifier) of
         # localization resources that can be used to evaluate the
         # transformations.
@@ -344,76 +356,115 @@ class TorBrowserMigrator:
         # one step, so we want to fill the changeset with all required
         # (path, identifier) pairs found in the localization resources.
 
-        # Choose the transforms that are required and available.
-        changeset = set()
         available_strings = ctx.tb_get_available_strings()
-        for (target_path, transform_id), dep_set in ctx.dependencies.items():
-            # ctx.dependencies is a dict of dependencies for all
-            # transformations
-            # { (target_path, transform_identifier): set(
-            #     (localization_path, string_identifier),
-            # )}
-            #
-            # e.g. if we want to create a new fluent Message called
-            # "new-string1", and it uses "oldString1" from "old-file1.dtd"
-            # and "oldString2" from "old-file2.dtd". And "new-string2" using
-            # "oldString3" from "old-file2.dtd", it would be
-            # {
-            #   ("new-file.ftl", "new-string1"): set(
-            #     ("old-file1.dtd", "oldString1"),
-            #     ("old-file2.dtd", "oldString2"),
-            #   ),
-            #   ("new-file.ftl", "new-string2"): set(
-            #     ("old-file2.dtd", "oldString3"),
-            #   ),
-            # }
-            can_transform = True
-            for dep in dep_set:
-                path, string_id = dep
-                if dep not in available_strings:
-                    can_transform = False
-                    self.logger.info(
-                        f"Skipping transform {target_path}:{transform_id} for "
-                        f"'{locale}' locale because it is missing the "
-                        f"string {path}:{string_id}."
-                    )
-                    break
-                # Strings in legacy formats might have an entry in the file
-                # that is just a copy of the en-US strings.
-                # For these we want to check the weblate metadata to ensure
-                # it is a translated string.
-                if not path.endswith(
-                    ".ftl"
-                ) and not self.weblate_metadata.is_translated(
-                    os.path.join("en-US", path),
-                    os.path.join(locale, path),
-                    string_id,
-                ):
-                    can_transform = False
-                    self.logger.info(
-                        f"Skipping transform {target_path}:{transform_id} for "
-                        f"'{locale}' locale because the string "
-                        f"{path}:{string_id} has not been translated on "
-                        "weblate."
-                    )
-                    break
-            if can_transform:
-                changeset.update(dep_set)
-
-        print("", file=sys.stderr)
         wrote_file = False
         errors = []
-        for path, fluent in ctx.serialize_changeset(changeset).items():
-            full_path = os.path.join(locale_dir, path)
-            self.logger.info(f"Writing to {full_path}")
-            with open(full_path, "w") as file:
-                file.write(fluent)
-            wrote_file = True
 
+        for target_path, reference in ctx.reference_resources.items():
+            translated_ids = [
+                entry.id.name
+                for entry in ctx.target_resources[target_path].body
+                if isinstance(entry, (ast.Message, ast.Term))
+                # NOTE: We're assuming that the Message and Term ids do not
+                # conflict with each other.
+            ]
+            new_entries = []
+
+            # Apply transfomations in the order they appear in the reference
+            # (en-US) file.
+            for entry in reference.body:
+                if not isinstance(entry, (ast.Message, ast.Term)):
+                    continue
+                transform_id = entry.id.name
+                transform = ctx.tb_get_transform(target_path, transform_id)
+                if not transform:
+                    # No transformation for this reference entry.
+                    continue
+
+                if transform_id in translated_ids:
+                    self.logger.info(
+                        f"Skipping transform {target_path}:{transform_id} "
+                        f"for '{locale}' locale because it already has a "
+                        f"translation."
+                    )
+                    continue
+
+                # ctx.dependencies is a dict of dependencies for all
+                # transformations
+                # { (target_path, transform_identifier): set(
+                #     (localization_path, string_identifier),
+                # )}
+                #
+                # e.g. if we want to create a new fluent Message called
+                # "new-string1", and it uses "oldString1" from "old-file1.dtd"
+                # and "oldString2" from "old-file2.dtd". And "new-string2" using
+                # "oldString3" from "old-file2.dtd", it would be
+                # {
+                #   ("new-file.ftl", "new-string1"): set(
+                #     ("old-file1.dtd", "oldString1"),
+                #     ("old-file2.dtd", "oldString2"),
+                #   ),
+                #   ("new-file.ftl", "new-string2"): set(
+                #     ("old-file2.dtd", "oldString3"),
+                #   ),
+                # }
+                dep_set = ctx.dependencies[(target_path, transform_id)]
+                can_transform = True
+                for dep in dep_set:
+                    path, string_id = dep
+                    if dep not in available_strings:
+                        can_transform = False
+                        self.logger.info(
+                            f"Skipping transform {target_path}:{transform_id} "
+                            f"for '{locale}' locale because it is missing the "
+                            f"string {path}:{string_id}."
+                        )
+                        break
+                    # Strings in legacy formats might have an entry in the file
+                    # that is just a copy of the en-US strings.
+                    # For these we want to check the weblate metadata to ensure
+                    # it is a translated string.
+                    if not path.endswith(
+                        ".ftl"
+                    ) and not self.weblate_metadata.is_translated(
+                        os.path.join("en-US", path),
+                        os.path.join(locale, path),
+                        string_id,
+                    ):
+                        can_transform = False
+                        self.logger.info(
+                            f"Skipping transform {target_path}:{transform_id} "
+                            f"for '{locale}' locale because the string "
+                            f"{path}:{string_id} has not been translated on "
+                            "weblate."
+                        )
+                        break
+                if not can_transform:
+                    continue
+
+                # Run the transformation.
+                new_entries.append(ctx.evaluate(transform))
+
+            if not new_entries:
+                continue
+
+            full_path = os.path.join(locale_dir, target_path)
+            print("", file=sys.stderr)
+            self.logger.info(f"Writing to {full_path}")
+
+            # For Fluent we can just serialize the transformations and append
+            # them to the end of the existing file.
+            resource = ast.Resource(new_entries)
+            with open(full_path, "a") as file:
+                file.write(serialize(resource))
+
+            with open(full_path, "r") as file:
+                full_content = file.read()
+            wrote_file = True
             # Collect any fluent parsing errors from the newly written file.
             errors.extend(
                 (full_path, message, line, sample)
-                for message, line, sample in self._fluent_errors(fluent)
+                for message, line, sample in self._fluent_errors(full_content)
             )
 
         if not wrote_file:
@@ -547,7 +598,7 @@ class TorBrowserMigrator:
                 have_error = True
                 continue
 
-            transformed = ctx.tb_get_transformed(target_path, transform_id)
+            transformed = ctx.evaluate(ctx.tb_get_transform(target_path, transform_id))
             reference_entry = ctx.tb_get_reference_entry(target_path, transform_id)
             if reference_entry is None:
                 self.logger.error(
