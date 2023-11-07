@@ -200,6 +200,7 @@ const YecWidget = {
 
     this.isActive = now >= yecStart && now < yecEnd;
     document.getElementById("yec-2023-close").addEventListener("click", () => {
+      dispatchEvent(new CustomEvent("YECHidden", { bubbles: true }));
       this.isOpen = false;
     });
 
@@ -215,7 +216,7 @@ const YecWidget = {
 
   _isStable: false,
   _isActive: false,
-  _isOpen: true,
+  _isOpen: false,
 
   /**
    * Whether this is a stable release.
@@ -294,7 +295,8 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("InitialData", event => {
-  const { appLocale, isStable } = event.detail;
+  const { appLocale, isStable, hideYEC } = event.detail;
   YecWidget.setDonateLocale(appLocale);
   YecWidget.isStable = isStable;
+  YecWidget.isOpen = !hideYEC;
 });
