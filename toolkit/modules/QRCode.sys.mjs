@@ -11,9 +11,7 @@
  * @see <a href="http://jeromeetienne.github.com/jquery-qrcode/" target="_blank">http://jeromeetienne.github.com/jquery-qrcode/</a>
  */
 
-var EXPORTED_SYMBOLS = ["QRCode"];
-
-var QRCode;
+export var QRCode;
 
 (function () {
   //---------------------------------------------------------------------
