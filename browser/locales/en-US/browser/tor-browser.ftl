@@ -304,3 +304,25 @@ user-provide-bridge-dialog-next-button =
 # The "aria-label" should use the same text, but include some ending punctuation to separate it from the sentence that follows. This is used for screen reader users.
 built-in-dialog-current-bridge-label = Current bridge
     .aria-label = Current bridge.
+
+## About Tor Browser dialog.
+
+# '<label data-l10n-name="project-link">' and '</label>' should wrap the link text for the Tor Project, and will link to the Tor Project web page.
+# -brand-short-name refers to 'Tor Browser', localized.
+# -vendor-short-name refers to 'Tor Project', localized.
+about-dialog-tor-project =  { -brand-short-name } is developed by <label data-l10n-name="project-link">the { -vendor-short-name }</label>, a nonprofit working to defend your privacy and freedom online.
+
+# '<label data-l10n-name="donate-link">' and '</label>' should wrap the link text for donating to Tor Project, and will link to the Tor Project donation page.
+# '<label data-l10n-name="community-link">' and '</label>' should wrap the link text for getting involved with Tor Project, and will link to the Tor Project community page.
+about-dialog-help-out = Want to help? <label data-l10n-name="donate-link">Donate</label> or <label data-l10n-name="community-link">get involved</label>!
+
+# Link text for the Tor Project support page.
+about-dialog-questions-link = Questions?
+# Link text for the Tor Project page for Tor Network relay operators.
+about-dialog-grow-tor-network-link = Help the Tor Network Grow!
+# Link text for the Tor Browser license page (about:license).
+about-dialog-browser-license-link = Licensing Information
+
+# "Tor" and "The Onion Logo" are trademark names, so should not be translated (not including the quote marks, which can be localized).
+# "The Tor Project, Inc." is an organisation name.
+about-dialog-trademark-statement = “Tor” and “The Onion Logo” are registered trademarks of The Tor Project, Inc.
