@@ -23,8 +23,6 @@
   skin/classic/browser/menupanel.css                           (../shared/menupanel.css)
   skin/classic/browser/notification-icons.css                  (../shared/notification-icons.css)
   skin/classic/browser/pageInfo.css                            (../shared/pageInfo.css)
-  skin/classic/browser/onionPattern.css                        (../shared/onionPattern.css)
-  skin/classic/browser/onionPattern.svg                        (../shared/onionPattern.svg)
   skin/classic/browser/searchbar.css                           (../shared/searchbar.css)
   skin/classic/browser/setDesktopBackground.css                (../shared/setDesktopBackground.css)
   skin/classic/browser/sidebar.css                             (../shared/sidebar.css)
