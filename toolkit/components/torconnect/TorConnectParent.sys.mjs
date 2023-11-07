@@ -2,18 +2,18 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 import {
   InternetStatus,
   TorConnect,
   TorConnectTopics,
   TorConnectState,
-} from "resource:///modules/TorConnect.sys.mjs";
+} from "resource://gre/modules/TorConnect.sys.mjs";
 import {
   TorSettings,
   TorSettingsTopics,
   TorSettingsData,
-} from "resource:///modules/TorSettings.sys.mjs";
+} from "resource://gre/modules/TorSettings.sys.mjs";
 
 const BroadcastTopic = "about-torconnect:broadcast";
 

@@ -67,6 +67,9 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectState: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   UITour: "resource:///modules/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
@@ -97,9 +100,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.jsm",
   SiteDataManager: "resource:///modules/SiteDataManager.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
-  TorConnect: "resource:///modules/TorConnect.jsm",
-  TorConnectState: "resource:///modules/TorConnect.jsm",
-  TorConnectTopics: "resource:///modules/TorConnect.jsm",
   Translation: "resource:///modules/translation/TranslationParent.jsm",
   webrtcUI: "resource:///modules/webrtcUI.jsm",
   ZoomUI: "resource:///modules/ZoomUI.jsm",
@@ -288,12 +288,12 @@ XPCOMUtils.defineLazyScriptGetter(
 XPCOMUtils.defineLazyScriptGetter(
   this,
   ["gTorConnectUrlbarButton"],
-  "chrome://browser/content/torconnect/torConnectUrlbarButton.js"
+  "chrome://global/content/torconnect/torConnectUrlbarButton.js"
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
   ["gTorConnectTitlebarStatus"],
-  "chrome://browser/content/torconnect/torConnectTitlebarStatus.js"
+  "chrome://global/content/torconnect/torConnectTitlebarStatus.js"
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,

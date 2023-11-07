@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ReaderMode: "resource://gre/modules/ReaderMode.sys.mjs",
   SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
   SearchUtils: "resource://gre/modules/SearchUtils.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
   UrlbarController: "resource:///modules/UrlbarController.sys.mjs",
   UrlbarEventBufferer: "resource:///modules/UrlbarEventBufferer.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -34,7 +35,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
-  TorConnect: "resource:///modules/TorConnect.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(

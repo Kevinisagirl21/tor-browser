@@ -27,8 +27,8 @@ var gTorConnectTitlebarStatus = {
    * Initialize the component.
    */
   init() {
-    const { TorStrings } = ChromeUtils.import(
-      "resource:///modules/TorStrings.jsm"
+    const { TorStrings } = ChromeUtils.importESModule(
+      "resource://gre/modules/TorStrings.sys.mjs"
     );
 
     this._strings = TorStrings.torConnect;
