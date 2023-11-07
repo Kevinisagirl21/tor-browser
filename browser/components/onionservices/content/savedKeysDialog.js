@@ -2,11 +2,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TorStrings",
-  "resource:///modules/TorStrings.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
+});
 
 ChromeUtils.defineESModuleGetters(this, {
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
