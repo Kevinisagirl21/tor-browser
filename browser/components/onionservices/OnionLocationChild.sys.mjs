@@ -1,12 +1,6 @@
 // Copyright (c) 2020, The Tor Project, Inc.
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["OnionLocationChild"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-class OnionLocationChild extends JSWindowActorChild {
+export class OnionLocationChild extends JSWindowActorChild {
   handleEvent(event) {
     this.onPageShow(event);
   }

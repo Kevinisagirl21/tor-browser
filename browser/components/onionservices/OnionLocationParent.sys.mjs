@@ -1,11 +1,6 @@
 // Copyright (c) 2020, The Tor Project, Inc.
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["OnionLocationParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
 // Prefs
 const NOTIFICATION_PREF = "privacy.prioritizeonions.showNotification";
@@ -31,7 +26,7 @@ const NOTIFICATION_DESCRIPTION = TorStrings.onionLocation.description;
 const NOTIFICATION_LEARN_MORE_URL =
   TorStrings.onionLocation.learnMoreURLNotification;
 
-class OnionLocationParent extends JSWindowActorParent {
+export class OnionLocationParent extends JSWindowActorParent {
   // Listeners are added in BrowserGlue.jsm
   receiveMessage(aMsg) {
     switch (aMsg.name) {
