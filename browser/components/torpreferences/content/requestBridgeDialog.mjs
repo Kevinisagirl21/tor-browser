@@ -1,19 +1,12 @@
-"use strict";
+import { BridgeDB } from "resource://gre/modules/BridgeDB.sys.mjs";
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["RequestBridgeDialog"];
+import {
+  TorConnect,
+  TorConnectTopics,
+} from "resource://gre/modules/TorConnect.sys.mjs";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const { BridgeDB } = ChromeUtils.importESModule(
-  "resource:///modules/BridgeDB.sys.mjs"
-);
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
-  "resource:///modules/TorConnect.sys.mjs"
-);
-
-class RequestBridgeDialog {
+export class RequestBridgeDialog {
   constructor(onSubmit) {
     this.onSubmit = onSubmit;
     this._dialog = null;

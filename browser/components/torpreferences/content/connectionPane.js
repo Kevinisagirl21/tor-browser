@@ -12,7 +12,7 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 );
 
 const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
-  ChromeUtils.importESModule("resource:///modules/TorSettings.sys.mjs");
+  ChromeUtils.importESModule("resource://gre/modules/TorSettings.sys.mjs");
 
 const { TorParsers } = ChromeUtils.importESModule(
   "resource://gre/modules/TorParsers.sys.mjs"
@@ -22,42 +22,42 @@ const { TorProviderBuilder, TorProviderTopics } = ChromeUtils.importESModule(
 );
 
 const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
-  ChromeUtils.importESModule("resource:///modules/TorConnect.sys.mjs");
+  ChromeUtils.importESModule("resource://gre/modules/TorConnect.sys.mjs");
 
-const { TorLogDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/torLogDialog.jsm"
+const { TorLogDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/torLogDialog.mjs"
 );
 
-const { ConnectionSettingsDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/connectionSettingsDialog.jsm"
+const { ConnectionSettingsDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/connectionSettingsDialog.mjs"
 );
 
-const { BridgeQrDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/bridgeQrDialog.jsm"
+const { BridgeQrDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/bridgeQrDialog.mjs"
 );
 
-const { BuiltinBridgeDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/builtinBridgeDialog.jsm"
+const { BuiltinBridgeDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/builtinBridgeDialog.mjs"
 );
 
-const { RequestBridgeDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/requestBridgeDialog.jsm"
+const { RequestBridgeDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/requestBridgeDialog.mjs"
 );
 
-const { ProvideBridgeDialog } = ChromeUtils.import(
-  "chrome://browser/content/torpreferences/provideBridgeDialog.jsm"
+const { ProvideBridgeDialog } = ChromeUtils.importESModule(
+  "chrome://browser/content/torpreferences/provideBridgeDialog.mjs"
 );
 
 const { MoatRPC } = ChromeUtils.importESModule(
-  "resource:///modules/Moat.sys.mjs"
+  "resource://gre/modules/Moat.sys.mjs"
 );
 
-const { QRCode } = ChromeUtils.import("resource://gre/modules/QRCode.jsm");
+const { QRCode } = ChromeUtils.importESModule(
+  "resource://gre/modules/QRCode.sys.mjs"
+);
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TorStrings",
-  "resource:///modules/TorStrings.jsm"
+const { TorStrings } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorStrings.sys.mjs"
 );
 
 const InternetStatus = Object.freeze({
