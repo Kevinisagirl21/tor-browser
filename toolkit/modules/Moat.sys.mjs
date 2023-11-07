@@ -5,7 +5,7 @@
 import {
   TorSettings,
   TorBridgeSource,
-} from "resource:///modules/TorSettings.sys.mjs";
+} from "resource://gre/modules/TorSettings.sys.mjs";
 
 const lazy = {};
 
