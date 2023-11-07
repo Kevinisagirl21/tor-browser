@@ -47,3 +47,7 @@ toolkit.jar:
   skin/classic/global/media/textrecognition.css            (../../shared/media/textrecognition.css)
 
   skin/classic/global/browser-colors.css                   (../../shared/browser-colors.css)
+
+# Tor customization
+  skin/classic/global/onionPattern.css                     (../../shared/onionPattern.css)
+  skin/classic/global/onionPattern.svg                     (../../shared/onionPattern.svg)

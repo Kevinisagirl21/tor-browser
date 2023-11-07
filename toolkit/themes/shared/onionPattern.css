@@ -22,7 +22,7 @@
   /* opacity of the entire div, not context-opacity */
   opacity: var(--onion-opacity, 1);
 
-  background-image: url("chrome://browser/skin/onionPattern.svg");
+  background-image: url("chrome://global/skin/onionPattern.svg");
   background-repeat: repeat;
   background-attachment: local;
   background-position: center;
