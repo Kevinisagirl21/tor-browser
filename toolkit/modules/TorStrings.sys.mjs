@@ -5,8 +5,6 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["TorStrings"];
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
@@ -548,7 +546,7 @@ const Loader = {
   } /* Rulesets */,
 };
 
-const TorStrings = {
+export const TorStrings = {
   get settings() {
     if (!this._settings) {
       this._settings = Loader.settings();
