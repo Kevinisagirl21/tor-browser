@@ -67,6 +67,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   TRRRacer: "resource:///modules/TRRPerformance.sys.mjs",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -822,10 +824,10 @@ let JSWINDOWACTORS = {
 
   Rulesets: {
     parent: {
-      moduleURI: "resource:///modules/RulesetsParent.jsm",
+      esModuleURI: "resource:///modules/RulesetsParent.sys.mjs",
     },
     child: {
-      moduleURI: "resource:///modules/RulesetsChild.jsm",
+      esModuleURI: "resource:///modules/RulesetsChild.sys.mjs",
       events: {
         DOMWindowCreated: {},
       },
@@ -882,20 +884,6 @@ let JSWINDOWACTORS = {
     },
 
     allFrames: true,
-  },
-
-  TorConnect: {
-    parent: {
-      esModuleURI: "resource:///actors/TorConnectParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/TorConnectChild.sys.mjs",
-      events: {
-        DOMWindowCreated: {},
-      },
-    },
-
-    matches: ["about:torconnect", "about:torconnect?*"],
   },
 
   // The older translations feature backed by external services.
@@ -2834,17 +2822,14 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          const { TorConnect, TorConnectTopics } = ChromeUtils.import(
-            "resource:///modules/TorConnect.jsm"
-          );
-          if (!TorConnect.shouldShowTorConnect) {
+          if (!lazy.TorConnect.shouldShowTorConnect) {
             // we will take this path when the user is using the legacy tor launcher or
             // when Tor Browser didn't launch its own tor.
             lazy.OnionAliasStore.init();
           } else {
             // this path is taken when using about:torconnect, we wait to init
             // after we are bootstrapped and connected to tor
-            const topic = TorConnectTopics.BootstrapComplete;
+            const topic = lazy.TorConnectTopics.BootstrapComplete;
             let bootstrapObserver = {
               observe(aSubject, aTopic, aData) {
                 if (aTopic === topic) {

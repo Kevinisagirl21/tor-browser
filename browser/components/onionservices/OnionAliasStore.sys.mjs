@@ -1,25 +1,16 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
-"use strict";
-
-const EXPORTED_SYMBOLS = ["OnionAliasStore", "OnionAliasStoreTopics"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout, clearTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
-);
-const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
+import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "JSONFile",
-  "resource://gre/modules/JSONFile.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
+});
 
 /* OnionAliasStore observer topics */
-const OnionAliasStoreTopics = Object.freeze({
+export const OnionAliasStoreTopics = Object.freeze({
   ChannelsChanged: "onionaliasstore:channels-changed",
 });
 
@@ -540,4 +531,4 @@ class _OnionAliasStore {
   }
 }
 
-const OnionAliasStore = new _OnionAliasStore();
+export const OnionAliasStore = new _OnionAliasStore();

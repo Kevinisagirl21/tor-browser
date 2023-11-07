@@ -1,6 +1,6 @@
-JAR_MANIFESTS += ['jar.mn']
+JAR_MANIFESTS += ["jar.mn"]
 
 EXTRA_JS_MODULES += [
-    'RulesetsChild.jsm',
-    'RulesetsParent.jsm',
+    "RulesetsChild.sys.mjs",
+    "RulesetsParent.sys.mjs",
 ]

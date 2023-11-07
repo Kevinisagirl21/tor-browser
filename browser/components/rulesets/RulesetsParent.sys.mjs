@@ -1,20 +1,16 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["RulesetsParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-const { OnionAliasStore, OnionAliasStoreTopics } = ChromeUtils.import(
-  "resource:///modules/OnionAliasStore.jsm"
-);
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
+import {
+  OnionAliasStore,
+  OnionAliasStoreTopics,
+} from "resource:///modules/OnionAliasStore.sys.mjs";
 
 const kShowWarningPref = "torbrowser.rulesets.show_warning";
 
 // This class allows about:rulesets to get TorStrings and to load/save the
 // preference for skipping the warning
-class RulesetsParent extends JSWindowActorParent {
+export class RulesetsParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
 
