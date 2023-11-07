@@ -4,7 +4,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutTorMessage: "resource:///modules/AboutTorMessage.sys.mjs",
-  TorConnect: "resource:///modules/TorConnect.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
 });
 
 /**
