@@ -5,7 +5,7 @@
 const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 
-const { TorConnect } = ChromeUtils.import("resource:///modules/TorConnect.jsm");
+import { TorConnect } from "resource://gre/modules/TorConnect.sys.mjs";
 
 export class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
   get browser() {

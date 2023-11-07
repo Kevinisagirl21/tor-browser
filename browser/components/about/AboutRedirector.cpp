@@ -158,11 +158,6 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::HIDE_FROM_ABOUTABOUT |
          nsIAboutModule::IS_SECURE_CHROME_UI},
 #endif
-    {"torconnect", "chrome://browser/content/torconnect/aboutTorConnect.xhtml",
-     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
-         nsIAboutModule::URI_CAN_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
-         nsIAboutModule::HIDE_FROM_ABOUTABOUT |
-         nsIAboutModule::IS_SECURE_CHROME_UI},
     // The correct URI must be obtained by GetManualChromeURI
     {"manual", "about:blank",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |

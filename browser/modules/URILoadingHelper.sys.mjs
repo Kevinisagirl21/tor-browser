@@ -9,10 +9,13 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  TorConnect: "resource:///modules/TorConnect.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "ReferrerInfo", () =>
@@ -694,7 +697,6 @@ export const URILoadingHelper = {
     aReferrerInfo
   ) {
     event = BrowserUtils.getRootEvent(event);
-
     let params;
 
     if (aIgnoreButton && typeof aIgnoreButton == "object") {

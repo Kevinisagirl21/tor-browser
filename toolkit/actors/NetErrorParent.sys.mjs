@@ -18,18 +18,13 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
 });
 
 ChromeUtils.defineModuleGetter(
   lazy,
   "HomePage",
   "resource:///modules/HomePage.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorConnect",
-  "resource:///modules/TorConnect.jsm"
 );
 
 class CaptivePortalObserver {
