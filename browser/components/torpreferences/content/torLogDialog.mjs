@@ -1,17 +1,9 @@
-"use strict";
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["TorLogDialog"];
+import { TorProviderBuilder } from "resource://gre/modules/TorProviderBuilder.sys.mjs";
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
-const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-
-const { TorProviderBuilder } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorProviderBuilder.sys.mjs"
-);
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-class TorLogDialog {
+export class TorLogDialog {
   constructor() {
     this._dialog = null;
     this._logTextarea = null;

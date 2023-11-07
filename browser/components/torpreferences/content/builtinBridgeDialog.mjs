@@ -1,19 +1,17 @@
-"use strict";
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["BuiltinBridgeDialog"];
+import {
+  TorSettings,
+  TorBridgeSource,
+  TorBuiltinBridgeTypes,
+} from "resource://gre/modules/TorSettings.sys.mjs";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+import {
+  TorConnect,
+  TorConnectTopics,
+} from "resource://gre/modules/TorConnect.sys.mjs";
 
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-const { TorSettings, TorBridgeSource, TorBuiltinBridgeTypes } =
-  ChromeUtils.importESModule("resource:///modules/TorSettings.sys.mjs");
-
-const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
-  "resource:///modules/TorConnect.sys.mjs"
-);
-
-class BuiltinBridgeDialog {
+export class BuiltinBridgeDialog {
   /**
    * Create a new instance.
    *

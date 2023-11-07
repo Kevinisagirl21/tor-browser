@@ -1,14 +1,11 @@
-"use strict";
+import {
+  TorSettings,
+  TorProxyType,
+} from "resource://gre/modules/TorSettings.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["ConnectionSettingsDialog"];
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
-const { TorSettings, TorProxyType } = ChromeUtils.importESModule(
-  "resource:///modules/TorSettings.sys.mjs"
-);
-
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-class ConnectionSettingsDialog {
+export class ConnectionSettingsDialog {
   constructor() {
     this._dialog = null;
     this._useProxyCheckbox = null;

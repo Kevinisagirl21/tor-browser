@@ -1,8 +1,8 @@
-@import url("chrome://browser/skin/browser-colors.css");
+@import url("chrome://global/skin/browser-colors.css");
 
 
 #category-connection > .category-icon {
-  list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
+  list-style-image: url("chrome://global/content/torconnect/tor-connect.svg");
 }
 
 /* Status */
@@ -37,7 +37,7 @@
 }
 
 #torPreferences-status-tor-connect .torPreferences-status-icon {
-  list-style-image: url("chrome://browser/content/torconnect/tor-connect-broken.svg");
+  list-style-image: url("chrome://global/content/torconnect/tor-connect-broken.svg");
 }
 
 .torPreferences-status-name {
@@ -54,7 +54,7 @@
 }
 
 #torPreferences-status-tor-connect.connected .torPreferences-status-icon {
-  list-style-image: url("chrome://browser/content/torconnect/tor-connect.svg");
+  list-style-image: url("chrome://global/content/torconnect/tor-connect.svg");
 }
 
 #torPreferences-status-tor-connect.blocked .torPreferences-status-icon {

@@ -1,12 +1,8 @@
-"use strict";
+import { QRCode } from "resource://gre/modules/QRCode.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["BridgeQrDialog"];
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
-const { QRCode } = ChromeUtils.import("resource://gre/modules/QRCode.jsm");
-
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
-
-class BridgeQrDialog {
+export class BridgeQrDialog {
   constructor() {
     this._bridgeString = "";
   }
