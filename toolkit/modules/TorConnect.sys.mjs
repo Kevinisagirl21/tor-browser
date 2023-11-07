@@ -7,7 +7,7 @@ import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  MoatRPC: "resource:///modules/Moat.sys.mjs",
+  MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
 });
 
@@ -23,9 +23,9 @@ import {
   TorSettings,
   TorSettingsTopics,
   TorBuiltinBridgeTypes,
-} from "resource:///modules/TorSettings.sys.mjs";
+} from "resource://gre/modules/TorSettings.sys.mjs";
 
-const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
+import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
 const TorTopics = Object.freeze({
   LogHasWarnOrErr: "TorLogHasWarnOrErr",
