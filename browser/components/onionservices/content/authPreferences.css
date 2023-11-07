@@ -1,6 +1,6 @@
 /* Copyright (c) 2020, The Tor Project, Inc. */
 
-@import url("chrome://browser/skin/browser-colors.css");
+@import url("chrome://global/skin/browser-colors.css");
 
 #torOnionServiceKeys-overview-container {
   margin-inline-end: 30px;

@@ -8,10 +8,8 @@ const OnionAuthPrompt = (function () {
   const lazy = {};
   ChromeUtils.defineESModuleGetters(lazy, {
     TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+    TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
     CommonUtils: "resource://services-common/utils.sys.mjs",
-  });
-  XPCOMUtils.defineLazyModuleGetters(lazy, {
-    TorStrings: "resource:///modules/TorStrings.jsm",
   });
 
   // OnionServicesAuthPrompt objects run within the main/chrome process.

@@ -7,13 +7,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
+  TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
 });
-
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorStrings",
-  "resource:///modules/TorStrings.jsm"
-);
 
 import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
 
