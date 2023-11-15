@@ -10,6 +10,7 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
@@ -290,6 +291,48 @@ class MeekTransport {
   }
 }
 
+class MeekTransportAndroid {
+  // These members are used by consumers to setup the proxy to do requests over
+  // meek. They are passed to newProxyInfoWithAuth.
+  proxyType = null;
+  proxyAddress = null;
+  proxyPort = 0;
+  proxyUsername = null;
+  proxyPassword = null;
+
+  #id = 0;
+
+  async init() {
+    // ensure we haven't already init'd
+    if (this.#id) {
+      throw new Error("MeekTransport: Already initialized");
+    }
+    const details = await lazy.EventDispatcher.instance.sendRequestForResult({
+      type: "GeckoView:Tor:StartMeek",
+    });
+    this.#id = details.id;
+    this.proxyType = "socks";
+    this.proxyAddress = details.address;
+    this.proxyPort = details.port;
+    [this.proxyUsername, this.proxyPassword] = makeMeekCredentials(
+      this.proxyType
+    );
+  }
+
+  async uninit() {
+    lazy.EventDispatcher.instance.sendRequest({
+      type: "GeckoView:Tor:StopMeek",
+      id: this.#id,
+    });
+    this.#id = 0;
+    this.proxyType = null;
+    this.proxyAddress = null;
+    this.proxyPort = 0;
+    this.proxyUsername = null;
+    this.proxyPassword = null;
+  }
+}
+
 //
 // Callback object with a cached promise for the returned Moat data
 //
@@ -407,7 +450,10 @@ export class MoatRPC {
       throw new Error("MoatRPC: Already initialized");
     }
 
-    const meekTransport = new MeekTransport();
+    const meekTransport =
+      Services.appinfo.OS === "Android"
+        ? new MeekTransportAndroid()
+        : new MeekTransport();
     await meekTransport.init();
     this.#meekTransport = meekTransport;
     this.#inited = true;
