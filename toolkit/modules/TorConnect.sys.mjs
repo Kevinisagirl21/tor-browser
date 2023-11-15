@@ -793,6 +793,9 @@ export const TorConnect = (() => {
 
               TorConnect._errorMessage = errorMessage;
               TorConnect._errorDetails = errorDetails;
+              console.error(
+                `[TorConnect] Entering error state (${errorMessage}, ${errorDetails})`
+              );
 
               Services.obs.notifyObservers(
                 { message: errorMessage, details: errorDetails },
