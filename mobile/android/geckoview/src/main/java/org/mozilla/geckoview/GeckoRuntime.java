@@ -167,7 +167,7 @@ public final class GeckoRuntime implements Parcelable {
       if (!BuildConfig.TOR_BROWSER) {
         GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
       } else {
-        Log.d(LOGTAG, "Tor Browser: skip GeckoNetworkManager startup"); 
+        Log.d(LOGTAG, "Tor Browser: skip GeckoNetworkManager startup");
       }
 
       // Set settings that may have changed between last app opening
