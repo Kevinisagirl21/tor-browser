@@ -204,12 +204,11 @@ const YecWidget = {
       this.isOpen = false;
     });
 
-    // TODO: Uncomment once we have a final donation matching amount.
-    //const donateMatchStart = Date.UTC(2023, 10, 13); // November 13th
-    //document.body.classList.toggle(
-    //  "yec-2023-is-donation-matching",
-    //  now >= donateMatchStart
-    //);
+    const donateMatchStart = Date.UTC(2023, 10, 22); // November 22nd
+    document.body.classList.toggle(
+      "yec-2023-is-donation-matching",
+      now >= donateMatchStart
+    );
 
     this._updateDonateLocale();
   },
