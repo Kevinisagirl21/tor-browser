@@ -62,12 +62,6 @@ export class RequestBridgeDialog {
       e.preventDefault();
       this.onSubmitCaptcha();
     });
-    this._dialog.addEventListener("dialoghelp", e => {
-      window.top.openTrustedLinkIn(
-        TorStrings.settings.learnMoreBridgesURL,
-        "tab"
-      );
-    });
 
     this._dialogHeader = this._dialog.querySelector(selectors.dialogHeader);
     this._dialogHeader.textContent = TorStrings.settings.contactingBridgeDB;

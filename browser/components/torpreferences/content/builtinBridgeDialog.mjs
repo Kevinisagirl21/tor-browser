@@ -86,12 +86,6 @@ export class BuiltinBridgeDialog {
     dialog.addEventListener("dialogaccept", () => {
       this.onSubmit(this._radioGroup.value, TorConnect.canBeginBootstrap);
     });
-    dialog.addEventListener("dialoghelp", e => {
-      window.top.openTrustedLinkIn(
-        TorStrings.settings.learnMoreCircumventionURL,
-        "tab"
-      );
-    });
 
     this._acceptButton = dialog.getButton("accept");
 
