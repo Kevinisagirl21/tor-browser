@@ -61,7 +61,6 @@ export class ProvideBridgeDialog {
     this._dialog.addEventListener("dialogaccept", e => {
       this.onSubmit(this._textarea.value, TorConnect.canBeginBootstrap);
     });
-    this._dialog.addEventListener("dialoghelp", openHelp);
 
     this._acceptButton = this._dialog.getButton("accept");
 
