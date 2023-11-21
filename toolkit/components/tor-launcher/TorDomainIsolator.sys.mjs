@@ -475,9 +475,19 @@ class TorDomainIsolatorImpl {
    * @returns {MozBrowser?} The browser the channel is associated to
    */
   #getBrowserForChannel(channel) {
+    const currentBrowser =
+      channel.loadInfo.browsingContext?.topChromeWindow?.browser;
+    if (
+      channel.loadInfo.browsingContext &&
+      currentBrowser?.browsingContext === channel.loadInfo.browsingContext
+    ) {
+      // Android has only one browser, and does not have the browsers property.
+      return currentBrowser;
+    }
     const browsers =
       channel.loadInfo.browsingContext?.topChromeWindow?.gBrowser?.browsers;
     if (!browsers || !channel.loadInfo.browsingContext?.browserId) {
+      logger.debug("Missing data to associate to a browser", channel.loadInfo);
       return null;
     }
     for (const browser of browsers) {
