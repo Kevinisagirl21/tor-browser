@@ -398,7 +398,7 @@ const gConnectionPane = (function () {
       bridgeSwitch.addEventListener("toggle", () => {
         TorSettings.bridges.enabled = bridgeSwitch.pressed;
         TorSettings.saveToPrefs();
-        TorSettings.applySettings().then(result => {
+        TorSettings.applySettings().finally(() => {
           this._populateBridgeCards();
         });
       });
@@ -486,7 +486,12 @@ const gConnectionPane = (function () {
         });
         const idString = TorStrings.settings.bridgeId;
         const id = card.querySelector(selectors.bridges.cardId);
-        const details = TorParsers.parseBridgeLine(bridgeString);
+        let details;
+        try {
+          details = TorParsers.parseBridgeLine(bridgeString);
+        } catch (e) {
+          console.error(`Detected invalid bridge line: ${bridgeString}`, e);
+        }
         if (details && details.id !== undefined) {
           card.setAttribute("data-bridge-id", details.id);
         }
@@ -529,7 +534,7 @@ const gConnectionPane = (function () {
                 bridgeSwitch.pressed && !!strings.length;
               TorSettings.bridges.bridge_strings = strings.join("\n");
               TorSettings.saveToPrefs();
-              TorSettings.applySettings().then(result => {
+              TorSettings.applySettings().finally(() => {
                 this._populateBridgeCards();
               });
             });
@@ -1021,7 +1026,7 @@ const gConnectionPane = (function () {
         TorSettings.bridges.builtin_type = "";
       }
       TorSettings.saveToPrefs();
-      TorSettings.applySettings().then(result => {
+      TorSettings.applySettings().finally(() => {
         this._populateBridgeCards();
       });
     },
@@ -1036,8 +1041,12 @@ const gConnectionPane = (function () {
     async saveBridgeSettings(connect) {
       TorSettings.saveToPrefs();
       // FIXME: This can throw if the user adds a bridge manually with invalid
-      // content. Should be addressed by tor-browser#40552.
-      await TorSettings.applySettings();
+      // content. Should be addressed by tor-browser#41913.
+      try {
+        await TorSettings.applySettings();
+      } catch (e) {
+        console.error("Applying settings failed", e);
+      }
 
       this._populateBridgeCards();
 
