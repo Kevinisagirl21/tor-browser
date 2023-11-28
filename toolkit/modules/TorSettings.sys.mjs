@@ -327,11 +327,13 @@ export const TorSettings = (() => {
 
       /* Quickstart */
       settings.quickstart.enabled = Services.prefs.getBoolPref(
-        TorSettingsPrefs.quickstart.enabled
+        TorSettingsPrefs.quickstart.enabled,
+        false
       );
       /* Bridges */
       settings.bridges.enabled = Services.prefs.getBoolPref(
-        TorSettingsPrefs.bridges.enabled
+        TorSettingsPrefs.bridges.enabled,
+        false
       );
       settings.bridges.source = Services.prefs.getIntPref(
         TorSettingsPrefs.bridges.source,
@@ -339,13 +341,17 @@ export const TorSettings = (() => {
       );
       if (settings.bridges.source == TorBridgeSource.BuiltIn) {
         const builtinType = Services.prefs.getStringPref(
-          TorSettingsPrefs.bridges.builtin_type
+          TorSettingsPrefs.bridges.builtin_type,
+          ""
         );
         settings.bridges.builtin_type = builtinType;
         settings.bridges.bridge_strings = getBuiltinBridgeStrings(builtinType);
         if (!settings.bridges.bridge_strings.length) {
           // in this case the user is using a builtin bridge that is no longer supported,
           // reset to settings to default values
+          console.warn(
+            `[TorSettings] Cannot find any bridge line for the configured bridge type ${builtinType}`
+          );
           settings.bridges.source = TorBridgeSource.Invalid;
           settings.bridges.builtin_type = null;
         }
@@ -363,23 +369,29 @@ export const TorSettings = (() => {
       }
       /* Proxy */
       settings.proxy.enabled = Services.prefs.getBoolPref(
-        TorSettingsPrefs.proxy.enabled
+        TorSettingsPrefs.proxy.enabled,
+        false
       );
       if (settings.proxy.enabled) {
         settings.proxy.type = Services.prefs.getIntPref(
-          TorSettingsPrefs.proxy.type
+          TorSettingsPrefs.proxy.type,
+          TorProxyType.Invalid
         );
         settings.proxy.address = Services.prefs.getStringPref(
-          TorSettingsPrefs.proxy.address
+          TorSettingsPrefs.proxy.address,
+          ""
         );
         settings.proxy.port = Services.prefs.getIntPref(
-          TorSettingsPrefs.proxy.port
+          TorSettingsPrefs.proxy.port,
+          0
         );
         settings.proxy.username = Services.prefs.getStringPref(
-          TorSettingsPrefs.proxy.username
+          TorSettingsPrefs.proxy.username,
+          ""
         );
         settings.proxy.password = Services.prefs.getStringPref(
-          TorSettingsPrefs.proxy.password
+          TorSettingsPrefs.proxy.password,
+          ""
         );
       } else {
         settings.proxy.type = TorProxyType.Invalid;
@@ -391,11 +403,13 @@ export const TorSettings = (() => {
 
       /* Firewall */
       settings.firewall.enabled = Services.prefs.getBoolPref(
-        TorSettingsPrefs.firewall.enabled
+        TorSettingsPrefs.firewall.enabled,
+        false
       );
       if (settings.firewall.enabled) {
         const portList = Services.prefs.getStringPref(
-          TorSettingsPrefs.firewall.allowed_ports
+          TorSettingsPrefs.firewall.allowed_ports,
+          ""
         );
         settings.firewall.allowed_ports = parsePortList(portList);
       } else {
