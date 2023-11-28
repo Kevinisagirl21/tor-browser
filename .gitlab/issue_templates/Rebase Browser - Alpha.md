@@ -138,3 +138,10 @@
   - **Tag**: `base-browser-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1-build1`
   - **Message**: `Tagging build1 for $(ESR_VERSION)esr-based alpha`
   - [ ] Push tag to `upstream`
+- [ ] Update tor-browser-build's main (no MR required, you can just push it if you have the permissions)
+  - [ ] Update `projects/firefox/config`
+    - [ ] Update `firefox_platform_version` 
+    - [ ] Set `browser_build` to 1 (to prevent failures in alpha testbuilds)
+  - [ ] Update `projects/geckoview/config`
+    - [ ] Update `geckoview_version`
+    - [ ] Set `browser_build` to 1
