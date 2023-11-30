@@ -4575,7 +4575,9 @@ BrowserGlue.prototype = {
     //            migration to packaged locales.
     // Version 2: Tor Browser 13.0/13.0a1: tor-browser#41845. Also, removed some
     //            torbutton preferences that are not used anymore.
-    const TBB_MIGRATION_VERSION = 2;
+    // Version 3: Tor Browser 13.0.7/13.5a3: Remove blockchair
+    //            (tor-browser#42283).
+    const TBB_MIGRATION_VERSION = 3;
     const MIGRATION_PREF = "torbrowser.migration.version";
 
     // If we decide to force updating users to pass through any version
@@ -4626,6 +4628,22 @@ BrowserGlue.prototype = {
           Services.prefs.clearUserPref(pref);
         }
       }
+    }
+    if (currentVersion < 3) {
+      (async () => {
+        try {
+          const engine = await lazy.AddonManager.getAddonByID(
+            "blockchair@search.mozilla.org"
+          );
+          await engine?.uninstall();
+        } catch {}
+        try {
+          const engine = await lazy.AddonManager.getAddonByID(
+            "blockchair-onion@search.mozilla.org"
+          );
+          engine?.uninstall();
+        } catch {}
+      })();
     }
 
     Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
