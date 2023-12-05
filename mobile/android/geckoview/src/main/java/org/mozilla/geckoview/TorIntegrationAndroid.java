@@ -49,6 +49,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_TOR_LOGS = "GeckoView:Tor:Logs";
     private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
     private static final String EVENT_SETTINGS_CHANGED = "GeckoView:Tor:SettingsChanged";
+    private static final String EVENT_SETTINGS_OPEN = "GeckoView:Tor:OpenSettings";
 
     // Events we emit
     private static final String EVENT_SETTINGS_GET = "GeckoView:Tor:SettingsGet";
@@ -118,7 +119,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_BOOTSTRAP_PROGRESS,
                         EVENT_BOOTSTRAP_COMPLETE,
                         EVENT_BOOTSTRAP_ERROR,
-                        EVENT_TOR_LOGS);
+                        EVENT_TOR_LOGS,
+                        EVENT_SETTINGS_OPEN);
     }
 
     @Override // BundleEventListener
@@ -173,6 +175,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
             String type = message.getString("logType");
             for (TorLogListener listener: mLogListeners) {
                     listener.onLog(type, msg);
+            }
+        } else if (EVENT_SETTINGS_OPEN.equals(event)) {
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onSettingsRequested();
             }
         }
     }
@@ -572,6 +578,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
         void onBootstrapProgress(double progress, String status, boolean hasWarnings);
         void onBootstrapComplete();
         void onBootstrapError(String message, String details);
+        void onSettingsRequested();
     }
 
     public interface TorLogListener {
