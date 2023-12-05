@@ -169,7 +169,7 @@ static const RedirEntry kRedirMap[] = {
 #endif
     {"telemetry", "chrome://global/content/aboutTelemetry.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
-    {"torconnect", "chrome://global/content/torconnect/aboutTorConnect.xhtml",
+    {"torconnect", "chrome://global/content/torconnect/aboutTorConnect.html",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::URI_CAN_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
          nsIAboutModule::HIDE_FROM_ABOUTABOUT |
