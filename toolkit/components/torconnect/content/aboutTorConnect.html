@@ -1,16 +1,10 @@
 <!-- Copyright (c) 2021, The Tor Project, Inc. -->
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src chrome:; object-src 'none'"
-    />
-    <link
-      rel="stylesheet"
-      href="chrome://global/skin/onionPattern.css"
-      type="text/css"
-      media="all"
     />
     <link
       rel="stylesheet"
@@ -21,48 +15,48 @@
   </head>
   <body>
     <div id="progressBar">
-      <div id="progressBackground" />
-      <div id="progressSolid" />
+      <div id="progressBackground"></div>
+      <div id="progressSolid"></div>
     </div>
     <div id="connectPageContainer" class="container">
       <div id="breadcrumbs" class="hidden">
         <span id="connect-to-tor" class="breadcrumb-item">
-          <span id="connect-to-tor-icon" class="breadcrumb-icon" />
-          <span class="breadcrumb-label" />
+          <span id="connect-to-tor-icon" class="breadcrumb-icon"></span>
+          <span class="breadcrumb-label"></span>
         </span>
         <span
           id="connection-assist-separator"
           class="breadcrumb-separator breadcrumb-icon"
-        />
+        ></span>
         <span id="connection-assist" class="breadcrumb-item">
-          <span id="connection-assist-icon" class="breadcrumb-icon" />
-          <span class="breadcrumb-label" />
+          <span id="connection-assist-icon" class="breadcrumb-icon"></span>
+          <span class="breadcrumb-label"></span>
         </span>
         <span
           id="try-bridge-separator"
           class="breadcrumb-separator breadcrumb-icon"
-        />
+        ></span>
         <span id="try-bridge" class="breadcrumb-item">
-          <span id="try-bridge-icon" class="breadcrumb-icon" />
-          <span class="breadcrumb-label" />
+          <span id="try-bridge-icon" class="breadcrumb-icon"></span>
+          <span class="breadcrumb-label"></span>
         </span>
       </div>
       <div id="text-container">
         <div class="title">
-          <h1 class="title-text" />
+          <h1 class="title-text"></h1>
         </div>
         <div id="connectLongContent">
-          <p id="connectLongContentText" />
+          <p id="connectLongContentText"></p>
         </div>
         <div id="connectShortDesc">
-          <p id="connectShortDescText" />
+          <p id="connectShortDescText"></p>
         </div>
 
         <button id="viewLogButton"></button>
 
         <div id="quickstartContainer">
           <input id="quickstartCheckbox" type="checkbox" />
-          <label id="quickstartCheckboxLabel" for="quickstartCheckbox" />
+          <label id="quickstartCheckboxLabel" for="quickstartCheckbox"></label>
         </div>
 
         <div id="connectButtonContainer" class="button-container">
@@ -70,7 +64,7 @@
           <button id="configureButton" hidden="true"></button>
           <button id="cancelButton" hidden="true"></button>
           <button id="connectButton" class="primary" hidden="true"></button>
-          <label id="locationDropdownLabel" for="countries" />
+          <label id="locationDropdownLabel" for="countries"></label>
           <form id="locationDropdown" hidden="true">
             <select id="countries"></select>
           </form>
@@ -78,7 +72,9 @@
         </div>
       </div>
     </div>
-#include ../../../themes/shared/onionPattern.inc.xhtml
+    <div class="onion-pattern-container">
+      <div class="onion-pattern-crop"></div>
+    </div>
+    <script src="chrome://global/content/torconnect/aboutTorConnect.js"></script>
   </body>
-  <script src="chrome://global/content/torconnect/aboutTorConnect.js" />
 </html>
