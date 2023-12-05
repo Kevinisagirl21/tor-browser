@@ -21,6 +21,56 @@ const TorLauncherPrefs = Object.freeze({
   moat_service: "extensions.torlauncher.moat_service",
 });
 
+function makeMeekCredentials(proxyType) {
+  // Construct the per-connection arguments.
+  let meekClientEscapedArgs = "";
+  const meekReflector = Services.prefs.getStringPref(
+    TorLauncherPrefs.bridgedb_reflector
+  );
+
+  // Escape aValue per section 3.5 of the PT specification:
+  //   First the "<Key>=<Value>" formatted arguments MUST be escaped,
+  //   such that all backslash, equal sign, and semicolon characters
+  //   are escaped with a backslash.
+  const escapeArgValue = aValue =>
+    aValue
+      ? aValue
+          .replaceAll("\\", "\\\\")
+          .replaceAll("=", "\\=")
+          .replaceAll(";", "\\;")
+      : "";
+
+  if (meekReflector) {
+    meekClientEscapedArgs += "url=";
+    meekClientEscapedArgs += escapeArgValue(meekReflector);
+  }
+  const meekFront = Services.prefs.getStringPref(
+    TorLauncherPrefs.bridgedb_front
+  );
+  if (meekFront) {
+    if (meekClientEscapedArgs.length) {
+      meekClientEscapedArgs += ";";
+    }
+    meekClientEscapedArgs += "front=";
+    meekClientEscapedArgs += escapeArgValue(meekFront);
+  }
+
+  // socks5
+  if (proxyType === "socks") {
+    if (meekClientEscapedArgs.length <= 255) {
+      return [meekClientEscapedArgs, "\x00"];
+    } else {
+      return [
+        meekClientEscapedArgs.substring(0, 255),
+        meekClientEscapedArgs.substring(255),
+      ];
+    }
+    // socks4
+  } else {
+    return [meekClientEscapedArgs, undefined];
+  }
+}
+
 //
 // Launches and controls the PT process lifetime
 //
@@ -68,39 +118,6 @@ class MeekTransport {
         const meekPath = meekWorkDir.clone();
         meekPath.appendRelativePath(proxy.pathToBinary);
         proxy.pathToBinary = meekPath.path;
-      }
-
-      // Construct the per-connection arguments.
-      let meekClientEscapedArgs = "";
-      const meekReflector = Services.prefs.getStringPref(
-        TorLauncherPrefs.bridgedb_reflector
-      );
-
-      // Escape aValue per section 3.5 of the PT specification:
-      //   First the "<Key>=<Value>" formatted arguments MUST be escaped,
-      //   such that all backslash, equal sign, and semicolon characters
-      //   are escaped with a backslash.
-      const escapeArgValue = aValue =>
-        aValue
-          ? aValue
-              .replaceAll("\\", "\\\\")
-              .replaceAll("=", "\\=")
-              .replaceAll(";", "\\;")
-          : "";
-
-      if (meekReflector) {
-        meekClientEscapedArgs += "url=";
-        meekClientEscapedArgs += escapeArgValue(meekReflector);
-      }
-      const meekFront = Services.prefs.getStringPref(
-        TorLauncherPrefs.bridgedb_front
-      );
-      if (meekFront) {
-        if (meekClientEscapedArgs.length) {
-          meekClientEscapedArgs += ";";
-        }
-        meekClientEscapedArgs += "front=";
-        meekClientEscapedArgs += escapeArgValue(meekFront);
       }
 
       // Setup env and start meek process
@@ -247,22 +264,9 @@ class MeekTransport {
         this.#meekClientProcess = null;
         this.uninit();
       });
-
-      // socks5
-      if (this.proxyType === "socks") {
-        if (meekClientEscapedArgs.length <= 255) {
-          this.proxyUsername = meekClientEscapedArgs;
-          this.proxyPassword = "\x00";
-        } else {
-          this.proxyUsername = meekClientEscapedArgs.substring(0, 255);
-          this.proxyPassword = meekClientEscapedArgs.substring(255);
-        }
-        // socks4
-      } else {
-        this.proxyUsername = meekClientEscapedArgs;
-        this.proxyPassword = undefined;
-      }
-
+      [this.proxyUsername, this.proxyPassword] = makeMeekCredentials(
+        this.proxyType
+      );
       this.#inited = true;
     } catch (ex) {
       if (this.#meekClientProcess) {
@@ -403,7 +407,7 @@ export class MoatRPC {
       throw new Error("MoatRPC: Already initialized");
     }
 
-    let meekTransport = new MeekTransport();
+    const meekTransport = new MeekTransport();
     await meekTransport.init();
     this.#meekTransport = meekTransport;
     this.#inited = true;
