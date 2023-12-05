@@ -325,6 +325,10 @@ class TorFile {
 }
 
 export const TorLauncherUtil = Object.freeze({
+  get isAndroid() {
+    return Services.appinfo.OS === "Android";
+  },
+
   get isMac() {
     return Services.appinfo.OS === "Darwin";
   },

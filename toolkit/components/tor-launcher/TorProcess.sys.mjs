@@ -33,8 +33,6 @@ export class TorProcess {
   #args = [];
   #subprocess = null;
   #status = TorProcessStatus.Unknown;
-  // Have we ever made a connection on the control port?
-  #didConnectToTorControlPort = false;
 
   onExit = exitCode => {};
 
@@ -69,10 +67,6 @@ export class TorProcess {
     }
   }
 
-  get status() {
-    return this.#status;
-  }
-
   get isRunning() {
     return (
       this.#status === TorProcessStatus.Starting ||
@@ -102,7 +96,6 @@ export class TorProcess {
       }
 
       this.#status = TorProcessStatus.Starting;
-      this.#didConnectToTorControlPort = false;
 
       // useful for simulating slow tor daemon launch
       const kPrefTorDaemonLaunchDelay = "extensions.torlauncher.launch_delay";
@@ -155,13 +148,6 @@ export class TorProcess {
     this.#status = TorProcessStatus.Exited;
   }
 
-  // The owner of the process can use this function to tell us that they
-  // successfully connected to the control port. This information will be used
-  // only to decide which text to show in the confirmation dialog if tor exits.
-  connectionWorked() {
-    this.#didConnectToTorControlPort = true;
-  }
-
   async #dumpStdout() {
     let string;
     while (
@@ -201,20 +187,6 @@ export class TorProcess {
   #processExitedUnexpectedly(exitCode) {
     this.#subprocess = null;
     this.#status = TorProcessStatus.Exited;
-    // FIXME: We can probably drop #didConnectToTorControlPort and use only one
-    // callback. Then we can let the provider actually distinguish between the
-    // cases.
-    if (!this.#didConnectToTorControlPort) {
-      logger.warn("Tor exited before we could connect to its control port.");
-      // tor might be misconfigured, because we could never connect to it.
-      // Two instances of Tor Browser trying to use the same port numbers is
-      // also a typical scenario for this.
-      // This might happen very early, before the browser UI is actually
-      // available. So, we will tell the process owner that the process exited,
-      // without trying to restart it.
-      this.onExit(exitCode);
-      return;
-    }
     logger.warn("Tor exited suddenly.");
     this.onExit(exitCode);
   }
