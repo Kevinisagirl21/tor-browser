@@ -36,6 +36,15 @@ const logger = new ConsoleAPI({
  * @property {number=} port The port number to use for a TCP control port
  */
 /**
+ * @typedef {object} SocksSettings An object that includes the proxy settings to
+ * be configured in the browser.
+ * @property {boolean=} transproxy If true, no proxy is configured
+ * @property {nsIFile=} ipcFile The nsIFile object with the path to a Unix
+ * socket to use for an IPC proxy
+ * @property {string=} host The host to connect for a TCP proxy
+ * @property {number=} port The port number to use for a TCP proxy
+ */
+/**
  * @typedef {object} LogEntry An object with a log message
  * @property {Date} date The date at which we received the message
  * @property {string} type The message level
@@ -112,6 +121,13 @@ export class TorProvider {
   #torProcess = null;
 
   /**
+   * The settings for the SOCKS proxy.
+   *
+   * @type {SocksSettings?}
+   */
+  #socksSettings = null;
+
+  /**
    * The logs we received over the control port.
    * We store a finite number of log entries which can be configured with
    * extensions.torlauncher.max_tor_log_entries.
@@ -165,8 +181,9 @@ export class TorProvider {
   async init() {
     logger.debug("Initializing the Tor provider.");
 
-    const socksSettings = TorLauncherUtil.getPreferredSocksConfiguration();
-    logger.debug("Requested SOCKS configuration", socksSettings);
+    // These settings might be customized in the following steps.
+    this.#socksSettings = TorLauncherUtil.getPreferredSocksConfiguration();
+    logger.debug("Requested SOCKS configuration", this.#socksSettings);
 
     try {
       await this.#setControlPortConfiguration();
@@ -175,11 +192,11 @@ export class TorProvider {
       throw e;
     }
 
-    if (socksSettings.transproxy) {
+    if (this.#socksSettings.transproxy) {
       logger.info("Transparent proxy required, not starting a Tor daemon.");
     } else if (this.ownsTorDaemon) {
       try {
-        await this.#startDaemon(socksSettings);
+        await this.#startDaemon();
       } catch (e) {
         logger.error("Failed to start the tor daemon", e);
         throw e;
@@ -197,8 +214,7 @@ export class TorProvider {
       throw e;
     }
 
-    // We do not customize SOCKS settings, at least for now.
-    TorLauncherUtil.setProxyConfiguration(socksSettings);
+    TorLauncherUtil.setProxyConfiguration(this.#socksSettings);
 
     logger.info("The Tor provider is ready.");
 
@@ -464,7 +480,7 @@ export class TorProvider {
 
   // Process management
 
-  async #startDaemon(socksSettings) {
+  async #startDaemon() {
     // TorProcess should be instanced once, then always reused and restarted
     // only through the prompt it exposes when the controlled process dies.
     if (this.#torProcess) {
@@ -476,7 +492,7 @@ export class TorProvider {
 
     this.#torProcess = new lazy.TorProcess(
       this.#controlPortSettings,
-      socksSettings
+      this.#socksSettings
     );
     // Use a closure instead of bind because we reassign #cancelConnection.
     // Also, we now assign an exit handler that cancels the first connection,
@@ -619,7 +635,6 @@ export class TorProvider {
         }
         this.#openControlPort()
           .then(controller => {
-            this.#torProcess?.connectionWorked();
             this.#cancelConnection = () => {};
             // The cancel function should have already called reject.
             if (!canceled) {
