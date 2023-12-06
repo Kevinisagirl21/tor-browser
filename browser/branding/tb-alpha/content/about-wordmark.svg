@@ -1,4 +1,8 @@
-<svg width="382" height="44" viewBox="0 0 382 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- tor-browser#42319: Make sure all the about wordmark SVGs (release, alpha,
+     nightly) have the same size. This will likely add some padding to some
+     channels, so the background-position for RTL languages should be ajusted
+     accordingly in the respective aboutDialog.css. -->
+<svg width="416" height="45" viewBox="0 0 416 45" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M337.358 34V0H341.173V13.6246C341.823 12.5477 342.633 11.678 343.605 11.0154C345.004 10.0617 346.689 9.58485 348.66 9.58485C351.521 9.58485 353.794 10.475 355.479 12.2553C357.164 14.0355 357.99 16.7377 357.959 20.3619V34H354.144V21.7924C354.144 19.4399 353.858 17.6438 353.285 16.4039C352.745 15.1641 351.998 14.3216 351.044 13.8766C350.09 13.3997 349.01 13.1613 347.801 13.1613C345.703 13.1613 344.066 13.9084 342.89 15.4025C341.745 16.8649 341.173 18.9472 341.173 21.6494V34H337.358Z" fill="white"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M292.09 34L288.281 24.5105H273.058L269.248 34H264.957L278.547 0.619917H282.743L296.334 34H292.09ZM280.669 5.54972L286.826 20.8864H274.513L280.669 5.54972Z" fill="white"/>
 <path d="M299.66 34V0.619917H303.475V34H299.66Z" fill="white"/>
