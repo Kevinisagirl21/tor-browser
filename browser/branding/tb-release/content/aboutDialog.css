@@ -39,6 +39,14 @@
   margin-inline: 30px;
 }
 
+#rightBox:-moz-locale-dir(rtl) {
+  /* tor-browser#42319: re-align the background image after we added some
+  padding to make all the channel use the same size for the wordmark.
+  We can remove this it if we stop making the resource accessible from content
+  (tor-browser#29745) */
+  background-position: right -164px top 0;
+}
+
 #bottomBox {
   background-color: hsla(235, 43%, 10%, .5);
   padding: 15px 10px 15px;
