@@ -487,6 +487,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mPrioritizeOnions.set(flag);
       return this;
     }
+
+    public @NonNull Builder useNewBootstrap(final boolean flag) {
+      getSettings().mUseNewBootstrap.set(flag);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -540,6 +545,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<>("browser.security_level.security_slider", 4);
   /* package */ final Pref<Boolean> mPrioritizeOnions =
       new Pref<>("privacy.prioritizeonions.enabled", false);
+  /* package */ final Pref<Boolean> mUseNewBootstrap =
+      new Pref<>("browser.tor_android.use_new_bootstrap", false);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1349,6 +1356,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    */
   public @NonNull GeckoRuntimeSettings setPrioritizeOnions(final boolean flag) {
     mPrioritizeOnions.commit(flag);
+    return this;
+  }
+
+  public boolean getUseNewBootstrap() {
+    return mUseNewBootstrap.get();
+  }
+
+  public @NonNull GeckoRuntimeSettings setUseNewBootstrap(final boolean flag) {
+    mUseNewBootstrap.commit(flag);
     return this;
   }
 
