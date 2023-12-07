@@ -10,16 +10,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
 });
 
-// The only event we might emit
-const TOR_START_EVENT = "GeckoView:Tor:StartTor";
-
 const logger = new ConsoleAPI({
   maxLogLevel: "info",
   prefix: "TorProcessAndroid",
 });
 
+const TorOutgoingEvents = Object.freeze({
+  start: "GeckoView:Tor:StartTor",
+  stop: "GeckoView:Tor:StopTor",
+});
+
 // The events we will listen to
-const TorEvents = Object.freeze({
+const TorIncomingEvents = Object.freeze({
   started: "GeckoView:Tor:TorStarted",
   startFailed: "GeckoView:Tor:TorStartFailed",
   exited: "GeckoView:Tor:TorExited",
@@ -63,12 +65,12 @@ export class TorProcessAndroid {
     });
     lazy.EventDispatcher.instance.registerListener(
       this,
-      Object.values(TorEvents)
+      Object.values(TorIncomingEvents)
     );
     let config;
     try {
       config = await lazy.EventDispatcher.instance.sendRequestForResult({
-        type: TOR_START_EVENT,
+        type: TorOutgoingEvents.start,
         handle: this.#processHandle,
       });
       logger.debug("Sent the start event.");
@@ -83,10 +85,15 @@ export class TorProcessAndroid {
   forget() {
     // Processes usually exit when we close the control port connection to them.
     logger.trace(`Forgetting process ${this.#processHandle}`);
+    lazy.EventDispatcher.instance.sendRequestForResult({
+      type: TorOutgoingEvents.stop,
+      handle: this.#processHandle,
+    });
+    logger.debug("Sent the start event.");
     this.#processHandle = null;
     lazy.EventDispatcher.instance.unregisterListener(
       this,
-      Object.values(TorEvents)
+      Object.values(TorIncomingEvents)
     );
   }
 
@@ -97,13 +104,13 @@ export class TorProcessAndroid {
     }
     logger.info(`Received an event ${event}`, data);
     switch (event) {
-      case TorEvents.started:
+      case TorIncomingEvents.started:
         this.#startResolve();
         break;
-      case TorEvents.startFailed:
+      case TorIncomingEvents.startFailed:
         this.#startReject(new Error(data.error));
         break;
-      case TorEvents.exited:
+      case TorIncomingEvents.exited:
         this.forget();
         if (this.#startReject !== null) {
           this.#startReject();
