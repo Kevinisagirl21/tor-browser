@@ -476,6 +476,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mSecurityLevel.set(level);
       return this;
     }
+
+    public @NonNull Builder useNewBootstrap(final boolean flag) {
+      getSettings().mUseNewBootstrap.set(flag);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -527,6 +532,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Integer> mSpoofEnglish = new Pref<>("privacy.spoof_english", 0);
   /* package */ final Pref<Integer> mSecurityLevel =
       new Pref<>("browser.security_level.security_slider", 4);
+  /* package */ final Pref<Boolean> mUseNewBootstrap =
+      new Pref<>("browser.tor_android.use_new_bootstrap", false);
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1316,6 +1323,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    */
   public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
     mSecurityLevel.commit(level);
+    return this;
+  }
+
+  public boolean getUseNewBootstrap() {
+    return mUseNewBootstrap.get();
+  }
+
+  public @NonNull GeckoRuntimeSettings setUseNewBootstrap(final boolean flag) {
+    mUseNewBootstrap.commit(flag);
     return this;
   }
 
