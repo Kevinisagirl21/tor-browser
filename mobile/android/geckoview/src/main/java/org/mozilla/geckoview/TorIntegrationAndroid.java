@@ -36,6 +36,7 @@ import org.mozilla.gecko.util.GeckoBundle;
     private static final String TAG = "TorIntegrationAndroid";
 
     private static final String TOR_EVENT_START = "GeckoView:Tor:StartTor";
+    private static final String TOR_EVENT_STOP = "GeckoView:Tor:StopTor";
     private static final String MEEK_EVENT_START = "GeckoView:Tor:StartMeek";
     private static final String MEEK_EVENT_STOP = "GeckoView:Tor:StopMeek";
 
@@ -45,9 +46,10 @@ import org.mozilla.gecko.util.GeckoBundle;
 
     private final String mLibraryDir;
     private final Path mCacheDir;
+    private final String mIpcDirectory;
     private final String mDataDir;
 
-    private final HashMap<String, TorProcess> mTorProcesses = new HashMap<>();
+    private TorProcess mTorProcess = null;
     /**
      * The first time we run a Tor process in this session, we copy some configuration files to be
      * sure we always have the latest version, but if we re-launch a tor process we do not need to
@@ -64,16 +66,17 @@ import org.mozilla.gecko.util.GeckoBundle;
     public TorIntegrationAndroid(Context context) {
         mLibraryDir = context.getApplicationInfo().nativeLibraryDir;
         mCacheDir = context.getCacheDir().toPath();
+        mIpcDirectory = mCacheDir + "/tor-private";
         mDataDir = context.getDataDir().getAbsolutePath() + "/tor";
         registerListener();
     }
 
     public synchronized void shutdown() {
-        // TODO: Find a place where actually call this!
-        for (TorProcess p : mTorProcesses.values()) {
-            p.shutdown();
+        // FIXME: It seems this never gets called
+        if (mTorProcess != null) {
+            mTorProcess.shutdown();
+            mTorProcess = null;
         }
-        mTorProcesses.clear();
     }
 
     private void registerListener() {
@@ -90,6 +93,8 @@ import org.mozilla.gecko.util.GeckoBundle;
             final String event, final GeckoBundle message, final EventCallback callback) {
         if (TOR_EVENT_START.equals(event)) {
             startDaemon(message, callback);
+        } else if (TOR_EVENT_STOP.equals(event)) {
+            stopDaemon(message, callback);
         } else if (MEEK_EVENT_START.equals(event)) {
             startMeek(message, callback);
         } else if (MEEK_EVENT_STOP.equals(event)) {
@@ -105,36 +110,38 @@ import org.mozilla.gecko.util.GeckoBundle;
             callback.sendError("Expected a handle for the new process.");
             return;
         }
-        if (mTorProcesses.containsKey(handle)) {
-            Log.e(TAG, "Refusing to reuse the process handle " + handle + ".");
-            callback.sendError("A process with the same handle already exists");
-            return;
-        }
         Log.d(TAG, "Starting the a tor process with handle " + handle);
 
-        Set<PosixFilePermission> chmod = PosixFilePermissions.fromString("rwx------");
-        Path dir = null;
-        try {
-            // Do we really need to create a random one? We could use the handle...
-            dir = Files.createTempDirectory(
-                    mCacheDir,
-                    "tor-private-",
-                    PosixFilePermissions.asFileAttribute(chmod));
-        } catch (IOException e) {
-            Log.e(
-                    TAG, "Failed to create a temporary directory for IPC files", e);
-            callback.sendError(
-                    "Cannot create a temporary directory for IPC files. " + e.getMessage());
-            return;
+        TorProcess previousProcess = mTorProcess;
+        if (previousProcess != null) {
+            Log.w(TAG, "We still have a running process: " + previousProcess.getHandle());
         }
-
-        mTorProcesses.put(handle, new TorProcess(handle, dir));
+        mTorProcess = new TorProcess(handle);
 
         GeckoBundle bundle = new GeckoBundle(3);
-        bundle.putString("controlPortPath", dir.toString() + CONTROL_PORT_FILE);
-        bundle.putString("socksPath", dir.toString() + SOCKS_FILE);
-        bundle.putString("cookieFilePath", dir.toString() + COOKIE_AUTH_FILE);
+        bundle.putString("controlPortPath", mIpcDirectory + CONTROL_PORT_FILE);
+        bundle.putString("socksPath", mIpcDirectory + SOCKS_FILE);
+        bundle.putString("cookieFilePath", mIpcDirectory + COOKIE_AUTH_FILE);
         callback.sendSuccess(bundle);
+    }
+
+    private synchronized void stopDaemon(final GeckoBundle message, final EventCallback callback) {
+        if (mTorProcess == null) {
+            if (callback != null) {
+                callback.sendSuccess(null);
+            }
+            return;
+        }
+        String handle = message.getString("handle", "");
+        if (!mTorProcess.getHandle().equals(handle)) {
+            GeckoBundle bundle = new GeckoBundle(1);
+            bundle.putString("error", "The requested process has not been found. It might have already been stopped.");
+            callback.sendError(bundle);
+            return;
+        }
+        mTorProcess.shutdown();
+        mTorProcess = null;
+        callback.sendSuccess(null);
     }
 
     class TorProcess extends Thread {
@@ -142,30 +149,31 @@ import org.mozilla.gecko.util.GeckoBundle;
         private static final String TOR_EVENT_START_FAILED = "GeckoView:Tor:TorStartFailed";
         private static final String TOR_EVENT_EXITED = "GeckoView:Tor:TorExited";
         private final String mHandle;
-        private final File mIpcDirectrory;
         private Process mProcess = null;
 
-        TorProcess(String handle, Path ipcPath) {
+        TorProcess(String handle) {
             mHandle = handle;
-            mIpcDirectrory = ipcPath.toFile();
             setName("tor-process-" + handle);
             start();
         }
 
         @Override
         public void run() {
+            cleanIpcDirectory();
+
+            final String ipcDir = TorIntegrationAndroid.this.mIpcDirectory;
             final ArrayList<String> args = new ArrayList<>();
             args.add(mLibraryDir + "/libTor.so");
             args.add("DisableNetwork");
             args.add("1");
             args.add("+__ControlPort");
-            args.add("unix:" + mIpcDirectrory + CONTROL_PORT_FILE);
+            args.add("unix:" + ipcDir + CONTROL_PORT_FILE);
             args.add("+__SocksPort");
-            args.add("unix:" + mIpcDirectrory + SOCKS_FILE + " IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth");
+            args.add("unix:" + ipcDir + SOCKS_FILE + " IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth");
             args.add("CookieAuthentication");
             args.add("1");
             args.add("CookieAuthFile");
-            args.add(mIpcDirectrory + COOKIE_AUTH_FILE);
+            args.add(ipcDir + COOKIE_AUTH_FILE);
             args.add("DataDirectory");
             args.add(mDataDir);
             boolean copied = true;
@@ -224,8 +232,26 @@ import org.mozilla.gecko.util.GeckoBundle;
             // FIXME: We usually don't reach this when the application is killed!
             // So, we don't do our cleanup.
             Log.i(TAG, "Tor process " + mHandle + " has exited.");
-            // We do not have child directories, only files
-            File[] maybeFiles = mIpcDirectrory.listFiles();
+            EventDispatcher.getInstance().dispatch(TOR_EVENT_EXITED, data);
+        }
+
+        private void cleanIpcDirectory() {
+            File directory = new File(TorIntegrationAndroid.this.mIpcDirectory);
+            if (!Files.isDirectory(directory.toPath())) {
+                if (!directory.mkdirs()) {
+                    Log.e(TAG, "Failed to create the IPC directory.");
+                    return;
+                }
+                try {
+                    Set<PosixFilePermission> chmod = PosixFilePermissions.fromString("rwx------");
+                    Files.setPosixFilePermissions(directory.toPath(), chmod);
+                } catch (IOException e) {
+                    Log.e(TAG, "Could not set the permissions to the IPC directory.", e);
+                }
+                return;
+            }
+            // We assume we do not have child directories, only files
+            File[] maybeFiles = directory.listFiles();
             if (maybeFiles != null) {
                 for (File file : maybeFiles) {
                     if (!file.delete()) {
@@ -233,10 +259,6 @@ import org.mozilla.gecko.util.GeckoBundle;
                     }
                 }
             }
-            if (!mIpcDirectrory.delete()) {
-                Log.d(TAG, "Could not delete " + mIpcDirectrory);
-            }
-            EventDispatcher.getInstance().dispatch(TOR_EVENT_EXITED, data);
         }
 
         private void copyAndUseConfigFile(String option, String name, ArrayList<String> args) throws IOException {
@@ -262,6 +284,10 @@ import org.mozilla.gecko.util.GeckoBundle;
                     Log.e(TAG, "Cannot join the thread for tor process " + mHandle + ", possibly already terminated", e);
                 }
             }
+        }
+
+        public String getHandle() {
+            return mHandle;
         }
     }
 
