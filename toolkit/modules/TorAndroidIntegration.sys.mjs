@@ -8,6 +8,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
@@ -25,9 +26,15 @@ const logger = new ConsoleAPI({
 
 const ListenedEvents = Object.freeze({
   settingsGet: "GeckoView:Tor:SettingsGet",
+  // The data is passed directly to TorSettings.
   settingsSet: "GeckoView:Tor:SettingsSet",
   settingsApply: "GeckoView:Tor:SettingsApply",
   settingsSave: "GeckoView:Tor:SettingsSave",
+  bootstrapBegin: "GeckoView:Tor:BootstrapBegin",
+  // Optionally takes a countryCode, as data.countryCode.
+  bootstrapBeginAuto: "GeckoView:Tor:BootstrapBeginAuto",
+  bootstrapCancel: "GeckoView:Tor:BootstrapCancel",
+  bootstrapGetState: "GeckoView:Tor:BootstrapGetState",
 });
 
 class TorAndroidIntegrationImpl {
@@ -41,6 +48,10 @@ class TorAndroidIntegrationImpl {
 
     this.#bootstrapMethodReset();
     Services.prefs.addObserver(Prefs.useNewBootstrap, this);
+
+    for (const topic in lazy.TorConnectTopics) {
+      Services.obs.addObserver(this, topic);
+    }
   }
 
   async #initNewBootstrap() {
@@ -67,6 +78,8 @@ class TorAndroidIntegrationImpl {
           this.#bootstrapMethodReset();
         }
         break;
+      case lazy.TorConnectTopics.StateChange:
+        break;
     }
   }
 
@@ -74,24 +87,36 @@ class TorAndroidIntegrationImpl {
     logger.debug(`Received event ${event}`, data);
     try {
       switch (event) {
-        case settingsGet:
+        case ListenedEvents.settingsGet:
           callback?.onSuccess(lazy.TorSettings.getSettings());
           return;
-        case settingsSet:
+        case ListenedEvents.settingsSet:
           // This does not throw, so we do not have any way to report the error!
           lazy.TorSettings.setSettings(data);
           break;
-        case settingsApply:
+        case ListenedEvents.settingsApply:
           await lazy.TorSettings.applySettings();
           break;
-        case settingsSave:
+        case ListenedEvents.settingsSave:
           await lazy.TorSettings.saveSettings();
           break;
+        case ListenedEvents.bootstrapBegin:
+          lazy.TorConnect.beginBootstrap();
+          break;
+        case ListenedEvents.bootstrapBeginAuto:
+          lazy.TorConnect.beginAutoBootstrap(data.countryCode);
+          break;
+        case ListenedEvents.bootstrapCancel:
+          lazy.TorConnect.cancelBootstrap();
+          break;
+        case ListenedEvents.bootstrapGetState:
+          callback?.onSuccess(lazy.TorConnect.state);
+          return;
       }
       callback?.onSuccess();
     } catch (e) {
-      logger.error();
-      callback?.sendError(e);
+      logger.error(`Error while handling event ${event}`, e);
+      callback?.onError(e);
     }
   }
 

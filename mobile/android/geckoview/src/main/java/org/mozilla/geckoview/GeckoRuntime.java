@@ -1009,6 +1009,14 @@ public final class GeckoRuntime implements Parcelable {
   }
 
   /**
+   * Get the Tor integration controller for this runtime.
+   */
+  @UiThread
+  public @NonNull TorIntegrationAndroid getTorIntegrationController() {
+    return mTorIntegration;
+  }
+
+  /**
    * Appends notes to crash report.
    *
    * @param notes The application notes to append to the crash report.
