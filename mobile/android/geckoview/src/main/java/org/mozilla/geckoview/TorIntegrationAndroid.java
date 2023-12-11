@@ -9,6 +9,10 @@ package org.mozilla.geckoview;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +26,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,13 +37,24 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 
-/* package */ class TorIntegrationAndroid implements BundleEventListener {
+public class TorIntegrationAndroid implements BundleEventListener {
     private static final String TAG = "TorIntegrationAndroid";
 
-    private static final String TOR_EVENT_START = "GeckoView:Tor:StartTor";
-    private static final String TOR_EVENT_STOP = "GeckoView:Tor:StopTor";
-    private static final String MEEK_EVENT_START = "GeckoView:Tor:StartMeek";
-    private static final String MEEK_EVENT_STOP = "GeckoView:Tor:StopMeek";
+    // Events we listen to
+    private static final String EVENT_TOR_START = "GeckoView:Tor:StartTor";
+    private static final String EVENT_TOR_STOP = "GeckoView:Tor:StopTor";
+    private static final String EVENT_MEEK_START = "GeckoView:Tor:StartMeek";
+    private static final String EVENT_MEEK_STOP = "GeckoView:Tor:StopMeek";
+
+    // Events we emit
+    private static final String EVENT_SETTINGS_GET = "GeckoView:Tor:SettingsGet";
+    private static final String EVENT_SETTINGS_SET = "GeckoView:Tor:SettingsSet";
+    private static final String EVENT_SETTINGS_APPLY = "GeckoView:Tor:SettingsApply";
+    private static final String EVENT_SETTINGS_SAVE = "GeckoView:Tor:SettingsSave";
+    private static final String EVENT_BOOTSTRAP_BEGIN = "GeckoView:Tor:BootstrapBegin";
+    private static final String EVENT_BOOTSTRAP_BEGIN_AUTO = "GeckoView:Tor:BootstrapBeginAuto";
+    private static final String EVENT_BOOTSTRAP_CANCEL = "GeckoView:Tor:BootstrapCancel";
+    private static final String EVENT_BOOTSTRAP_GET_STATE = "GeckoView:Tor:BootstrapGetState";
 
     private static final String CONTROL_PORT_FILE = "/control-ipc";
     private static final String SOCKS_FILE = "/socks-ipc";
@@ -63,7 +79,7 @@ import org.mozilla.gecko.util.GeckoBundle;
     private final HashMap<Integer, MeekTransport> mMeeks = new HashMap<>();
     private int mMeekCounter;
 
-    public TorIntegrationAndroid(Context context) {
+    /* package */ TorIntegrationAndroid(Context context) {
         mLibraryDir = context.getApplicationInfo().nativeLibraryDir;
         mCacheDir = context.getCacheDir().toPath();
         mIpcDirectory = mCacheDir + "/tor-private";
@@ -71,7 +87,7 @@ import org.mozilla.gecko.util.GeckoBundle;
         registerListener();
     }
 
-    public synchronized void shutdown() {
+    /* package */ synchronized void shutdown() {
         // FIXME: It seems this never gets called
         if (mTorProcess != null) {
             mTorProcess.shutdown();
@@ -83,21 +99,21 @@ import org.mozilla.gecko.util.GeckoBundle;
         EventDispatcher.getInstance()
                 .registerUiThreadListener(
                         this,
-                        TOR_EVENT_START,
-                        MEEK_EVENT_START,
-                        MEEK_EVENT_STOP);
+                        EVENT_TOR_START,
+                        EVENT_MEEK_START,
+                        EVENT_MEEK_STOP);
     }
 
     @Override // BundleEventListener
     public synchronized void handleMessage(
             final String event, final GeckoBundle message, final EventCallback callback) {
-        if (TOR_EVENT_START.equals(event)) {
+        if (EVENT_TOR_START.equals(event)) {
             startDaemon(message, callback);
-        } else if (TOR_EVENT_STOP.equals(event)) {
+        } else if (EVENT_TOR_STOP.equals(event)) {
             stopDaemon(message, callback);
-        } else if (MEEK_EVENT_START.equals(event)) {
+        } else if (EVENT_MEEK_START.equals(event)) {
             startMeek(message, callback);
-        } else if (MEEK_EVENT_STOP.equals(event)) {
+        } else if (EVENT_MEEK_STOP.equals(event)) {
             stopMeek(message, callback);
         }
     }
@@ -145,9 +161,9 @@ import org.mozilla.gecko.util.GeckoBundle;
     }
 
     class TorProcess extends Thread {
-        private static final String TOR_EVENT_STARTED = "GeckoView:Tor:TorStarted";
-        private static final String TOR_EVENT_START_FAILED = "GeckoView:Tor:TorStartFailed";
-        private static final String TOR_EVENT_EXITED = "GeckoView:Tor:TorExited";
+        private static final String EVENT_TOR_STARTED = "GeckoView:Tor:TorStarted";
+        private static final String EVENT_TOR_START_FAILED = "GeckoView:Tor:TorStartFailed";
+        private static final String EVENT_TOR_EXITED = "GeckoView:Tor:TorExited";
         private final String mHandle;
         private Process mProcess = null;
 
@@ -202,14 +218,14 @@ import org.mozilla.gecko.util.GeckoBundle;
                 final GeckoBundle data = new GeckoBundle(2);
                 data.putString("handle", mHandle);
                 data.putString("error", e.getMessage());
-                EventDispatcher.getInstance().dispatch(TOR_EVENT_START_FAILED, data);
+                EventDispatcher.getInstance().dispatch(EVENT_TOR_START_FAILED, data);
                 return;
             }
             Log.i(TAG, "Tor process " + mHandle + " started.");
             {
                 final GeckoBundle data = new GeckoBundle(1);
                 data.putString("handle", mHandle);
-                EventDispatcher.getInstance().dispatch(TOR_EVENT_STARTED, data);
+                EventDispatcher.getInstance().dispatch(EVENT_TOR_STARTED, data);
             }
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(mProcess.getInputStream()));
@@ -232,7 +248,7 @@ import org.mozilla.gecko.util.GeckoBundle;
             // FIXME: We usually don't reach this when the application is killed!
             // So, we don't do our cleanup.
             Log.i(TAG, "Tor process " + mHandle + " has exited.");
-            EventDispatcher.getInstance().dispatch(TOR_EVENT_EXITED, data);
+            EventDispatcher.getInstance().dispatch(EVENT_TOR_EXITED, data);
         }
 
         private void cleanIpcDirectory() {
@@ -432,4 +448,71 @@ import org.mozilla.gecko.util.GeckoBundle;
             }
         }
     }
+
+    public static class BootstrapState {
+        // FIXME: We can do better than this :)
+        public GeckoBundle mBundle;
+
+        BootstrapState(GeckoBundle bundle) {
+            mBundle = bundle;
+        }
+    }
+
+    public interface BootstrapStateChangeListener {
+        void onBootstrapStateChange(BootstrapState state);
+    }
+
+    public @NonNull GeckoResult<GeckoBundle> getSettings() {
+        return EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET);
+    }
+
+    public @NonNull GeckoResult<Void> saveSettings(final GeckoBundle settings) {
+        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SET, settings);
+    }
+
+    public @NonNull GeckoResult<Void> applySettings() {
+        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_APPLY);
+    }
+
+    public @NonNull GeckoResult<Void> saveSettings() {
+        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SAVE);
+    }
+
+    public @NonNull GeckoResult<Void> beginBootstrap() {
+        return EventDispatcher.getInstance().queryVoid(EVENT_BOOTSTRAP_BEGIN);
+    }
+
+    public @NonNull GeckoResult<Void> beginAutoBootstrap(final String countryCode) {
+        final GeckoBundle bundle = new GeckoBundle(1);
+        bundle.putString("countryCode", countryCode);
+        return EventDispatcher.getInstance().queryVoid(EVENT_BOOTSTRAP_BEGIN_AUTO, bundle);
+    }
+
+    public @NonNull GeckoResult<Void> beginAutoBootstrap() {
+        return beginAutoBootstrap(null);
+    }
+
+    public @NonNull GeckoResult<Void> cancelBootstrap() {
+        return EventDispatcher.getInstance().queryVoid(EVENT_BOOTSTRAP_CANCEL);
+    }
+
+    public @NonNull GeckoResult<BootstrapState> getBootstrapState() {
+        return EventDispatcher.getInstance().queryBundle(EVENT_BOOTSTRAP_GET_STATE).map(new GeckoResult.OnValueMapper<>() {
+            @AnyThread
+            @Nullable
+            public BootstrapState onValue(@Nullable GeckoBundle value) throws Throwable {
+                return new BootstrapState(value);
+            }
+        });
+    }
+
+    public void registerBootstrapStateChangeListener(BootstrapStateChangeListener listener) {
+        mBootstrapStateListeners.add(listener);
+    }
+
+    public void unregisterBootstrapStateChangeListener(BootstrapStateChangeListener listener) {
+        mBootstrapStateListeners.remove(listener);
+    }
+
+    private final HashSet<BootstrapStateChangeListener> mBootstrapStateListeners = new HashSet<>();
 }
