@@ -10,15 +10,21 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "logger", () => {
+  let { ConsoleAPI } = ChromeUtils.importESModule(
+    "resource://gre/modules/Console.sys.mjs"
+  );
+  return new ConsoleAPI({
+    maxLogLevel: "warn",
+    maxLogLevelPref: "browser.torsettings.log_level",
+    prefix: "TorSettings",
+  });
+});
+
 /* TorSettings observer topics */
 export const TorSettingsTopics = Object.freeze({
   Ready: "torsettings:ready",
-  SettingChanged: "torsettings:setting-changed",
-});
-
-/* TorSettings observer data (for SettingChanged topic) */
-export const TorSettingsData = Object.freeze({
-  QuickStartEnabled: "torsettings:quickstart_enabled",
+  SettingsChanged: "torsettings:settings-changed",
 });
 
 /* Prefs used to store settings in TorBrowser prefs */
@@ -32,7 +38,7 @@ const TorSettingsPrefs = Object.freeze({
   bridges: {
     /* bool:  does tor use bridges */
     enabled: "torbrowser.settings.bridges.enabled",
-    /* int: -1=invalid|0=builtin|1=bridge_db|2=user_provided */
+    /* int: See TorBridgeSource */
     source: "torbrowser.settings.bridges.source",
     /* string: obfs4|meek_azure|snowflake|etc */
     builtin_type: "torbrowser.settings.bridges.builtin_type",
@@ -42,7 +48,7 @@ const TorSettingsPrefs = Object.freeze({
   proxy: {
     /* bool: does tor use a proxy */
     enabled: "torbrowser.settings.proxy.enabled",
-    /* -1=invalid|0=socks4,1=socks5,2=https */
+    /* See TorProxyType */
     type: "torbrowser.settings.proxy.type",
     /* string: proxy server address */
     address: "torbrowser.settings.proxy.address",
@@ -140,23 +146,6 @@ export const TorBuiltinBridgeTypes = Object.freeze(
 
 /* Parsing Methods */
 
-// expects a string representation of an integer from 1 to 65535
-const parsePort = function (aPort) {
-  // ensure port string is a valid positive integer
-  const validIntRegex = /^[0-9]+$/;
-  if (!validIntRegex.test(aPort)) {
-    return 0;
-  }
-
-  // ensure port value is on valid range
-  const port = Number.parseInt(aPort);
-  if (port < 1 || port > 65535) {
-    return 0;
-  }
-
-  return port;
-};
-
 // expects a '\n' or '\r\n' delimited bridge string, which we split and trim
 // each bridge string can also optionally have 'bridge' at the beginning ie:
 // bridge $(type) $(address):$(port) $(certificate)
@@ -174,17 +163,6 @@ const parseBridgeStrings = function (aBridgeStrings) {
   return splitStrings
     .map(val => val.trim().replace(/^bridge\s+/i, ""))
     .filter(bridgeString => bridgeString != "");
-};
-
-// expecting a ',' delimited list of ints with possible white space between
-// returns an array of ints
-const parsePortList = function (aPortListString) {
-  const splitStrings = aPortListString.split(",");
-  // parse and remove duplicates
-  const portSet = new Set(splitStrings.map(val => parsePort(val.trim())));
-  // parsePort returns 0 for failed parses, so remove 0 from list
-  portSet.delete(0);
-  return Array.from(portSet);
 };
 
 const getBuiltinBridgeStrings = function (builtinType) {
@@ -235,70 +213,373 @@ const arrayShuffle = function (array) {
   }
 };
 
-const arrayCopy = function (array) {
-  return [].concat(array);
-};
-
 /* TorSettings module */
 
 export const TorSettings = (() => {
   const self = {
-    _settings: null,
+    /**
+     * The underlying settings values.
+     *
+     * @type {object}
+     */
+    _settings: {
+      quickstart: {
+        enabled: false,
+      },
+      bridges: {
+        enabled: false,
+        source: TorBridgeSource.Invalid,
+        builtin_type: "",
+        bridge_strings: [],
+      },
+      proxy: {
+        enabled: false,
+        type: TorProxyType.Invalid,
+        address: "",
+        port: 0,
+        username: "",
+        password: "",
+      },
+      firewall: {
+        enabled: false,
+        allowed_ports: [],
+      },
+    },
 
-    // tor daemon related settings
-    defaultSettings() {
-      const settings = {
-        quickstart: {
-          enabled: false,
-        },
-        bridges: {
-          enabled: false,
-          source: TorBridgeSource.Invalid,
-          builtin_type: null,
-          bridge_strings: [],
-        },
-        proxy: {
-          enabled: false,
-          type: TorProxyType.Invalid,
-          address: null,
-          port: 0,
-          username: null,
-          password: null,
-        },
-        firewall: {
-          enabled: false,
-          allowed_ports: [],
-        },
-      };
-      return settings;
+    /**
+     * The current number of freezes applied to the notifications.
+     *
+     * @type {integer}
+     */
+    _freezeNotificationsCount: 0,
+    /**
+     * The queue for settings that have changed. To be broadcast in the
+     * notification when not frozen.
+     *
+     * @type {Set<string>}
+     */
+    _notificationQueue: new Set(),
+    /**
+     * Send a notification if we have any queued and we are not frozen.
+     */
+    _tryNotification() {
+      if (this._freezeNotificationsCount || !this._notificationQueue.size) {
+        return;
+      }
+      Services.obs.notifyObservers(
+        { changes: [...this._notificationQueue] },
+        TorSettingsTopics.SettingsChanged
+      );
+      this._notificationQueue.clear();
+    },
+    /**
+     * Pause notifications for changes in setting values. This is useful if you
+     * need to make batch changes to settings.
+     *
+     * This should always be paired with a call to thawNotifications once
+     * notifications should be released. Usually you should wrap whatever
+     * changes you make with a `try` block and call thawNotifications in the
+     * `finally` block.
+     */
+    freezeNotifications() {
+      this._freezeNotificationsCount++;
+    },
+    /**
+     * Release the hold on notifications so they may be sent out.
+     *
+     * Note, if some other method has also frozen the notifications, this will
+     * only release them once it has also called this method.
+     */
+    thawNotifications() {
+      this._freezeNotificationsCount--;
+      this._tryNotification();
+    },
+    /**
+     * @typedef {object} TorSettingProperty
+     *
+     * @property {function} [getter] - A getter for the property. If this is
+     *   given, the property cannot be set.
+     * @property {function} [transform] - Called in the setter for the property,
+     *   with the new value given. Should transform the given value into the
+     *   right type.
+     * @property {function} [equal] - Test whether two values for the property
+     *   are considered equal. Otherwise uses `===`.
+     * @property {function} [callback] - Called whenever the property value
+     *   changes, with the new value given. Should be used to trigger any other
+     *   required changes for the new value.
+     * @property {function} [copy] - Called whenever the property is read, with
+     *   the stored value given. Should return a copy of the value. Otherwise
+     *   returns the stored value.
+     */
+    /**
+     * Add properties to the TorSettings instance, to be read or set.
+     *
+     * @param {string} groupname - The name of the setting group. The given
+     *   settings will be accessible from the TorSettings property of the same
+     *   name.
+     * @param {object<string, TorSettingProperty>} propParams - An object that
+     *   defines the settings to add to this group. The object property names
+     *   will be mapped to properties of TorSettings under the given groupname
+     *   property. Details about the setting should be described in the
+     *   TorSettingProperty property value.
+     */
+    _addProperties(groupname, propParams) {
+      // Create a new object to hold all these settings.
+      const group = {};
+      for (const name in propParams) {
+        const { getter, transform, callback, copy, equal } = propParams[name];
+        Object.defineProperty(group, name, {
+          get: getter
+            ? getter
+            : () => {
+                let val = this._settings[groupname][name];
+                if (copy) {
+                  val = copy(val);
+                }
+                // Assume string or number value.
+                return val;
+              },
+          set: getter
+            ? undefined
+            : val => {
+                const prevVal = this._settings[groupname][name];
+                this.freezeNotifications();
+                try {
+                  if (transform) {
+                    val = transform(val);
+                  }
+                  const isEqual = equal ? equal(val, prevVal) : val === prevVal;
+                  if (!isEqual) {
+                    if (callback) {
+                      callback(val);
+                    }
+                    this._settings[groupname][name] = val;
+                    this._notificationQueue.add(`${groupname}.${name}`);
+                  }
+                } finally {
+                  this.thawNotifications();
+                }
+              },
+        });
+      }
+      // The group object itself should not be writable.
+      Object.preventExtensions(group);
+      Object.defineProperty(this, groupname, {
+        writable: false,
+        value: group,
+      });
+    },
+
+    /**
+     * Regular expression for a decimal non-negative integer.
+     *
+     * @type {RegExp}
+     */
+    _portRegex: /^[0-9]+$/,
+    /**
+     * Parse a string as a port number.
+     *
+     * @param {string|integer} val - The value to parse.
+     * @param {boolean} trim - Whether a string value can be stripped of
+     *   whitespace before parsing.
+     *
+     * @return {integer?} - The port number, or null if the given value was not
+     *   valid.
+     */
+    _parsePort(val, trim) {
+      if (typeof val === "string") {
+        if (trim) {
+          val = val.trim();
+        }
+        // ensure port string is a valid positive integer
+        if (this._portRegex.test(val)) {
+          val = Number.parseInt(val, 10);
+        } else {
+          lazy.logger.error(`Invalid port string "${val}"`);
+          return null;
+        }
+      }
+      if (!Number.isInteger(val) || val < 1 || val > 65535) {
+        lazy.logger.error(`Port out of range: ${val}`);
+        return null;
+      }
+      return val;
+    },
+    /**
+     * Test whether two arrays have equal members and order.
+     *
+     * @param {Array} val1 - The first array to test.
+     * @param {Array} val2 - The second array to compare against.
+     *
+     * @return {boolean} - Whether the two arrays are equal.
+     */
+    _arrayEqual(val1, val2) {
+      if (val1.length !== val2.length) {
+        return false;
+      }
+      return val1.every((v, i) => v === val2[i]);
     },
 
     /* load or init our settings, and register observers */
     async init() {
+      this._addProperties("quickstart", {
+        enabled: {},
+      });
+      this._addProperties("bridges", {
+        enabled: {},
+        source: {
+          transform: val => {
+            if (Object.values(TorBridgeSource).includes(val)) {
+              return val;
+            }
+            lazy.logger.error(`Not a valid bridge source: "${val}"`);
+            return TorBridgeSource.Invalid;
+          },
+        },
+        bridge_strings: {
+          transform: val => {
+            if (Array.isArray(val)) {
+              return [...val];
+            }
+            return parseBridgeStrings(val);
+          },
+          copy: val => [...val],
+          equal: (val1, val2) => this._arrayEqual(val1, val2),
+        },
+        builtin_type: {
+          callback: val => {
+            if (!val) {
+              // Make sure that the source is not BuiltIn
+              if (this.bridges.source === TorBridgeSource.BuiltIn) {
+                this.bridges.source = TorBridgeSource.Invalid;
+              }
+              return;
+            }
+            const bridgeStrings = getBuiltinBridgeStrings(val);
+            if (bridgeStrings.length) {
+              this.bridges.bridge_strings = bridgeStrings;
+              return;
+            }
+            lazy.logger.error(`No built-in ${val} bridges found`);
+            // Change to be empty, this will trigger this callback again,
+            // but with val as "".
+            this.bridges.builtin_type == "";
+          },
+        },
+      });
+      this._addProperties("proxy", {
+        enabled: {
+          callback: val => {
+            if (val) {
+              return;
+            }
+            // Reset proxy settings.
+            this.proxy.type = TorProxyType.Invalid;
+            this.proxy.address = "";
+            this.proxy.port = 0;
+            this.proxy.username = "";
+            this.proxy.password = "";
+          },
+        },
+        type: {
+          transform: val => {
+            if (Object.values(TorProxyType).includes(val)) {
+              return val;
+            }
+            lazy.logger.error(`Not a valid proxy type: "${val}"`);
+            return TorProxyType.Invalid;
+          },
+        },
+        address: {},
+        port: {
+          transform: val => {
+            if (val === 0) {
+              // This is a valid value that "unsets" the port.
+              // Keep this value without giving a warning.
+              // NOTE: In contrast, "0" is not valid.
+              return 0;
+            }
+            // Unset to 0 if invalid null is returned.
+            return this._parsePort(val, false) ?? 0;
+          },
+        },
+        username: {},
+        password: {},
+        uri: {
+          getter: () => {
+            const { type, address, port, username, password } = this.proxy;
+            switch (type) {
+              case TorProxyType.Socks4:
+                return `socks4a://${address}:${port}`;
+              case TorProxyType.Socks5:
+                if (username) {
+                  return `socks5://${username}:${password}@${address}:${port}`;
+                }
+                return `socks5://${address}:${port}`;
+              case TorProxyType.HTTPS:
+                if (username) {
+                  return `http://${username}:${password}@${address}:${port}`;
+                }
+                return `http://${address}:${port}`;
+            }
+            return null;
+          },
+        },
+      });
+      this._addProperties("firewall", {
+        enabled: {
+          callback: val => {
+            if (!val) {
+              this.firewall.allowed_ports = "";
+            }
+          },
+        },
+        allowed_ports: {
+          transform: val => {
+            if (!Array.isArray(val)) {
+              val = val === "" ? [] : val.split(",");
+            }
+            // parse and remove duplicates
+            const portSet = new Set(val.map(p => this._parsePort(p, true)));
+            // parsePort returns null for failed parses, so remove it.
+            portSet.delete(null);
+            return [...portSet];
+          },
+          copy: val => [...val],
+          equal: (val1, val2) => this._arrayEqual(val1, val2),
+        },
+      });
+
       // TODO: We could use a shared promise, and wait for it to be fullfilled
       // instead of Service.obs.
       if (lazy.TorLauncherUtil.shouldStartAndOwnTor) {
         // if the settings branch exists, load settings from prefs
         if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
-          this.loadFromPrefs();
-        } else {
-          // otherwise load defaults
-          this._settings = this.defaultSettings();
+          // Do not want notifications for initially loaded prefs.
+          this.freezeNotifications();
+          try {
+            this.loadFromPrefs();
+          } finally {
+            this._notificationQueue.clear();
+            this.thawNotifications();
+          }
         }
-        Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
-
         try {
           const provider = await lazy.TorProviderBuilder.build();
           if (provider.isRunning) {
             this.handleProcessReady();
+            // No need to add an observer to call this again.
+            return;
           }
         } catch {}
+
+        Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
       }
     },
 
     /* wait for relevant life-cycle events to apply saved settings */
     async observe(subject, topic, data) {
-      console.log(`TorSettings: Observed ${topic}`);
+      lazy.logger.debug(`Observed ${topic}`);
 
       switch (topic) {
         case lazy.TorProviderTopics.ProcessIsReady:
@@ -315,135 +596,105 @@ export const TorSettings = (() => {
     async handleProcessReady() {
       // push down settings to tor
       await this.applySettings();
-      console.log("TorSettings: Ready");
+      lazy.logger.info("Ready");
       Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
     },
 
     // load our settings from prefs
     loadFromPrefs() {
-      console.log("TorSettings: loadFromPrefs()");
-
-      const settings = this.defaultSettings();
+      lazy.logger.debug("loadFromPrefs()");
 
       /* Quickstart */
-      settings.quickstart.enabled = Services.prefs.getBoolPref(
+      this.quickstart.enabled = Services.prefs.getBoolPref(
         TorSettingsPrefs.quickstart.enabled,
         false
       );
       /* Bridges */
-      settings.bridges.enabled = Services.prefs.getBoolPref(
+      this.bridges.enabled = Services.prefs.getBoolPref(
         TorSettingsPrefs.bridges.enabled,
         false
       );
-      settings.bridges.source = Services.prefs.getIntPref(
+      this.bridges.source = Services.prefs.getIntPref(
         TorSettingsPrefs.bridges.source,
         TorBridgeSource.Invalid
       );
-      if (settings.bridges.source == TorBridgeSource.BuiltIn) {
-        const builtinType = Services.prefs.getStringPref(
+      if (this.bridges.source == TorBridgeSource.BuiltIn) {
+        this.bridges.builtin_type = Services.prefs.getStringPref(
           TorSettingsPrefs.bridges.builtin_type,
           ""
         );
-        settings.bridges.builtin_type = builtinType;
-        settings.bridges.bridge_strings = getBuiltinBridgeStrings(builtinType);
-        if (!settings.bridges.bridge_strings.length) {
-          // in this case the user is using a builtin bridge that is no longer supported,
-          // reset to settings to default values
-          console.warn(
-            `[TorSettings] Cannot find any bridge line for the configured bridge type ${builtinType}`
-          );
-          settings.bridges.source = TorBridgeSource.Invalid;
-          settings.bridges.builtin_type = null;
-        }
       } else {
-        settings.bridges.bridge_strings = [];
         const bridgeBranchPrefs = Services.prefs
           .getBranch(TorSettingsPrefs.bridges.bridge_strings)
           .getChildList("");
-        bridgeBranchPrefs.forEach(pref => {
-          const bridgeString = Services.prefs.getStringPref(
+        this.bridges.bridge_strings = Array.from(bridgeBranchPrefs, pref =>
+          Services.prefs.getStringPref(
             `${TorSettingsPrefs.bridges.bridge_strings}${pref}`
-          );
-          settings.bridges.bridge_strings.push(bridgeString);
-        });
+          )
+        );
       }
       /* Proxy */
-      settings.proxy.enabled = Services.prefs.getBoolPref(
+      this.proxy.enabled = Services.prefs.getBoolPref(
         TorSettingsPrefs.proxy.enabled,
         false
       );
-      if (settings.proxy.enabled) {
-        settings.proxy.type = Services.prefs.getIntPref(
+      if (this.proxy.enabled) {
+        this.proxy.type = Services.prefs.getIntPref(
           TorSettingsPrefs.proxy.type,
           TorProxyType.Invalid
         );
-        settings.proxy.address = Services.prefs.getStringPref(
+        this.proxy.address = Services.prefs.getStringPref(
           TorSettingsPrefs.proxy.address,
           ""
         );
-        settings.proxy.port = Services.prefs.getIntPref(
+        this.proxy.port = Services.prefs.getIntPref(
           TorSettingsPrefs.proxy.port,
           0
         );
-        settings.proxy.username = Services.prefs.getStringPref(
+        this.proxy.username = Services.prefs.getStringPref(
           TorSettingsPrefs.proxy.username,
           ""
         );
-        settings.proxy.password = Services.prefs.getStringPref(
+        this.proxy.password = Services.prefs.getStringPref(
           TorSettingsPrefs.proxy.password,
           ""
         );
-      } else {
-        settings.proxy.type = TorProxyType.Invalid;
-        settings.proxy.address = null;
-        settings.proxy.port = 0;
-        settings.proxy.username = null;
-        settings.proxy.password = null;
       }
 
       /* Firewall */
-      settings.firewall.enabled = Services.prefs.getBoolPref(
+      this.firewall.enabled = Services.prefs.getBoolPref(
         TorSettingsPrefs.firewall.enabled,
         false
       );
-      if (settings.firewall.enabled) {
-        const portList = Services.prefs.getStringPref(
+      if (this.firewall.enabled) {
+        this.firewall.allowed_ports = Services.prefs.getStringPref(
           TorSettingsPrefs.firewall.allowed_ports,
           ""
         );
-        settings.firewall.allowed_ports = parsePortList(portList);
-      } else {
-        settings.firewall.allowed_ports = 0;
       }
-
-      this._settings = settings;
-
-      return this;
     },
 
     // save our settings to prefs
     saveToPrefs() {
-      console.log("TorSettings: saveToPrefs()");
-
-      const settings = this._settings;
+      lazy.logger.debug("saveToPrefs()");
 
       /* Quickstart */
       Services.prefs.setBoolPref(
         TorSettingsPrefs.quickstart.enabled,
-        settings.quickstart.enabled
+        this.quickstart.enabled
       );
       /* Bridges */
       Services.prefs.setBoolPref(
         TorSettingsPrefs.bridges.enabled,
-        settings.bridges.enabled
+        this.bridges.enabled
       );
       Services.prefs.setIntPref(
         TorSettingsPrefs.bridges.source,
-        settings.bridges.source
+        this.bridges.source
       );
       Services.prefs.setStringPref(
         TorSettingsPrefs.bridges.builtin_type,
-        settings.bridges.builtin_type
+        this.bridges.builtin_type
       );
       // erase existing bridge strings
       const bridgeBranchPrefs = Services.prefs
@@ -455,8 +706,8 @@ export const TorSettings = (() => {
         );
       });
       // write new ones
-      if (settings.bridges.source !== TorBridgeSource.BuiltIn) {
-        settings.bridges.bridge_strings.forEach((string, index) => {
+      if (this.bridges.source !== TorBridgeSource.BuiltIn) {
+        this.bridges.bridge_strings.forEach((string, index) => {
           Services.prefs.setStringPref(
             `${TorSettingsPrefs.bridges.bridge_strings}.${index}`,
             string
@@ -466,28 +717,22 @@ export const TorSettings = (() => {
       /* Proxy */
       Services.prefs.setBoolPref(
         TorSettingsPrefs.proxy.enabled,
-        settings.proxy.enabled
+        this.proxy.enabled
       );
-      if (settings.proxy.enabled) {
-        Services.prefs.setIntPref(
-          TorSettingsPrefs.proxy.type,
-          settings.proxy.type
-        );
+      if (this.proxy.enabled) {
+        Services.prefs.setIntPref(TorSettingsPrefs.proxy.type, this.proxy.type);
         Services.prefs.setStringPref(
           TorSettingsPrefs.proxy.address,
-          settings.proxy.address
+          this.proxy.address
         );
-        Services.prefs.setIntPref(
-          TorSettingsPrefs.proxy.port,
-          settings.proxy.port
-        );
+        Services.prefs.setIntPref(TorSettingsPrefs.proxy.port, this.proxy.port);
         Services.prefs.setStringPref(
           TorSettingsPrefs.proxy.username,
-          settings.proxy.username
+          this.proxy.username
         );
         Services.prefs.setStringPref(
           TorSettingsPrefs.proxy.password,
-          settings.proxy.password
+          this.proxy.password
         );
       } else {
         Services.prefs.clearUserPref(TorSettingsPrefs.proxy.type);
@@ -499,12 +744,12 @@ export const TorSettings = (() => {
       /* Firewall */
       Services.prefs.setBoolPref(
         TorSettingsPrefs.firewall.enabled,
-        settings.firewall.enabled
+        this.firewall.enabled
       );
-      if (settings.firewall.enabled) {
+      if (this.firewall.enabled) {
         Services.prefs.setStringPref(
           TorSettingsPrefs.firewall.allowed_ports,
-          settings.firewall.allowed_ports.join(",")
+          this.firewall.allowed_ports.join(",")
         );
       } else {
         Services.prefs.clearUserPref(TorSettingsPrefs.firewall.allowed_ports);
@@ -518,19 +763,15 @@ export const TorSettings = (() => {
 
     // push our settings down to the tor daemon
     async applySettings() {
-      console.log("TorSettings: applySettings()");
-      const settings = this._settings;
+      lazy.logger.debug("applySettings()");
       const settingsMap = new Map();
 
       /* Bridges */
       const haveBridges =
-        settings.bridges.enabled && !!settings.bridges.bridge_strings.length;
+        this.bridges.enabled && !!this.bridges.bridge_strings.length;
       settingsMap.set(TorConfigKeys.useBridges, haveBridges);
       if (haveBridges) {
-        settingsMap.set(
-          TorConfigKeys.bridgeList,
-          settings.bridges.bridge_strings
-        );
+        settingsMap.set(TorConfigKeys.bridgeList, this.bridges.bridge_strings);
       } else {
         settingsMap.set(TorConfigKeys.bridgeList, null);
       }
@@ -542,13 +783,13 @@ export const TorSettings = (() => {
       settingsMap.set(TorConfigKeys.socks5ProxyPassword, null);
       settingsMap.set(TorConfigKeys.httpsProxy, null);
       settingsMap.set(TorConfigKeys.httpsProxyAuthenticator, null);
-      if (settings.proxy.enabled) {
-        const address = settings.proxy.address;
-        const port = settings.proxy.port;
-        const username = settings.proxy.username;
-        const password = settings.proxy.password;
+      if (this.proxy.enabled) {
+        const address = this.proxy.address;
+        const port = this.proxy.port;
+        const username = this.proxy.username;
+        const password = this.proxy.password;
 
-        switch (settings.proxy.type) {
+        switch (this.proxy.type) {
           case TorProxyType.Socks4:
             settingsMap.set(TorConfigKeys.socks4Proxy, `${address}:${port}`);
             break;
@@ -568,8 +809,8 @@ export const TorSettings = (() => {
       }
 
       /* Firewall */
-      if (settings.firewall.enabled) {
-        const reachableAddresses = settings.firewall.allowed_ports
+      if (this.firewall.enabled) {
+        const reachableAddresses = this.firewall.allowed_ports
           .map(port => `*:${port}`)
           .join(",");
         settingsMap.set(TorConfigKeys.reachableAddresses, reachableAddresses);
@@ -586,33 +827,28 @@ export const TorSettings = (() => {
 
     // set all of our settings at once from a settings object
     setSettings(settings) {
-      console.log("TorSettings: setSettings()");
+      lazy.logger.debug("setSettings()");
       const backup = this.getSettings();
+      const backup_notifications = [...this._notificationQueue];
 
+      // Hold off on lots of notifications until all settings are changed.
+      this.freezeNotifications();
       try {
-        this._settings.bridges.enabled = !!settings.bridges.enabled;
-        this._settings.bridges.source = settings.bridges.source;
+        this.bridges.enabled = !!settings.bridges.enabled;
+        this.bridges.source = settings.bridges.source;
         switch (settings.bridges.source) {
           case TorBridgeSource.BridgeDB:
           case TorBridgeSource.UserProvided:
-            this._settings.bridges.bridge_strings =
-              settings.bridges.bridge_strings;
+            this.bridges.bridge_strings = settings.bridges.bridge_strings;
             break;
           case TorBridgeSource.BuiltIn: {
-            this._settings.bridges.builtin_type = settings.bridges.builtin_type;
-            settings.bridges.bridge_strings = getBuiltinBridgeStrings(
-              settings.bridges.builtin_type
-            );
-            if (
-              !settings.bridges.bridge_strings.length &&
-              settings.bridges.enabled
-            ) {
+            this.bridges.builtin_type = settings.bridges.builtin_type;
+            if (!this.bridges.bridge_strings.length) {
+              // No bridges were found when setting the builtin_type.
               throw new Error(
                 `No available builtin bridges of type ${settings.bridges.builtin_type}`
               );
             }
-            this._settings.bridges.bridge_strings =
-              settings.bridges.bridge_strings;
             break;
           }
           case TorBridgeSource.Invalid:
@@ -628,164 +864,30 @@ export const TorSettings = (() => {
 
         // TODO: proxy and firewall
       } catch (ex) {
+        // Restore the old settings without any new notifications generated from
+        // the above code.
+        // NOTE: Since this code is not async, it should not be possible for
+        // some other call to TorSettings to change anything whilst we are
+        // in this context (other than lower down in this call stack), so it is
+        // safe to discard all changes to settings and notifications.
         this._settings = backup;
-        console.log(`TorSettings: setSettings failed => ${ex.message}`);
+        this._notificationQueue.clear();
+        for (const notification of backup_notifications) {
+          this._notificationQueue.add(notification);
+        }
+
+        lazy.logger.error("setSettings failed", ex);
+      } finally {
+        this.thawNotifications();
       }
 
-      console.log("TorSettings: setSettings result");
-      console.log(this._settings);
+      lazy.logger.debug("setSettings result", this._settings);
     },
 
     // get a copy of all our settings
     getSettings() {
-      console.log("TorSettings: getSettings()");
-      // TODO: replace with structuredClone someday (post esr94): https://developer.mozilla.org/en-US/docs/Web/API/structuredClone
-      return JSON.parse(JSON.stringify(this._settings));
-    },
-
-    /* Getters and Setters */
-
-    // Quickstart
-    get quickstart() {
-      return {
-        get enabled() {
-          return self._settings.quickstart.enabled;
-        },
-        set enabled(val) {
-          if (val != self._settings.quickstart.enabled) {
-            self._settings.quickstart.enabled = val;
-            Services.obs.notifyObservers(
-              { value: val },
-              TorSettingsTopics.SettingChanged,
-              TorSettingsData.QuickStartEnabled
-            );
-          }
-        },
-      };
-    },
-
-    // Bridges
-    get bridges() {
-      return {
-        get enabled() {
-          return self._settings.bridges.enabled;
-        },
-        set enabled(val) {
-          self._settings.bridges.enabled = val;
-        },
-        get source() {
-          return self._settings.bridges.source;
-        },
-        set source(val) {
-          self._settings.bridges.source = val;
-        },
-        get builtin_type() {
-          return self._settings.bridges.builtin_type;
-        },
-        set builtin_type(val) {
-          const bridgeStrings = getBuiltinBridgeStrings(val);
-          if (bridgeStrings.length) {
-            self._settings.bridges.builtin_type = val;
-            self._settings.bridges.bridge_strings = bridgeStrings;
-          } else {
-            self._settings.bridges.builtin_type = "";
-            if (self._settings.bridges.source === TorBridgeSource.BuiltIn) {
-              self._settings.bridges.source = TorBridgeSource.Invalid;
-            }
-          }
-        },
-        get bridge_strings() {
-          return arrayCopy(self._settings.bridges.bridge_strings);
-        },
-        set bridge_strings(val) {
-          self._settings.bridges.bridge_strings = parseBridgeStrings(val);
-        },
-      };
-    },
-
-    // Proxy
-    get proxy() {
-      return {
-        get enabled() {
-          return self._settings.proxy.enabled;
-        },
-        set enabled(val) {
-          self._settings.proxy.enabled = val;
-          // reset proxy settings
-          self._settings.proxy.type = TorProxyType.Invalid;
-          self._settings.proxy.address = null;
-          self._settings.proxy.port = 0;
-          self._settings.proxy.username = null;
-          self._settings.proxy.password = null;
-        },
-        get type() {
-          return self._settings.proxy.type;
-        },
-        set type(val) {
-          self._settings.proxy.type = val;
-        },
-        get address() {
-          return self._settings.proxy.address;
-        },
-        set address(val) {
-          self._settings.proxy.address = val;
-        },
-        get port() {
-          return arrayCopy(self._settings.proxy.port);
-        },
-        set port(val) {
-          self._settings.proxy.port = parsePort(val);
-        },
-        get username() {
-          return self._settings.proxy.username;
-        },
-        set username(val) {
-          self._settings.proxy.username = val;
-        },
-        get password() {
-          return self._settings.proxy.password;
-        },
-        set password(val) {
-          self._settings.proxy.password = val;
-        },
-        get uri() {
-          switch (this.type) {
-            case TorProxyType.Socks4:
-              return `socks4a://${this.address}:${this.port}`;
-            case TorProxyType.Socks5:
-              if (this.username) {
-                return `socks5://${this.username}:${this.password}@${this.address}:${this.port}`;
-              }
-              return `socks5://${this.address}:${this.port}`;
-            case TorProxyType.HTTPS:
-              if (this._proxyUsername) {
-                return `http://${this.username}:${this.password}@${this.address}:${this.port}`;
-              }
-              return `http://${this.address}:${this.port}`;
-          }
-          return null;
-        },
-      };
-    },
-
-    // Firewall
-    get firewall() {
-      return {
-        get enabled() {
-          return self._settings.firewall.enabled;
-        },
-        set enabled(val) {
-          self._settings.firewall.enabled = val;
-          // reset firewall settings
-          self._settings.firewall.allowed_ports = [];
-        },
-        get allowed_ports() {
-          return self._settings.firewall.allowed_ports;
-        },
-        set allowed_ports(val) {
-          self._settings.firewall.allowed_ports = parsePortList(val);
-        },
-      };
+      lazy.logger.debug("getSettings()");
+      return structuredClone(this._settings);
     },
   };
   return self;
