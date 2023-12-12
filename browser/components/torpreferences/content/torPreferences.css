@@ -69,6 +69,384 @@
 }
 
 /* Bridge settings */
+
+.bridge-status-badge {
+  display: flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.85em;
+}
+
+.bridge-status-badge:not(
+  .bridge-status-connected,
+  .bridge-status-none,
+  .bridge-status-current-built-in
+) {
+  display: none;
+}
+
+.bridge-status-badge.bridge-status-connected {
+  color: var(--purple-60);
+}
+
+@media (prefers-color-scheme: dark) {
+  .bridge-status-badge.bridge-status-connected {
+    color: var(--purple-30);
+  }
+}
+
+.bridge-status-badge.bridge-status-current-built-in {
+  color: var(--in-content-accent-color);
+}
+
+.bridge-status-badge > * {
+  flex: 0 0 auto;
+}
+
+.bridge-status-icon {
+  width: 16px;
+  height: 16px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.bridge-status-badge:is(
+  .bridge-status-connected,
+  .bridge-status-current-built-in
+) .bridge-status-icon {
+  background-image: url("chrome://global/skin/icons/check.svg");
+}
+
+.bridge-status-badge.bridge-status-none .bridge-status-icon {
+  /* Hide the icon. */
+  display: none;
+}
+
+#tor-bridges-enabled-toggle {
+  margin-block: 16px;
+  width: max-content;
+}
+
+#tor-bridges-update-area {
+  /* Still accessible to screen reader, but not visual. */
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+#torPreferences-bridges-group:not(.have-bridges, .no-bridges) {
+  /* Hide bridge settings whilst not initialized. */
+  display: none;
+}
+
+#torPreferences-bridges-group:not(.have-bridges) #tor-bridges-current {
+  display: none;
+}
+
+#torPreferences-bridges-group:not(.no-bridges) #tor-bridges-none {
+  display: none;
+}
+
+#tor-bridges-current:not(.source-built-in) #tor-bridges-built-in-label {
+  display: none;
+}
+
+#tor-bridges-current:not(.source-user) #tor-bridges-user-label {
+  display: none;
+}
+
+#tor-bridges-current:not(.source-requested) #tor-bridges-requested-label {
+  display: none;
+}
+
+#tor-bridges-current:not(
+  .source-user,
+  .source-requested
+) #tor-bridges-share {
+  display: none;
+}
+
+#tor-bridges-none,
+#tor-bridges-current {
+  margin-inline: 0;
+  margin-block: 32px;
+  line-height: 1.8;
+}
+
+#tor-bridges-none {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding-block: 64px;
+  padding-inline: 32px;
+  gap: 16px;
+  border-radius: 4px;
+  color: var(--text-color-deemphasized);
+  border: 2px dashed color-mix(in srgb, currentColor 20%, transparent);
+}
+
+#tor-bridges-none-icon {
+  width: 20px;
+  height: 20px;
+  content: url("chrome://browser/content/torpreferences/bridge.svg");
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+#tor-bridges-current {
+  padding: 16px;
+  border-radius: 4px;
+  background: var(--in-content-box-info-background);
+}
+
+#tor-bridges-current-header-bar {
+  display: flex;
+  min-width: max-content;
+  align-items: center;
+  border-block-end: 1px solid var(--in-content-border-color);
+  padding-block-end: 16px;
+  margin-block-end: 16px;
+}
+
+#tor-bridges-current-header-bar > * {
+  flex: 0 0 auto;
+}
+
+#tor-bridges-current-heading {
+  margin: 0;
+  margin-inline-end: 2em;
+  font-size: inherit;
+  flex: 1 0 auto;
+}
+
+.tor-bridges-options-button {
+  padding: 3px;
+  margin: 0;
+  min-height: auto;
+  min-width: auto;
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  background-image: url("chrome://global/skin/icons/more.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-origin: content-box;
+  background-size: contain;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+#tor-bridges-all-options-button {
+  margin-inline-start: 8px;
+}
+
+#tor-bridges-built-in-display {
+  display: grid;
+  grid-template:
+    "type status" min-content
+    "description description" auto
+    / max-content 1fr;
+  gap: 4px 1.5em;
+  margin-block-end: 16px;
+}
+
+#tor-bridges-built-in-display:not(.built-in-active) {
+  display: none;
+}
+
+#tor-bridges-built-in-type-name {
+  font-weight: 700;
+  grid-area: type;
+}
+
+#tor-bridges-built-in-connected {
+  grid-area: status;
+  justify-self: end;
+}
+
+#tor-bridges-built-in-description {
+  grid-area: description;
+}
+
+#tor-bridges-grid-display {
+  display: grid;
+  grid-template-columns: max-content repeat(4, max-content) 1fr;
+  --tor-bridges-grid-column-gap: 8px;
+  --tor-bridges-grid-column-short-gap: 4px;
+}
+
+#tor-bridges-grid-display:not(.grid-active) {
+  display: none;
+}
+
+.tor-bridges-grid-row {
+  /* We want each row to act as a row of three items in the
+   * #tor-bridges-grid-display grid layout.
+   * We also want a 16px spacing between rows, and 8px spacing between columns,
+   * which are outside the .tor-bridges-grid-cell's border area. So that
+   * clicking these gaps will not focus any item, and their focus outlines do
+   * not overlap.
+   * Moreover, we also want each row to show its .tor-bridges-options-cell when
+   * the .tor-bridges-grid-row has :hover.
+   *
+   * We could use "display: contents" on the row and set a "gap: 16px 8px" on
+   * the parent so that its items fall into the parent layout. However, the gap
+   * between the items would mean there are places where no row has :hover. So
+   * if the user glided across the grid, the options button would visibly
+   * disappear any time the pointer entered a gap, causing the display to feel
+   * "jumpy".
+   *
+   * Instead, we use a "subgrid" layout for each .tor-bridges-grid-row, and
+   * using padding, rather than a gap, for the vertical spacing. Therefore,
+   * every part of the grid is covered by a row, so moving the pointer over the
+   * grid will always have one row with :hover, so one of the options cell will
+   * always be visible.
+   */
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  /* Add 16px gap between rows, plus 8px at the start and end of the grid. */
+  padding-block: 8px;
+}
+
+.tor-bridges-grid-cell:focus-visible {
+  outline: var(--in-content-focus-outline);
+  outline-offset: var(--in-content-focus-outline-offset);
+}
+
+.tor-bridges-grid-cell {
+  /* The cell is stretched to the height of the row, so that each focus outline
+   * shares the same height, but we want to center-align the content within,
+   * which is either a single Element or a TextNode. */
+  display: grid;
+  align-content: center;
+}
+
+.tor-bridges-type-cell {
+  margin-inline-end: var(--tor-bridges-grid-column-gap);
+}
+
+.tor-bridges-emojis-block {
+  /* Emoji block occupies four columns, but with a smaller gap. */
+  display: contents;
+}
+
+.tor-bridges-emoji-cell:not(:last-child) {
+  margin-inline-end: var(--tor-bridges-grid-column-short-gap);
+}
+
+.tor-bridges-emoji-icon {
+  display: block;
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  background: var(--in-content-button-background);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.tor-bridges-grid-end-block {
+  /* The last three cells all share a single grid item slot in the
+   * #tor-bridges-grid-display layout.
+   * This is because we do not want to align its cells between rows. */
+  min-width: max-content;
+  display: flex;
+  /* Choose "stretch" instead of "center" so that focus outline is a consistent
+   * height between cells. */
+  align-items: stretch;
+  margin-inline-start: var(--tor-bridges-grid-column-gap);
+  gap: var(--tor-bridges-grid-column-gap);
+}
+
+.tor-bridges-address-cell {
+  /* base size */
+  width: 10em;
+  flex: 1 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-color-deemphasized);
+}
+
+.tor-bridges-status-cell,
+.tor-bridges-options-cell {
+  flex: 0 0 auto;
+}
+
+/* Hide the options button if the row does not have hover or focus. */
+.tor-bridges-grid-row:not(
+  :hover,
+  :focus-within
+) .tor-bridges-options-cell,
+/* Hide the status cell when it shows "No status" if the cell does not have
+ * focus. */
+.tor-bridges-grid-row.hide-status .tor-bridges-status-cell:not(:focus) {
+  /* Still accessible to screen reader, but not visual and does not contribute
+   * to the parent flex layout. */
+  /* NOTE: We assume that the height of these cell's content is equal to or less
+   * than the other cells, so there won't be a jump in row height when they
+   * become visual again and contribute to the layout. */
+  position: absolute;
+  clip-path: inset(50%);
+}
+
+#tor-bridges-share {
+  margin-block-start: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--in-content-border-color);
+  padding: 16px;
+  display: grid;
+  grid-template:
+    "heading heading heading" min-content
+    /* If the description spans one line, it will be center-aligned with the
+     * buttons, otherwise it will start to expand upwards. */
+    "description . ." 1fr
+    "description copy qr" min-content
+    / 1fr max-content max-content;
+  gap: 0 8px;
+  align-items: center;
+}
+
+#tor-bridges-share-heading {
+  grid-area: heading;
+  font-size: inherit;
+  margin: 0;
+  font-weight: 700;
+}
+
+#tor-bridges-share-description {
+  grid-area: description;
+}
+
+#tor-bridges-copy-addresses-button {
+  grid-area: copy;
+  margin: 0;
+  /* Match the QR height if it is higher than ours. */
+  min-height: auto;
+  line-height: 1;
+  align-self: stretch;
+}
+
+#tor-bridges-qr-addresses-button {
+  grid-area: qr;
+  padding: 5px;
+  margin: 0;
+  min-height: auto;
+  min-width: auto;
+  box-sizing: content-box;
+  width: 24px;
+  height: 24px;
+  background-image: url("chrome://browser/content/torpreferences/bridge-qr.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-origin: content-box;
+  background-size: contain;
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
 #torPreferences-bridges-location {
   width: 280px;
 }
@@ -175,28 +553,6 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 
 #torPreferences-builtinBridge-typeSelection radio label {
   font-weight: 700;
-}
-
-.torPreferences-current-bridge-badge {
-  display: flex;
-  align-items: center;
-  font-size: 0.85em;
-  color: var(--in-content-accent-color);
-}
-
-.builtin-bridges-option:not(
-  .current-builtin-bridge-type
-) .torPreferences-current-bridge-badge {
-  display: none;
-}
-
-.torPreferences-current-bridge-icon {
-  margin-inline-start: 1px;
-  margin-inline-end: 7px;
-  list-style-image: url("chrome://global/skin/icons/check.svg");
-  -moz-context-properties: fill;
-  fill: currentColor;
-  flex: 0 0 auto;
 }
 
 /* Request bridge dialog */
