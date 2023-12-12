@@ -45,7 +45,55 @@ tor-browser-home-message-testing = This is an unstable version of Tor Browser fo
 home-mode-choice-tor =
     .label = Tor Browser Home
 
-## Tor Bridges Settings
+## Tor connection settings.
+
+# "Connection" refers to the Tor Browser's connection to the Tor network.
+tor-connection-settings-heading = Connection
+# -brand-short-name refers to 'Tor Browser', localized.
+tor-connection-overview = { -brand-short-name } routes your traffic over the Tor Network, run by thousands of volunteers around the world.
+tor-connection-browser-learn-more-link = Learn more
+tor-connection-quickstart-heading = Quickstart
+# -brand-short-name refers to 'Tor Browser', localized.
+tor-connection-quickstart-description = Quickstart connects { -brand-short-name } to the Tor Network automatically when launched, based on your last used connection settings.
+tor-connection-quickstart-checkbox =
+    .label = Always connect automatically
+
+# Prefix before the internet connection status.
+# "Internet" is not a proper noun, but is capitalized because it is the start of a sentence.
+tor-connection-internet-status-label = Internet:
+# Button to test the internet connection.
+# Here "Test" is a verb, as in "test the internet connection".
+# Uses sentence case in English (US).
+tor-connection-internet-status-test-button = Test
+# Shown when the user is connected to the internet.
+# Uses sentence case in English (US).
+tor-connection-internet-status-online = Online
+# Shown when the user is not connected to the internet.
+# Uses sentence case in English (US).
+tor-connection-internet-status-offline = Offline
+
+# Prefix before the Tor network connection status.
+# Uses sentence case in English (US).
+tor-connection-network-status-label = Tor network:
+# Shown when the user is connected to the Tor network.
+# Uses sentence case in English (US).
+tor-connection-network-status-connected = Connected
+# Shown when the user is not connected to the Tor network.
+# Uses sentence case in English (US).
+tor-connection-network-status-not-connected = Not connected
+# Shown when the user's Tor connection may be blocked.
+# Uses sentence case in English (US).
+tor-connection-network-status-blocked = Potentially blocked
+# Button shown when we are not yet connected to the Tor network.
+# It will open a page to start connecting to the Tor network.
+# Uses sentence case in English (US).
+tor-connection-network-status-connect-button = Connect
+
+## Tor Bridges Settings.
+
+tor-bridges-heading = Bridges
+tor-bridges-overview = Bridges help you securely access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another.
+tor-bridges-learn-more-link = Learn more
 
 # Toggle button for enabling and disabling the use of bridges.
 tor-bridges-use-bridges =
@@ -78,6 +126,16 @@ tor-bridges-menu-item-remove-all-bridges = Remove all bridges
 
 # Shown when one of the built-in bridges is in use.
 tor-bridges-built-in-status-connected = Connected
+# "obfs4" is a technical name, and likely should not be translated.
+tor-bridges-built-in-obfs4-name = obfs4
+tor-bridges-built-in-obfs4-description = Makes your Tor traffic look like random data. May not work in heavily censored regions.
+# "Snowflake" is a proper noun for a type of Tor bridge, and likely should not be translated.
+tor-bridges-built-in-snowflake-name = Snowflake
+# "Snowflake" is a proper noun for a type of Tor bridge, and likely should not be translated.
+tor-bridges-built-in-snowflake-description = Routes your connection through Snowflake proxies to make it look like you’re placing a video call, for example.
+# "meek-azure" is a technical name, and likely should not be translated.
+tor-bridges-built-in-meek-azure-name = meek-azure
+tor-bridges-built-in-meek-azure-description = Makes it look like you’re connected to a Microsoft website, instead of using Tor. May work in heavily censored regions, but is usually very slow.
 
 # Shown at the start of a Tor bridge line.
 # $type (String) - The Tor bridge type ("snowflake", "obfs4", "meek-azure").
@@ -195,6 +253,7 @@ tor-bridges-add-bridges-heading = Add bridges
 # Shown as a heading when the user has existing bridges that can be replaced.
 tor-bridges-replace-bridges-heading = Replace your bridges
 
+# -brand-short-name refers to 'Tor Browser', localized.
 tor-bridges-select-built-in-description = Choose from one of { -brand-short-name }’s built-in bridges
 tor-bridges-select-built-in-button = Select a built-in bridge…
 
@@ -232,6 +291,23 @@ tor-bridges-provider-email-instruction = Email { $address }
 
 tor-bridges-request-from-browser = You can also get bridges from the bridge bot without leaving { -brand-short-name }.
 tor-bridges-request-button = Request bridges…
+
+## Warning dialog when removing all bridges.
+
+remove-all-bridges-warning-title = Remove all bridges?
+remove-all-bridges-warning-description = If these bridges were received from torproject.org or added manually, this action cannot be undone
+remove-all-bridges-warning-remove-button = Remove
+
+## Bridge QR code dialog.
+
+bridge-qr-dialog-title =
+    .title = Scan the QR code
+
+## Common button used in bridge dialogs.
+
+bridge-dialog-button-connect = Connect
+bridge-dialog-button-accept = OK
+bridge-dialog-button-submit = Submit
 
 ## User provided bridge dialog.
 
@@ -300,10 +376,91 @@ user-provide-bridge-dialog-next-button =
 
 ## Built-in bridges dialog.
 
+built-in-dialog-title =
+    .title = Select a Built-In Bridge
+# -brand-short-name refers to 'Tor Browser', localized.
+built-in-dialog-introduction = { -brand-short-name } includes some specific types of bridges known as “pluggable transports”, which can help conceal the fact you’re using Tor.
+# "obfs4" is a technical name, and likely should not be translated.
+built-in-dialog-obfs4-radio-option =
+    .label = obfs4
+# "Snowflake" is a proper noun for a type of Tor bridge, and likely should not be translated.
+built-in-dialog-snowflake-radio-option =
+    .label = Snowflake
+# "meek-azure" is a technical name, and likely should not be translated.
+built-in-dialog-meek-azure-radio-option =
+    .label = meek-azure
 # Label attached to the built-in bridge option that is already in use.
 # The "aria-label" should use the same text, but include some ending punctuation to separate it from the sentence that follows. This is used for screen reader users.
 built-in-dialog-current-bridge-label = Current bridge
     .aria-label = Current bridge.
+
+request-bridge-dialog-title =
+    .title = Request Bridge
+request-bridge-dialog-top-wait = Contacting BridgeDB. Please Wait.
+request-bridge-dialog-top-solve = Solve the CAPTCHA to request a bridge.
+request-bridge-dialog-captcha-input =
+    .placeholder = Enter the characters from the image
+request-bridge-dialog-captcha-failed = The solution is not correct. Please try again.
+
+## Tor advanced settings.
+
+tor-advanced-settings-heading = Advanced
+tor-advanced-settings-description = Configure how { -brand-short-name } connects to the internet.
+# Button that opens the advanced connection settings dialog.
+# Uses sentence case in English (US).
+tor-advanced-settings-button = Settings…
+# "log" is a noun, referring to the recorded text output of the Tor process.
+tor-view-log-description = View the Tor log.
+# "log" is a noun, referring to the recorded text output of the Tor process.
+# Uses sentence case in English (US).
+tor-view-log-button = View log…
+
+## Tor log dialog.
+
+# "log" is a noun, referring to the recorded text output of the Tor process.
+tor-log-dialog-title =
+    .title = Tor log
+# "log" is a noun, referring to the recorded text output of the Tor process.
+tor-log-dialog-copy-button =
+    .label = Copy Tor log to clipboard
+# Button text changes for a short time after activating the button.
+tor-log-dialog-copy-button-copied =
+    .label = Copied!
+
+## Tor advanced connection settings dialog.
+
+tor-advanced-dialog-title =
+    .title = Connection settings
+tor-advanced-dialog-introduction = Configure how { -brand-short-name } connects to the internet.
+tor-advanced-dialog-proxy-checkbox =
+    .label = I use a proxy to connect to the internet
+tor-advanced-dialog-proxy-type-selector-label = Proxy type
+# SOCKS4 is a technical name, and should likely not be translated.
+tor-advanced-dialog-proxy-socks4-menuitem =
+    .label = SOCKS4
+# SOCKS5 is a technical name, and should likely not be translated.
+tor-advanced-dialog-proxy-socks5-menuitem =
+    .label = SOCKS5
+# HTTP and HTTPS are technical names, and should likely not be translated.
+# The "/" refers to "HTTP or HTTPS" and can be translated.
+tor-advanced-dialog-proxy-http-menuitem =
+    .label = HTTP/HTTPS
+# "address" is a noun, referring to an network IP address.
+tor-advanced-dialog-proxy-address-input-label = Address
+tor-advanced-dialog-proxy-address-input =
+    .placeholder = IP address or hostname
+tor-advanced-dialog-proxy-port-input-label = Port
+tor-advanced-dialog-proxy-username-input-label = Username
+tor-advanced-dialog-proxy-username-input =
+    .placeholder = Optional
+tor-advanced-dialog-proxy-password-input-label = Password
+tor-advanced-dialog-proxy-password-input =
+    .placeholder = Optional
+tor-advanced-dialog-firewall-checkbox =
+    .label = This computer goes through a firewall that only allows connections to certain ports
+tor-advanced-dialog-firewall-ports-input-label = Allowed ports
+tor-advanced-dialog-firewall-ports-input =
+    .placeholder = Comma-separated values
 
 ## About Tor Browser dialog.
 
