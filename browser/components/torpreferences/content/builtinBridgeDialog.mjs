@@ -69,10 +69,12 @@ export class BuiltinBridgeDialog {
       optionEl.querySelector(
         ".torPreferences-current-bridge-label"
       ).textContent = TorStrings.settings.currentBridge;
-      optionEl.classList.toggle(
-        "current-builtin-bridge-type",
-        type === currentBuiltinType
-      );
+      optionEl
+        .querySelector(".bridge-status-badge")
+        .classList.toggle(
+          "bridge-status-current-built-in",
+          type === currentBuiltinType
+        );
     }
 
     if (currentBuiltinType) {

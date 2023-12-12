@@ -1,4 +1,6 @@
 browser.jar:
+    content/browser/torpreferences/bridge.svg                        (content/bridge.svg)
+    content/browser/torpreferences/bridge-qr.svg                     (content/bridge-qr.svg)
     content/browser/torpreferences/bridgeQrDialog.xhtml              (content/bridgeQrDialog.xhtml)
     content/browser/torpreferences/bridgeQrDialog.mjs                (content/bridgeQrDialog.mjs)
     content/browser/torpreferences/builtinBridgeDialog.xhtml         (content/builtinBridgeDialog.xhtml)
