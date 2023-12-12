@@ -4,10 +4,6 @@ const { TorSettings, TorProxyType } = ChromeUtils.importESModule(
   "resource://gre/modules/TorSettings.sys.mjs"
 );
 
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
-
 const gConnectionSettingsDialog = {
   _useProxyCheckbox: null,
   _proxyTypeLabel: null,
@@ -25,7 +21,6 @@ const gConnectionSettingsDialog = {
   _allowedPortsTextbox: null,
 
   selectors: {
-    header: "#torPreferences-connection-header",
     useProxyCheckbox: "checkbox#torPreferences-connection-toggleProxy",
     proxyTypeLabel: "label#torPreferences-localProxy-type",
     proxyTypeList: "menulist#torPreferences-localProxy-builtinList",
@@ -53,36 +48,27 @@ const gConnectionSettingsDialog = {
   init() {
     const selectors = this.selectors;
 
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.connectionSettingsDialogTitle
-    );
-    document.querySelector(selectors.header).textContent =
-      TorStrings.settings.connectionSettingsDialogHeader;
-
     // Local Proxy
     this._useProxyCheckbox = document.querySelector(selectors.useProxyCheckbox);
-    this._useProxyCheckbox.setAttribute(
-      "label",
-      TorStrings.settings.useLocalProxy
-    );
     this._useProxyCheckbox.addEventListener("command", e => {
       const checked = this._useProxyCheckbox.checked;
       this.onToggleProxy(checked);
     });
     this._proxyTypeLabel = document.querySelector(selectors.proxyTypeLabel);
-    this._proxyTypeLabel.setAttribute("value", TorStrings.settings.proxyType);
 
     let mockProxies = [
       {
         value: TorProxyType.Socks4,
-        label: TorStrings.settings.proxyTypeSOCKS4,
+        l10nId: "tor-advanced-dialog-proxy-socks4-menuitem",
       },
       {
         value: TorProxyType.Socks5,
-        label: TorStrings.settings.proxyTypeSOCKS5,
+        l10nId: "tor-advanced-dialog-proxy-socks5-menuitem",
       },
-      { value: TorProxyType.HTTPS, label: TorStrings.settings.proxyTypeHTTP },
+      {
+        value: TorProxyType.HTTPS,
+        l10nId: "tor-advanced-dialog-proxy-http-menuitem",
+      },
     ];
     this._proxyTypeMenulist = document.querySelector(selectors.proxyTypeList);
     this._proxyTypeMenulist.addEventListener("command", e => {
@@ -92,23 +78,15 @@ const gConnectionSettingsDialog = {
     for (let currentProxy of mockProxies) {
       let menuEntry = window.document.createXULElement("menuitem");
       menuEntry.setAttribute("value", currentProxy.value);
-      menuEntry.setAttribute("label", currentProxy.label);
+      menuEntry.setAttribute("data-l10n-id", currentProxy.l10nId);
       this._proxyTypeMenulist.querySelector("menupopup").appendChild(menuEntry);
     }
 
     this._proxyAddressLabel = document.querySelector(
       selectors.proxyAddressLabel
     );
-    this._proxyAddressLabel.setAttribute(
-      "value",
-      TorStrings.settings.proxyAddress
-    );
     this._proxyAddressTextbox = document.querySelector(
       selectors.proxyAddressTextbox
-    );
-    this._proxyAddressTextbox.setAttribute(
-      "placeholder",
-      TorStrings.settings.proxyAddressPlaceholder
     );
     this._proxyAddressTextbox.addEventListener("blur", e => {
       let value = this._proxyAddressTextbox.value.trim();
@@ -122,35 +100,18 @@ const gConnectionSettingsDialog = {
       }
     });
     this._proxyPortLabel = document.querySelector(selectors.proxyPortLabel);
-    this._proxyPortLabel.setAttribute("value", TorStrings.settings.proxyPort);
     this._proxyPortTextbox = document.querySelector(selectors.proxyPortTextbox);
     this._proxyUsernameLabel = document.querySelector(
       selectors.proxyUsernameLabel
     );
-    this._proxyUsernameLabel.setAttribute(
-      "value",
-      TorStrings.settings.proxyUsername
-    );
     this._proxyUsernameTextbox = document.querySelector(
       selectors.proxyUsernameTextbox
-    );
-    this._proxyUsernameTextbox.setAttribute(
-      "placeholder",
-      TorStrings.settings.proxyUsernamePasswordPlaceholder
     );
     this._proxyPasswordLabel = document.querySelector(
       selectors.proxyPasswordLabel
     );
-    this._proxyPasswordLabel.setAttribute(
-      "value",
-      TorStrings.settings.proxyPassword
-    );
     this._proxyPasswordTextbox = document.querySelector(
       selectors.proxyPasswordTextbox
-    );
-    this._proxyPasswordTextbox.setAttribute(
-      "placeholder",
-      TorStrings.settings.proxyUsernamePasswordPlaceholder
     );
 
     this.onToggleProxy(false);
@@ -167,10 +128,6 @@ const gConnectionSettingsDialog = {
     this._useFirewallCheckbox = document.querySelector(
       selectors.useFirewallCheckbox
     );
-    this._useFirewallCheckbox.setAttribute(
-      "label",
-      TorStrings.settings.useFirewall
-    );
     this._useFirewallCheckbox.addEventListener("command", e => {
       const checked = this._useFirewallCheckbox.checked;
       this.onToggleFirewall(checked);
@@ -178,16 +135,8 @@ const gConnectionSettingsDialog = {
     this._allowedPortsLabel = document.querySelector(
       selectors.firewallAllowedPortsLabel
     );
-    this._allowedPortsLabel.setAttribute(
-      "value",
-      TorStrings.settings.allowedPorts
-    );
     this._allowedPortsTextbox = document.querySelector(
       selectors.firewallAllowedPortsTextbox
-    );
-    this._allowedPortsTextbox.setAttribute(
-      "placeholder",
-      TorStrings.settings.allowedPortsPlaceholder
     );
 
     this.onToggleFirewall(false);

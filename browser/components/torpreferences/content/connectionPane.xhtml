@@ -11,16 +11,21 @@
     data-category="paneConnection"
     hidden="true"
   >
-    <html:h1 id="torPreferences-header" />
+    <html:h1 data-l10n-id="tor-connection-settings-heading"></html:h1>
   </hbox>
 
   <groupbox data-category="paneConnection" hidden="true">
     <description flex="1">
-      <html:span id="torPreferences-description" class="tail-with-learn-more" />
+      <html:span
+        data-l10n-id="tor-connection-overview"
+        class="tail-with-learn-more"
+      ></html:span>
       <label
-        id="torPreferences-learnMore"
         class="learnMore text-link"
         is="text-link"
+        href="about:manual#about"
+        useoriginprincipal="true"
+        data-l10n-id="tor-connection-browser-learn-more-link"
       />
     </description>
   </groupbox>
@@ -36,33 +41,45 @@
         class="torPreferences-status-grouping"
       >
         <image class="torPreferences-status-icon" />
-        <html:span class="torPreferences-status-name"></html:span>
+        <html:span
+          class="torPreferences-status-name"
+          data-l10n-id="tor-connection-internet-status-label"
+        ></html:span>
         <html:span class="torPreferences-status-result"></html:span>
-        <button id="torPreferences-status-internet-test" />
+        <html:button
+          id="torPreferences-status-internet-test"
+          data-l10n-id="tor-connection-internet-status-test-button"
+        ></html:button>
       </hbox>
       <hbox
         id="torPreferences-status-tor-connect"
         class="torPreferences-status-grouping"
       >
         <image class="torPreferences-status-icon" />
-        <html:span class="torPreferences-status-name"></html:span>
+        <html:span
+          class="torPreferences-status-name"
+          data-l10n-id="tor-connection-network-status-label"
+        ></html:span>
         <html:span class="torPreferences-status-result"></html:span>
-        <button id="torPreferences-status-tor-connect-button" />
+        <html:button
+          id="torPreferences-status-tor-connect-button"
+          data-l10n-id="tor-connection-network-status-connect-button"
+        ></html:button>
       </hbox>
     </hbox>
   </groupbox>
 
   <!-- Quickstart -->
-  <groupbox
-    id="torPreferences-quickstart-group"
-    data-category="paneConnection"
-    hidden="true"
-  >
-    <html:h2 id="torPreferences-quickstart-header" />
-    <description flex="1">
-      <html:span id="torPreferences-quickstart-description" />
+  <groupbox data-category="paneConnection" hidden="true">
+    <label>
+      <html:h2 data-l10n-id="tor-connection-quickstart-heading"></html:h2>
+    </label>
+    <description flex="1" data-l10n-id="tor-connection-quickstart-description">
     </description>
-    <checkbox id="torPreferences-quickstart-toggle" />
+    <checkbox
+      id="torPreferences-quickstart-toggle"
+      data-l10n-id="tor-connection-quickstart-checkbox"
+    />
   </groupbox>
 
   <!-- Bridges -->
@@ -71,6 +88,7 @@
       id="torPreferences-bridges-header"
       class="tor-focusable-heading"
       tabindex="-1"
+      data-l10n-id="tor-bridges-heading"
     ></html:h1>
   </hbox>
   <groupbox
@@ -80,13 +98,15 @@
   >
     <description flex="1">
       <html:span
-        id="torPreferences-bridges-description"
         class="tail-with-learn-more"
+        data-l10n-id="tor-bridges-overview"
       />
       <label
-        id="torPreferences-bridges-learnMore"
         class="learnMore text-link"
         is="text-link"
+        href="about:manual#bridges"
+        useoriginprincipal="true"
+        data-l10n-id="tor-bridges-learn-more-link"
       />
     </description>
     <hbox
@@ -479,7 +499,7 @@
 
   <!-- Advanced -->
   <hbox class="subcategory" data-category="paneConnection" hidden="true">
-    <html:h1 id="torPreferences-advanced-header" />
+    <html:h1 data-l10n-id="tor-advanced-settings-heading"></html:h1>
   </hbox>
   <groupbox
     id="torPreferences-advanced-group"
@@ -487,14 +507,20 @@
     hidden="true"
   >
     <hbox align="center">
-      <label id="torPreferences-advanced-label" flex="1" />
-      <button id="torPreferences-advanced-button" class="accessory-button" />
+      <label data-l10n-id="tor-advanced-settings-description" flex="1" />
+      <html:button
+        id="torPreferences-advanced-button"
+        class="accessory-button"
+        data-l10n-id="tor-advanced-settings-button"
+      ></html:button>
     </hbox>
     <hbox align="center" data-subcategory="viewlogs">
-      <label id="torPreferences-torLogs" flex="1" />
-      <vbox>
-        <button id="torPreferences-buttonTorLogs" class="accessory-button" />
-      </vbox>
+      <label data-l10n-id="tor-view-log-description" flex="1" />
+      <html:button
+        id="torPreferences-buttonTorLogs"
+        class="accessory-button"
+        data-l10n-id="tor-view-log-button"
+      ></html:button>
     </hbox>
   </groupbox>
 </html:template>

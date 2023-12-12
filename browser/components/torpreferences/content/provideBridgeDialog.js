@@ -1,9 +1,5 @@
 "use strict";
 
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
-
 const { TorSettings, TorBridgeSource, validateBridgeLines } =
   ChromeUtils.importESModule("resource://gre/modules/TorSettings.sys.mjs");
 
@@ -191,10 +187,8 @@ const gProvideBridgeDialog = {
       this._result.connect = connect;
 
       this._acceptButton.setAttribute(
-        "label",
-        connect
-          ? TorStrings.settings.bridgeButtonConnect
-          : TorStrings.settings.bridgeButtonAccept
+        "data-l10n-id",
+        connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-accept"
       );
     }
   },

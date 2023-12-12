@@ -7,26 +7,30 @@
   type="child"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
   xmlns:html="http://www.w3.org/1999/xhtml"
+  data-l10n-id="built-in-dialog-title"
 >
   <dialog id="torPreferences-builtinBridge-dialog" buttons="accept,cancel">
     <linkset>
+      <html:link rel="localization" href="branding/brand.ftl" />
       <html:link rel="localization" href="browser/tor-browser.ftl" />
     </linkset>
 
     <script src="chrome://browser/content/torpreferences/builtinBridgeDialog.js" />
 
-    <description id="torPreferences-builtinBridge-description"> </description>
+    <description data-l10n-id="built-in-dialog-introduction"></description>
     <radiogroup id="torPreferences-builtinBridge-typeSelection">
       <vbox class="builtin-bridges-option">
         <hbox>
           <!-- The radio option is described by both the "Current bridge" label
           - and the full description. If the "Connected" label is hidden, then
            - only the latter description should contribute. -->
-          <radio value="obfs4" />
+          <radio
+            value="obfs4"
+            data-l10n-id="built-in-dialog-obfs4-radio-option"
+          />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
-              id="obfs-bridges-current"
               class="torPreferences-current-bridge-label"
               data-l10n-id="built-in-dialog-current-bridge-label"
             >
@@ -34,18 +38,20 @@
           </html:span>
         </hbox>
         <html:div
-          id="obfs-bridges-description"
           class="indent builtin-bridges-option-description"
+          data-l10n-id="tor-bridges-built-in-obfs4-description"
         >
         </html:div>
       </vbox>
       <vbox class="builtin-bridges-option">
         <hbox>
-          <radio value="snowflake" />
+          <radio
+            value="snowflake"
+            data-l10n-id="built-in-dialog-snowflake-radio-option"
+          />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
-              id="snowflake-bridges-current"
               class="torPreferences-current-bridge-label"
               data-l10n-id="built-in-dialog-current-bridge-label"
             >
@@ -53,18 +59,20 @@
           </html:span>
         </hbox>
         <html:div
-          id="snowflake-bridges-description"
           class="indent builtin-bridges-option-description"
+          data-l10n-id="tor-bridges-built-in-snowflake-description"
         >
         </html:div>
       </vbox>
       <vbox class="builtin-bridges-option">
         <hbox>
-          <radio value="meek-azure" />
+          <radio
+            value="meek-azure"
+            data-l10n-id="built-in-dialog-meek-azure-radio-option"
+          />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
-              id="meek-bridges-current"
               class="torPreferences-current-bridge-label"
               data-l10n-id="built-in-dialog-current-bridge-label"
             >
@@ -72,8 +80,8 @@
           </html:span>
         </hbox>
         <html:div
-          id="meek-bridges-description"
           class="indent builtin-bridges-option-description"
+          data-l10n-id="tor-bridges-built-in-meek-azure-description"
         >
         </html:div>
       </vbox>

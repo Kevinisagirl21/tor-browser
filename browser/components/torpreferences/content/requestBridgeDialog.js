@@ -3,9 +3,6 @@
 const { BridgeDB } = ChromeUtils.importESModule(
   "resource://gre/modules/BridgeDB.sys.mjs"
 );
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
 
 const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/TorConnect.sys.mjs"
@@ -20,8 +17,6 @@ const gRequestBridgeDialog = {
       "button#torPreferences-requestBridge-refreshCaptchaButton",
     incorrectCaptchaHbox:
       "hbox#torPreferences-requestBridge-incorrectCaptchaHbox",
-    incorrectCaptchaLabel:
-      "label#torPreferences-requestBridge-incorrectCaptchaError",
   },
 
   init() {
@@ -33,10 +28,6 @@ const gRequestBridgeDialog = {
       "torPreferences-requestBridge-dialog"
     );
 
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.requestBridgeDialogTitle
-    );
     // user may have opened a Request Bridge dialog in another tab, so update the
     // CAPTCHA image or close out the dialog if we have a bridge list
     this._dialog.addEventListener("focusin", () => {
@@ -59,7 +50,6 @@ const gRequestBridgeDialog = {
     });
 
     this._dialogHeader = this._dialog.querySelector(selectors.dialogHeader);
-    this._dialogHeader.textContent = TorStrings.settings.contactingBridgeDB;
 
     this._captchaImage = this._dialog.querySelector(selectors.captchaImage);
 
@@ -70,10 +60,6 @@ const gRequestBridgeDialog = {
 
     this._captchaEntryTextbox = this._dialog.querySelector(
       selectors.captchaEntryTextbox
-    );
-    this._captchaEntryTextbox.setAttribute(
-      "placeholder",
-      TorStrings.settings.captchaTextboxPlaceholder
     );
     this._captchaEntryTextbox.disabled = true;
     // disable submit if entry textbox is empty
@@ -88,13 +74,6 @@ const gRequestBridgeDialog = {
 
     this._incorrectCaptchaHbox = this._dialog.querySelector(
       selectors.incorrectCaptchaHbox
-    );
-    this._incorrectCaptchaLabel = this._dialog.querySelector(
-      selectors.incorrectCaptchaLabel
-    );
-    this._incorrectCaptchaLabel.setAttribute(
-      "value",
-      TorStrings.settings.incorrectCaptcha
     );
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
@@ -111,10 +90,8 @@ const gRequestBridgeDialog = {
     const connect = TorConnect.canBeginBootstrap;
     this._result.connect = connect;
     this._submitButton.setAttribute(
-      "label",
-      connect
-        ? TorStrings.settings.bridgeButtonConnect
-        : TorStrings.settings.submitCaptcha
+      "data-l10n-id",
+      connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-submit"
     );
   },
 
@@ -129,7 +106,10 @@ const gRequestBridgeDialog = {
   _setcaptchaImage(uri) {
     if (uri != this._captchaImage.src) {
       this._captchaImage.src = uri;
-      this._dialogHeader.textContent = TorStrings.settings.solveTheCaptcha;
+      this._dialogHeader.setAttribute(
+        "data-l10n-id",
+        "request-bridge-dialog-top-solve"
+      );
       this._setUIDisabled(false);
       this._captchaEntryTextbox.focus();
       this._captchaEntryTextbox.select();
@@ -185,7 +165,10 @@ const gRequestBridgeDialog = {
   onRefreshCaptcha() {
     this._setUIDisabled(true);
     this._captchaImage.src = "";
-    this._dialogHeader.textContent = TorStrings.settings.contactingBridgeDB;
+    this._dialogHeader.setAttribute(
+      "data-l10n-id",
+      "request-bridge-dialog-top-wait"
+    );
     this._captchaEntryTextbox.value = "";
     this._incorrectCaptchaHbox.style.visibility = "hidden";
 

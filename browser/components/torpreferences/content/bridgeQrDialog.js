@@ -4,19 +4,11 @@ const { QRCode } = ChromeUtils.importESModule(
   "resource://gre/modules/QRCode.sys.mjs"
 );
 
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
-
 window.addEventListener(
   "DOMContentLoaded",
   () => {
     const bridgeString = window.arguments[0];
 
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.scanQrTitle
-    );
     const target = document.getElementById("bridgeQr-target");
     const style = window.getComputedStyle(target);
     // We are assuming that the style width and height have "px" units.
