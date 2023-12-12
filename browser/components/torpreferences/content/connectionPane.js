@@ -11,7 +11,7 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
 
-const { TorSettings, TorSettingsTopics, TorSettingsData, TorBridgeSource } =
+const { TorSettings, TorSettingsTopics, TorBridgeSource } =
   ChromeUtils.importESModule("resource://gre/modules/TorSettings.sys.mjs");
 
 const { TorParsers } = ChromeUtils.importESModule(
@@ -285,7 +285,7 @@ const gConnectionPane = (function () {
         TorSettings.saveToPrefs().applySettings();
       });
       this._enableQuickstartCheckbox.checked = TorSettings.quickstart.enabled;
-      Services.obs.addObserver(this, TorSettingsTopics.SettingChanged);
+      Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
 
       // Bridge setup
       prefpane.querySelector(selectors.bridges.header).innerText =
@@ -885,7 +885,7 @@ const gConnectionPane = (function () {
 
     uninit() {
       // unregister our observer topics
-      Services.obs.removeObserver(this, TorSettingsTopics.SettingChanged);
+      Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
       Services.obs.removeObserver(this, TorConnectTopics.StateChange);
       Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
       Services.obs.removeObserver(this, "intl:app-locales-changed");
@@ -903,13 +903,10 @@ const gConnectionPane = (function () {
     observe(subject, topic, data) {
       switch (topic) {
         // triggered when a TorSettings param has changed
-        case TorSettingsTopics.SettingChanged: {
-          const obj = subject?.wrappedJSObject;
-          switch (data) {
-            case TorSettingsData.QuickStartEnabled: {
-              this._enableQuickstartCheckbox.checked = obj.value;
-              break;
-            }
+        case TorSettingsTopics.SettingsChanged: {
+          if (subject.wrappedJSObject.changes.includes("quickstart.enabled")) {
+            this._enableQuickstartCheckbox.checked =
+              TorSettings.quickstart.enabled;
           }
           break;
         }

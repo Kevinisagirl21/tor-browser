@@ -339,6 +339,8 @@ export class ConnectionSettingsDialog {
         TorSettings.proxy.type = type;
         TorSettings.proxy.address = address;
         TorSettings.proxy.port = port;
+        TorSettings.proxy.username = "";
+        TorSettings.proxy.password = "";
         break;
       case TorProxyType.Socks5:
         TorSettings.proxy.enabled = true;
