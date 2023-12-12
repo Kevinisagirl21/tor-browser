@@ -67,107 +67,23 @@ const Loader = {
   */
   settings() {
     const strings = {
-      categoryTitle: "Connection",
       // Message box
       torPreferencesDescription:
         "Tor Browser routes your traffic over the Tor Network, run by thousands of volunteers around the world.",
-      // Status
-      statusInternetLabel: "Internet:",
-      statusInternetTest: "Test",
-      statusInternetOnline: "Online",
-      statusInternetOffline: "Offline",
-      statusTorLabel: "Tor Network:",
-      statusTorConnected: "Connected",
-      statusTorNotConnected: "Not Connected",
-      statusTorBlocked: "Potentially Blocked",
-      learnMore: "Learn more",
       // Quickstart
-      quickstartHeading: "Quickstart",
-      quickstartDescription:
-        "Quickstart connects Tor Browser to the Tor Network automatically when launched, based on your last used connection settings.",
       quickstartCheckbox: "Always connect automatically",
-      // Bridge settings
-      bridgesHeading: "Bridges",
-      bridgesDescription2:
-        "Bridges help you securely access the Tor Network in places where Tor is blocked. Depending on where you are, one bridge may work better than another.",
       bridgeLocation: "Your location",
       bridgeLocationAutomatic: "Automatic",
       bridgeLocationFrequent: "Frequently selected locations",
       bridgeLocationOther: "Other locations",
       bridgeChooseForMe: "Choose a Bridge For Me…",
-      remove: "Remove",
-      bridgeDisableBuiltIn: "Disable built-in bridges",
-      copied: "Copied!",
-      bridgeRemoveAllDialogTitle: "Remove all bridges?",
-      bridgeRemoveAllDialogDescription:
-        "If these bridges were received from torproject.org or added manually, this action cannot be undone",
-      // Advanced settings
-      advancedHeading: "Advanced",
-      advancedLabel: "Configure how Tor Browser connects to the internet",
-      advancedButton: "Settings…",
-      showTorDaemonLogs: "View the Tor logs",
-      showLogs: "View Logs…",
-      // Remove all bridges dialog
-      removeBridgesQuestion: "Remove all the bridges?",
-      removeBridgesWarning: "This action cannot be undone.",
-      cancel: "Cancel",
-      // Scan bridge QR dialog
-      scanQrTitle: "Scan the QR code",
-      // Builtin bridges dialog
-      builtinBridgeHeader: "Select a Built-In Bridge",
-      builtinBridgeDescription2:
-        "Tor Browser includes some specific types of bridges known as “pluggable transports”, which can help conceal the fact you’re using Tor.",
-      builtinBridgeObfs4Title: "obfs4 (Built-in)",
-      builtinBridgeObfs4Description2:
-        "Makes your Tor traffic look like random data. May not work in heavily censored regions.",
-      builtinBridgeSnowflake: "Snowflake",
-      builtinBridgeSnowflakeDescription2:
-        "Routes your connection through Snowflake proxies to make it look like you’re placing a video call, for example.",
-      builtinBridgeMeekAzure: "meek-azure",
-      builtinBridgeMeekAzureDescription2:
-        "Makes it look like you’re connected to a Microsoft website, instead of using Tor. May work in heavily censored regions, but is usually very slow.",
-      bridgeButtonConnect: "Connect",
-      bridgeButtonAccept: "OK",
-      // Request bridges dialog
-      requestBridgeDialogTitle: "Request Bridge",
-      submitCaptcha: "Submit",
-      contactingBridgeDB: "Contacting BridgeDB. Please Wait.",
-      solveTheCaptcha: "Solve the CAPTCHA to request a bridge.",
-      captchaTextboxPlaceholder: "Enter the characters from the image",
-      incorrectCaptcha: "The solution is not correct. Please try again.",
-      // Connection settings dialog
-      connectionSettingsDialogTitle: "Connection Settings",
-      connectionSettingsDialogHeader:
-        "Configure how Tor Browser connects to the Internet",
-      useLocalProxy: "I use a proxy to connect to the Internet",
-      proxyType: "Proxy Type",
-      proxyTypeSOCKS4: "SOCKS4",
-      proxyTypeSOCKS5: "SOCKS5",
-      proxyTypeHTTP: "HTTP/HTTPS",
-      proxyAddress: "Address",
-      proxyAddressPlaceholder: "IP address or hostname",
-      proxyPort: "Port",
-      proxyUsername: "Username",
-      proxyPassword: "Password",
-      proxyUsernamePasswordPlaceholder: "Optional",
-      useFirewall:
-        "This computer goes through a firewall that only allows connections to certain ports",
-      allowedPorts: "Allowed Ports",
-      allowedPortsPlaceholder: "Comma-seperated values",
-      // Log dialog
-      torLogDialogTitle: "Tor Logs",
-      copyLog: "Copy Tor Log to Clipboard",
     };
 
     const tsb = new TorPropertyStringBundle(
       "chrome://torbutton/locale/settings.properties",
       "settings."
     );
-    return {
-      ...tsb.getStrings(strings),
-      learnMoreTorBrowserURL: "about:manual#about",
-      learnMoreBridgesURL: "about:manual#bridges",
-    };
+    return tsb.getStrings(strings);
   } /* Tor Network Settings Strings */,
 
   torConnect() {
