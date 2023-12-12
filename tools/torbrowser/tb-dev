@@ -226,8 +226,7 @@ def get_gitlab_default():
     )
 
     with urllib.request.urlopen(gitlab_request, timeout=20) as response:
-        branch_name = json.load(response)["data"]["project"]["repository"]["rootRef"]
-    return f"{get_upstream_name()}/{branch_name}"
+        return json.load(response)["data"]["project"]["repository"]["rootRef"]
 
 
 def within_tor_browser_root():
@@ -498,7 +497,9 @@ def show_default(_args):
     """
     Print the default branch name from gitlab.
     """
-    print(get_gitlab_default())
+    default_branch = get_gitlab_default()
+    upstream = get_upstream_name()
+    print(f"{upstream}/{default_branch}")
 
 
 def branch_from_default(args):
@@ -506,9 +507,10 @@ def branch_from_default(args):
     Fetch the default gitlab branch from upstream and create a new local branch.
     """
     default_branch = get_gitlab_default()
+    upstream = get_upstream_name()
 
-    git_run(["fetch"], get_upstream_name())
-    git_run(["switch", "--create", args.branchname, "--track", default_branch])
+    git_run(["fetch", upstream, default_branch])
+    git_run(["switch", "--create", args.branchname, "--track", f"{upstream}/{default_branch}"])
 
 
 def move_to_default(args):
@@ -529,11 +531,13 @@ def move_to_default(args):
 
     current_upstream_branch = get_upstream_tracking_branch(branch_name)
     default_branch = get_gitlab_default()
+    upstream = get_upstream_name()
 
-    git_run(["fetch"], get_upstream_name())
+    git_run(["fetch", upstream, default_branch])
 
-    if current_upstream_branch == default_branch:
-        print(f"{branch_name} is already set to track the default branch {default_branch}.")
+    new_upstream_branch = f"{upstream}/{default_branch}"
+    if current_upstream_branch == new_upstream_branch:
+        print(f"{branch_name} is already set to track the default branch {new_upstream_branch}.")
         return
 
     # We want to avoid checking out the old branch because this can cause
@@ -546,7 +550,7 @@ def move_to_default(args):
     git_run(["branch", "-m", branch_name, old_branch_name])
 
     try:
-        git_run(["switch", "--create", branch_name, "--track", default_branch])
+        git_run(["switch", "--create", branch_name, "--track", new_upstream_branch])
     except subprocess.CalledProcessError as err:
         print(f"Moving {old_branch_name} back to {branch_name}")
         git_run(["branch", "-m", old_branch_name, branch_name])
