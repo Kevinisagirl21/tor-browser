@@ -12,7 +12,6 @@ import {
 import {
   TorSettings,
   TorSettingsTopics,
-  TorSettingsData,
 } from "resource://gre/modules/TorSettings.sys.mjs";
 
 const BroadcastTopic = "about-torconnect:broadcast";
@@ -115,9 +114,11 @@ export class TorConnectParent extends JSWindowActorParent {
             }
             break;
           }
-          case TorSettingsTopics.SettingChanged: {
-            if (aData === TorSettingsData.QuickStartEnabled) {
-              self.state.QuickStartEnabled = obj.value;
+          case TorSettingsTopics.SettingsChanged: {
+            if (
+              aSubject.wrappedJSObject.changes.includes("quickstart.enabled")
+            ) {
+              self.state.QuickStartEnabled = TorSettings.quickstart.enabled;
             } else {
               // this isn't a setting torconnect cares about
               return;
@@ -141,7 +142,7 @@ export class TorConnectParent extends JSWindowActorParent {
     Services.obs.addObserver(this.torConnectObserver, TorSettingsTopics.Ready);
     Services.obs.addObserver(
       this.torConnectObserver,
-      TorSettingsTopics.SettingChanged
+      TorSettingsTopics.SettingsChanged
     );
 
     this.userActionObserver = {
@@ -168,7 +169,7 @@ export class TorConnectParent extends JSWindowActorParent {
     );
     Services.obs.removeObserver(
       this.torConnectObserver,
-      TorSettingsTopics.SettingChanged
+      TorSettingsTopics.SettingsChanged
     );
     Services.obs.removeObserver(this.userActionObserver, BroadcastTopic);
   }
