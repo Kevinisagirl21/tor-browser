@@ -7,8 +7,13 @@
   type="child"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
   xmlns:html="http://www.w3.org/1999/xhtml"
+  data-l10n-id="tor-log-dialog-title"
 >
   <dialog id="torPreferences-torLog-dialog" buttons="accept,extra1">
+    <linkset>
+      <html:link rel="localization" href="browser/tor-browser.ftl" />
+    </linkset>
+
     <script src="chrome://browser/content/torpreferences/torLogDialog.js" />
 
     <html:textarea

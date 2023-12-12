@@ -7,21 +7,13 @@ const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
 const { TorProviderBuilder } = ChromeUtils.importESModule(
   "resource://gre/modules/TorProviderBuilder.sys.mjs"
 );
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
 
 window.addEventListener(
   "DOMContentLoaded",
   () => {
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.torLogDialogTitle
-    );
-
     const dialog = document.getElementById("torPreferences-torLog-dialog");
     const copyLogButton = dialog.getButton("extra1");
-    copyLogButton.setAttribute("label", TorStrings.settings.copyLog);
+    copyLogButton.setAttribute("data-l10n-id", "tor-log-dialog-copy-button");
 
     const logText = document.getElementById(
       "torPreferences-torDialog-textarea"
@@ -35,8 +27,10 @@ window.addEventListener(
       );
       clipboard.copyString(logText.value);
 
-      const label = copyLogButton.querySelector("label");
-      label.setAttribute("value", TorStrings.settings.copied);
+      copyLogButton.setAttribute(
+        "data-l10n-id",
+        "tor-log-dialog-copy-button-copied"
+      );
       copyLogButton.classList.add("primary");
 
       const RESTORE_TIME = 1200;
@@ -44,7 +38,10 @@ window.addEventListener(
         clearTimeout(restoreButtonTimeout);
       }
       restoreButtonTimeout = setTimeout(() => {
-        label.setAttribute("value", TorStrings.settings.copyLog);
+        copyLogButton.setAttribute(
+          "data-l10n-id",
+          "tor-log-dialog-copy-button"
+        );
         copyLogButton.classList.remove("primary");
         restoreButtonTimeout = null;
       }, RESTORE_TIME);

@@ -7,20 +7,26 @@
   type="child"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
   xmlns:html="http://www.w3.org/1999/xhtml"
+  data-l10n-id="request-bridge-dialog-title"
 >
   <dialog id="torPreferences-requestBridge-dialog" buttons="accept,cancel">
+    <linkset>
+      <html:link rel="localization" href="browser/tor-browser.ftl" />
+    </linkset>
+
     <script src="chrome://browser/content/torpreferences/requestBridgeDialog.js" />
 
-    <!-- ok, so &#8203; is a zero-width space. We need to have *something* in the innerText so that XUL knows how tall the
-       title node is so that it can determine how large to make the dialog element's inner draw area. If we have nothing
-       in the innerText, then it collapse to 0 height, and the contents of the dialog ends up partially hidden >:( -->
-    <html:h3 id="torPreferences-requestBridge-header">&#8203;</html:h3>
+    <html:h3
+      id="torPreferences-requestBridge-header"
+      data-l10n-id="request-bridge-dialog-top-solve"
+    ></html:h3>
     <!-- init to transparent 400x125 png -->
     <image id="torPreferences-requestBridge-captchaImage" flex="1" />
     <hbox id="torPreferences-requestBridge-inputHbox">
       <html:input
         id="torPreferences-requestBridge-captchaTextbox"
         type="text"
+        data-l10n-id="request-bridge-dialog-captcha-input"
       />
       <button
         id="torPreferences-requestBridge-refreshCaptchaButton"
@@ -30,7 +36,7 @@
     </hbox>
     <hbox id="torPreferences-requestBridge-incorrectCaptchaHbox" align="center">
       <image id="torPreferences-requestBridge-errorIcon" />
-      <label id="torPreferences-requestBridge-incorrectCaptchaError" flex="1" />
+      <label data-l10n-id="request-bridge-dialog-captcha-failed" flex="1" />
     </hbox>
   </dialog>
 </window>

@@ -1088,18 +1088,17 @@ const gBuiltinBridgesArea = {
    * @type {Object<string,object>}
    */
   _bridgeTypeStrings: {
-    // TODO: Change to Fluent ids.
     obfs4: {
-      name: TorStrings.settings.builtinBridgeObfs4Title,
-      description: TorStrings.settings.builtinBridgeObfs4Description2,
+      name: "tor-bridges-built-in-obfs4-name",
+      description: "tor-bridges-built-in-obfs4-description",
     },
     snowflake: {
-      name: TorStrings.settings.builtinBridgeSnowflake,
-      description: TorStrings.settings.builtinBridgeSnowflakeDescription2,
+      name: "tor-bridges-built-in-snowflake-name",
+      description: "tor-bridges-built-in-snowflake-description",
     },
     "meek-azure": {
-      name: TorStrings.settings.builtinBridgeMeekAzure,
-      description: TorStrings.settings.builtinBridgeMeekAzureDescription2,
+      name: "tor-bridges-built-in-meek-azure-name",
+      description: "tor-bridges-built-in-meek-azure-description",
     },
   },
 
@@ -1151,15 +1150,11 @@ const gBuiltinBridgesArea = {
 
       const bridgeStrings = this._bridgeTypeStrings[bridgeType];
       if (bridgeStrings) {
-        /*
         document.l10n.setAttributes(this._nameEl, bridgeStrings.name);
         document.l10n.setAttributes(
           this._descriptionEl,
           bridgeStrings.description
         );
-        */
-        this._nameEl.textContent = bridgeStrings.name;
-        this._descriptionEl.textContent = bridgeStrings.description;
       } else {
         // Unknown type, or no type.
         this._nameEl.removeAttribute("data-l10n-id");
@@ -2075,7 +2070,7 @@ const gBridgeSettings = {
     // "Remove all bridges"?
     document
       .getElementById("tor-bridges-options-remove-all-menu-item")
-      .addEventListener("click", () => {
+      .addEventListener("click", async () => {
         // TODO: Should we only have a warning when not built-in?
         const parentWindow =
           Services.wm.getMostRecentWindow("navigator:browser");
@@ -2085,13 +2080,20 @@ const gBridgeSettings = {
           Services.prompt.BUTTON_POS_0_DEFAULT +
           Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL;
 
+        const [titleString, bodyString, removeString] =
+          await document.l10n.formatValues([
+            { id: "remove-all-bridges-warning-title" },
+            { id: "remove-all-bridges-warning-description" },
+            { id: "remove-all-bridges-warning-remove-button" },
+          ]);
+
         // TODO: Update the text, and remove old strings.
         const buttonIndex = Services.prompt.confirmEx(
           parentWindow,
-          TorStrings.settings.bridgeRemoveAllDialogTitle,
-          TorStrings.settings.bridgeRemoveAllDialogDescription,
+          titleString,
+          bodyString,
           flags,
-          TorStrings.settings.remove,
+          removeString,
           null,
           null,
           null,
@@ -2289,35 +2291,12 @@ const gBridgeSettings = {
 const gConnectionPane = (function () {
   /* CSS selectors for all of the Tor Network DOM elements we need to access */
   const selectors = {
-    category: {
-      title: "label#torPreferences-labelCategory",
-    },
-    torPreferences: {
-      header: "h1#torPreferences-header",
-      description: "span#torPreferences-description",
-      learnMore: "label#torPreferences-learnMore",
-    },
-    quickstart: {
-      header: "h2#torPreferences-quickstart-header",
-      description: "span#torPreferences-quickstart-description",
-      enableQuickstartCheckbox: "checkbox#torPreferences-quickstart-toggle",
-    },
     bridges: {
-      header: "h1#torPreferences-bridges-header",
-      description: "span#torPreferences-bridges-description",
-      learnMore: "label#torPreferences-bridges-learnMore",
       locationGroup: "#torPreferences-bridges-locationGroup",
       locationLabel: "#torPreferences-bridges-locationLabel",
       location: "#torPreferences-bridges-location",
       locationEntries: "#torPreferences-bridges-locationEntries",
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
-    },
-    advanced: {
-      header: "h1#torPreferences-advanced-header",
-      label: "#torPreferences-advanced-label",
-      button: "#torPreferences-advanced-button",
-      torLogsLabel: "label#torPreferences-torLogs",
-      torLogsButton: "button#torPreferences-buttonTorLogs",
     },
   }; /* selectors */
 
@@ -2342,96 +2321,62 @@ const gConnectionPane = (function () {
         }
       });
 
-      document
-        .querySelector(selectors.category.title)
-        .setAttribute("value", TorStrings.settings.categoryTitle);
-
-      const prefpane = document.getElementById("mainPrefPane");
-
-      // Heading
-      prefpane.querySelector(selectors.torPreferences.header).innerText =
-        TorStrings.settings.categoryTitle;
-      prefpane.querySelector(selectors.torPreferences.description).textContent =
-        TorStrings.settings.torPreferencesDescription;
-      {
-        const learnMore = prefpane.querySelector(
-          selectors.torPreferences.learnMore
-        );
-        learnMore.setAttribute("value", TorStrings.settings.learnMore);
-        learnMore.setAttribute(
-          "href",
-          TorStrings.settings.learnMoreTorBrowserURL
-        );
-        if (TorStrings.settings.learnMoreTorBrowserURL.startsWith("about:")) {
-          learnMore.setAttribute("useoriginprincipal", "true");
-        }
-      }
-
       // Internet and Tor status
       const internetStatus = document.getElementById(
         "torPreferences-status-internet"
       );
-      internetStatus.querySelector(".torPreferences-status-name").textContent =
-        TorStrings.settings.statusInternetLabel;
       const internetResult = internetStatus.querySelector(
         ".torPreferences-status-result"
       );
       const internetTest = document.getElementById(
         "torPreferences-status-internet-test"
       );
-      internetTest.setAttribute(
-        "label",
-        TorStrings.settings.statusInternetTest
-      );
-      internetTest.addEventListener("command", () => {
+      internetTest.addEventListener("click", () => {
         this.onInternetTest();
       });
 
       const torConnectStatus = document.getElementById(
         "torPreferences-status-tor-connect"
       );
-      torConnectStatus.querySelector(
-        ".torPreferences-status-name"
-      ).textContent = TorStrings.settings.statusTorLabel;
       const torConnectResult = torConnectStatus.querySelector(
         ".torPreferences-status-result"
       );
       const torConnectButton = document.getElementById(
         "torPreferences-status-tor-connect-button"
       );
-      torConnectButton.setAttribute(
-        "label",
-        TorStrings.torConnect.torConnectButton
-      );
-      torConnectButton.addEventListener("command", () => {
+      torConnectButton.addEventListener("click", () => {
         TorConnect.openTorConnect({ beginBootstrap: true });
       });
 
       this._populateStatus = () => {
+        let internetId;
         switch (this._internetStatus) {
           case InternetStatus.Online:
             internetStatus.classList.remove("offline");
-            internetResult.textContent =
-              TorStrings.settings.statusInternetOnline;
-            internetResult.hidden = false;
+            internetId = "tor-connection-internet-status-online";
             break;
           case InternetStatus.Offline:
             internetStatus.classList.add("offline");
-            internetResult.textContent =
-              TorStrings.settings.statusInternetOffline;
-            internetResult.hidden = false;
+            internetId = "tor-connection-internet-status-offline";
             break;
           case InternetStatus.Unknown:
           default:
             internetStatus.classList.remove("offline");
-            internetResult.hidden = true;
             break;
         }
+        if (internetId) {
+          document.l10n.setAttributes(internetResult, internetId);
+          internetResult.hidden = false;
+        } else {
+          internetResult.hidden = true;
+        }
+
+        let connectId;
         // FIXME: What about the TorConnectState.Disabled state?
         if (TorConnect.state === TorConnectState.Bootstrapped) {
           torConnectStatus.classList.add("connected");
           torConnectStatus.classList.remove("blocked");
-          torConnectResult.textContent = TorStrings.settings.statusTorConnected;
+          connectId = "tor-connection-network-status-connected";
           // NOTE: If the button is focused when we hide it, the focus may be
           // lost. But we don't have an obvious place to put the focus instead.
           torConnectButton.hidden = true;
@@ -2441,26 +2386,18 @@ const gConnectionPane = (function () {
             "blocked",
             TorConnect.potentiallyBlocked
           );
-          torConnectResult.textContent = TorConnect.potentiallyBlocked
-            ? TorStrings.settings.statusTorBlocked
-            : TorStrings.settings.statusTorNotConnected;
+          connectId = TorConnect.potentiallyBlocked
+            ? "tor-connection-network-status-blocked"
+            : "tor-connection-network-status-not-connected";
           torConnectButton.hidden = false;
         }
+        document.l10n.setAttributes(torConnectResult, connectId);
       };
       this._populateStatus();
 
       // Quickstart
-      prefpane.querySelector(selectors.quickstart.header).innerText =
-        TorStrings.settings.quickstartHeading;
-      prefpane.querySelector(selectors.quickstart.description).textContent =
-        TorStrings.settings.quickstartDescription;
-
-      this._enableQuickstartCheckbox = prefpane.querySelector(
-        selectors.quickstart.enableQuickstartCheckbox
-      );
-      this._enableQuickstartCheckbox.setAttribute(
-        "label",
-        TorStrings.settings.quickstartCheckbox
+      this._enableQuickstartCheckbox = document.getElementById(
+        "torPreferences-quickstart-toggle"
       );
       this._enableQuickstartCheckbox.addEventListener("command", e => {
         const checked = this._enableQuickstartCheckbox.checked;
@@ -2470,22 +2407,10 @@ const gConnectionPane = (function () {
       this._enableQuickstartCheckbox.checked = TorSettings.quickstart.enabled;
       Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
 
-      // Bridge setup
-      prefpane.querySelector(selectors.bridges.header).innerText =
-        TorStrings.settings.bridgesHeading;
-      prefpane.querySelector(selectors.bridges.description).textContent =
-        TorStrings.settings.bridgesDescription2;
-      {
-        const learnMore = prefpane.querySelector(selectors.bridges.learnMore);
-        learnMore.setAttribute("value", TorStrings.settings.learnMore);
-        learnMore.setAttribute("href", TorStrings.settings.learnMoreBridgesURL);
-        if (TorStrings.settings.learnMoreBridgesURL.startsWith("about:")) {
-          learnMore.setAttribute("useoriginprincipal", "true");
-        }
-      }
-
       // Location
       {
+        const prefpane = document.getElementById("mainPrefPane");
+
         const locationGroup = prefpane.querySelector(
           selectors.bridges.locationGroup
         );
@@ -2571,33 +2496,18 @@ const gConnectionPane = (function () {
       }
 
       // Advanced setup
-      prefpane.querySelector(selectors.advanced.header).innerText =
-        TorStrings.settings.advancedHeading;
-      prefpane.querySelector(selectors.advanced.label).textContent =
-        TorStrings.settings.advancedLabel;
-      {
-        const settingsButton = prefpane.querySelector(
-          selectors.advanced.button
-        );
-        settingsButton.setAttribute(
-          "label",
-          TorStrings.settings.advancedButton
-        );
-        settingsButton.addEventListener("command", () => {
+      document
+        .getElementById("torPreferences-advanced-button")
+        .addEventListener("click", () => {
           this.onAdvancedSettings();
         });
-      }
 
       // Tor logs
-      prefpane.querySelector(selectors.advanced.torLogsLabel).textContent =
-        TorStrings.settings.showTorDaemonLogs;
-      const torLogsButton = prefpane.querySelector(
-        selectors.advanced.torLogsButton
-      );
-      torLogsButton.setAttribute("label", TorStrings.settings.showLogs);
-      torLogsButton.addEventListener("command", () => {
-        this.onViewTorLogs();
-      });
+      document
+        .getElementById("torPreferences-buttonTorLogs")
+        .addEventListener("click", () => {
+          this.onViewTorLogs();
+        });
 
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
     },

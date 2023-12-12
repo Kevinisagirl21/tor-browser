@@ -1,9 +1,5 @@
 "use strict";
 
-const { TorStrings } = ChromeUtils.importESModule(
-  "resource://gre/modules/TorStrings.sys.mjs"
-);
-
 const { TorSettings, TorBridgeSource } = ChromeUtils.importESModule(
   "resource://gre/modules/TorSettings.sys.mjs"
 );
@@ -16,33 +12,9 @@ const gBuiltinBridgeDialog = {
   init() {
     this._result = window.arguments[0];
 
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.builtinBridgeHeader
-    );
-
-    document.getElementById(
-      "torPreferences-builtinBridge-description"
-    ).textContent = TorStrings.settings.builtinBridgeDescription2;
-
     this._radioGroup = document.getElementById(
       "torPreferences-builtinBridge-typeSelection"
     );
-
-    const typeStrings = {
-      obfs4: {
-        label: TorStrings.settings.builtinBridgeObfs4Title,
-        descr: TorStrings.settings.builtinBridgeObfs4Description2,
-      },
-      snowflake: {
-        label: TorStrings.settings.builtinBridgeSnowflake,
-        descr: TorStrings.settings.builtinBridgeSnowflakeDescription2,
-      },
-      "meek-azure": {
-        label: TorStrings.settings.builtinBridgeMeekAzure,
-        descr: TorStrings.settings.builtinBridgeMeekAzureDescription2,
-      },
-    };
 
     const currentBuiltinType =
       TorSettings.bridges.enabled &&
@@ -56,16 +28,18 @@ const gBuiltinBridgeDialog = {
       const radio = optionEl.querySelector("radio");
       const type = radio.value;
       optionEl.hidden = !TorSettings.builtinBridgeTypes.includes(type);
-      radio.label = typeStrings[type].label;
+
       const descriptionEl = optionEl.querySelector(
         ".builtin-bridges-option-description"
       );
-      descriptionEl.textContent = typeStrings[type].descr;
+      // Set an id to be used for the aria-describedby.
+      descriptionEl.id = `builtin-bridges-description-${type}`;
       const currentBadge = optionEl.querySelector(".bridge-status-badge");
       if (type === currentBuiltinType) {
         const currentLabelEl = optionEl.querySelector(
           ".torPreferences-current-bridge-label"
         );
+        currentLabelEl.id = `builtin-bridges-current-${type}`;
         // Described by both the current badge and the full description.
         // These will be concatenated together in the screen reader output.
         radio.setAttribute(
@@ -77,6 +51,7 @@ const gBuiltinBridgeDialog = {
       } else {
         // No visible badge.
         radio.setAttribute("aria-describedby", descriptionEl.id);
+        currentBadge.classList.remove("bridge-status-current-built-in");
       }
     }
 
@@ -117,10 +92,8 @@ const gBuiltinBridgeDialog = {
     const connect = TorConnect.canBeginBootstrap;
     this._result.connect = connect;
     this._acceptButton.setAttribute(
-      "label",
-      connect
-        ? TorStrings.settings.bridgeButtonConnect
-        : TorStrings.settings.bridgeButtonAccept
+      "data-l10n-id",
+      connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-accept"
     );
   },
 

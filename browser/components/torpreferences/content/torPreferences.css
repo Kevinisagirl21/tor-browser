@@ -1023,6 +1023,11 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 /* Connection settings dialog */
+#torPreferences-connection-dialog label {
+  /* Do not wrap the labels. */
+  white-space: nowrap;
+}
+
 #torPreferences-connection-header {
   margin: 4px 0 14px 0;
 }
