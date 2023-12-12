@@ -259,6 +259,7 @@ abstract class Settings {
 
     open var spoofEnglish: Boolean by UnsupportedSetting()
 
+    open var useNewBootstrap: Boolean by UnsupportedSetting()
 }
 
 /**
@@ -311,7 +312,7 @@ data class DefaultSettings(
     override var emailTrackerBlockingPrivateBrowsing: Boolean = false,
     override var torSecurityLevel: Int = 4,
     override var spoofEnglish: Boolean = false,
-    override var prioritizeOnions: Boolean = false,
+    override var useNewBootstrap: Boolean = true,
 ) : Settings()
 
 class UnsupportedSetting<T> {
