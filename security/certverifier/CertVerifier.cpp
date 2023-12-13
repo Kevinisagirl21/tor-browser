@@ -865,12 +865,15 @@ Result CertVerifier::VerifySSLServerCert(
       // find other certificates with the same subject but different keys, and
       // the certificate is self-signed.
       if (StringEndsWith(hostname, ".onion"_ns)) {
-        // Self signed cert over onion is deemed secure, the hidden service
-        // provides authentication. We defer returning this error and keep
-        // processing to determine if there are other legitimate certificate
-        // errors (such as expired, wrong domain) that we would like to surface
-        // to the user
-        errOnionWithSelfSignedCert = true;
+        // Self signed cert over onion is deemed secure in some cases, as the
+        // onion service provides encryption.
+        // Firefox treats some errors as self-signed certificates and it allows
+        // to override them. For Onion services, we prefer being stricter, and
+        // we return the original errors.
+        // Moreover, we need also to determine if there are other legitimate
+        // certificate errors (such as expired, wrong domain) that we would like
+        // to surface to the user.
+        errOnionWithSelfSignedCert = rv == Result::ERROR_UNKNOWN_ISSUER;
       } else {
         return Result::ERROR_SELF_SIGNED_CERT;
       }
