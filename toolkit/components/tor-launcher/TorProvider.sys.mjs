@@ -1009,11 +1009,7 @@ export class TorProvider {
         notify = true;
       }
       if (notify) {
-        Services.obs.notifyObservers(
-          null,
-          TorProviderTopics.BridgeChanged,
-          this.#currentBridge
-        );
+        Services.obs.notifyObservers(null, TorProviderTopics.BridgeChanged);
       }
     }
   }
