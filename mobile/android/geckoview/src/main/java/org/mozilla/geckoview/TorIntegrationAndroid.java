@@ -29,13 +29,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+
+import org.mozilla.geckoview.androidlegacysettings.TorLegacyAndroidSettings;
 
 public class TorIntegrationAndroid implements BundleEventListener {
     private static final String TAG = "TorIntegrationAndroid";
@@ -55,6 +56,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_BOOTSTRAP_BEGIN_AUTO = "GeckoView:Tor:BootstrapBeginAuto";
     private static final String EVENT_BOOTSTRAP_CANCEL = "GeckoView:Tor:BootstrapCancel";
     private static final String EVENT_BOOTSTRAP_GET_STATE = "GeckoView:Tor:BootstrapGetState";
+    private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
 
     private static final String CONTROL_PORT_FILE = "/control-ipc";
     private static final String SOCKS_FILE = "/socks-ipc";
@@ -79,6 +81,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private final HashMap<Integer, MeekTransport> mMeeks = new HashMap<>();
     private int mMeekCounter;
 
+    private TorSettings mSettings = null;
+
     /* package */ TorIntegrationAndroid(Context context) {
         mLibraryDir = context.getApplicationInfo().nativeLibraryDir;
         mCacheDir = context.getCacheDir().toPath();
@@ -101,7 +105,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         this,
                         EVENT_TOR_START,
                         EVENT_MEEK_START,
-                        EVENT_MEEK_STOP);
+                        EVENT_MEEK_STOP,
+                        EVENT_SETTINGS_READY);
     }
 
     @Override // BundleEventListener
@@ -115,6 +120,19 @@ public class TorIntegrationAndroid implements BundleEventListener {
             startMeek(message, callback);
         } else if (EVENT_MEEK_STOP.equals(event)) {
             stopMeek(message, callback);
+        } else if (EVENT_SETTINGS_READY.equals(event)) {
+            loadSettings(message);
+        }
+    }
+
+    private void loadSettings(GeckoBundle message) {
+        if (TorLegacyAndroidSettings.unmigrated()) {
+            mSettings = TorLegacyAndroidSettings.loadTorSettings();
+            setSettings(mSettings);
+            TorLegacyAndroidSettings.setMigrated();
+        } else {
+            GeckoBundle bundle = message.getBundle("settings");
+            mSettings = new TorSettings(bundle);
         }
     }
 
@@ -466,8 +484,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
         return EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET);
     }
 
-    public @NonNull GeckoResult<Void> saveSettings(final GeckoBundle settings) {
-        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SET, settings);
+    public @NonNull GeckoResult<Void> setSettings(final TorSettings settings) {
+        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SET, settings.asGeckoBundle());
     }
 
     public @NonNull GeckoResult<Void> applySettings() {

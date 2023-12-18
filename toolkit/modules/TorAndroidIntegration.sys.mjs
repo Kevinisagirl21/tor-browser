@@ -9,6 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
   TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
+  TorSettingsTopics: "resource://gre/modules/TorSettings.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
@@ -22,6 +23,11 @@ const logger = new ConsoleAPI({
   maxLogLevel: "info",
   maxLogLevelPref: Prefs.logLevel,
   prefix: "TorAndroidIntegration",
+});
+
+const EmittedEvents = Object.freeze( {
+  settingsReady: "GeckoView:Tor:SettingsReady",
+  settingsChanged: "GeckoView:Tor:SettingsChanged",
 });
 
 const ListenedEvents = Object.freeze({
@@ -50,7 +56,11 @@ class TorAndroidIntegrationImpl {
     Services.prefs.addObserver(Prefs.useNewBootstrap, this);
 
     for (const topic in lazy.TorConnectTopics) {
-      Services.obs.addObserver(this, topic);
+      Services.obs.addObserver(this, lazy.TorConnectTopics[topic]);
+    }
+
+    for (const topic in lazy.TorSettingsTopics) {
+      Services.obs.addObserver(this, lazy.TorSettingsTopics[topic]);
     }
   }
 
@@ -79,6 +89,12 @@ class TorAndroidIntegrationImpl {
         }
         break;
       case lazy.TorConnectTopics.StateChange:
+        break;
+      case lazy.TorSettingsTopics.Ready:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.settingsReady,
+          settings: lazy.TorSettings.getSettings(),
+        });
         break;
     }
   }
