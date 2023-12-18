@@ -917,9 +917,7 @@ const gConnectionPane = (function () {
           break;
         }
         case TorProviderTopics.BridgeChanged: {
-          if (data?.fingerprint !== this._currentBridgeId) {
-            this._checkConnectedBridge();
-          }
+          this._checkConnectedBridge();
           break;
         }
         case "intl:app-locales-changed": {
