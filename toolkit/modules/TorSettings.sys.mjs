@@ -175,6 +175,14 @@ class TorSettingsImpl {
       allowed_ports: [],
     },
   };
+  /**
+   * Accumulated errors from trying to set settings.
+   *
+   * Only added to if not null.
+   *
+   * @type {Array<Error>?}
+   */
+  #settingErrors = null;
 
   /**
    * The recommended pluggable transport.
@@ -224,16 +232,33 @@ class TorSettingsImpl {
       enabled: {},
     });
     this.#addProperties("bridges", {
+      /**
+       * Whether the bridges are enabled or not.
+       *
+       * @type {boolean}
+       */
       enabled: {},
+      /**
+       * The current bridge source.
+       *
+       * @type {integer}
+       */
       source: {
-        transform: val => {
+        transform: (val, addError) => {
           if (Object.values(TorBridgeSource).includes(val)) {
             return val;
           }
-          lazy.logger.error(`Not a valid bridge source: "${val}"`);
+          addError(`Not a valid bridge source: "${val}"`);
           return TorBridgeSource.Invalid;
         },
       },
+      /**
+       * The current bridge strings.
+       *
+       * Can only be non-empty if the "source" is not Invalid.
+       *
+       * @type {Array<string>}
+       */
       bridge_strings: {
         transform: val => {
           if (Array.isArray(val)) {
@@ -244,13 +269,15 @@ class TorSettingsImpl {
         copy: val => [...val],
         equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
+      /**
+       * The built-in type to use when using the BuiltIn "source", or empty when
+       * using any other source.
+       *
+       * @type {string}
+       */
       builtin_type: {
-        callback: val => {
+        callback: (val, addError) => {
           if (!val) {
-            // Make sure that the source is not BuiltIn
-            if (this.bridges.source === TorBridgeSource.BuiltIn) {
-              this.bridges.source = TorBridgeSource.Invalid;
-            }
             return;
           }
           const bridgeStrings = this.#getBuiltinBridges(val);
@@ -258,39 +285,28 @@ class TorSettingsImpl {
             this.bridges.bridge_strings = bridgeStrings;
             return;
           }
-          lazy.logger.error(`No built-in ${val} bridges found`);
-          // Change to be empty, this will trigger this callback again,
-          // but with val as "".
-          this.bridges.builtin_type == "";
+
+          addError(`No built-in ${val} bridges found`);
+          // Set as invalid, which will make the builtin_type "" and set the
+          // bridge_strings to be empty at the next #cleanupSettings.
+          this.bridges.source = TorBridgeSource.Invalid;
         },
       },
     });
     this.#addProperties("proxy", {
-      enabled: {
-        callback: val => {
-          if (val) {
-            return;
-          }
-          // Reset proxy settings.
-          this.proxy.type = TorProxyType.Invalid;
-          this.proxy.address = "";
-          this.proxy.port = 0;
-          this.proxy.username = "";
-          this.proxy.password = "";
-        },
-      },
+      enabled: {},
       type: {
-        transform: val => {
+        transform: (val, addError) => {
           if (Object.values(TorProxyType).includes(val)) {
             return val;
           }
-          lazy.logger.error(`Not a valid proxy type: "${val}"`);
+          addError(`Not a valid proxy type: "${val}"`);
           return TorProxyType.Invalid;
         },
       },
       address: {},
       port: {
-        transform: val => {
+        transform: (val, addError) => {
           if (val === 0) {
             // This is a valid value that "unsets" the port.
             // Keep this value without giving a warning.
@@ -298,15 +314,11 @@ class TorSettingsImpl {
             return 0;
           }
           // Unset to 0 if invalid null is returned.
-          return this.#parsePort(val, false) ?? 0;
+          return this.#parsePort(val, false, addError) ?? 0;
         },
       },
-      username: {
-        transform: val => val ?? "",
-      },
-      password: {
-        transform: val => val ?? "",
-      },
+      username: {},
+      password: {},
       uri: {
         getter: () => {
           const { type, address, port, username, password } = this.proxy;
@@ -329,20 +341,16 @@ class TorSettingsImpl {
       },
     });
     this.#addProperties("firewall", {
-      enabled: {
-        callback: val => {
-          if (!val) {
-            this.firewall.allowed_ports = "";
-          }
-        },
-      },
+      enabled: {},
       allowed_ports: {
-        transform: val => {
+        transform: (val, addError) => {
           if (!Array.isArray(val)) {
             val = val === "" ? [] : val.split(",");
           }
           // parse and remove duplicates
-          const portSet = new Set(val.map(p => this.#parsePort(p, true)));
+          const portSet = new Set(
+            val.map(p => this.#parsePort(p, true, addError))
+          );
           // parsePort returns null for failed parses, so remove it.
           portSet.delete(null);
           return [...portSet];
@@ -351,6 +359,39 @@ class TorSettingsImpl {
         equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
     });
+  }
+
+  /**
+   * Clean the setting values after making some changes, so that the values do
+   * not contradict each other.
+   */
+  #cleanupSettings() {
+    this.freezeNotifications();
+    try {
+      if (this.bridges.source === TorBridgeSource.Invalid) {
+        this.bridges.enabled = false;
+        this.bridges.bridge_strings = [];
+      }
+      if (!this.bridges.bridge_strings.length) {
+        this.bridges.enabled = false;
+        this.bridges.source = TorBridgeSource.Invalid;
+      }
+      if (this.bridges.source !== TorBridgeSource.BuiltIn) {
+        this.bridges.builtin_type = "";
+      }
+      if (!this.proxy.enabled) {
+        this.proxy.type = TorProxyType.Invalid;
+        this.proxy.address = "";
+        this.proxy.port = 0;
+        this.proxy.username = "";
+        this.proxy.password = "";
+      }
+      if (!this.firewall.enabled) {
+        this.firewall.allowed_ports = [];
+      }
+    } finally {
+      this.thawNotifications();
+    }
   }
 
   /**
@@ -435,6 +476,13 @@ class TorSettingsImpl {
     const group = {};
     for (const name in propParams) {
       const { getter, transform, callback, copy, equal } = propParams[name];
+      // Method for adding setting errors.
+      const addError = message => {
+        message = `TorSettings.${groupname}.${name}: ${message}`;
+        lazy.logger.error(message);
+        // Only add to #settingErrors if it is not null.
+        this.#settingErrors?.push(message);
+      };
       Object.defineProperty(group, name, {
         get: getter
           ? () => {
@@ -467,16 +515,20 @@ class TorSettingsImpl {
               this.freezeNotifications();
               try {
                 if (transform) {
-                  val = transform(val);
+                  val = transform(val, addError);
                 }
                 const isEqual = equal ? equal(val, prevVal) : val === prevVal;
                 if (!isEqual) {
-                  if (callback) {
-                    callback(val);
-                  }
+                  // Set before the callback.
                   this.#settings[groupname][name] = val;
                   this.#notificationQueue.add(`${groupname}.${name}`);
+
+                  if (callback) {
+                    callback(val, addError);
+                  }
                 }
+              } catch (e) {
+                addError(e.message);
               } finally {
                 this.thawNotifications();
               }
@@ -503,11 +555,12 @@ class TorSettingsImpl {
    * @param {string|integer} val - The value to parse.
    * @param {boolean} trim - Whether a string value can be stripped of
    *   whitespace before parsing.
+   * @param {function} addError - Callback to add error messages to.
    *
    * @return {integer?} - The port number, or null if the given value was not
    *   valid.
    */
-  #parsePort(val, trim) {
+  #parsePort(val, trim, addError) {
     if (typeof val === "string") {
       if (trim) {
         val = val.trim();
@@ -516,12 +569,12 @@ class TorSettingsImpl {
       if (this.#portRegex.test(val)) {
         val = Number.parseInt(val, 10);
       } else {
-        lazy.logger.error(`Invalid port string "${val}"`);
+        addError(`Invalid port string "${val}"`);
         return null;
       }
     }
     if (!Number.isInteger(val) || val < 1 || val > 65535) {
-      lazy.logger.error(`Port out of range: ${val}`);
+      addError(`Port out of range: ${val}`);
       return null;
     }
     return val;
@@ -739,6 +792,8 @@ class TorSettingsImpl {
         ""
       );
     }
+
+    this.#cleanupSettings();
   }
 
   /**
@@ -748,6 +803,7 @@ class TorSettingsImpl {
     lazy.logger.debug("saveToPrefs()");
 
     this.#checkIfInitialized();
+    this.#cleanupSettings();
 
     /* Quickstart */
     Services.prefs.setBoolPref(
@@ -847,6 +903,8 @@ class TorSettingsImpl {
   async #applySettings(allowUninitialized) {
     lazy.logger.debug("#applySettings()");
 
+    this.#cleanupSettings();
+
     const settingsMap = new Map();
 
     // #applySettings can be called only when #allowUninitialized is false
@@ -928,6 +986,8 @@ class TorSettingsImpl {
 
     const backup = this.getSettings();
     const backupNotifications = [...this.#notificationQueue];
+    // Start collecting errors.
+    this.#settingErrors = [];
 
     // Hold off on lots of notifications until all settings are changed.
     this.freezeNotifications();
@@ -946,24 +1006,10 @@ class TorSettingsImpl {
           case TorBridgeSource.UserProvided:
             this.bridges.bridge_strings = settings.bridges.bridge_strings;
             break;
-          case TorBridgeSource.BuiltIn: {
+          case TorBridgeSource.BuiltIn:
             this.bridges.builtin_type = settings.bridges.builtin_type;
-            if (!this.bridges.bridge_strings.length) {
-              // No bridges were found when setting the builtin_type.
-              throw new Error(
-                `No available builtin bridges of type ${settings.bridges.builtin_type}`
-              );
-            }
             break;
-          }
           case TorBridgeSource.Invalid:
-            break;
-          default:
-            if (settings.bridges.enabled) {
-              throw new Error(
-                `Bridge source '${settings.source}' is not a valid source`
-              );
-            }
             break;
         }
       }
@@ -985,6 +1031,12 @@ class TorSettingsImpl {
           this.firewall.allowed_ports = settings.firewall.allowed_ports;
         }
       }
+
+      this.#cleanupSettings();
+
+      if (this.#settingErrors.length) {
+        throw Error(this.#settingErrors.join("; "));
+      }
     } catch (ex) {
       // Restore the old settings without any new notifications generated from
       // the above code.
@@ -1001,6 +1053,8 @@ class TorSettingsImpl {
       lazy.logger.error("setSettings failed", ex);
     } finally {
       this.thawNotifications();
+      // Stop collecting errors.
+      this.#settingErrors = null;
     }
 
     lazy.logger.debug("setSettings result", this.#settings);
