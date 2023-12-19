@@ -1,4 +1,4 @@
-var EXPORTED_SYMBOLS = ["set_panic_hook", "open_invite", "handle_new_lox_credential", "trust_promotion", "handle_trust_promotion", "trust_migration", "handle_trust_migration", "level_up", "handle_level_up", "issue_invite", "handle_issue_invite", "prepare_invite", "redeem_invite", "handle_redeem_invite", "check_blockage", "handle_check_blockage", "blockage_migration", "handle_blockage_migration", "get_last_upgrade_time", "get_trust_level", "get_invites_remaining", "get_issued_invite_expiry", "get_received_invite_expiry", "get_bridgelines_from_bucket", "invitation_is_trusted", "init", "initSync"];
+var EXPORTED_SYMBOLS = ["set_panic_hook", "open_invite", "handle_new_lox_credential", "trust_promotion", "handle_trust_promotion", "trust_migration", "handle_trust_migration", "level_up", "handle_level_up", "issue_invite", "handle_issue_invite", "prepare_invite", "redeem_invite", "handle_redeem_invite", "check_blockage", "handle_check_blockage", "blockage_migration", "handle_blockage_migration", "get_last_upgrade_time", "get_trust_level", "get_invites_remaining", "get_issued_invite_expiry", "get_received_invite_expiry", "get_bridgelines_from_bucket", "invitation_is_trusted", "get_next_unlock", "init", "initSync"];
 
 let wasm;
 let module;
@@ -937,6 +937,40 @@ function invitation_is_trusted(unspecified_invitation_str) {
     }
 }
 
+/**
+* @param {string} constants_str
+* @param {string} lox_cred_str
+* @returns {string}
+*/
+function get_next_unlock(constants_str, lox_cred_str) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(constants_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(lox_cred_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.get_next_unlock(retptr, ptr0, len0, ptr1, len1);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        var r2 = getInt32Memory0()[retptr / 4 + 2];
+        var r3 = getInt32Memory0()[retptr / 4 + 3];
+        var ptr3 = r0;
+        var len3 = r1;
+        if (r3) {
+            ptr3 = 0; len3 = 0;
+            throw takeObject(r2);
+        }
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(deferred4_0, deferred4_1, 1);
+    }
+}
+
 function handleError(f, args) {
     try {
         return f.apply(this, args);
@@ -1162,7 +1196,7 @@ function initSync(module, window) {
     return __wbg_finalize_init(instance, module);
 }
 
-async function init(input, window) {
+async function init(window, input) {
     if (wasm !== undefined) return wasm;
 
     if (typeof input === 'undefined') {{
