@@ -875,10 +875,7 @@ export class TorProvider {
    */
   #processBootstrapStatus(statusObj, isNotification) {
     // Notify observers
-    Services.obs.notifyObservers(
-      { wrappedJSObject: statusObj },
-      TorProviderTopics.BootstrapStatus
-    );
+    Services.obs.notifyObservers(statusObj, TorProviderTopics.BootstrapStatus);
 
     if (statusObj.PROGRESS === 100) {
       this.#isBootstrapDone = true;
