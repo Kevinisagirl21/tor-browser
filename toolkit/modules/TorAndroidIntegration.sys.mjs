@@ -25,9 +25,13 @@ const logger = new ConsoleAPI({
   prefix: "TorAndroidIntegration",
 });
 
-const EmittedEvents = Object.freeze( {
+const EmittedEvents = Object.freeze({
   settingsReady: "GeckoView:Tor:SettingsReady",
   settingsChanged: "GeckoView:Tor:SettingsChanged",
+  bootstrapStateChanged: "GeckoView:Tor:BootstrapStateChanged",
+  bootstrapProgress: "GeckoView:Tor:BootstrapProgress",
+  bootstrapComplete: "GeckoView:Tor:BootstrapComplete",
+  bootstrapError: "GeckoView:Tor:BootstrapError",
 });
 
 const ListenedEvents = Object.freeze({
@@ -89,6 +93,30 @@ class TorAndroidIntegrationImpl {
         }
         break;
       case lazy.TorConnectTopics.StateChange:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.bootstrapStateChanged,
+          state: subj.wrappedJSObject.state ?? "",
+        });
+        break;
+      case lazy.TorConnectTopics.BootstrapProgress:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.bootstrapProgress,
+          progress: subj.wrappedJSObject.progress ?? "",
+          status: subj.wrappedJSObject.status ?? 0,
+          hasWarnings: subj.wrappedJSObject.hasWarnings ?? false,
+        });
+        break;
+      case lazy.TorConnectTopics.BootstrapComplete:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.bootstrapComplete,
+        });
+        break;
+      case lazy.TorConnectTopics.BootstrapError:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.bootstrapError,
+          message: subj.wrappedJSObject.message ?? "",
+          details: subj.wrappedJSObject.details ?? "",
+        });
         break;
       case lazy.TorSettingsTopics.Ready:
         lazy.EventDispatcher.instance.sendRequest({

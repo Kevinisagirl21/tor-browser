@@ -46,6 +46,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_TOR_STOP = "GeckoView:Tor:StopTor";
     private static final String EVENT_MEEK_START = "GeckoView:Tor:StartMeek";
     private static final String EVENT_MEEK_STOP = "GeckoView:Tor:StopMeek";
+    private static final String EVENT_BOOTSTRAP_STATE_CHANGED = "GeckoView:Tor:BootstrapStateChanged";
+    private static final String EVENT_BOOTSTRAP_PROGRESS = "GeckoView:Tor:BootstrapProgress";
+    private static final String EVENT_BOOTSTRAP_COMPLETE = "GeckoView:Tor:BootstrapComplete";
+    private static final String EVENT_BOOTSTRAP_ERROR = "GeckoView:Tor:BootstrapError";
 
     // Events we emit
     private static final String EVENT_SETTINGS_GET = "GeckoView:Tor:SettingsGet";
@@ -106,7 +110,11 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_TOR_START,
                         EVENT_MEEK_START,
                         EVENT_MEEK_STOP,
-                        EVENT_SETTINGS_READY);
+                        EVENT_SETTINGS_READY,
+                        EVENT_BOOTSTRAP_STATE_CHANGED,
+                        EVENT_BOOTSTRAP_PROGRESS,
+                        EVENT_BOOTSTRAP_COMPLETE,
+                        EVENT_BOOTSTRAP_ERROR);
     }
 
     @Override // BundleEventListener
@@ -122,6 +130,28 @@ public class TorIntegrationAndroid implements BundleEventListener {
             stopMeek(message, callback);
         } else if (EVENT_SETTINGS_READY.equals(event)) {
             loadSettings(message);
+        } else if (EVENT_BOOTSTRAP_STATE_CHANGED.equals(event)) {
+            String state = message.getString("state");
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapStateChange(state);
+            }
+        } else if (EVENT_BOOTSTRAP_PROGRESS.equals(event)) {
+            double progress = message.getDouble("progress");
+            String status = message.getString("status");
+            boolean hasWarnings = message.getBoolean("hasWarnings");
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapProgress(progress, status, hasWarnings);
+            }
+        } else if (EVENT_BOOTSTRAP_COMPLETE.equals(event)) {
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapComplete();
+            }
+        } else if (EVENT_BOOTSTRAP_ERROR.equals(event)) {
+            String msg = message.getString("message");
+            String details = message.getString("details");
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapError(msg, details);
+            }
         }
     }
 
@@ -467,17 +497,11 @@ public class TorIntegrationAndroid implements BundleEventListener {
         }
     }
 
-    public static class BootstrapState {
-        // FIXME: We can do better than this :)
-        public GeckoBundle mBundle;
-
-        BootstrapState(GeckoBundle bundle) {
-            mBundle = bundle;
-        }
-    }
-
     public interface BootstrapStateChangeListener {
-        void onBootstrapStateChange(BootstrapState state);
+        void onBootstrapStateChange(String state);
+        void onBootstrapProgress(double progress, String status, boolean hasWarnings);
+        void onBootstrapComplete();
+        void onBootstrapError(String message, String details);
     }
 
     public @NonNull GeckoResult<GeckoBundle> getSettings() {
@@ -512,16 +536,6 @@ public class TorIntegrationAndroid implements BundleEventListener {
 
     public @NonNull GeckoResult<Void> cancelBootstrap() {
         return EventDispatcher.getInstance().queryVoid(EVENT_BOOTSTRAP_CANCEL);
-    }
-
-    public @NonNull GeckoResult<BootstrapState> getBootstrapState() {
-        return EventDispatcher.getInstance().queryBundle(EVENT_BOOTSTRAP_GET_STATE).map(new GeckoResult.OnValueMapper<>() {
-            @AnyThread
-            @Nullable
-            public BootstrapState onValue(@Nullable GeckoBundle value) throws Throwable {
-                return new BootstrapState(value);
-            }
-        });
     }
 
     public void registerBootstrapStateChangeListener(BootstrapStateChangeListener listener) {
