@@ -1,0 +1,2 @@
+toolkit.jar:
+    content/global/lox/lox_wasm_bg.wasm                      (content/lox_wasm_bg.wasm)
