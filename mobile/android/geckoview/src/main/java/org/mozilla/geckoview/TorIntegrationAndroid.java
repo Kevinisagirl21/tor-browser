@@ -51,6 +51,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_BOOTSTRAP_PROGRESS = "GeckoView:Tor:BootstrapProgress";
     private static final String EVENT_BOOTSTRAP_COMPLETE = "GeckoView:Tor:BootstrapComplete";
     private static final String EVENT_BOOTSTRAP_ERROR = "GeckoView:Tor:BootstrapError";
+    private static final String EVENT_SETTINGS_OPEN = "GeckoView:Tor:OpenSettings";
 
     // Events we emit
     private static final String EVENT_SETTINGS_GET = "GeckoView:Tor:SettingsGet";
@@ -115,7 +116,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_BOOTSTRAP_STATE_CHANGED,
                         EVENT_BOOTSTRAP_PROGRESS,
                         EVENT_BOOTSTRAP_COMPLETE,
-                        EVENT_BOOTSTRAP_ERROR);
+                        EVENT_BOOTSTRAP_ERROR,
+                        EVENT_SETTINGS_OPEN);
     }
 
     @Override // BundleEventListener
@@ -156,6 +158,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
             String details = message.getString("details");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
                 listener.onBootstrapError(msg, details);
+            }
+        } else if (EVENT_SETTINGS_OPEN.equals(event)) {
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onSettingsRequested();
             }
         }
     }
@@ -517,6 +523,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
         void onBootstrapProgress(double progress, String status, boolean hasWarnings);
         void onBootstrapComplete();
         void onBootstrapError(String message, String details);
+        void onSettingsRequested();
     }
 
     public @NonNull GeckoResult<GeckoBundle> getSettings() {
