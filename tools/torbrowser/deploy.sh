@@ -6,16 +6,9 @@ BUILD_OUTPUT="$2"
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 
 RESDIR="$BUILD_OUTPUT/dist/firefox"
-if [ "$(uname)" = "Darwin" ]; then 
+if [ "$(uname)" = "Darwin" ]; then
     RESDIR="$RESDIR/Tor Browser.app/Contents/Resources"
 fi
-
-# Add built-in bridges
-mkdir -p "$BUILD_OUTPUT/_omni/defaults/preferences"
-cat "$BUILD_OUTPUT/dist/bin/browser/defaults/preferences/000-tor-browser.js" "$SCRIPT_DIR/bridges.js" >> "$BUILD_OUTPUT/_omni/defaults/preferences/000-tor-browser.js"
-cd "$BUILD_OUTPUT/_omni"
-zip -Xmr "$RESDIR/browser/omni.ja" "defaults/preferences/000-tor-browser.js"
-rm -rf "$BUILD_OUTPUT/_omni"
 
 # Repackage the manual
 # rm -rf $BUILD_OUTPUT/_omni
@@ -34,12 +27,12 @@ if [ "$(uname)" = "Darwin" ]; then
     cd "$BINARIES/Tor Browser.app/Contents/MacOS"
     "$SCRIPT_DIR/browser-self-sign-macos.sh"
 
-  else
+else
 
     # backup the startup script
     mv "$BINARIES/dev/Browser/firefox" "$BINARIES/dev/Browser/firefox.bak"
-    
-    # copy binaries 
+
+    # copy binaries
     cp -r "$RESDIR/"* "$BINARIES/dev/Browser"
     rm -rf "$BINARIES/dev/Browser/TorBrowser/Data/Browser/profile.default/startupCache"
 
