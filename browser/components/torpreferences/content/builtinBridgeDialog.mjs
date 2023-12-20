@@ -3,7 +3,6 @@ import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 import {
   TorSettings,
   TorBridgeSource,
-  TorBuiltinBridgeTypes,
 } from "resource://gre/modules/TorSettings.sys.mjs";
 
 import {
@@ -62,7 +61,7 @@ export class BuiltinBridgeDialog {
     )) {
       const radio = optionEl.querySelector("radio");
       const type = radio.value;
-      optionEl.hidden = !TorBuiltinBridgeTypes.includes(type);
+      optionEl.hidden = !TorSettings.builtinBridgeTypes.includes(type);
       radio.label = typeStrings[type].label;
       optionEl.querySelector(
         ".builtin-bridges-option-description"
