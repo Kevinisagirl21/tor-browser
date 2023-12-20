@@ -23,7 +23,6 @@ import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs"
 import {
   TorSettings,
   TorSettingsTopics,
-  TorBuiltinBridgeTypes,
 } from "resource://gre/modules/TorSettings.sys.mjs";
 
 import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
@@ -609,7 +608,7 @@ export const TorConnect = (() => {
                 }
 
                 const settings = await this.mrpc.circumvention_settings(
-                  [...TorBuiltinBridgeTypes, "vanilla"],
+                  [...TorSettings.builtinBridgeTypes, "vanilla"],
                   countryCode
                 );
 
@@ -625,7 +624,7 @@ export const TorConnect = (() => {
                 } else {
                   try {
                     this.settings = await this.mrpc.circumvention_defaults([
-                      ...TorBuiltinBridgeTypes,
+                      ...TorSettings.builtinBridgeTypes,
                       "vanilla",
                     ]);
                   } catch (err) {

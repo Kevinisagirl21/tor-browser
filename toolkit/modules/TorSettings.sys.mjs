@@ -67,16 +67,6 @@ const TorSettingsPrefs = Object.freeze({
   },
 });
 
-/* Legacy tor-launcher prefs and pref branches*/
-const TorLauncherPrefs = Object.freeze({
-  quickstart: "extensions.torlauncher.quickstart",
-  default_bridge_type: "extensions.torlauncher.default_bridge_type",
-  default_bridge: "extensions.torlauncher.default_bridge.",
-  default_bridge_recommended_type:
-    "extensions.torlauncher.default_bridge_recommended_type",
-  bridgedb_bridge: "extensions.torlauncher.bridgedb_bridge.",
-});
-
 /* Config Keys used to configure tor daemon */
 const TorConfigKeys = Object.freeze({
   useBridges: "UseBridges",
@@ -105,101 +95,41 @@ export const TorProxyType = Object.freeze({
   HTTPS: 2,
 });
 
-export const TorBuiltinBridgeTypes = Object.freeze(
-  (() => {
-    const bridgeListBranch = Services.prefs.getBranch(
-      TorLauncherPrefs.default_bridge
-    );
-    const bridgePrefs = bridgeListBranch.getChildList("");
-
-    // an unordered set for shoving bridge types into
-    const bridgeTypes = new Set();
-    // look for keys ending in ".N" and treat string before that as the bridge type
-    const pattern = /\.[0-9]+$/;
-    for (const key of bridgePrefs) {
-      const offset = key.search(pattern);
-      if (offset != -1) {
-        const bt = key.substring(0, offset);
-        bridgeTypes.add(bt);
-      }
-    }
-
-    // recommended bridge type goes first in the list
-    const recommendedBridgeType = Services.prefs.getCharPref(
-      TorLauncherPrefs.default_bridge_recommended_type,
-      null
-    );
-
-    const retval = [];
-    if (recommendedBridgeType && bridgeTypes.has(recommendedBridgeType)) {
-      retval.push(recommendedBridgeType);
-    }
-
-    for (const bridgeType of bridgeTypes.values()) {
-      if (bridgeType != recommendedBridgeType) {
-        retval.push(bridgeType);
-      }
-    }
-    return retval;
-  })()
-);
-
-/* Parsing Methods */
-
-// expects a '\n' or '\r\n' delimited bridge string, which we split and trim
-// each bridge string can also optionally have 'bridge' at the beginning ie:
-// bridge $(type) $(address):$(port) $(certificate)
-// we strip out the 'bridge' prefix here
-const parseBridgeStrings = function (aBridgeStrings) {
+/**
+ * Split a blob of bridge lines into an array with single lines.
+ * Lines are delimited by \r\n or \n and each bridge string can also optionally
+ * have 'bridge' at the beginning.
+ * We split the text by \r\n, we trim the lines, remove the bridge prefix and
+ * filter out any remaiing empty item.
+ *
+ * @param {string} aBridgeStrings The text with the lines
+ * @returns {string[]} An array where each bridge line is an item
+ */
+function parseBridgeStrings(aBridgeStrings) {
   // replace carriage returns ('\r') with new lines ('\n')
   aBridgeStrings = aBridgeStrings.replace(/\r/g, "\n");
   // then replace contiguous new lines ('\n') with a single one
   aBridgeStrings = aBridgeStrings.replace(/[\n]+/g, "\n");
 
-  // split on the newline and for each bridge string: trim, remove starting 'bridge' string
-  // finally discard entries that are empty strings; empty strings could occur if we receive
-  // a new line containing only whitespace
+  // Split on the newline and for each bridge string: trim, remove starting
+  // 'bridge' string.
+  // Finally, discard entries that are empty strings; empty strings could occur
+  // if we receive a new line containing only whitespace.
   const splitStrings = aBridgeStrings.split("\n");
   return splitStrings
     .map(val => val.trim().replace(/^bridge\s+/i, ""))
-    .filter(bridgeString => bridgeString != "");
-};
+    .filter(bridgeString => bridgeString !== "");
+}
 
-const getBuiltinBridgeStrings = function (builtinType) {
-  if (!builtinType) {
-    return [];
-  }
-
-  const bridgeBranch = Services.prefs.getBranch(
-    TorLauncherPrefs.default_bridge
-  );
-  const bridgeBranchPrefs = bridgeBranch.getChildList("");
-  const retval = [];
-
-  // regex matches against strings ending in ".N" where N is a positive integer
-  const pattern = /\.[0-9]+$/;
-  for (const key of bridgeBranchPrefs) {
-    // verify the location of the match is the correct offset required for aBridgeType
-    // to fit, and that the string begins with aBridgeType
-    if (
-      key.search(pattern) == builtinType.length &&
-      key.startsWith(builtinType)
-    ) {
-      const bridgeStr = bridgeBranch.getCharPref(key);
-      retval.push(bridgeStr);
-    }
-  }
-
-  // shuffle so that Tor Browser users don't all try the built-in bridges in the same order
-  arrayShuffle(retval);
-
-  return retval;
-};
-
-/* Helper methods */
-
-const arrayShuffle = function (array) {
-  // fisher-yates shuffle
+/**
+ * Return a shuffled (Fisher-Yates) copy of an array.
+ *
+ * @template T
+ * @param {T[]} array
+ * @returns {T[]}
+ */
+function arrayShuffle(array) {
+  array = [...array];
   for (let i = array.length - 1; i > 0; --i) {
     // number n such that 0.0 <= n < 1.0
     const n = Math.random();
@@ -211,7 +141,8 @@ const arrayShuffle = function (array) {
     array[i] = array[j];
     array[j] = tmp;
   }
-};
+  return array;
+}
 
 /* TorSettings module */
 
@@ -244,6 +175,32 @@ class TorSettingsImpl {
       allowed_ports: [],
     },
   };
+
+  /**
+   * The recommended pluggable transport.
+   *
+   * @type {string}
+   */
+  #recommendedPT = "";
+
+  /**
+   * The bridge lines for built-in bridges.
+   * Keys are pluggable transports, and values are arrays of bridge lines.
+   *
+   * @type {Object.<string, string[]>}
+   */
+  #builtinBridges = {};
+
+  #initComplete;
+  #initFailed;
+  #initialized = false;
+
+  constructor() {
+    this.initializedPromise = new Promise((resolve, reject) => {
+      this.#initComplete = resolve;
+      this.#initFailed = reject;
+    })
+  }
 
   /**
    * The current number of freezes applied to the notifications.
@@ -419,8 +376,40 @@ class TorSettingsImpl {
     return val1.every((v, i) => v === val2[i]);
   }
 
-  /* load or init our settings, and register observers */
+  /**
+   * Return the bridge lines associated to a certain pluggable transport.
+   *
+   * @param {string} pt The pluggable transport to return the lines for
+   * @returns {string[]} The bridge lines in random order
+   */
+  #getBuiltinBridges(pt) {
+    // Shuffle so that Tor Browser users do not all try the built-in bridges in
+    // the same order.
+    return arrayShuffle(this.#builtinBridges[pt] ?? []);
+  }
+
   async init() {
+    if (this.#initialized) {
+      return;
+    }
+    try {
+      await this.#initInternal();
+      this.#initialized = true;
+      this.#initComplete();
+    } catch (e) {
+      this.#initFailed(e);
+      throw e;
+    }
+  }
+
+  get initialized() {
+    return this.#initialized;
+  }
+
+  /**
+   * Load or init our settings, and register observers.
+   */
+  async #initInternal() {
     this.#addProperties("quickstart", {
       enabled: {},
     });
@@ -454,7 +443,7 @@ class TorSettingsImpl {
             }
             return;
           }
-          const bridgeStrings = getBuiltinBridgeStrings(val);
+          const bridgeStrings = this.#getBuiltinBridges(val);
           if (bridgeStrings.length) {
             this.bridges.bridge_strings = bridgeStrings;
             return;
@@ -548,6 +537,15 @@ class TorSettingsImpl {
         equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
     });
+
+    try {
+      const req = await fetch("chrome://global/content/pt_config.json");
+      const config = await req.json();
+      this.#recommendedPT = config.recommendedDefault;
+      this.#builtinBridges = config.bridges;
+    } catch (e) {
+      lazy.logger.error("Could not load the built-in PT config.", e);
+    }
 
     // TODO: We could use a shared promise, and wait for it to be fullfilled
     // instead of Service.obs.
@@ -883,10 +881,30 @@ class TorSettingsImpl {
     lazy.logger.debug("setSettings result", this.#settings);
   }
 
-  // get a copy of all our settings
+  /**
+   * Get a copy of all our settings
+   *
+   * @returns {object} A copy of the settings object
+   */
   getSettings() {
     lazy.logger.debug("getSettings()");
     return structuredClone(this.#settings);
+  }
+
+  /**
+   * Return an array with the pluggable transports for which we have at least a
+   * built-in bridge line.
+   *
+   * @returns {string[]} An array with PT identifiers
+   */
+  get builtinBridgeTypes() {
+    const types = Object.keys(this.#builtinBridges);
+    const recommendedIndex = types.indexOf(this.#recommendedPT);
+    if (recommendedIndex > 0) {
+      types.splice(recommendedIndex, 1);
+      types.unshift(this.#recommendedPT);
+    }
+    return types;
   }
 }
 
