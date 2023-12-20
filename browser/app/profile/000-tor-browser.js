@@ -69,7 +69,6 @@ pref("extensions.torbutton.pref_fixup_version", 0);
 
 pref("extensions.torlauncher.start_tor", true);
 pref("extensions.torlauncher.prompt_at_startup", true);
-pref("extensions.torlauncher.quickstart", false);
 
 pref("extensions.torlauncher.max_tor_log_entries", 1000);
 
@@ -113,11 +112,3 @@ pref("extensions.torlauncher.tordatadir_path", "");
 pref("extensions.torlauncher.bridgedb_front", "foursquare.com");
 pref("extensions.torlauncher.bridgedb_reflector", "https://moat.torproject.org.global.prod.fastly.net/");
 pref("extensions.torlauncher.moat_service", "https://bridges.torproject.org/moat");
-pref("extensions.torlauncher.bridgedb_bridge_type", "obfs4");
-
-// Recommended default bridge type.
-// pref("extensions.torlauncher.default_bridge_recommended_type", "obfs3");
-
-// Default bridges.
-// pref("extensions.torlauncher.default_bridge.TYPE.1", "TYPE x.x.x.x:yy");
-// pref("extensions.torlauncher.default_bridge.TYPE.2", "TYPE x.x.x.x:yy");
