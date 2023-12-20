@@ -867,7 +867,7 @@ const gConnectionPane = (function () {
     },
 
     init() {
-      this._populateXUL();
+      TorSettings.initializedPromise.then(() => this._populateXUL());
 
       const onUnload = () => {
         window.removeEventListener("unload", onUnload);
