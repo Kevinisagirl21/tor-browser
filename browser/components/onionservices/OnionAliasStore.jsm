@@ -12,11 +12,10 @@ const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "JSONFile",
-  "resource://gre/modules/JSONFile.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
+  TorRequestWatch: "resource:///modules/TorRequestWatch.sys.mjs",
+});
 
 /* OnionAliasStore observer topics */
 const OnionAliasStoreTopics = Object.freeze({
@@ -281,6 +280,7 @@ class _OnionAliasStore {
   }
 
   async init() {
+    lazy.TorRequestWatch.start();
     await this._loadSettings();
     if (this.enabled) {
       await this._startUpdates();
@@ -295,6 +295,7 @@ class _OnionAliasStore {
     }
     this._rulesetTimeout = null;
     Services.prefs.removeObserver(kPrefOnionAliasEnabled, this);
+    lazy.TorRequestWatch.stop();
   }
 
   async getChannels() {
