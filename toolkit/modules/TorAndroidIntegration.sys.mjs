@@ -136,13 +136,19 @@ class TorAndroidIntegrationImpl {
           return;
         case ListenedEvents.settingsSet:
           // This does not throw, so we do not have any way to report the error!
-          lazy.TorSettings.setSettings(data);
+          lazy.TorSettings.setSettings(data.settings);
+          if (data.save) {
+            lazy.TorSettings.saveToPrefs();
+          }
+          if (data.apply) {
+            lazy.TorSettings.applySettings();
+          }
           break;
         case ListenedEvents.settingsApply:
           await lazy.TorSettings.applySettings();
           break;
         case ListenedEvents.settingsSave:
-          await lazy.TorSettings.saveSettings();
+          await lazy.TorSettings.saveToPrefs();
           break;
         case ListenedEvents.bootstrapBegin:
           lazy.TorConnect.beginBootstrap();
