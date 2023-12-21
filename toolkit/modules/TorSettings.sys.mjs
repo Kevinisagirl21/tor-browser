@@ -221,7 +221,7 @@ class TorSettingsImpl {
    *
    * @type {object}
    */
-  _settings = {
+  #settings = {
     quickstart: {
       enabled: false,
     },
@@ -250,26 +250,26 @@ class TorSettingsImpl {
    *
    * @type {integer}
    */
-  _freezeNotificationsCount = 0;
+  #freezeNotificationsCount = 0;
   /**
    * The queue for settings that have changed. To be broadcast in the
    * notification when not frozen.
    *
    * @type {Set<string>}
    */
-  _notificationQueue = new Set();
+  #notificationQueue = new Set();
   /**
    * Send a notification if we have any queued and we are not frozen.
    */
-  _tryNotification() {
-    if (this._freezeNotificationsCount || !this._notificationQueue.size) {
+  #tryNotification() {
+    if (this.#freezeNotificationsCount || !this.#notificationQueue.size) {
       return;
     }
     Services.obs.notifyObservers(
-      { changes: [...this._notificationQueue] },
+      { changes: [...this.#notificationQueue] },
       TorSettingsTopics.SettingsChanged
     );
-    this._notificationQueue.clear();
+    this.#notificationQueue.clear();
   }
   /**
    * Pause notifications for changes in setting values. This is useful if you
@@ -281,7 +281,7 @@ class TorSettingsImpl {
    * `finally` block.
    */
   freezeNotifications() {
-    this._freezeNotificationsCount++;
+    this.#freezeNotificationsCount++;
   }
   /**
    * Release the hold on notifications so they may be sent out.
@@ -290,8 +290,8 @@ class TorSettingsImpl {
    * only release them once it has also called this method.
    */
   thawNotifications() {
-    this._freezeNotificationsCount--;
-    this._tryNotification();
+    this.#freezeNotificationsCount--;
+    this.#tryNotification();
   }
   /**
    * @typedef {object} TorSettingProperty
@@ -322,7 +322,7 @@ class TorSettingsImpl {
    *   property. Details about the setting should be described in the
    *   TorSettingProperty property value.
    */
-  _addProperties(groupname, propParams) {
+  #addProperties(groupname, propParams) {
     // Create a new object to hold all these settings.
     const group = {};
     for (const name in propParams) {
@@ -331,7 +331,7 @@ class TorSettingsImpl {
         get: getter
           ? getter
           : () => {
-              let val = this._settings[groupname][name];
+              let val = this.#settings[groupname][name];
               if (copy) {
                 val = copy(val);
               }
@@ -341,7 +341,7 @@ class TorSettingsImpl {
         set: getter
           ? undefined
           : val => {
-              const prevVal = this._settings[groupname][name];
+              const prevVal = this.#settings[groupname][name];
               this.freezeNotifications();
               try {
                 if (transform) {
@@ -352,8 +352,8 @@ class TorSettingsImpl {
                   if (callback) {
                     callback(val);
                   }
-                  this._settings[groupname][name] = val;
-                  this._notificationQueue.add(`${groupname}.${name}`);
+                  this.#settings[groupname][name] = val;
+                  this.#notificationQueue.add(`${groupname}.${name}`);
                 }
               } finally {
                 this.thawNotifications();
@@ -374,7 +374,7 @@ class TorSettingsImpl {
    *
    * @type {RegExp}
    */
-  _portRegex = /^[0-9]+$/;
+  #portRegex = /^[0-9]+$/;
   /**
    * Parse a string as a port number.
    *
@@ -385,13 +385,13 @@ class TorSettingsImpl {
    * @return {integer?} - The port number, or null if the given value was not
    *   valid.
    */
-  _parsePort(val, trim) {
+  #parsePort(val, trim) {
     if (typeof val === "string") {
       if (trim) {
         val = val.trim();
       }
       // ensure port string is a valid positive integer
-      if (this._portRegex.test(val)) {
+      if (this.#portRegex.test(val)) {
         val = Number.parseInt(val, 10);
       } else {
         lazy.logger.error(`Invalid port string "${val}"`);
@@ -412,7 +412,7 @@ class TorSettingsImpl {
    *
    * @return {boolean} - Whether the two arrays are equal.
    */
-  _arrayEqual(val1, val2) {
+  #arrayEqual(val1, val2) {
     if (val1.length !== val2.length) {
       return false;
     }
@@ -421,10 +421,10 @@ class TorSettingsImpl {
 
   /* load or init our settings, and register observers */
   async init() {
-    this._addProperties("quickstart", {
+    this.#addProperties("quickstart", {
       enabled: {},
     });
-    this._addProperties("bridges", {
+    this.#addProperties("bridges", {
       enabled: {},
       source: {
         transform: val => {
@@ -443,7 +443,7 @@ class TorSettingsImpl {
           return parseBridgeStrings(val);
         },
         copy: val => [...val],
-        equal: (val1, val2) => this._arrayEqual(val1, val2),
+        equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
       builtin_type: {
         callback: val => {
@@ -466,7 +466,7 @@ class TorSettingsImpl {
         },
       },
     });
-    this._addProperties("proxy", {
+    this.#addProperties("proxy", {
       enabled: {
         callback: val => {
           if (val) {
@@ -499,7 +499,7 @@ class TorSettingsImpl {
             return 0;
           }
           // Unset to 0 if invalid null is returned.
-          return this._parsePort(val, false) ?? 0;
+          return this.#parsePort(val, false) ?? 0;
         },
       },
       username: {},
@@ -525,7 +525,7 @@ class TorSettingsImpl {
         },
       },
     });
-    this._addProperties("firewall", {
+    this.#addProperties("firewall", {
       enabled: {
         callback: val => {
           if (!val) {
@@ -539,13 +539,13 @@ class TorSettingsImpl {
             val = val === "" ? [] : val.split(",");
           }
           // parse and remove duplicates
-          const portSet = new Set(val.map(p => this._parsePort(p, true)));
+          const portSet = new Set(val.map(p => this.#parsePort(p, true)));
           // parsePort returns null for failed parses, so remove it.
           portSet.delete(null);
           return [...portSet];
         },
         copy: val => [...val],
-        equal: (val1, val2) => this._arrayEqual(val1, val2),
+        equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
     });
 
@@ -559,7 +559,7 @@ class TorSettingsImpl {
         try {
           this.loadFromPrefs();
         } finally {
-          this._notificationQueue.clear();
+          this.#notificationQueue.clear();
           this.thawNotifications();
         }
       }
@@ -828,7 +828,7 @@ class TorSettingsImpl {
   setSettings(settings) {
     lazy.logger.debug("setSettings()");
     const backup = this.getSettings();
-    const backup_notifications = [...this._notificationQueue];
+    const backupNotifications = [...this.#notificationQueue];
 
     // Hold off on lots of notifications until all settings are changed.
     this.freezeNotifications();
@@ -869,10 +869,10 @@ class TorSettingsImpl {
       // some other call to TorSettings to change anything whilst we are
       // in this context (other than lower down in this call stack), so it is
       // safe to discard all changes to settings and notifications.
-      this._settings = backup;
-      this._notificationQueue.clear();
-      for (const notification of backup_notifications) {
-        this._notificationQueue.add(notification);
+      this.#settings = backup;
+      this.#notificationQueue.clear();
+      for (const notification of backupNotifications) {
+        this.#notificationQueue.add(notification);
       }
 
       lazy.logger.error("setSettings failed", ex);
@@ -880,13 +880,13 @@ class TorSettingsImpl {
       this.thawNotifications();
     }
 
-    lazy.logger.debug("setSettings result", this._settings);
+    lazy.logger.debug("setSettings result", this.#settings);
   }
 
   // get a copy of all our settings
   getSettings() {
     lazy.logger.debug("getSettings()");
-    return structuredClone(this._settings);
+    return structuredClone(this.#settings);
   }
 }
 
