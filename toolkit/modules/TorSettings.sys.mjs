@@ -207,238 +207,19 @@ class TorSettingsImpl {
    */
   #initialized = false;
   /**
-   * Keep track on when we are initializing to allow calling setters and
+   * During some phases of the initialization, allow calling setters and
    * getters without throwing errors.
    *
    * @type {boolean}
    */
-  #initializing = false;
+  #allowUninitialized = false;
 
   constructor() {
     this.initializedPromise = new Promise((resolve, reject) => {
       this.#initComplete = resolve;
       this.#initFailed = reject;
     });
-  }
 
-  /**
-   * The current number of freezes applied to the notifications.
-   *
-   * @type {integer}
-   */
-  #freezeNotificationsCount = 0;
-  /**
-   * The queue for settings that have changed. To be broadcast in the
-   * notification when not frozen.
-   *
-   * @type {Set<string>}
-   */
-  #notificationQueue = new Set();
-  /**
-   * Send a notification if we have any queued and we are not frozen.
-   */
-  #tryNotification() {
-    if (this.#freezeNotificationsCount || !this.#notificationQueue.size) {
-      return;
-    }
-    Services.obs.notifyObservers(
-      { changes: [...this.#notificationQueue] },
-      TorSettingsTopics.SettingsChanged
-    );
-    this.#notificationQueue.clear();
-  }
-  /**
-   * Pause notifications for changes in setting values. This is useful if you
-   * need to make batch changes to settings.
-   *
-   * This should always be paired with a call to thawNotifications once
-   * notifications should be released. Usually you should wrap whatever
-   * changes you make with a `try` block and call thawNotifications in the
-   * `finally` block.
-   */
-  freezeNotifications() {
-    this.#freezeNotificationsCount++;
-  }
-  /**
-   * Release the hold on notifications so they may be sent out.
-   *
-   * Note, if some other method has also frozen the notifications, this will
-   * only release them once it has also called this method.
-   */
-  thawNotifications() {
-    this.#freezeNotificationsCount--;
-    this.#tryNotification();
-  }
-  /**
-   * @typedef {object} TorSettingProperty
-   *
-   * @property {function} [getter] - A getter for the property. If this is
-   *   given, the property cannot be set.
-   * @property {function} [transform] - Called in the setter for the property,
-   *   with the new value given. Should transform the given value into the
-   *   right type.
-   * @property {function} [equal] - Test whether two values for the property
-   *   are considered equal. Otherwise uses `===`.
-   * @property {function} [callback] - Called whenever the property value
-   *   changes, with the new value given. Should be used to trigger any other
-   *   required changes for the new value.
-   * @property {function} [copy] - Called whenever the property is read, with
-   *   the stored value given. Should return a copy of the value. Otherwise
-   *   returns the stored value.
-   */
-  /**
-   * Add properties to the TorSettings instance, to be read or set.
-   *
-   * @param {string} groupname - The name of the setting group. The given
-   *   settings will be accessible from the TorSettings property of the same
-   *   name.
-   * @param {object.<string, TorSettingProperty>} propParams - An object that
-   *   defines the settings to add to this group. The object property names
-   *   will be mapped to properties of TorSettings under the given groupname
-   *   property. Details about the setting should be described in the
-   *   TorSettingProperty property value.
-   */
-  #addProperties(groupname, propParams) {
-    const self = this;
-    // Create a new object to hold all these settings.
-    const group = {};
-    for (const name in propParams) {
-      const { getter, transform, callback, copy, equal } = propParams[name];
-      Object.defineProperty(group, name, {
-        get: getter
-          ? () => {
-              self.#checkIfInitialized(false);
-              return getter();
-            }
-          : () => {
-              self.#checkIfInitialized(false);
-              let val = this.#settings[groupname][name];
-              if (copy) {
-                val = copy(val);
-              }
-              // Assume string or number value.
-              return val;
-            },
-        set: getter
-          ? undefined
-          : val => {
-              self.#checkIfInitialized(false);
-              const prevVal = this.#settings[groupname][name];
-              this.freezeNotifications();
-              try {
-                if (transform) {
-                  val = transform(val);
-                }
-                const isEqual = equal ? equal(val, prevVal) : val === prevVal;
-                if (!isEqual) {
-                  if (callback) {
-                    callback(val);
-                  }
-                  this.#settings[groupname][name] = val;
-                  this.#notificationQueue.add(`${groupname}.${name}`);
-                }
-              } finally {
-                this.thawNotifications();
-              }
-            },
-      });
-    }
-    // The group object itself should not be writable.
-    Object.preventExtensions(group);
-    Object.defineProperty(this, groupname, {
-      writable: false,
-      value: group,
-    });
-  }
-
-  /**
-   * Regular expression for a decimal non-negative integer.
-   *
-   * @type {RegExp}
-   */
-  #portRegex = /^[0-9]+$/;
-  /**
-   * Parse a string as a port number.
-   *
-   * @param {string|integer} val - The value to parse.
-   * @param {boolean} trim - Whether a string value can be stripped of
-   *   whitespace before parsing.
-   *
-   * @return {integer?} - The port number, or null if the given value was not
-   *   valid.
-   */
-  #parsePort(val, trim) {
-    if (typeof val === "string") {
-      if (trim) {
-        val = val.trim();
-      }
-      // ensure port string is a valid positive integer
-      if (this.#portRegex.test(val)) {
-        val = Number.parseInt(val, 10);
-      } else {
-        lazy.logger.error(`Invalid port string "${val}"`);
-        return null;
-      }
-    }
-    if (!Number.isInteger(val) || val < 1 || val > 65535) {
-      lazy.logger.error(`Port out of range: ${val}`);
-      return null;
-    }
-    return val;
-  }
-  /**
-   * Test whether two arrays have equal members and order.
-   *
-   * @param {Array} val1 - The first array to test.
-   * @param {Array} val2 - The second array to compare against.
-   *
-   * @return {boolean} - Whether the two arrays are equal.
-   */
-  #arrayEqual(val1, val2) {
-    if (val1.length !== val2.length) {
-      return false;
-    }
-    return val1.every((v, i) => v === val2[i]);
-  }
-
-  /**
-   * Return the bridge lines associated to a certain pluggable transport.
-   *
-   * @param {string} pt The pluggable transport to return the lines for
-   * @returns {string[]} The bridge lines in random order
-   */
-  #getBuiltinBridges(pt) {
-    // Shuffle so that Tor Browser users do not all try the built-in bridges in
-    // the same order.
-    return arrayShuffle(this.#builtinBridges[pt] ?? []);
-  }
-
-  /**
-   * Load or init our settings, and register observers.
-   */
-  async init() {
-    if (this.#initialized) {
-      lazy.logger.warn("Called init twice.");
-      return;
-    }
-    this.#initializing = true;
-    try {
-      await this.#initInternal();
-      this.#initialized = true;
-      this.#initComplete();
-    } catch (e) {
-      this.#initFailed(e);
-      throw e;
-    } finally {
-      this.#initializing = false;
-    }
-  }
-
-  /**
-   * The actual implementation of the initialization, which is wrapped to make
-   * it easier to update initializatedPromise.
-   */
-  async #initInternal() {
     this.#addProperties("quickstart", {
       enabled: {},
     });
@@ -566,10 +347,235 @@ class TorSettingsImpl {
         equal: (val1, val2) => this.#arrayEqual(val1, val2),
       },
     });
+  }
 
+  /**
+   * The current number of freezes applied to the notifications.
+   *
+   * @type {integer}
+   */
+  #freezeNotificationsCount = 0;
+  /**
+   * The queue for settings that have changed. To be broadcast in the
+   * notification when not frozen.
+   *
+   * @type {Set<string>}
+   */
+  #notificationQueue = new Set();
+  /**
+   * Send a notification if we have any queued and we are not frozen.
+   */
+  #tryNotification() {
+    if (this.#freezeNotificationsCount || !this.#notificationQueue.size) {
+      return;
+    }
+    Services.obs.notifyObservers(
+      { changes: [...this.#notificationQueue] },
+      TorSettingsTopics.SettingsChanged
+    );
+    this.#notificationQueue.clear();
+  }
+  /**
+   * Pause notifications for changes in setting values. This is useful if you
+   * need to make batch changes to settings.
+   *
+   * This should always be paired with a call to thawNotifications once
+   * notifications should be released. Usually you should wrap whatever
+   * changes you make with a `try` block and call thawNotifications in the
+   * `finally` block.
+   */
+  freezeNotifications() {
+    this.#freezeNotificationsCount++;
+  }
+  /**
+   * Release the hold on notifications so they may be sent out.
+   *
+   * Note, if some other method has also frozen the notifications, this will
+   * only release them once it has also called this method.
+   */
+  thawNotifications() {
+    this.#freezeNotificationsCount--;
+    this.#tryNotification();
+  }
+  /**
+   * @typedef {object} TorSettingProperty
+   *
+   * @property {function} [getter] - A getter for the property. If this is
+   *   given, the property cannot be set.
+   * @property {function} [transform] - Called in the setter for the property,
+   *   with the new value given. Should transform the given value into the
+   *   right type.
+   * @property {function} [equal] - Test whether two values for the property
+   *   are considered equal. Otherwise uses `===`.
+   * @property {function} [callback] - Called whenever the property value
+   *   changes, with the new value given. Should be used to trigger any other
+   *   required changes for the new value.
+   * @property {function} [copy] - Called whenever the property is read, with
+   *   the stored value given. Should return a copy of the value. Otherwise
+   *   returns the stored value.
+   */
+  /**
+   * Add properties to the TorSettings instance, to be read or set.
+   *
+   * @param {string} groupname - The name of the setting group. The given
+   *   settings will be accessible from the TorSettings property of the same
+   *   name.
+   * @param {object.<string, TorSettingProperty>} propParams - An object that
+   *   defines the settings to add to this group. The object property names
+   *   will be mapped to properties of TorSettings under the given groupname
+   *   property. Details about the setting should be described in the
+   *   TorSettingProperty property value.
+   */
+  #addProperties(groupname, propParams) {
+    // Create a new object to hold all these settings.
+    const group = {};
+    for (const name in propParams) {
+      const { getter, transform, callback, copy, equal } = propParams[name];
+      Object.defineProperty(group, name, {
+        get: getter
+          ? () => {
+              // Allow getting in loadFromPrefs before we are initialized.
+              if (!this.#allowUninitialized) {
+                this.#checkIfInitialized();
+              }
+              return getter();
+            }
+          : () => {
+              // Allow getting in loadFromPrefs before we are initialized.
+              if (!this.#allowUninitialized) {
+                this.#checkIfInitialized();
+              }
+              let val = this.#settings[groupname][name];
+              if (copy) {
+                val = copy(val);
+              }
+              // Assume string or number value.
+              return val;
+            },
+        set: getter
+          ? undefined
+          : val => {
+              // Allow setting in loadFromPrefs before we are initialized.
+              if (!this.#allowUninitialized) {
+                this.#checkIfInitialized();
+              }
+              const prevVal = this.#settings[groupname][name];
+              this.freezeNotifications();
+              try {
+                if (transform) {
+                  val = transform(val);
+                }
+                const isEqual = equal ? equal(val, prevVal) : val === prevVal;
+                if (!isEqual) {
+                  if (callback) {
+                    callback(val);
+                  }
+                  this.#settings[groupname][name] = val;
+                  this.#notificationQueue.add(`${groupname}.${name}`);
+                }
+              } finally {
+                this.thawNotifications();
+              }
+            },
+      });
+    }
+    // The group object itself should not be writable.
+    Object.preventExtensions(group);
+    Object.defineProperty(this, groupname, {
+      writable: false,
+      value: group,
+    });
+  }
+
+  /**
+   * Regular expression for a decimal non-negative integer.
+   *
+   * @type {RegExp}
+   */
+  #portRegex = /^[0-9]+$/;
+  /**
+   * Parse a string as a port number.
+   *
+   * @param {string|integer} val - The value to parse.
+   * @param {boolean} trim - Whether a string value can be stripped of
+   *   whitespace before parsing.
+   *
+   * @return {integer?} - The port number, or null if the given value was not
+   *   valid.
+   */
+  #parsePort(val, trim) {
+    if (typeof val === "string") {
+      if (trim) {
+        val = val.trim();
+      }
+      // ensure port string is a valid positive integer
+      if (this.#portRegex.test(val)) {
+        val = Number.parseInt(val, 10);
+      } else {
+        lazy.logger.error(`Invalid port string "${val}"`);
+        return null;
+      }
+    }
+    if (!Number.isInteger(val) || val < 1 || val > 65535) {
+      lazy.logger.error(`Port out of range: ${val}`);
+      return null;
+    }
+    return val;
+  }
+  /**
+   * Test whether two arrays have equal members and order.
+   *
+   * @param {Array} val1 - The first array to test.
+   * @param {Array} val2 - The second array to compare against.
+   *
+   * @return {boolean} - Whether the two arrays are equal.
+   */
+  #arrayEqual(val1, val2) {
+    if (val1.length !== val2.length) {
+      return false;
+    }
+    return val1.every((v, i) => v === val2[i]);
+  }
+
+  /**
+   * Return the bridge lines associated to a certain pluggable transport.
+   *
+   * @param {string} pt The pluggable transport to return the lines for
+   * @returns {string[]} The bridge lines in random order
+   */
+  #getBuiltinBridges(pt) {
+    // Shuffle so that Tor Browser users do not all try the built-in bridges in
+    // the same order.
+    return arrayShuffle(this.#builtinBridges[pt] ?? []);
+  }
+
+  /**
+   * Load or init our settings, and register observers.
+   */
+  async init() {
+    if (this.#initialized) {
+      lazy.logger.warn("Called init twice.");
+      return;
+    }
+    try {
+      await this.#initInternal();
+      this.#initialized = true;
+      this.#initComplete();
+    } catch (e) {
+      this.#initFailed(e);
+      throw e;
+    }
+  }
+
+  /**
+   * The actual implementation of the initialization, which is wrapped to make
+   * it easier to update initializatedPromise.
+   */
+  async #initInternal() {
     try {
       const req = await fetch("chrome://global/content/pt_config.json");
       const config = await req.json();
+      lazy.logger.debug("Loaded pt_config.json", config);
       this.#recommendedPT = config.recommendedDefault;
       this.#builtinBridges = config.bridges;
     } catch (e) {
@@ -584,8 +590,10 @@ class TorSettingsImpl {
         // Do not want notifications for initially loaded prefs.
         this.freezeNotifications();
         try {
+          this.#allowUninitialized = true;
           this.#loadFromPrefs();
         } finally {
+          this.#allowUninitialized = false;
           this.#notificationQueue.clear();
           this.thawNotifications();
         }
@@ -606,13 +614,9 @@ class TorSettingsImpl {
   /**
    * Check whether the object has been successfully initialized, and throw if
    * it has not.
-   *
-   * @param {boolean} fatal If true, this will always be an error; if false, it
-   * will be ignored during initialization (setters and getters are called by
-   * #loadFromPrefs).
    */
-  #checkIfInitialized(fatal) {
-    if (!this.#initialized && (!this.#initializing || fatal)) {
+  #checkIfInitialized() {
+    if (!this.#initialized) {
       lazy.logger.trace("Not initialized code path.");
       throw new Error(
         "TorSettings has not been initialized yet, or its initialization failed"
@@ -652,7 +656,7 @@ class TorSettingsImpl {
    */
   async #handleProcessReady() {
     // push down settings to tor
-    await this.applySettings();
+    await this.#applySettings(true);
     lazy.logger.info("Ready");
     Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
   }
@@ -739,7 +743,7 @@ class TorSettingsImpl {
   saveToPrefs() {
     lazy.logger.debug("saveToPrefs()");
 
-    this.#checkIfInitialized(true);
+    this.#checkIfInitialized();
 
     /* Quickstart */
     Services.prefs.setBoolPref(
@@ -828,69 +832,81 @@ class TorSettingsImpl {
    * Push our settings down to the tor provider.
    */
   async applySettings() {
-    lazy.logger.debug("applySettings()");
+    this.#checkIfInitialized();
+    return this.#applySettings(false);
+  }
 
-    await this.initializedPromise;
+  /**
+   * Internal implementation of applySettings that does not check if we are
+   * initialized.
+   */
+  async #applySettings(allowUninitialized) {
+    lazy.logger.debug("#applySettings()");
 
     const settingsMap = new Map();
 
-    /* Bridges */
-    const haveBridges =
-      this.bridges.enabled && !!this.bridges.bridge_strings.length;
-    settingsMap.set(TorConfigKeys.useBridges, haveBridges);
-    if (haveBridges) {
-      settingsMap.set(TorConfigKeys.bridgeList, this.bridges.bridge_strings);
-    } else {
-      settingsMap.set(TorConfigKeys.bridgeList, null);
-    }
+    // #applySettings can be called only when #allowUninitialized is false
+    this.#allowUninitialized = allowUninitialized;
 
-    /* Proxy */
-    settingsMap.set(TorConfigKeys.socks4Proxy, null);
-    settingsMap.set(TorConfigKeys.socks5Proxy, null);
-    settingsMap.set(TorConfigKeys.socks5ProxyUsername, null);
-    settingsMap.set(TorConfigKeys.socks5ProxyPassword, null);
-    settingsMap.set(TorConfigKeys.httpsProxy, null);
-    settingsMap.set(TorConfigKeys.httpsProxyAuthenticator, null);
-    if (this.proxy.enabled) {
-      const address = this.proxy.address;
-      const port = this.proxy.port;
-      const username = this.proxy.username;
-      const password = this.proxy.password;
-
-      switch (this.proxy.type) {
-        case TorProxyType.Socks4:
-          settingsMap.set(TorConfigKeys.socks4Proxy, `${address}:${port}`);
-          break;
-        case TorProxyType.Socks5:
-          settingsMap.set(TorConfigKeys.socks5Proxy, `${address}:${port}`);
-          settingsMap.set(TorConfigKeys.socks5ProxyUsername, username);
-          settingsMap.set(TorConfigKeys.socks5ProxyPassword, password);
-          break;
-        case TorProxyType.HTTPS:
-          settingsMap.set(TorConfigKeys.httpsProxy, `${address}:${port}`);
-          settingsMap.set(
-            TorConfigKeys.httpsProxyAuthenticator,
-            `${username}:${password}`
-          );
-          break;
+    try {
+      /* Bridges */
+      const haveBridges =
+        this.bridges.enabled && !!this.bridges.bridge_strings.length;
+      settingsMap.set(TorConfigKeys.useBridges, haveBridges);
+      if (haveBridges) {
+        settingsMap.set(TorConfigKeys.bridgeList, this.bridges.bridge_strings);
+      } else {
+        settingsMap.set(TorConfigKeys.bridgeList, null);
       }
-    }
 
-    /* Firewall */
-    if (this.firewall.enabled) {
-      const reachableAddresses = this.firewall.allowed_ports
-        .map(port => `*:${port}`)
-        .join(",");
-      settingsMap.set(TorConfigKeys.reachableAddresses, reachableAddresses);
-    } else {
-      settingsMap.set(TorConfigKeys.reachableAddresses, null);
+      /* Proxy */
+      settingsMap.set(TorConfigKeys.socks4Proxy, null);
+      settingsMap.set(TorConfigKeys.socks5Proxy, null);
+      settingsMap.set(TorConfigKeys.socks5ProxyUsername, null);
+      settingsMap.set(TorConfigKeys.socks5ProxyPassword, null);
+      settingsMap.set(TorConfigKeys.httpsProxy, null);
+      settingsMap.set(TorConfigKeys.httpsProxyAuthenticator, null);
+      if (this.proxy.enabled) {
+        const address = this.proxy.address;
+        const port = this.proxy.port;
+        const username = this.proxy.username;
+        const password = this.proxy.password;
+
+        switch (this.proxy.type) {
+          case TorProxyType.Socks4:
+            settingsMap.set(TorConfigKeys.socks4Proxy, `${address}:${port}`);
+            break;
+          case TorProxyType.Socks5:
+            settingsMap.set(TorConfigKeys.socks5Proxy, `${address}:${port}`);
+            settingsMap.set(TorConfigKeys.socks5ProxyUsername, username);
+            settingsMap.set(TorConfigKeys.socks5ProxyPassword, password);
+            break;
+          case TorProxyType.HTTPS:
+            settingsMap.set(TorConfigKeys.httpsProxy, `${address}:${port}`);
+            settingsMap.set(
+              TorConfigKeys.httpsProxyAuthenticator,
+              `${username}:${password}`
+            );
+            break;
+        }
+      }
+
+      /* Firewall */
+      if (this.firewall.enabled) {
+        const reachableAddresses = this.firewall.allowed_ports
+          .map(port => `*:${port}`)
+          .join(",");
+        settingsMap.set(TorConfigKeys.reachableAddresses, reachableAddresses);
+      } else {
+        settingsMap.set(TorConfigKeys.reachableAddresses, null);
+      }
+    } finally {
+      this.#allowUninitialized = false;
     }
 
     /* Push to Tor */
     const provider = await lazy.TorProviderBuilder.build();
     await provider.writeSettings(settingsMap);
-
-    return this;
   }
 
   /**
@@ -900,7 +916,7 @@ class TorSettingsImpl {
    */
   setSettings(settings) {
     lazy.logger.debug("setSettings()");
-    this.#checkIfInitialized(true);
+    this.#checkIfInitialized();
 
     const backup = this.getSettings();
     const backupNotifications = [...this.#notificationQueue];
@@ -965,7 +981,7 @@ class TorSettingsImpl {
    */
   getSettings() {
     lazy.logger.debug("getSettings()");
-    this.#checkIfInitialized(true);
+    this.#checkIfInitialized();
     return structuredClone(this.#settings);
   }
 
@@ -976,7 +992,7 @@ class TorSettingsImpl {
    * @returns {string[]} An array with PT identifiers
    */
   get builtinBridgeTypes() {
-    this.#checkIfInitialized(true);
+    this.#checkIfInitialized();
     const types = Object.keys(this.#builtinBridges);
     const recommendedIndex = types.indexOf(this.#recommendedPT);
     if (recommendedIndex > 0) {

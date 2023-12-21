@@ -1,4 +1,5 @@
 {
+  "_comment": "Used for dev build, replaced for release builds in tor-browser-build. This file is copied from tor-browser-build cb513eec:tor-expert-bundle/pt_config.json",
   "recommendedDefault" : "obfs4",
   "pluggableTransports" : {
     "lyrebird" : "ClientTransportPlugin meek_lite,obfs2,obfs3,obfs4,scramblesuit exec ${pt_path}lyrebird${pt_extension}",
