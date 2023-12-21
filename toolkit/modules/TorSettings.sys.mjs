@@ -215,13 +215,13 @@ const arrayShuffle = function (array) {
 
 /* TorSettings module */
 
-export const TorSettings = {
+class TorSettingsImpl {
   /**
    * The underlying settings values.
    *
    * @type {object}
    */
-  _settings: {
+  _settings = {
     quickstart: {
       enabled: false,
     },
@@ -243,21 +243,21 @@ export const TorSettings = {
       enabled: false,
       allowed_ports: [],
     },
-  },
+  };
 
   /**
    * The current number of freezes applied to the notifications.
    *
    * @type {integer}
    */
-  _freezeNotificationsCount: 0,
+  _freezeNotificationsCount = 0;
   /**
    * The queue for settings that have changed. To be broadcast in the
    * notification when not frozen.
    *
    * @type {Set<string>}
    */
-  _notificationQueue: new Set(),
+  _notificationQueue = new Set();
   /**
    * Send a notification if we have any queued and we are not frozen.
    */
@@ -270,7 +270,7 @@ export const TorSettings = {
       TorSettingsTopics.SettingsChanged
     );
     this._notificationQueue.clear();
-  },
+  }
   /**
    * Pause notifications for changes in setting values. This is useful if you
    * need to make batch changes to settings.
@@ -282,7 +282,7 @@ export const TorSettings = {
    */
   freezeNotifications() {
     this._freezeNotificationsCount++;
-  },
+  }
   /**
    * Release the hold on notifications so they may be sent out.
    *
@@ -292,7 +292,7 @@ export const TorSettings = {
   thawNotifications() {
     this._freezeNotificationsCount--;
     this._tryNotification();
-  },
+  }
   /**
    * @typedef {object} TorSettingProperty
    *
@@ -367,14 +367,14 @@ export const TorSettings = {
       writable: false,
       value: group,
     });
-  },
+  }
 
   /**
    * Regular expression for a decimal non-negative integer.
    *
    * @type {RegExp}
    */
-  _portRegex: /^[0-9]+$/,
+  _portRegex = /^[0-9]+$/;
   /**
    * Parse a string as a port number.
    *
@@ -403,7 +403,7 @@ export const TorSettings = {
       return null;
     }
     return val;
-  },
+  }
   /**
    * Test whether two arrays have equal members and order.
    *
@@ -417,7 +417,7 @@ export const TorSettings = {
       return false;
     }
     return val1.every((v, i) => v === val2[i]);
-  },
+  }
 
   /* load or init our settings, and register observers */
   async init() {
@@ -574,7 +574,7 @@ export const TorSettings = {
 
       Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
     }
-  },
+  }
 
   /* wait for relevant life-cycle events to apply saved settings */
   async observe(subject, topic, data) {
@@ -589,7 +589,7 @@ export const TorSettings = {
         await this.handleProcessReady();
         break;
     }
-  },
+  }
 
   // once the tor daemon is ready, we need to apply our settings
   async handleProcessReady() {
@@ -597,7 +597,7 @@ export const TorSettings = {
     await this.applySettings();
     lazy.logger.info("Ready");
     Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
-  },
+  }
 
   // load our settings from prefs
   loadFromPrefs() {
@@ -671,7 +671,7 @@ export const TorSettings = {
         ""
       );
     }
-  },
+  }
 
   // save our settings to prefs
   saveToPrefs() {
@@ -758,7 +758,7 @@ export const TorSettings = {
     Services.prefs.setBoolPref(TorSettingsPrefs.enabled, true);
 
     return this;
-  },
+  }
 
   // push our settings down to the tor daemon
   async applySettings() {
@@ -822,7 +822,7 @@ export const TorSettings = {
     await provider.writeSettings(settingsMap);
 
     return this;
-  },
+  }
 
   // set all of our settings at once from a settings object
   setSettings(settings) {
@@ -881,11 +881,13 @@ export const TorSettings = {
     }
 
     lazy.logger.debug("setSettings result", this._settings);
-  },
+  }
 
   // get a copy of all our settings
   getSettings() {
     lazy.logger.debug("getSettings()");
     return structuredClone(this._settings);
-  },
-};
+  }
+}
+
+export const TorSettings = new TorSettingsImpl();
