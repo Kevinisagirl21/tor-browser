@@ -7,6 +7,7 @@
 package org.mozilla.geckoview;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import androidx.annotation.AnyThread;
@@ -131,7 +132,11 @@ public class TorIntegrationAndroid implements BundleEventListener {
         } else if (EVENT_MEEK_STOP.equals(event)) {
             stopMeek(message, callback);
         } else if (EVENT_SETTINGS_READY.equals(event)) {
-            loadSettings(message);
+            try {
+                new SettingsLoader().execute(message);
+            } catch(Exception e) {
+                Log.e(TAG, "SettingsLoader error: "+ e.toString());
+            }
         } else if (EVENT_BOOTSTRAP_STATE_CHANGED.equals(event)) {
             String state = message.getString("state");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
@@ -161,14 +166,24 @@ public class TorIntegrationAndroid implements BundleEventListener {
         }
     }
 
-    private void loadSettings(GeckoBundle message) {
-        if (TorLegacyAndroidSettings.unmigrated()) {
-            mSettings = TorLegacyAndroidSettings.loadTorSettings();
-            setSettings(mSettings);
-            TorLegacyAndroidSettings.setMigrated();
-        } else {
-            GeckoBundle bundle = message.getBundle("settings");
-            mSettings = new TorSettings(bundle);
+    private class SettingsLoader extends AsyncTask<GeckoBundle, Void, TorSettings> {
+        protected TorSettings doInBackground(GeckoBundle... messages) {
+            GeckoBundle message = messages[0];
+            TorSettings settings;
+            if (TorLegacyAndroidSettings.unmigrated()) {
+                settings = TorLegacyAndroidSettings.loadTorSettings();
+                setSettings(settings, true, true);
+                TorLegacyAndroidSettings.setMigrated();
+            } else {
+                GeckoBundle bundle = message.getBundle("settings");
+                settings = new TorSettings(bundle);
+            }
+            return settings;
+        }
+
+        @Override
+        protected void onPostExecute(TorSettings torSettings) {
+            mSettings = torSettings;
         }
     }
 
@@ -515,8 +530,12 @@ public class TorIntegrationAndroid implements BundleEventListener {
         return EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET);
     }
 
-    public @NonNull GeckoResult<Void> setSettings(final TorSettings settings) {
-        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SET, settings.asGeckoBundle());
+    public @NonNull GeckoResult<Void> setSettings(final TorSettings settings, boolean save, boolean apply) {
+        GeckoBundle bundle = new GeckoBundle(3);
+        bundle.putBoolean("save", save);
+        bundle.putBoolean("apply", apply);
+        bundle.putBundle("settings", settings.asGeckoBundle());
+        return EventDispatcher.getInstance().queryVoid(EVENT_SETTINGS_SET, bundle);
     }
 
     public @NonNull GeckoResult<Void> applySettings() {
