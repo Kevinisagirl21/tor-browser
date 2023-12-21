@@ -191,15 +191,34 @@ class TorSettingsImpl {
    */
   #builtinBridges = {};
 
+  /**
+   * Resolve callback of the initializedPromise.
+   */
   #initComplete;
+  /**
+   * Reject callback of the initializedPromise.
+   */
   #initFailed;
+  /**
+   * Tell whether the initializedPromise has been resolved.
+   * We keep this additional member to avoid making everything async.
+   *
+   * @type {boolean}
+   */
   #initialized = false;
+  /**
+   * Keep track on when we are initializing to allow calling setters and
+   * getters without throwing errors.
+   *
+   * @type {boolean}
+   */
+  #initializing = false;
 
   constructor() {
     this.initializedPromise = new Promise((resolve, reject) => {
       this.#initComplete = resolve;
       this.#initFailed = reject;
-    })
+    });
   }
 
   /**
@@ -273,21 +292,26 @@ class TorSettingsImpl {
    * @param {string} groupname - The name of the setting group. The given
    *   settings will be accessible from the TorSettings property of the same
    *   name.
-   * @param {object<string, TorSettingProperty>} propParams - An object that
+   * @param {object.<string, TorSettingProperty>} propParams - An object that
    *   defines the settings to add to this group. The object property names
    *   will be mapped to properties of TorSettings under the given groupname
    *   property. Details about the setting should be described in the
    *   TorSettingProperty property value.
    */
   #addProperties(groupname, propParams) {
+    const self = this;
     // Create a new object to hold all these settings.
     const group = {};
     for (const name in propParams) {
       const { getter, transform, callback, copy, equal } = propParams[name];
       Object.defineProperty(group, name, {
         get: getter
-          ? getter
+          ? () => {
+              self.#checkIfInitialized(false);
+              return getter();
+            }
           : () => {
+              self.#checkIfInitialized(false);
               let val = this.#settings[groupname][name];
               if (copy) {
                 val = copy(val);
@@ -298,6 +322,7 @@ class TorSettingsImpl {
         set: getter
           ? undefined
           : val => {
+              self.#checkIfInitialized(false);
               const prevVal = this.#settings[groupname][name];
               this.freezeNotifications();
               try {
@@ -388,10 +413,15 @@ class TorSettingsImpl {
     return arrayShuffle(this.#builtinBridges[pt] ?? []);
   }
 
+  /**
+   * Load or init our settings, and register observers.
+   */
   async init() {
     if (this.#initialized) {
+      lazy.logger.warn("Called init twice.");
       return;
     }
+    this.#initializing = true;
     try {
       await this.#initInternal();
       this.#initialized = true;
@@ -399,15 +429,14 @@ class TorSettingsImpl {
     } catch (e) {
       this.#initFailed(e);
       throw e;
+    } finally {
+      this.#initializing = false;
     }
   }
 
-  get initialized() {
-    return this.#initialized;
-  }
-
   /**
-   * Load or init our settings, and register observers.
+   * The actual implementation of the initialization, which is wrapped to make
+   * it easier to update initializatedPromise.
    */
   async #initInternal() {
     this.#addProperties("quickstart", {
@@ -555,7 +584,7 @@ class TorSettingsImpl {
         // Do not want notifications for initially loaded prefs.
         this.freezeNotifications();
         try {
-          this.loadFromPrefs();
+          this.#loadFromPrefs();
         } finally {
           this.#notificationQueue.clear();
           this.thawNotifications();
@@ -564,7 +593,7 @@ class TorSettingsImpl {
       try {
         const provider = await lazy.TorProviderBuilder.build();
         if (provider.isRunning) {
-          this.handleProcessReady();
+          this.#handleProcessReady();
           // No need to add an observer to call this again.
           return;
         }
@@ -574,7 +603,35 @@ class TorSettingsImpl {
     }
   }
 
-  /* wait for relevant life-cycle events to apply saved settings */
+  /**
+   * Check whether the object has been successfully initialized, and throw if
+   * it has not.
+   *
+   * @param {boolean} fatal If true, this will always be an error; if false, it
+   * will be ignored during initialization (setters and getters are called by
+   * #loadFromPrefs).
+   */
+  #checkIfInitialized(fatal) {
+    if (!this.#initialized && (!this.#initializing || fatal)) {
+      lazy.logger.trace("Not initialized code path.");
+      throw new Error(
+        "TorSettings has not been initialized yet, or its initialization failed"
+      );
+    }
+  }
+
+  /**
+   * Tell whether TorSettings has been successfully initialized.
+   *
+   * @returns {boolean}
+   */
+  get initialized() {
+    return this.#initialized;
+  }
+
+  /**
+   * Wait for relevant life-cycle events to apply saved settings.
+   */
   async observe(subject, topic, data) {
     lazy.logger.debug(`Observed ${topic}`);
 
@@ -584,21 +641,26 @@ class TorSettingsImpl {
           this,
           lazy.TorProviderTopics.ProcessIsReady
         );
-        await this.handleProcessReady();
+        await this.#handleProcessReady();
         break;
     }
   }
 
-  // once the tor daemon is ready, we need to apply our settings
-  async handleProcessReady() {
+  /**
+   * Apply the settings once the tor provider is ready and notify any observer
+   * that the settings can be used.
+   */
+  async #handleProcessReady() {
     // push down settings to tor
     await this.applySettings();
     lazy.logger.info("Ready");
     Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
   }
 
-  // load our settings from prefs
-  loadFromPrefs() {
+  /**
+   * Load our settings from prefs.
+   */
+  #loadFromPrefs() {
     lazy.logger.debug("loadFromPrefs()");
 
     /* Quickstart */
@@ -671,9 +733,13 @@ class TorSettingsImpl {
     }
   }
 
-  // save our settings to prefs
+  /**
+   * Save our settings to prefs.
+   */
   saveToPrefs() {
     lazy.logger.debug("saveToPrefs()");
+
+    this.#checkIfInitialized(true);
 
     /* Quickstart */
     Services.prefs.setBoolPref(
@@ -758,9 +824,14 @@ class TorSettingsImpl {
     return this;
   }
 
-  // push our settings down to the tor daemon
+  /**
+   * Push our settings down to the tor provider.
+   */
   async applySettings() {
     lazy.logger.debug("applySettings()");
+
+    await this.initializedPromise;
+
     const settingsMap = new Map();
 
     /* Bridges */
@@ -822,9 +893,15 @@ class TorSettingsImpl {
     return this;
   }
 
-  // set all of our settings at once from a settings object
+  /**
+   * Set all of our settings at once from a settings object.
+   *
+   * @param {object} settings The settings object to set
+   */
   setSettings(settings) {
     lazy.logger.debug("setSettings()");
+    this.#checkIfInitialized(true);
+
     const backup = this.getSettings();
     const backupNotifications = [...this.#notificationQueue];
 
@@ -882,12 +959,13 @@ class TorSettingsImpl {
   }
 
   /**
-   * Get a copy of all our settings
+   * Get a copy of all our settings.
    *
    * @returns {object} A copy of the settings object
    */
   getSettings() {
     lazy.logger.debug("getSettings()");
+    this.#checkIfInitialized(true);
     return structuredClone(this.#settings);
   }
 
@@ -898,6 +976,7 @@ class TorSettingsImpl {
    * @returns {string[]} An array with PT identifiers
    */
   get builtinBridgeTypes() {
+    this.#checkIfInitialized(true);
     const types = Object.keys(this.#builtinBridges);
     const recommendedIndex = types.indexOf(this.#recommendedPT);
     if (recommendedIndex > 0) {
