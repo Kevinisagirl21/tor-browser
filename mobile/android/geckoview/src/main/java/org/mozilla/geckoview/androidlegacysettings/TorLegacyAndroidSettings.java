@@ -53,13 +53,11 @@ public class TorLegacyAndroidSettings {
             settings.bridgesSource = TorSettings.BridgeSource.BuiltIn;
             switch (userDefinedBridgeList) {
                 case "obfs4":
-                    settings.bridgesBuiltinType = "objs4";
+                case "snowflake":
+                    settings.bridgesBuiltinType = userDefinedBridgeList;
                     break;
                 case "meek":
-                    settings.bridgesBuiltinType = "meek_azure";
-                    break;
-                case "snowflake":
-                    settings.bridgesBuiltinType = "snowflake";
+                    settings.bridgesBuiltinType = "meek-azure";
                     break;
                 default:
                     settings.bridgesSource = TorSettings.BridgeSource.Invalid;
