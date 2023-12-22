@@ -49,14 +49,22 @@ import java.util.Locale;
 
     public static boolean bridgesEnabled() {
         setContext();
+        // for Locale.getDefault().getLanguage().equals("fa"), bridges were enabled by default (and
+        // it was meek). This was a default set in 2019 code, but it is not a good default anymore,
+        // so we removed the check.
         return prefs.getBoolean(PREF_BRIDGES_ENABLED, false);
     }
 
     public static String getBridgesList() {
         setContext();
-        // was "meek" for (Locale.getDefault().getLanguage().equals("fa")) and "obfs4" for the rest from a 2019 commit
-        // but that has stopped representing a good default sometime since so not importing for new users
         String list = prefs.getString(PREF_BRIDGES_LIST, "");
+        // list might be empty if the default PT was used, so check also if bridges are enabled.
+        if (list.isEmpty() && prefs.getBoolean(PREF_BRIDGES_ENABLED, false)) {
+            // Even though the check on the fa locale is not good to enable bridges by default, we
+            // still check it here, because if the list was empty, it was likely that it was the
+            // choice for users with this locale.
+            return (Locale.getDefault().getLanguage().equals("fa")) ? "meek": "obfs4";
+        }
         return list;
     }
 
