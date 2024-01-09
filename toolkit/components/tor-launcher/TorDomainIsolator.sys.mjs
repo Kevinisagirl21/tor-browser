@@ -224,7 +224,7 @@ class TorDomainIsolatorImpl {
   newCircuitForBrowser(globalBrowser) {
     const browser = globalBrowser.selectedBrowser;
     const firstPartyDomain = getDomainForBrowser(browser);
-    this.#newCircuitForDomain(firstPartyDomain);
+    this.newCircuitForDomain(firstPartyDomain);
     const { username, password } = this.#getSocksProxyCredentials(
       firstPartyDomain,
       browser.contentPrincipal.originAttributes.userContextId
@@ -329,7 +329,7 @@ class TorDomainIsolatorImpl {
           logger.info(
             "tor catchall circuit has reached its maximum lifetime. Rotating."
           );
-          this.#newCircuitForDomain(CATCHALL_DOMAIN);
+          this.newCircuitForDomain(CATCHALL_DOMAIN);
         }
       }
       const { username, password } = this.#getSocksProxyCredentials(
@@ -437,7 +437,7 @@ class TorDomainIsolatorImpl {
    * @param {string?} domain The first-party domain to re-create the nonce for.
    * If empty or null, the catchall domain will be used.
    */
-  #newCircuitForDomain(domain) {
+  newCircuitForDomain(domain) {
     if (!domain) {
       domain = CATCHALL_DOMAIN;
     }
