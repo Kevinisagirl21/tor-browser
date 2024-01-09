@@ -2,10 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import {
-  TorSettings,
-  TorBridgeSource,
-} from "resource://gre/modules/TorSettings.sys.mjs";
+import { TorBridgeSource } from "resource://gre/modules/TorSettings.sys.mjs";
 
 const lazy = {};
 
@@ -204,68 +201,52 @@ export class MoatRPC {
   // Convert received settings object to format used by TorSettings module
   // In the event of error, just return null
   #fixupSettings(settings) {
-    try {
-      let retval = TorSettings.defaultSettings();
-      if ("bridges" in settings) {
-        retval.bridges.enabled = true;
-        switch (settings.bridges.source) {
-          case "builtin":
-            retval.bridges.source = TorBridgeSource.BuiltIn;
-            retval.bridges.builtin_type = settings.bridges.type;
-            // Tor Browser will periodically update the built-in bridge strings list using the
-            // circumvention_builtin() function, so we can ignore the bridge strings we have received here;
-            // BridgeDB only returns a subset of the available built-in bridges through the circumvention_settings()
-            // function which is fine for our 3rd parties, but we're better off ignoring them in Tor Browser, otherwise
-            // we get in a weird situation of needing to update our built-in bridges in a piece-meal fashion which
-            // seems over-complicated/error-prone
-            break;
-          case "bridgedb":
-            retval.bridges.source = TorBridgeSource.BridgeDB;
-            if (settings.bridges.bridge_strings) {
-              retval.bridges.bridge_strings = settings.bridges.bridge_strings;
-              retval.bridges.disabled_strings = [];
-            } else {
-              throw new Error(
-                "MoatRPC::_fixupSettings(): Received no bridge-strings for BridgeDB bridge source"
-              );
-            }
-            break;
-          default:
-            throw new Error(
-              `MoatRPC::_fixupSettings(): Unexpected bridge source '${settings.bridges.source}'`
-            );
-        }
-      }
-      if ("proxy" in settings) {
-        // TODO: populate proxy settings
-      }
-      if ("firewall" in settings) {
-        // TODO: populate firewall settings
-      }
-      return retval;
-    } catch (ex) {
-      console.log(ex.message);
-      return null;
+    if (!("bridges" in settings)) {
+      throw new Error("Expected to find `bridges` in the settings object.");
     }
+    const retval = {
+      bridges: {
+        enabled: true,
+      },
+    };
+    switch (settings.bridges.source) {
+      case "builtin":
+        retval.bridges.source = TorBridgeSource.BuiltIn;
+        retval.bridges.builtin_type = settings.bridges.type;
+        // TorSettings will ignore strings for built-in bridges, and use the
+        // ones it already knows, instead.
+        break;
+      case "bridgedb":
+        retval.bridges.source = TorBridgeSource.BridgeDB;
+        if (settings.bridges.bridge_strings) {
+          retval.bridges.bridge_strings = settings.bridges.bridge_strings;
+        } else {
+          throw new Error(
+            "Received no bridge-strings for BridgeDB bridge source"
+          );
+        }
+        break;
+      default:
+        throw new Error(
+          `Unexpected bridge source '${settings.bridges.source}'`
+        );
+    }
+    return retval;
   }
 
   // Converts a list of settings objects received from BridgeDB to a list of settings objects
   // understood by the TorSettings module
   // In the event of error, returns and empty list
   #fixupSettingsList(settingsList) {
-    try {
-      let retval = [];
-      for (let settings of settingsList) {
-        settings = this.#fixupSettings(settings);
-        if (settings != null) {
-          retval.push(settings);
-        }
+    const retval = [];
+    for (const settings of settingsList) {
+      try {
+        retval.push(this.#fixupSettings(settings));
+      } catch (ex) {
+        console.log(ex);
       }
-      return retval;
-    } catch (ex) {
-      console.log(ex.message);
-      return [];
     }
+    return retval;
   }
 
   // Request tor settings for the user optionally based on their location (derived
