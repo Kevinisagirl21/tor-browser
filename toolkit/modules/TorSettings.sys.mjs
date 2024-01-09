@@ -301,8 +301,12 @@ class TorSettingsImpl {
           return this.#parsePort(val, false) ?? 0;
         },
       },
-      username: {},
-      password: {},
+      username: {
+        transform: val => val ?? "",
+      },
+      password: {
+        transform: val => val ?? "",
+      },
       uri: {
         getter: () => {
           const { type, address, port, username, password } = this.proxy;
@@ -910,7 +914,11 @@ class TorSettingsImpl {
   }
 
   /**
-   * Set all of our settings at once from a settings object.
+   * Set blocks of settings at once from an object.
+   *
+   * It is possible to set all settings, or only some sections (e.g., only
+   * bridges), but if a key is present, its settings must make sense (e.g., if
+   * bridges are enabled, a valid source must be provided).
    *
    * @param {object} settings The settings object to set
    */
@@ -924,35 +932,59 @@ class TorSettingsImpl {
     // Hold off on lots of notifications until all settings are changed.
     this.freezeNotifications();
     try {
-      this.bridges.enabled = !!settings.bridges.enabled;
-      this.bridges.source = settings.bridges.source;
-      switch (settings.bridges.source) {
-        case TorBridgeSource.BridgeDB:
-        case TorBridgeSource.UserProvided:
-          this.bridges.bridge_strings = settings.bridges.bridge_strings;
-          break;
-        case TorBridgeSource.BuiltIn: {
-          this.bridges.builtin_type = settings.bridges.builtin_type;
-          if (!this.bridges.bridge_strings.length) {
-            // No bridges were found when setting the builtin_type.
-            throw new Error(
-              `No available builtin bridges of type ${settings.bridges.builtin_type}`
-            );
-          }
-          break;
+      if ("bridges" in settings) {
+        this.bridges.enabled = !!settings.bridges.enabled;
+        // Currently, disabling bridges in the UI does not remove the lines,
+        // because we call only the `enabled` setter.
+        // So, if the bridge source is undefined but bridges are disabled,
+        // do not force Invalid. Instead, keep the current source.
+        if (this.bridges.enabled || settings.bridges.source !== undefined) {
+          this.bridges.source = settings.bridges.source;
         }
-        case TorBridgeSource.Invalid:
-          break;
-        default:
-          if (settings.bridges.enabled) {
-            throw new Error(
-              `Bridge source '${settings.source}' is not a valid source`
-            );
+        switch (settings.bridges.source) {
+          case TorBridgeSource.BridgeDB:
+          case TorBridgeSource.UserProvided:
+            this.bridges.bridge_strings = settings.bridges.bridge_strings;
+            break;
+          case TorBridgeSource.BuiltIn: {
+            this.bridges.builtin_type = settings.bridges.builtin_type;
+            if (!this.bridges.bridge_strings.length) {
+              // No bridges were found when setting the builtin_type.
+              throw new Error(
+                `No available builtin bridges of type ${settings.bridges.builtin_type}`
+              );
+            }
+            break;
           }
-          break;
+          case TorBridgeSource.Invalid:
+            break;
+          default:
+            if (settings.bridges.enabled) {
+              throw new Error(
+                `Bridge source '${settings.source}' is not a valid source`
+              );
+            }
+            break;
+        }
       }
 
-      // TODO: proxy and firewall
+      if ("proxy" in settings) {
+        this.proxy.enabled = !!settings.proxy.enabled;
+        if (this.proxy.enabled) {
+          this.proxy.type = settings.proxy.type;
+          this.proxy.address = settings.proxy.address;
+          this.proxy.port = settings.proxy.port;
+          this.proxy.username = settings.proxy.username;
+          this.proxy.password = settings.proxy.password;
+        }
+      }
+
+      if ("firewall" in settings) {
+        this.firewall.enabled = !!settings.firewall.enabled;
+        if (this.firewall.enabled) {
+          this.firewall.allowed_ports = settings.firewall.allowed_ports;
+        }
+      }
     } catch (ex) {
       // Restore the old settings without any new notifications generated from
       // the above code.
