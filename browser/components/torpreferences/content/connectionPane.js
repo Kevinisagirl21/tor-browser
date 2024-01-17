@@ -96,29 +96,6 @@ const gConnectionPane = (function () {
       location: "#torPreferences-bridges-location",
       locationEntries: "#torPreferences-bridges-locationEntries",
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
-      currentHeader: "#torPreferences-currentBridges-header",
-      currentDescription: "#torPreferences-currentBridges-description",
-      currentDescriptionText: "#torPreferences-currentBridges-descriptionText",
-      controls: "#torPreferences-currentBridges-controls",
-      switch: "#torPreferences-currentBridges-switch",
-      cards: "#torPreferences-currentBridges-cards",
-      cardTemplate: "#torPreferences-bridgeCard-template",
-      card: ".torPreferences-bridgeCard",
-      cardId: ".torPreferences-bridgeCard-id",
-      cardHeadingManualLink: ".torPreferences-bridgeCard-manualLink",
-      cardHeadingAddr: ".torPreferences-bridgeCard-headingAddr",
-      cardConnectedLabel: ".torPreferences-current-bridge-label",
-      cardOptions: ".torPreferences-bridgeCard-options",
-      cardMenu: "#torPreferences-bridgeCard-menu",
-      cardQrGrid: ".torPreferences-bridgeCard-grid",
-      cardQrContainer: ".torPreferences-bridgeCard-qr",
-      cardQr: ".torPreferences-bridgeCard-qrCode",
-      cardShare: ".torPreferences-bridgeCard-share",
-      cardAddr: ".torPreferences-bridgeCard-addr",
-      cardLearnMore: ".torPreferences-bridgeCard-learnMore",
-      cardCopy: ".torPreferences-bridgeCard-copyButton",
-      showAll: "#torPreferences-currentBridges-showAll",
-      removeAll: "#torPreferences-currentBridges-removeAll",
       addHeader: "#torPreferences-addBridge-header",
       addBuiltinLabel: "#torPreferences-addBridge-labelBuiltinBridge",
       addBuiltinButton: "#torPreferences-addBridge-buttonBuiltinBridge",
@@ -141,8 +118,6 @@ const gConnectionPane = (function () {
     _enableQuickstartCheckbox: null,
 
     _internetStatus: InternetStatus.Unknown,
-
-    _currentBridgeId: null,
 
     // populate xul with strings and cache the relevant elements
     _populateXUL() {
@@ -387,390 +362,6 @@ const gConnectionPane = (function () {
         this._showAutoconfiguration();
       }
 
-      // Bridge cards
-      const bridgeHeader = prefpane.querySelector(
-        selectors.bridges.currentHeader
-      );
-      bridgeHeader.textContent = TorStrings.settings.bridgeCurrent;
-      const bridgeControls = prefpane.querySelector(selectors.bridges.controls);
-      const bridgeSwitch = prefpane.querySelector(selectors.bridges.switch);
-      bridgeSwitch.setAttribute("label", TorStrings.settings.allBridgesEnabled);
-      bridgeSwitch.addEventListener("toggle", () => {
-        TorSettings.bridges.enabled = bridgeSwitch.pressed;
-        TorSettings.saveToPrefs();
-        TorSettings.applySettings().finally(() => {
-          this._populateBridgeCards();
-        });
-      });
-      const bridgeDescription = prefpane.querySelector(
-        selectors.bridges.currentDescription
-      );
-      bridgeDescription.querySelector(
-        selectors.bridges.currentDescriptionText
-      ).textContent = TorStrings.settings.bridgeCurrentDescription;
-      const bridgeTemplate = prefpane.querySelector(
-        selectors.bridges.cardTemplate
-      );
-      {
-        const learnMore = bridgeTemplate.querySelector(
-          selectors.bridges.cardLearnMore
-        );
-        learnMore.setAttribute("value", TorStrings.settings.learnMore);
-        learnMore.setAttribute(
-          "href",
-          TorStrings.settings.learnMoreBridgesCardURL
-        );
-        if (TorStrings.settings.learnMoreBridgesCardURL.startsWith("about:")) {
-          learnMore.setAttribute("useoriginprincipal", "true");
-        }
-      }
-      {
-        const manualLink = bridgeTemplate.querySelector(
-          selectors.bridges.cardHeadingManualLink
-        );
-        manualLink.setAttribute("value", TorStrings.settings.whatAreThese);
-        manualLink.setAttribute(
-          "href",
-          TorStrings.settings.learnMoreBridgesCardURL
-        );
-        if (TorStrings.settings.learnMoreBridgesCardURL.startsWith("about:")) {
-          manualLink.setAttribute("useoriginprincipal", "true");
-        }
-      }
-      bridgeTemplate.querySelector(
-        selectors.bridges.cardConnectedLabel
-      ).textContent = TorStrings.settings.connectedBridge;
-      bridgeTemplate
-        .querySelector(selectors.bridges.cardCopy)
-        .setAttribute("label", TorStrings.settings.bridgeCopy);
-      bridgeTemplate.querySelector(selectors.bridges.cardShare).textContent =
-        TorStrings.settings.bridgeShare;
-      const bridgeCards = prefpane.querySelector(selectors.bridges.cards);
-      const bridgeMenu = prefpane.querySelector(selectors.bridges.cardMenu);
-
-      this._addBridgeCard = bridgeString => {
-        const card = bridgeTemplate.cloneNode(true);
-        card.removeAttribute("id");
-        const grid = card.querySelector(selectors.bridges.cardQrGrid);
-        card.addEventListener("click", e => {
-          if (
-            card.classList.contains("currently-connected") ||
-            bridgeCards.classList.contains("single-card")
-          ) {
-            return;
-          }
-          let target = e.target;
-          let apply = true;
-          while (target !== null && target !== card && apply) {
-            // Deal with mixture of "command" and "click" events
-            apply = !target.classList?.contains("stop-click");
-            target = target.parentElement;
-          }
-          if (apply) {
-            if (card.classList.toggle("expanded")) {
-              grid.classList.add("to-animate");
-              grid.style.height = `${grid.scrollHeight}px`;
-            } else {
-              // Be sure we still have the to-animate class
-              grid.classList.add("to-animate");
-              grid.style.height = "";
-            }
-          }
-        });
-        const emojis = makeBridgeId(bridgeString).map(emojiIndex => {
-          const img = document.createElement("img");
-          img.classList.add("emoji");
-          // Image is set in _updateBridgeEmojis.
-          img.dataset.emojiIndex = emojiIndex;
-          return img;
-        });
-        const idString = TorStrings.settings.bridgeId;
-        const id = card.querySelector(selectors.bridges.cardId);
-        let details;
-        try {
-          details = TorParsers.parseBridgeLine(bridgeString);
-        } catch (e) {
-          console.error(`Detected invalid bridge line: ${bridgeString}`, e);
-        }
-        if (details && details.id !== undefined) {
-          card.setAttribute("data-bridge-id", details.id);
-        }
-        // TODO: properly handle "vanilla" bridges?
-        const type =
-          details && details.transport !== undefined
-            ? details.transport
-            : "vanilla";
-        for (const piece of idString.split(/(%[12]\$S)/)) {
-          if (piece == "%1$S") {
-            id.append(type);
-          } else if (piece == "%2$S") {
-            id.append(...emojis);
-          } else {
-            id.append(piece);
-          }
-        }
-        card.querySelector(selectors.bridges.cardHeadingAddr).textContent =
-          bridgeString;
-        const optionsButton = card.querySelector(selectors.bridges.cardOptions);
-        if (TorSettings.bridges.source === TorBridgeSource.BuiltIn) {
-          optionsButton.setAttribute("hidden", "true");
-        } else {
-          // Cloning the menupopup element does not work as expected.
-          // Therefore, we use only one, and just before opening it, we remove
-          // its previous items, and add the ones relative to the bridge whose
-          // button has been pressed.
-          optionsButton.addEventListener("click", () => {
-            const menuItem = document.createXULElement("menuitem");
-            menuItem.setAttribute("label", TorStrings.settings.remove);
-            menuItem.classList.add("menuitem-iconic");
-            menuItem.image = "chrome://global/skin/icons/delete.svg";
-            menuItem.addEventListener("command", e => {
-              const strings = TorSettings.bridges.bridge_strings;
-              const index = strings.indexOf(bridgeString);
-              if (index !== -1) {
-                strings.splice(index, 1);
-              }
-              TorSettings.bridges.enabled =
-                bridgeSwitch.pressed && !!strings.length;
-              TorSettings.bridges.bridge_strings = strings.join("\n");
-              TorSettings.saveToPrefs();
-              TorSettings.applySettings().finally(() => {
-                this._populateBridgeCards();
-              });
-            });
-            if (bridgeMenu.firstChild) {
-              bridgeMenu.firstChild.remove();
-            }
-            bridgeMenu.append(menuItem);
-            bridgeMenu.openPopup(optionsButton, {
-              position: "bottomleft topleft",
-            });
-          });
-        }
-        const bridgeAddr = card.querySelector(selectors.bridges.cardAddr);
-        bridgeAddr.setAttribute("value", bridgeString);
-        const bridgeCopy = card.querySelector(selectors.bridges.cardCopy);
-        let restoreTimeout = null;
-        bridgeCopy.addEventListener("command", e => {
-          this.onCopyBridgeAddress(bridgeAddr);
-          const label = bridgeCopy.querySelector("label");
-          label.setAttribute("value", TorStrings.settings.copied);
-          bridgeCopy.classList.add("primary");
-
-          const RESTORE_TIME = 1200;
-          if (restoreTimeout !== null) {
-            clearTimeout(restoreTimeout);
-          }
-          restoreTimeout = setTimeout(() => {
-            label.setAttribute("value", TorStrings.settings.bridgeCopy);
-            bridgeCopy.classList.remove("primary");
-            restoreTimeout = null;
-          }, RESTORE_TIME);
-        });
-        if (details?.id && details.id === this._currentBridgeId) {
-          card.classList.add("currently-connected");
-          bridgeCards.prepend(card);
-        } else {
-          bridgeCards.append(card);
-        }
-        // Add the QR only after appending the card, to have the computed style
-        try {
-          const container = card.querySelector(selectors.bridges.cardQr);
-          const style = getComputedStyle(container);
-          const width = style.width.substring(0, style.width.length - 2);
-          const height = style.height.substring(0, style.height.length - 2);
-          new QRCode(container, {
-            text: bridgeString,
-            width,
-            height,
-            colorDark: style.color,
-            colorLight: style.backgroundColor,
-            document,
-          });
-          container.parentElement.addEventListener("click", () => {
-            this.onShowQr(bridgeString);
-          });
-        } catch (err) {
-          // TODO: Add a generic image in case of errors such as code overflow.
-          // It should never happen with correct codes, but after all this
-          // content can be generated by users...
-          console.error("Could not generate the QR code for the bridge:", err);
-        }
-      };
-      this._checkBridgeCardsHeight = () => {
-        for (const card of bridgeCards.children) {
-          // Expanded cards have the height set manually to their details for
-          // the CSS animation. However, when resizing the window, we may need
-          // to adjust their height.
-          if (
-            card.classList.contains("expanded") ||
-            card.classList.contains("currently-connected")
-          ) {
-            const grid = card.querySelector(selectors.bridges.cardQrGrid);
-            // Reset it first, to avoid having a height that is higher than
-            // strictly needed. Also, remove the to-animate class, because the
-            // animation interferes with this process!
-            grid.classList.remove("to-animate");
-            grid.style.height = "";
-            grid.style.height = `${grid.scrollHeight}px`;
-          }
-        }
-      };
-      this._currentBridgesExpanded = false;
-      const showAll = prefpane.querySelector(selectors.bridges.showAll);
-      showAll.setAttribute("label", TorStrings.settings.bridgeShowAll);
-      showAll.addEventListener("command", () => {
-        this._currentBridgesExpanded = !this._currentBridgesExpanded;
-        this._populateBridgeCards();
-        if (!this._currentBridgesExpanded) {
-          bridgeSwitch.scrollIntoView({ behavior: "smooth" });
-        }
-      });
-      const removeAll = prefpane.querySelector(selectors.bridges.removeAll);
-      removeAll.setAttribute("label", TorStrings.settings.bridgeRemoveAll);
-      removeAll.addEventListener("command", () => {
-        this._confirmBridgeRemoval();
-      });
-      this._populateBridgeCards = () => {
-        const collapseThreshold = 4;
-
-        const newStrings = new Set(TorSettings.bridges.bridge_strings);
-        const numBridges = newStrings.size;
-        const noBridges = !numBridges;
-        bridgeHeader.hidden = noBridges;
-        bridgeDescription.hidden = noBridges;
-        bridgeControls.hidden = noBridges;
-        bridgeCards.hidden = noBridges;
-        if (noBridges) {
-          showAll.hidden = true;
-          removeAll.hidden = true;
-          bridgeCards.textContent = "";
-          return;
-        }
-        // Changing the pressed property on moz-toggle should not trigger its
-        // "toggle" event.
-        bridgeSwitch.pressed = TorSettings.bridges.enabled;
-        bridgeCards.classList.toggle("disabled", !TorSettings.bridges.enabled);
-        bridgeCards.classList.toggle("single-card", numBridges === 1);
-
-        let shownCards = 0;
-        const toShow = this._currentBridgesExpanded
-          ? numBridges
-          : collapseThreshold;
-
-        // Do not remove all the old cards, because it makes scrollbar "jump"
-        const currentCards = bridgeCards.querySelectorAll(
-          selectors.bridges.card
-        );
-        for (const card of currentCards) {
-          const string = card.querySelector(selectors.bridges.cardAddr).value;
-          const hadString = newStrings.delete(string);
-          if (!hadString || shownCards == toShow) {
-            card.remove();
-          } else {
-            shownCards++;
-          }
-        }
-
-        // Add only the new strings that remained in the set
-        for (const bridge of newStrings) {
-          if (shownCards >= toShow) {
-            if (!this._currentBridgeId) {
-              break;
-            } else if (!bridge.includes(this._currentBridgeId)) {
-              continue;
-            }
-          }
-          this._addBridgeCard(bridge);
-          shownCards++;
-        }
-
-        // If we know the connected bridge, we may have added more than the ones
-        // we should actually show (but the connected ones have been prepended,
-        // if needed). So, remove any exceeding ones.
-        while (shownCards > toShow) {
-          bridgeCards.lastElementChild.remove();
-          shownCards--;
-        }
-
-        // Newly added emojis.
-        this._updateBridgeEmojis();
-
-        // And finally update the buttons
-        removeAll.hidden = false;
-        showAll.classList.toggle("primary", TorSettings.bridges.enabled);
-        if (numBridges > collapseThreshold) {
-          showAll.hidden = false;
-          showAll.setAttribute(
-            "aria-expanded",
-            // Boolean value gets converted to string "true" or "false".
-            this._currentBridgesExpanded
-          );
-          showAll.setAttribute(
-            "label",
-            this._currentBridgesExpanded
-              ? TorStrings.settings.bridgeShowFewer
-              : TorStrings.settings.bridgeShowAll
-          );
-          // We do not want both collapsed and disabled at the same time,
-          // because we use collapsed only to display a gradient on the list.
-          bridgeCards.classList.toggle(
-            "list-collapsed",
-            !this._currentBridgesExpanded && TorSettings.bridges.enabled
-          );
-        } else {
-          // NOTE: We do not expect the showAll button to have focus when we
-          // hide it since we do not expect `numBridges` to decrease whilst
-          // this button is focused.
-          showAll.hidden = true;
-          bridgeCards.classList.remove("list-collapsed");
-        }
-      };
-      this._populateBridgeCards();
-      this._updateConnectedBridges = () => {
-        for (const card of bridgeCards.querySelectorAll(
-          ".currently-connected"
-        )) {
-          card.classList.remove("currently-connected");
-          card.querySelector(selectors.bridges.cardQrGrid).style.height = "";
-        }
-        if (!this._currentBridgeId) {
-          return;
-        }
-        // Make sure we have the connected bridge in the list
-        this._populateBridgeCards();
-        // At the moment, IDs do not have to be unique (and it is a concrete
-        // case also with built-in bridges!). E.g., one line for the IPv4
-        // address and one for the IPv6 address, so use querySelectorAll
-        const cards = bridgeCards.querySelectorAll(
-          `[data-bridge-id="${this._currentBridgeId}"]`
-        );
-        for (const card of cards) {
-          card.classList.add("currently-connected");
-        }
-        const placeholder = document.createElement("span");
-        bridgeCards.prepend(placeholder);
-        placeholder.replaceWith(...cards);
-        this._checkBridgeCardsHeight();
-      };
-      this._checkConnectedBridge = async () => {
-        // TODO: We could make sure TorSettings is in sync by monitoring also
-        // changes of settings. At that point, we could query it, instead of
-        // doing a query over the control port.
-        let bridge = null;
-        try {
-          const provider = await TorProviderBuilder.build();
-          bridge = provider.currentBridge;
-        } catch (e) {
-          console.warn("Could not get current bridge", e);
-        }
-        if (bridge?.fingerprint !== this._currentBridgeId) {
-          this._currentBridgeId = bridge?.fingerprint ?? null;
-          this._updateConnectedBridges();
-        }
-      };
-      this._checkConnectedBridge();
-
       // Add a new bridge
       prefpane.querySelector(selectors.bridges.addHeader).textContent =
         TorStrings.settings.bridgeAdd;
@@ -804,34 +395,6 @@ const gConnectionPane = (function () {
         });
       }
 
-      this._confirmBridgeRemoval = () => {
-        const aParentWindow =
-          Services.wm.getMostRecentWindow("navigator:browser");
-
-        const ps = Services.prompt;
-        const btnFlags =
-          ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING +
-          ps.BUTTON_POS_0_DEFAULT +
-          ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL;
-
-        const notUsed = { value: false };
-        const btnIndex = ps.confirmEx(
-          aParentWindow,
-          TorStrings.settings.bridgeRemoveAllDialogTitle,
-          TorStrings.settings.bridgeRemoveAllDialogDescription,
-          btnFlags,
-          TorStrings.settings.remove,
-          null,
-          null,
-          null,
-          notUsed
-        );
-
-        if (btnIndex === 0) {
-          this.onRemoveAllBridges();
-        }
-      };
-
       // Advanced setup
       prefpane.querySelector(selectors.advanced.header).innerText =
         TorStrings.settings.advancedHeading;
@@ -862,8 +425,6 @@ const gConnectionPane = (function () {
       });
 
       Services.obs.addObserver(this, TorConnectTopics.StateChange);
-      Services.obs.addObserver(this, TorProviderTopics.BridgeChanged);
-      Services.obs.addObserver(this, "intl:app-locales-changed");
     },
 
     init() {
@@ -874,21 +435,12 @@ const gConnectionPane = (function () {
         gConnectionPane.uninit();
       };
       window.addEventListener("unload", onUnload);
-
-      window.addEventListener("resize", () => {
-        this._checkBridgeCardsHeight();
-      });
-      window.addEventListener("hashchange", () => {
-        this._checkBridgeCardsHeight();
-      });
     },
 
     uninit() {
       // unregister our observer topics
       Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
       Services.obs.removeObserver(this, TorConnectTopics.StateChange);
-      Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
-      Services.obs.removeObserver(this, "intl:app-locales-changed");
     },
 
     // whether the page should be present in about:preferences
@@ -916,64 +468,6 @@ const gConnectionPane = (function () {
           this.onStateChange();
           break;
         }
-        case TorProviderTopics.BridgeChanged: {
-          this._checkConnectedBridge();
-          break;
-        }
-        case "intl:app-locales-changed": {
-          this._updateBridgeEmojis();
-          break;
-        }
-      }
-    },
-
-    /**
-     * Update the bridge emojis to show their corresponding emoji with an
-     * annotation that matches the current locale.
-     */
-    async _updateBridgeEmojis() {
-      if (!this._emojiPromise) {
-        this._emojiPromise = Promise.all([
-          fetch(
-            "chrome://browser/content/torpreferences/bridgemoji/bridge-emojis.json"
-          ).then(response => response.json()),
-          fetch(
-            "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
-          ).then(response => response.json()),
-        ]);
-      }
-      const [emojiList, emojiAnnotations] = await this._emojiPromise;
-      let langCode;
-      // Find the first desired locale we have annotations for.
-      // Add "en" as a fallback.
-      for (const bcp47 of [...Services.locale.appLocalesAsBCP47, "en"]) {
-        langCode = bcp47;
-        if (langCode in emojiAnnotations) {
-          break;
-        }
-        // Remove everything after the dash, if there is one.
-        langCode = bcp47.replace(/-.*/, "");
-        if (langCode in emojiAnnotations) {
-          break;
-        }
-      }
-      for (const img of document.querySelectorAll(".emoji[data-emoji-index]")) {
-        const emoji = emojiList[img.dataset.emojiIndex];
-        if (!emoji) {
-          // Unexpected.
-          console.error(`No emoji for index ${img.dataset.emojiIndex}`);
-          img.removeAttribute("src");
-          img.removeAttribute("alt");
-          img.removeAttribute("title");
-          continue;
-        }
-        const cp = emoji.codePointAt(0).toString(16);
-        img.setAttribute(
-          "src",
-          `chrome://browser/content/torpreferences/bridgemoji/svgs/${cp}.svg`
-        );
-        img.setAttribute("alt", emoji);
-        img.setAttribute("title", emojiAnnotations[langCode][cp]);
       }
     },
 
@@ -999,31 +493,6 @@ const gConnectionPane = (function () {
     onStateChange() {
       this._populateStatus();
       this._showAutoconfiguration();
-      this._populateBridgeCards();
-    },
-
-    onShowQr(bridgeString) {
-      const dialog = new BridgeQrDialog();
-      dialog.openDialog(gSubDialog, bridgeString);
-    },
-
-    onCopyBridgeAddress(addressElem) {
-      const clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
-        Ci.nsIClipboardHelper
-      );
-      clipboard.copyString(addressElem.value);
-    },
-
-    onRemoveAllBridges() {
-      TorSettings.bridges.enabled = false;
-      TorSettings.bridges.bridge_strings = "";
-      if (TorSettings.bridges.source === TorBridgeSource.BuiltIn) {
-        TorSettings.bridges.builtin_type = "";
-      }
-      TorSettings.saveToPrefs();
-      TorSettings.applySettings().finally(() => {
-        this._populateBridgeCards();
-      });
     },
 
     /**
@@ -1042,8 +511,6 @@ const gConnectionPane = (function () {
       } catch (e) {
         console.error("Applying settings failed", e);
       }
-
-      this._populateBridgeCards();
 
       if (!connect) {
         return;
