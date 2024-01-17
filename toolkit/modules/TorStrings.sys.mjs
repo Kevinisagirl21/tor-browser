@@ -3,8 +3,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"use strict";
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
@@ -86,7 +84,6 @@ const Loader = {
       statusTorNotConnected: "Not Connected",
       statusTorBlocked: "Potentially Blocked",
       learnMore: "Learn more",
-      whatAreThese: "What are these?",
       // Quickstart
       quickstartHeading: "Quickstart",
       quickstartDescription:
@@ -101,22 +98,10 @@ const Loader = {
       bridgeLocationFrequent: "Frequently selected locations",
       bridgeLocationOther: "Other locations",
       bridgeChooseForMe: "Choose a Bridge For Me…",
-      bridgeCurrent: "Your Current Bridges",
-      bridgeCurrentDescription:
-        "You can keep one or more bridges saved, and Tor will choose which one to use when you connect. Tor will automatically switch to use another bridge when needed.",
-      bridgeId: "%1$S bridge: %2$S",
       currentBridge: "Current bridge",
-      connectedBridge: "Connected",
       remove: "Remove",
       bridgeDisableBuiltIn: "Disable built-in bridges",
-      bridgeShare:
-        "Share this bridge using the QR code or by copying its address:",
-      bridgeCopy: "Copy Bridge Address",
       copied: "Copied!",
-      bridgeShowAll: "Show All Bridges",
-      bridgeShowFewer: "Show Fewer Bridges",
-      allBridgesEnabled: "Use current bridges",
-      bridgeRemoveAll: "Remove All Bridges",
       bridgeRemoveAllDialogTitle: "Remove all bridges?",
       bridgeRemoveAllDialogDescription:
         "If these bridges were received from torproject.org or added manually, this action cannot be undone",
@@ -199,8 +184,6 @@ const Loader = {
       ...tsb.getStrings(strings),
       learnMoreTorBrowserURL: "about:manual#about",
       learnMoreBridgesURL: "about:manual#bridges",
-      learnMoreBridgesCardURL: "about:manual#bridges_bridge-moji",
-      learnMoreCircumventionURL: "about:manual#circumvention",
     };
   } /* Tor Network Settings Strings */,
 
