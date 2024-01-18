@@ -9,6 +9,8 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-connection-dialog" buttons="accept,cancel">
+    <script src="chrome://browser/content/torpreferences/connectionSettingsDialog.js" />
+
     <html:h3 id="torPreferences-connection-header">&#8203;</html:h3>
     <!-- Local Proxy -->
     <checkbox id="torPreferences-connection-toggleProxy" label="&#8203;" />
@@ -78,16 +80,5 @@
         />
       </hbox>
     </box>
-    <script type="application/javascript">
-      <![CDATA[
-          "use strict";
-
-          let connectionSettingsDialog = window.arguments[0];
-          document.addEventListener("DOMContentLoaded", () => {
-            let dialog = document.getElementById("torPreferences-connection-dialog");
-            connectionSettingsDialog.init(window, dialog);
-          });
-        ]]>
-    </script>
   </dialog>
 </window>

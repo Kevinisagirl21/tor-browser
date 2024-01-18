@@ -9,6 +9,8 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-provideBridge-dialog" buttons="accept,cancel">
+    <script src="chrome://browser/content/torpreferences/provideBridgeDialog.js" />
+
     <description>
       <html:div id="torPreferences-provideBridge-description"
         >&#8203;<br />&#8203;</html:div
@@ -19,16 +21,5 @@
       multiline="true"
       rows="3"
     />
-    <script type="application/javascript">
-      <![CDATA[
-          "use strict";
-
-          let provideBridgeDialog = window.arguments[0];
-          document.addEventListener("DOMContentLoaded", () => {
-            let dialog = document.getElementById("torPreferences-provideBridge-dialog");
-            provideBridgeDialog.init(window, dialog);
-          });
-        ]]>
-    </script>
   </dialog>
 </window>

@@ -1,44 +1,39 @@
-import { BridgeDB } from "resource://gre/modules/BridgeDB.sys.mjs";
-import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
+"use strict";
 
-import {
-  TorConnect,
-  TorConnectTopics,
-} from "resource://gre/modules/TorConnect.sys.mjs";
+const { BridgeDB } = ChromeUtils.importESModule(
+  "resource://gre/modules/BridgeDB.sys.mjs"
+);
+const { TorStrings } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorStrings.sys.mjs"
+);
 
-export class RequestBridgeDialog {
-  constructor(onSubmit) {
-    this.onSubmit = onSubmit;
-    this._dialog = null;
-    this._submitButton = null;
-    this._dialogHeader = null;
-    this._captchaImage = null;
-    this._captchaEntryTextbox = null;
-    this._captchaRefreshButton = null;
-    this._incorrectCaptchaHbox = null;
-    this._incorrectCaptchaLabel = null;
-  }
+const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorConnect.sys.mjs"
+);
 
-  static get selectors() {
-    return {
-      dialogHeader: "h3#torPreferences-requestBridge-header",
-      captchaImage: "image#torPreferences-requestBridge-captchaImage",
-      captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
-      refreshCaptchaButton:
-        "button#torPreferences-requestBridge-refreshCaptchaButton",
-      incorrectCaptchaHbox:
-        "hbox#torPreferences-requestBridge-incorrectCaptchaHbox",
-      incorrectCaptchaLabel:
-        "label#torPreferences-requestBridge-incorrectCaptchaError",
-    };
-  }
+const gRequestBridgeDialog = {
+  selectors: {
+    dialogHeader: "h3#torPreferences-requestBridge-header",
+    captchaImage: "image#torPreferences-requestBridge-captchaImage",
+    captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
+    refreshCaptchaButton:
+      "button#torPreferences-requestBridge-refreshCaptchaButton",
+    incorrectCaptchaHbox:
+      "hbox#torPreferences-requestBridge-incorrectCaptchaHbox",
+    incorrectCaptchaLabel:
+      "label#torPreferences-requestBridge-incorrectCaptchaError",
+  },
 
-  _populateXUL(window, dialog) {
-    const selectors = RequestBridgeDialog.selectors;
+  init() {
+    this._result = window.arguments[0];
 
-    this._dialog = dialog;
-    const dialogWin = dialog.parentElement;
-    dialogWin.setAttribute(
+    const selectors = this.selectors;
+
+    this._dialog = document.getElementById(
+      "torPreferences-requestBridge-dialog"
+    );
+
+    document.documentElement.setAttribute(
       "title",
       TorStrings.settings.requestBridgeDialogTitle
     );
@@ -104,16 +99,24 @@ export class RequestBridgeDialog {
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
     this.onAcceptStateChange();
-  }
+  },
+
+  uninit() {
+    BridgeDB.close();
+    // Unregister our observer topics.
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+  },
 
   onAcceptStateChange() {
+    const connect = TorConnect.canBeginBootstrap;
+    this._result.connect = connect;
     this._submitButton.setAttribute(
       "label",
-      TorConnect.canBeginBootstrap
+      connect
         ? TorStrings.settings.bridgeButtonConnect
         : TorStrings.settings.submitCaptcha
     );
-  }
+  },
 
   observe(subject, topic, data) {
     switch (topic) {
@@ -121,7 +124,7 @@ export class RequestBridgeDialog {
         this.onAcceptStateChange();
         break;
     }
-  }
+  },
 
   _setcaptchaImage(uri) {
     if (uri != this._captchaImage.src) {
@@ -131,27 +134,17 @@ export class RequestBridgeDialog {
       this._captchaEntryTextbox.focus();
       this._captchaEntryTextbox.select();
     }
-  }
+  },
 
   _setUIDisabled(disabled) {
     this._submitButton.disabled = this._captchaGuessIsEmpty() || disabled;
     this._captchaEntryTextbox.disabled = disabled;
     this._captchaRefreshButton.disabled = disabled;
-  }
+  },
 
   _captchaGuessIsEmpty() {
     return this._captchaEntryTextbox.value == "";
-  }
-
-  init(window, dialog) {
-    this._populateXUL(window, dialog);
-  }
-
-  close() {
-    BridgeDB.close();
-    // Unregister our observer topics.
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
-  }
+  },
 
   /*
     Event Handlers
@@ -169,8 +162,9 @@ export class RequestBridgeDialog {
 
     BridgeDB.submitCaptchaGuess(captchaText)
       .then(aBridges => {
-        if (aBridges) {
-          this.onSubmit(aBridges, TorConnect.canBeginBootstrap);
+        if (aBridges && aBridges.length) {
+          this._result.accepted = true;
+          this._result.bridges = aBridges;
           this._submitButton.disabled = false;
           // This was successful, but use cancelDialog() to close, since
           // we intercept the `dialogaccept` event.
@@ -186,7 +180,7 @@ export class RequestBridgeDialog {
         this._incorrectCaptchaHbox.style.visibility = "visible";
         console.log(aError);
       });
-  }
+  },
 
   onRefreshCaptcha() {
     this._setUIDisabled(true);
@@ -198,18 +192,20 @@ export class RequestBridgeDialog {
     BridgeDB.requestNewCaptchaImage().then(uri => {
       this._setcaptchaImage(uri);
     });
-  }
+  },
+};
 
-  openDialog(gSubDialog) {
-    gSubDialog.open(
-      "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
-      {
-        features: "resizable=yes",
-        closingCallback: () => {
-          this.close();
-        },
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    gRequestBridgeDialog.init();
+    window.addEventListener(
+      "unload",
+      () => {
+        gRequestBridgeDialog.uninit();
       },
-      this
+      { once: true }
     );
-  }
-}
+  },
+  { once: true }
+);

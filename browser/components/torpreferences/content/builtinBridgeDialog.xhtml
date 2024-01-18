@@ -9,6 +9,8 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-builtinBridge-dialog" buttons="accept,cancel">
+    <script src="chrome://browser/content/torpreferences/builtinBridgeDialog.js" />
+
     <description id="torPreferences-builtinBridge-description"> </description>
     <radiogroup id="torPreferences-builtinBridge-typeSelection">
       <vbox class="builtin-bridges-option">
@@ -78,16 +80,5 @@
         </html:div>
       </vbox>
     </radiogroup>
-    <script type="application/javascript">
-      <![CDATA[
-          "use strict";
-
-          let builtinBridgeDialog = window.arguments[0];
-          document.addEventListener("DOMContentLoaded", () => {
-            let dialog = document.getElementById("torPreferences-builtinBridge-dialog");
-            builtinBridgeDialog.init(window, dialog);
-          });
-        ]]>
-    </script>
   </dialog>
 </window>
