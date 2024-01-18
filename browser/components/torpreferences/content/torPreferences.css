@@ -447,6 +447,91 @@
   fill: currentColor;
 }
 
+#tor-bridges-provider-heading {
+  font-size: 1.14em;
+  margin-block: 48px 8px;
+}
+
+#tor-bridges-provider-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  line-height: 1.8;
+  margin-block-start: 24px;
+}
+
+#tor-bridges-provider-list {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  /* 16px gap between items. */
+  gap: 16px 12px;
+  margin-block: 16px;
+}
+
+.tor-bridges-provider-item {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  justify-items: start;
+  /* No gap between the name and instruction. */
+  gap: 0 12px;
+}
+
+.tor-bridges-provider-icon {
+  width: 16px;
+  height: 16px;
+  -moz-context-properties: fill;
+  fill: var(--in-content-icon-color);
+}
+
+#tor-bridges-provider-icon-telegram {
+  content: url("chrome://browser/content/torpreferences/telegram-logo.svg");
+}
+
+#tor-bridges-provider-icon-web {
+  content: url("chrome://browser/content/torpreferences/network.svg");
+}
+
+#tor-bridges-provider-icon-email {
+  content: url("chrome://browser/skin/mail.svg");
+}
+
+.tor-bridges-provider-name {
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+.tor-bridges-provider-instruction {
+  grid-column: 2 / 3;
+}
+
+#tor-bridges-request-box {
+  /* Take up the full height in the container. */
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px;
+  background: var(--in-content-box-info-background);
+  border-radius: 4px;
+}
+
+#tor-bridges-request-box > * {
+  flex: 0 0 auto;
+}
+
+#tor-bridges-request-description {
+  margin-block: 12px 16px;
+}
+
+#tor-bridges-open-request-dialog-button {
+  margin: 0;
+  line-height: 1;
+}
+
 #torPreferences-bridges-location {
   width: 280px;
 }

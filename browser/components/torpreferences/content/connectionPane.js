@@ -1316,6 +1316,18 @@ const gBridgeSettings = {
    * @type {Element?}
    */
   _noBridgesEl: null,
+  /**
+   * The heading element for changing bridges.
+   *
+   * @type {Element?}
+   */
+  _changeHeadingEl: null,
+  /**
+   * The button for user to provide a bridge address or share code.
+   *
+   * @type {Element?}
+   */
+  _userProvideButton: null,
 
   /**
    * Initialize the bridge settings.
@@ -1344,6 +1356,47 @@ const gBridgeSettings = {
         TorSettings.bridges.enabled = this._toggleButton.pressed;
       });
     });
+
+    this._changeHeadingEl = document.getElementById(
+      "tor-bridges-change-heading"
+    );
+    this._userProvideButton = document.getElementById(
+      "tor-bridges-open-user-provide-dialog-button"
+    );
+
+    document.l10n.setAttributes(
+      document.getElementById("tor-bridges-user-provide-description"),
+      // TODO: Set a different string if we have Lox enabled.
+      "tor-bridges-add-addresses-description"
+    );
+
+    // TODO: Change to GetLoxBridges if Lox enabled, and the account is set up.
+    const telegramUserName = "GetBridgesBot";
+    const telegramInstruction = document.getElementById(
+      "tor-bridges-provider-instruction-telegram"
+    );
+    telegramInstruction.querySelector(
+      "a"
+    ).href = `https://t.me/${telegramUserName}`;
+    document.l10n.setAttributes(
+      telegramInstruction,
+      "tor-bridges-provider-telegram-instruction",
+      { telegramUserName }
+    );
+
+    document
+      .getElementById("tor-bridges-open-built-in-dialog-button")
+      .addEventListener("click", () => {
+        this._openBuiltinDialog();
+      });
+    this._userProvideButton.addEventListener("click", () => {
+      this._openUserProvideDialog(this._haveBridges ? "replace" : "add");
+    });
+    document
+      .getElementById("tor-bridges-open-request-dialog-button")
+      .addEventListener("click", () => {
+        this._openRequestDialog();
+      });
 
     Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
 
@@ -1488,6 +1541,17 @@ const gBridgeSettings = {
     // and hidden.
     this._groupEl.classList.toggle("no-bridges", !haveBridges);
     this._groupEl.classList.toggle("have-bridges", haveBridges);
+
+    document.l10n.setAttributes(
+      this._changeHeadingEl,
+      haveBridges
+        ? "tor-bridges-replace-bridges-heading"
+        : "tor-bridges-add-bridges-heading"
+    );
+    document.l10n.setAttributes(
+      this._userProvideButton,
+      haveBridges ? "tor-bridges-replace-button" : "tor-bridges-add-new-button"
+    );
   },
 
   /**
@@ -1615,9 +1679,7 @@ const gBridgeSettings = {
       "tor-bridges-options-edit-all-menu-item"
     );
     editItem.addEventListener("click", () => {
-      // TODO: move to gBridgeSettings.
-      // TODO: Change dialog title. Do not allow Lox invite.
-      gConnectionPane.onAddBridgeManually();
+      this._openUserProvideDialog("edit");
     });
 
     // TODO: Do we want a different item for built-in bridges, rather than
@@ -1687,6 +1749,138 @@ const gBridgeSettings = {
   _forceCloseBridgesMenu() {
     this._bridgesMenu.hide(null, { force: true });
   },
+
+  /**
+   * Open a bridge dialog that will change the users bridges.
+   *
+   * @param {string} url - The url of the dialog to open.
+   * @param {object?} inputData - The input data to send to the dialog window.
+   * @param {Function} onAccept - The method to call if the bridge dialog was
+   *   accepted by the user. This will be passed a "result" object containing
+   *   data set by the dialog. This should return a promise that resolves once
+   *   the bridge settings have been set, or null if the settings have not
+   *   been applied.
+   */
+  _openDialog(url, inputData, onAccept) {
+    const result = { accepted: false, connect: false };
+    let savedSettings = null;
+    gSubDialog.open(
+      url,
+      {
+        features: "resizable=yes",
+        closingCallback: () => {
+          if (!result.accepted) {
+            return;
+          }
+          savedSettings = onAccept(result);
+          if (!savedSettings) {
+            // No change in settings.
+            return;
+          }
+          if (!result.connect) {
+            // Do not open about:torconnect.
+            return;
+          }
+
+          // Wait until the settings are applied before bootstrapping.
+          savedSettings.then(() => {
+            // The bridge dialog button is "connect" when Tor is not
+            // bootstrapped, so do the connect.
+
+            // Start Bootstrapping, which should use the configured bridges.
+            // NOTE: We do this regardless of any previous TorConnect Error.
+            if (TorConnect.canBeginBootstrap) {
+              TorConnect.beginBootstrap();
+            }
+            // Open "about:torconnect".
+            // FIXME: If there has been a previous bootstrapping error then
+            // "about:torconnect" will be trying to get the user to use
+            // AutoBootstrapping. It is not set up to handle a forced direct
+            // entry to plain Bootstrapping from this dialog so the UI will
+            // not be aligned. In particular the
+            // AboutTorConnect.uiState.bootstrapCause will be aligned to
+            // whatever was shown previously in "about:torconnect" instead.
+            TorConnect.openTorConnect();
+          });
+        },
+        // closedCallback should be called after gSubDialog has already
+        // re-assigned focus back to the document.
+        closedCallback: () => {
+          if (!savedSettings) {
+            return;
+          }
+          // Wait until the settings have changed, so that the UI could
+          // respond, then move focus.
+          savedSettings.then(() => gBridgeSettings.takeFocus());
+        },
+      },
+      result,
+      inputData
+    );
+  },
+
+  /**
+   * Open the built-in bridge dialog.
+   */
+  _openBuiltinDialog() {
+    this._openDialog(
+      "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
+      null,
+      result => {
+        if (!result.type) {
+          return null;
+        }
+        return setTorSettings(() => {
+          TorSettings.bridges.enabled = true;
+          TorSettings.bridges.source = TorBridgeSource.BuiltIn;
+          TorSettings.bridges.builtin_type = result.type;
+        });
+      }
+    );
+  },
+
+  /*
+   * Open the request bridge dialog.
+   */
+  _openRequestDialog() {
+    this._openDialog(
+      "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
+      null,
+      result => {
+        if (!result.bridges?.length) {
+          return null;
+        }
+        return setTorSettings(() => {
+          TorSettings.bridges.enabled = true;
+          TorSettings.bridges.source = TorBridgeSource.BridgeDB;
+          TorSettings.bridges.bridge_strings = result.bridges.join("\n");
+        });
+      }
+    );
+  },
+
+  /**
+   * Open the user provide dialog.
+   *
+   * @param {string} mode - The mode to open the dialog in: "add", "replace" or
+   *   "edit".
+   */
+  _openUserProvideDialog(mode) {
+    this._openDialog(
+      "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
+      { mode },
+      result => {
+        if (!result.bridgeStrings) {
+          return null;
+        }
+        return setTorSettings(() => {
+          TorSettings.bridges.enabled = true;
+          TorSettings.bridges.source = TorBridgeSource.UserProvided;
+          TorSettings.bridges.bridge_strings = result.bridgeStrings;
+        });
+      }
+    );
+  },
 };
 
 /*
@@ -1719,13 +1913,6 @@ const gConnectionPane = (function () {
       location: "#torPreferences-bridges-location",
       locationEntries: "#torPreferences-bridges-locationEntries",
       chooseForMe: "#torPreferences-bridges-buttonChooseBridgeForMe",
-      addHeader: "#torPreferences-addBridge-header",
-      addBuiltinLabel: "#torPreferences-addBridge-labelBuiltinBridge",
-      addBuiltinButton: "#torPreferences-addBridge-buttonBuiltinBridge",
-      requestLabel: "#torPreferences-addBridge-labelRequestBridge",
-      requestButton: "#torPreferences-addBridge-buttonRequestBridge",
-      enterLabel: "#torPreferences-addBridge-labelEnterBridge",
-      enterButton: "#torPreferences-addBridge-buttonEnterBridge",
     },
     advanced: {
       header: "h1#torPreferences-advanced-header",
@@ -1985,39 +2172,6 @@ const gConnectionPane = (function () {
         this._showAutoconfiguration();
       }
 
-      // Add a new bridge
-      prefpane.querySelector(selectors.bridges.addHeader).textContent =
-        TorStrings.settings.bridgeAdd;
-      prefpane.querySelector(selectors.bridges.addBuiltinLabel).textContent =
-        TorStrings.settings.bridgeSelectBrowserBuiltin;
-      {
-        const button = prefpane.querySelector(
-          selectors.bridges.addBuiltinButton
-        );
-        button.setAttribute("label", TorStrings.settings.bridgeSelectBuiltin);
-        button.addEventListener("command", e => {
-          this.onAddBuiltinBridge();
-        });
-      }
-      prefpane.querySelector(selectors.bridges.requestLabel).textContent =
-        TorStrings.settings.bridgeRequestFromTorProject;
-      {
-        const button = prefpane.querySelector(selectors.bridges.requestButton);
-        button.setAttribute("label", TorStrings.settings.bridgeRequest);
-        button.addEventListener("command", e => {
-          this.onRequestBridge();
-        });
-      }
-      prefpane.querySelector(selectors.bridges.enterLabel).textContent =
-        TorStrings.settings.bridgeEnterKnown;
-      {
-        const button = prefpane.querySelector(selectors.bridges.enterButton);
-        button.setAttribute("label", TorStrings.settings.bridgeAddManually);
-        button.addEventListener("command", e => {
-          this.onAddBridgeManually();
-        });
-      }
-
       // Advanced setup
       prefpane.querySelector(selectors.advanced.header).innerText =
         TorStrings.settings.advancedHeading;
@@ -2120,122 +2274,6 @@ const gConnectionPane = (function () {
     onStateChange() {
       this._populateStatus();
       this._showAutoconfiguration();
-    },
-
-    /**
-     * Open a bridge dialog that will change the users bridges.
-     *
-     * @param {string} url - The url of the dialog to open.
-     * @param {Function} onAccept - The method to call if the bridge dialog was
-     *   accepted by the user. This will be passed a "result" object containing
-     *   data set by the dialog. This should return a promise that resolves once
-     *   the bridge settings have been set, or null if the settings have not
-     *   been applied.
-     */
-    openBridgeDialog(url, onAccept) {
-      const result = { accepted: false, connect: false };
-      let savedSettings = null;
-      gSubDialog.open(
-        url,
-        {
-          features: "resizable=yes",
-          closingCallback: () => {
-            if (!result.accepted) {
-              return;
-            }
-            savedSettings = onAccept(result);
-            if (!savedSettings) {
-              // No change in settings.
-              return;
-            }
-            if (!result.connect) {
-              // Do not open about:torconnect.
-              return;
-            }
-
-            // Wait until the settings are applied before bootstrapping.
-            savedSettings.then(() => {
-              // The bridge dialog button is "connect" when Tor is not
-              // bootstrapped, so do the connect.
-
-              // Start Bootstrapping, which should use the configured bridges.
-              // NOTE: We do this regardless of any previous TorConnect Error.
-              if (TorConnect.canBeginBootstrap) {
-                TorConnect.beginBootstrap();
-              }
-              // Open "about:torconnect".
-              // FIXME: If there has been a previous bootstrapping error then
-              // "about:torconnect" will be trying to get the user to use
-              // AutoBootstrapping. It is not set up to handle a forced direct
-              // entry to plain Bootstrapping from this dialog so the UI will
-              // not be aligned. In particular the
-              // AboutTorConnect.uiState.bootstrapCause will be aligned to
-              // whatever was shown previously in "about:torconnect" instead.
-              TorConnect.openTorConnect();
-            });
-          },
-          // closedCallback should be called after gSubDialog has already
-          // re-assigned focus back to the document.
-          closedCallback: () => {
-            if (!savedSettings) {
-              return;
-            }
-            // Wait until the settings have changed, so that the UI could
-            // respond, then move focus.
-            savedSettings.then(() => gCurrentBridgesArea.takeFocus());
-          },
-        },
-        result
-      );
-    },
-
-    onAddBuiltinBridge() {
-      this.openBridgeDialog(
-        "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
-        result => {
-          if (!result.type) {
-            return null;
-          }
-          return setTorSettings(() => {
-            TorSettings.bridges.enabled = true;
-            TorSettings.bridges.source = TorBridgeSource.BuiltIn;
-            TorSettings.bridges.builtin_type = result.type;
-          });
-        }
-      );
-    },
-
-    // called when the request bridge button is activated
-    onRequestBridge() {
-      this.openBridgeDialog(
-        "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
-        result => {
-          if (!result.bridges?.length) {
-            return null;
-          }
-          return setTorSettings(() => {
-            TorSettings.bridges.enabled = true;
-            TorSettings.bridges.source = TorBridgeSource.BridgeDB;
-            TorSettings.bridges.bridge_strings = result.bridges.join("\n");
-          });
-        }
-      );
-    },
-
-    onAddBridgeManually() {
-      this.openBridgeDialog(
-        "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
-        result => {
-          if (!result.bridgeStrings) {
-            return null;
-          }
-          return setTorSettings(() => {
-            TorSettings.bridges.enabled = true;
-            TorSettings.bridges.source = TorBridgeSource.UserProvided;
-            TorSettings.bridges.bridge_strings = result.bridgeStrings;
-          });
-        }
-      );
     },
 
     onAdvancedSettings() {

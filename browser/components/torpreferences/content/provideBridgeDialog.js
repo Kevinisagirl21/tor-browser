@@ -15,11 +15,24 @@ const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
 const gProvideBridgeDialog = {
   init() {
     this._result = window.arguments[0];
+    const mode = window.arguments[1].mode;
 
-    document.documentElement.setAttribute(
-      "title",
-      TorStrings.settings.provideBridgeTitleAdd
-    );
+    let titleId;
+    switch (mode) {
+      case "edit":
+        titleId = "user-provide-bridge-dialog-edit-title";
+        break;
+      case "add":
+        titleId = "user-provide-bridge-dialog-add-title";
+        break;
+      case "replace":
+      default:
+        titleId = "user-provide-bridge-dialog-replace-title";
+        break;
+    }
+
+    document.l10n.setAttributes(document.documentElement, titleId);
+
     const learnMore = document.createXULElement("label");
     learnMore.className = "learnMore text-link";
     learnMore.setAttribute("is", "text-link");

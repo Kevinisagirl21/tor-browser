@@ -293,28 +293,102 @@
         ></html:button>
       </html:div>
     </html:div>
-    <html:h2 id="torPreferences-addBridge-header"></html:h2>
+    <html:h2 id="tor-bridges-change-heading"></html:h2>
     <hbox align="center">
-      <label id="torPreferences-addBridge-labelBuiltinBridge" flex="1" />
-      <button
-        id="torPreferences-addBridge-buttonBuiltinBridge"
-        class="accessory-button"
+      <description
+        flex="1"
+        data-l10n-id="tor-bridges-select-built-in-description"
       />
+      <html:button
+        id="tor-bridges-open-built-in-dialog-button"
+        class="accessory-button"
+        data-l10n-id="tor-bridges-select-built-in-button"
+      ></html:button>
     </hbox>
     <hbox align="center">
-      <label id="torPreferences-addBridge-labelRequestBridge" flex="1" />
-      <button
-        id="torPreferences-addBridge-buttonRequestBridge"
+      <description id="tor-bridges-user-provide-description" flex="1" />
+      <html:button
+        id="tor-bridges-open-user-provide-dialog-button"
         class="accessory-button"
-      />
+      ></html:button>
     </hbox>
-    <hbox align="center">
-      <label id="torPreferences-addBridge-labelEnterBridge" flex="1" />
-      <button
-        id="torPreferences-addBridge-buttonEnterBridge"
-        class="accessory-button"
-      />
-    </hbox>
+    <html:h3
+      id="tor-bridges-provider-heading"
+      data-l10n-id="tor-bridges-find-more-heading"
+    ></html:h3>
+    <description data-l10n-id="tor-bridges-find-more-description" />
+    <html:div id="tor-bridges-provider-area">
+      <html:ul id="tor-bridges-provider-list">
+        <html:li class="tor-bridges-provider-item">
+          <html:img
+            id="tor-bridges-provider-icon-telegram"
+            class="tor-bridges-provider-icon"
+            alt=""
+          />
+          <html:div
+            class="tor-bridges-provider-name"
+            data-l10n-id="tor-bridges-provider-telegram-name"
+          ></html:div>
+          <html:div
+            id="tor-bridges-provider-instruction-telegram"
+            class="tor-bridges-provider-instruction"
+          >
+            <html:a data-l10n-name="user"></html:a>
+          </html:div>
+        </html:li>
+        <html:li class="tor-bridges-provider-item">
+          <html:img
+            id="tor-bridges-provider-icon-web"
+            class="tor-bridges-provider-icon"
+            alt=""
+          />
+          <html:div
+            class="tor-bridges-provider-name"
+            data-l10n-id="tor-bridges-provider-web-name"
+          ></html:div>
+          <html:div
+            class="tor-bridges-provider-instruction"
+            data-l10n-id="tor-bridges-provider-web-instruction"
+            data-l10n-args='{ "url": "bridges.torproject.org" }'
+          >
+            <html:a
+              href="https://bridges.torproject.org"
+              data-l10n-name="url"
+            ></html:a>
+          </html:div>
+        </html:li>
+        <html:li class="tor-bridges-provider-item">
+          <html:img
+            id="tor-bridges-provider-icon-email"
+            class="tor-bridges-provider-icon"
+            alt=""
+          />
+          <html:div
+            class="tor-bridges-provider-name"
+            data-l10n-id="tor-bridges-provider-email-name"
+          ></html:div>
+          <html:div
+            class="tor-bridges-provider-instruction"
+            data-l10n-id="tor-bridges-provider-email-instruction"
+            data-l10n-args='{ "address": "bridges@torproject.org" }'
+          ></html:div>
+        </html:li>
+      </html:ul>
+      <html:div id="tor-bridges-request-box">
+        <html:img
+          alt=""
+          src="chrome://browser/content/torpreferences/bridge-bot.svg"
+        ></html:img>
+        <html:div
+          id="tor-bridges-request-description"
+          data-l10n-id="tor-bridges-request-from-browser"
+        ></html:div>
+        <html:button
+          id="tor-bridges-open-request-dialog-button"
+          data-l10n-id="tor-bridges-request-button"
+        ></html:button>
+      </html:div>
+    </html:div>
   </groupbox>
 
   <!-- Advanced -->
