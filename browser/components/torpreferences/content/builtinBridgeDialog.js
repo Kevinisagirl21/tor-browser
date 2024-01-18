@@ -1,38 +1,32 @@
-import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
+"use strict";
 
-import {
-  TorSettings,
-  TorBridgeSource,
-} from "resource://gre/modules/TorSettings.sys.mjs";
+const { TorStrings } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorStrings.sys.mjs"
+);
 
-import {
-  TorConnect,
-  TorConnectTopics,
-} from "resource://gre/modules/TorConnect.sys.mjs";
+const { TorSettings, TorBridgeSource } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorSettings.sys.mjs"
+);
 
-export class BuiltinBridgeDialog {
-  /**
-   * Create a new instance.
-   *
-   * @param {Function} onSubmit - A callback for when the user accepts the
-   *   dialog selection.
-   */
-  constructor(onSubmit) {
-    this.onSubmit = onSubmit;
-    this._acceptButton = null;
-    this._radioGroup = null;
-  }
+const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorConnect.sys.mjs"
+);
 
-  _populateXUL(window, dialog) {
-    const dialogWin = dialog.parentElement;
-    dialogWin.setAttribute("title", TorStrings.settings.builtinBridgeHeader);
+const gBuiltinBridgeDialog = {
+  init() {
+    this._result = window.arguments[0];
 
-    dialog.querySelector(
-      "#torPreferences-builtinBridge-description"
+    document.documentElement.setAttribute(
+      "title",
+      TorStrings.settings.builtinBridgeHeader
+    );
+
+    document.getElementById(
+      "torPreferences-builtinBridge-description"
     ).textContent = TorStrings.settings.builtinBridgeDescription2;
 
-    this._radioGroup = dialog.querySelector(
-      "#torPreferences-builtinBridge-typeSelection"
+    this._radioGroup = document.getElementById(
+      "torPreferences-builtinBridge-typeSelection"
     );
 
     const typeStrings = {
@@ -84,8 +78,12 @@ export class BuiltinBridgeDialog {
     }
 
     this._radioGroup.addEventListener("select", () => this.onSelectChange());
+
+    const dialog = document.getElementById(
+      "torPreferences-builtinBridge-dialog"
+    );
     dialog.addEventListener("dialogaccept", () => {
-      this.onSubmit(this._radioGroup.value, TorConnect.canBeginBootstrap);
+      this._result.accepted = true;
     });
 
     this._acceptButton = dialog.getButton("accept");
@@ -94,20 +92,28 @@ export class BuiltinBridgeDialog {
 
     this.onSelectChange();
     this.onAcceptStateChange();
-  }
+  },
+
+  uninit() {
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+  },
 
   onSelectChange() {
-    this._acceptButton.disabled = !this._radioGroup.value;
-  }
+    const value = this._radioGroup.value;
+    this._acceptButton.disabled = !value;
+    this._result.type = value;
+  },
 
   onAcceptStateChange() {
+    const connect = TorConnect.canBeginBootstrap;
+    this._result.connect = connect;
     this._acceptButton.setAttribute(
       "label",
-      TorConnect.canBeginBootstrap
+      connect
         ? TorStrings.settings.bridgeButtonConnect
         : TorStrings.settings.bridgeButtonAccept
     );
-  }
+  },
 
   observe(subject, topic, data) {
     switch (topic) {
@@ -115,27 +121,20 @@ export class BuiltinBridgeDialog {
         this.onAcceptStateChange();
         break;
     }
-  }
+  },
+};
 
-  init(window, aDialog) {
-    this._populateXUL(window, aDialog);
-  }
-
-  close() {
-    // Unregister our observer topics.
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
-  }
-
-  openDialog(gSubDialog) {
-    gSubDialog.open(
-      "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
-      {
-        features: "resizable=yes",
-        closingCallback: () => {
-          this.close();
-        },
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    gBuiltinBridgeDialog.init();
+    window.addEventListener(
+      "unload",
+      () => {
+        gBuiltinBridgeDialog.uninit();
       },
-      this
+      { once: true }
     );
-  }
-}
+  },
+  { once: true }
+);

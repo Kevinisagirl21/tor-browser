@@ -9,21 +9,12 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-torLog-dialog" buttons="accept,extra1">
+    <script src="chrome://browser/content/torpreferences/torLogDialog.js" />
+
     <html:textarea
       id="torPreferences-torDialog-textarea"
       multiline="true"
       readonly="true"
     />
-    <script type="application/javascript">
-      <![CDATA[
-          "use strict";
-
-          let torLogDialog = window.arguments[0];
-          document.addEventListener("DOMContentLoaded", () => {
-            let dialog = document.getElementById("torPreferences-torLog-dialog");
-            torLogDialog.init(window, dialog);
-          });
-        ]]>
-    </script>
   </dialog>
 </window>

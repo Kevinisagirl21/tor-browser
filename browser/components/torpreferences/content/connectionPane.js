@@ -24,30 +24,6 @@ const { TorProviderBuilder, TorProviderTopics } = ChromeUtils.importESModule(
 const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
   ChromeUtils.importESModule("resource://gre/modules/TorConnect.sys.mjs");
 
-const { TorLogDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/torLogDialog.mjs"
-);
-
-const { ConnectionSettingsDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/connectionSettingsDialog.mjs"
-);
-
-const { BridgeQrDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/bridgeQrDialog.mjs"
-);
-
-const { BuiltinBridgeDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/builtinBridgeDialog.mjs"
-);
-
-const { RequestBridgeDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/requestBridgeDialog.mjs"
-);
-
-const { ProvideBridgeDialog } = ChromeUtils.importESModule(
-  "chrome://browser/content/torpreferences/provideBridgeDialog.mjs"
-);
-
 const { MoatRPC } = ChromeUtils.importESModule(
   "resource://gre/modules/Moat.sys.mjs"
 );
@@ -112,6 +88,19 @@ async function getConnectedBridgeId() {
     console.warn("Could not get current bridge", e);
   }
   return bridge?.fingerprint ?? null;
+}
+
+/**
+ * Show the bridge QR to the user.
+ *
+ * @param {string} bridgeString - The string to use in the QR.
+ */
+function showBridgeQr(bridgeString) {
+  gSubDialog.open(
+    "chrome://browser/content/torpreferences/bridgeQrDialog.xhtml",
+    { features: "resizable=yes" },
+    bridgeString
+  );
 }
 
 // TODO: Instead of aria-live in the DOM, use the proposed ariaNotify
@@ -803,8 +792,7 @@ const gBridgeGrid = {
         if (!bridgeLine) {
           return;
         }
-        const dialog = new BridgeQrDialog();
-        dialog.openDialog(gSubDialog, bridgeLine);
+        showBridgeQr(bridgeLine);
       });
     row.menu
       .querySelector(".tor-bridges-options-copy-one-menu-item")
@@ -1571,8 +1559,7 @@ const gBridgeSettings = {
     if (!this._canQRBridges) {
       return;
     }
-    const dialog = new BridgeQrDialog();
-    dialog.openDialog(gSubDialog, this._bridgeStrings);
+    showBridgeQr(this._bridgeStrings);
   },
 
   /**
@@ -2136,96 +2123,133 @@ const gConnectionPane = (function () {
     },
 
     /**
-     * Save and apply settings, then optionally open about:torconnect and start
-     * bootstrapping.
+     * Open a bridge dialog that will change the users bridges.
      *
-     * @param {fucntion} changes - The changes to make.
-     * @param {boolean} connect - Whether to open about:torconnect and start
-     *   bootstrapping if possible.
+     * @param {string} url - The url of the dialog to open.
+     * @param {Function} onAccept - The method to call if the bridge dialog was
+     *   accepted by the user. This will be passed a "result" object containing
+     *   data set by the dialog. This should return a promise that resolves once
+     *   the bridge settings have been set, or null if the settings have not
+     *   been applied.
      */
-    async saveBridgeSettings(changes, connect) {
-      // TODO: Move focus into the bridge area.
-      // dialog.ownerGlobal.addEventListener("unload", () => gCurrentBridgesArea.takeFocus(), { once: true });
-      // or use closedCallback in gSubDialog.open()
-      setTorSettings(changes);
+    openBridgeDialog(url, onAccept) {
+      const result = { accepted: false, connect: false };
+      let savedSettings = null;
+      gSubDialog.open(
+        url,
+        {
+          features: "resizable=yes",
+          closingCallback: () => {
+            if (!result.accepted) {
+              return;
+            }
+            savedSettings = onAccept(result);
+            if (!savedSettings) {
+              // No change in settings.
+              return;
+            }
+            if (!result.connect) {
+              // Do not open about:torconnect.
+              return;
+            }
 
-      if (!connect) {
-        return;
-      }
+            // Wait until the settings are applied before bootstrapping.
+            savedSettings.then(() => {
+              // The bridge dialog button is "connect" when Tor is not
+              // bootstrapped, so do the connect.
 
-      // The bridge dialog button is "connect" when Tor is not bootstrapped,
-      // so do the connect.
-
-      // Start Bootstrapping, which should use the configured bridges.
-      // NOTE: We do this regardless of any previous TorConnect Error.
-      if (TorConnect.canBeginBootstrap) {
-        TorConnect.beginBootstrap();
-      }
-      // Open "about:torconnect".
-      // FIXME: If there has been a previous bootstrapping error then
-      // "about:torconnect" will be trying to get the user to use
-      // AutoBootstrapping. It is not set up to handle a forced direct
-      // entry to plain Bootstrapping from this dialog so the UI will not
-      // be aligned. In particular the
-      // AboutTorConnect.uiState.bootstrapCause will be aligned to
-      // whatever was shown previously in "about:torconnect" instead.
-      TorConnect.openTorConnect();
+              // Start Bootstrapping, which should use the configured bridges.
+              // NOTE: We do this regardless of any previous TorConnect Error.
+              if (TorConnect.canBeginBootstrap) {
+                TorConnect.beginBootstrap();
+              }
+              // Open "about:torconnect".
+              // FIXME: If there has been a previous bootstrapping error then
+              // "about:torconnect" will be trying to get the user to use
+              // AutoBootstrapping. It is not set up to handle a forced direct
+              // entry to plain Bootstrapping from this dialog so the UI will
+              // not be aligned. In particular the
+              // AboutTorConnect.uiState.bootstrapCause will be aligned to
+              // whatever was shown previously in "about:torconnect" instead.
+              TorConnect.openTorConnect();
+            });
+          },
+          // closedCallback should be called after gSubDialog has already
+          // re-assigned focus back to the document.
+          closedCallback: () => {
+            if (!savedSettings) {
+              return;
+            }
+            // Wait until the settings have changed, so that the UI could
+            // respond, then move focus.
+            savedSettings.then(() => gCurrentBridgesArea.takeFocus());
+          },
+        },
+        result
+      );
     },
 
     onAddBuiltinBridge() {
-      const builtinBridgeDialog = new BuiltinBridgeDialog(
-        (bridgeType, connect) => {
-          this.saveBridgeSettings(() => {
+      this.openBridgeDialog(
+        "chrome://browser/content/torpreferences/builtinBridgeDialog.xhtml",
+        result => {
+          if (!result.type) {
+            return null;
+          }
+          return setTorSettings(() => {
             TorSettings.bridges.enabled = true;
             TorSettings.bridges.source = TorBridgeSource.BuiltIn;
-            TorSettings.bridges.builtin_type = bridgeType;
-          }, connect);
+            TorSettings.bridges.builtin_type = result.type;
+          });
         }
       );
-      builtinBridgeDialog.openDialog(gSubDialog);
     },
 
     // called when the request bridge button is activated
     onRequestBridge() {
-      const requestBridgeDialog = new RequestBridgeDialog(
-        (aBridges, connect) => {
-          if (!aBridges.length) {
-            return;
+      this.openBridgeDialog(
+        "chrome://browser/content/torpreferences/requestBridgeDialog.xhtml",
+        result => {
+          if (!result.bridges?.length) {
+            return null;
           }
-
-          const bridgeStrings = aBridges.join("\n");
-
-          this.saveBridgeSettings(() => {
+          return setTorSettings(() => {
             TorSettings.bridges.enabled = true;
             TorSettings.bridges.source = TorBridgeSource.BridgeDB;
-            TorSettings.bridges.bridge_strings = bridgeStrings;
-          }, connect);
+            TorSettings.bridges.bridge_strings = result.bridges.join("\n");
+          });
         }
       );
-      requestBridgeDialog.openDialog(gSubDialog);
     },
 
     onAddBridgeManually() {
-      const provideBridgeDialog = new ProvideBridgeDialog(
-        (aBridgeString, connect) => {
-          this.saveBridgeSettings(() => {
+      this.openBridgeDialog(
+        "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
+        result => {
+          if (!result.bridgeStrings) {
+            return null;
+          }
+          return setTorSettings(() => {
             TorSettings.bridges.enabled = true;
             TorSettings.bridges.source = TorBridgeSource.UserProvided;
-            TorSettings.bridges.bridge_strings = aBridgeString;
-          }, connect);
+            TorSettings.bridges.bridge_strings = result.bridgeStrings;
+          });
         }
       );
-      provideBridgeDialog.openDialog(gSubDialog);
     },
 
     onAdvancedSettings() {
-      const connectionSettingsDialog = new ConnectionSettingsDialog();
-      connectionSettingsDialog.openDialog(gSubDialog);
+      gSubDialog.open(
+        "chrome://browser/content/torpreferences/connectionSettingsDialog.xhtml",
+        { features: "resizable=yes" }
+      );
     },
 
     onViewTorLogs() {
-      const torLogDialog = new TorLogDialog();
-      torLogDialog.openDialog(gSubDialog);
+      gSubDialog.open(
+        "chrome://browser/content/torpreferences/torLogDialog.xhtml",
+        { features: "resizable=yes" }
+      );
     },
   };
   return retval;

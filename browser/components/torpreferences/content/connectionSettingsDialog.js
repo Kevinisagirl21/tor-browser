@@ -1,73 +1,67 @@
-import {
-  TorSettings,
-  TorProxyType,
-} from "resource://gre/modules/TorSettings.sys.mjs";
+"use strict";
 
-import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
+const { TorSettings, TorProxyType } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorSettings.sys.mjs"
+);
 
-export class ConnectionSettingsDialog {
-  constructor() {
-    this._dialog = null;
-    this._useProxyCheckbox = null;
-    this._proxyTypeLabel = null;
-    this._proxyTypeMenulist = null;
-    this._proxyAddressLabel = null;
-    this._proxyAddressTextbox = null;
-    this._proxyPortLabel = null;
-    this._proxyPortTextbox = null;
-    this._proxyUsernameLabel = null;
-    this._proxyUsernameTextbox = null;
-    this._proxyPasswordLabel = null;
-    this._proxyPasswordTextbox = null;
-    this._useFirewallCheckbox = null;
-    this._allowedPortsLabel = null;
-    this._allowedPortsTextbox = null;
-  }
+const { TorStrings } = ChromeUtils.importESModule(
+  "resource://gre/modules/TorStrings.sys.mjs"
+);
 
-  static get selectors() {
-    return {
-      header: "#torPreferences-connection-header",
-      useProxyCheckbox: "checkbox#torPreferences-connection-toggleProxy",
-      proxyTypeLabel: "label#torPreferences-localProxy-type",
-      proxyTypeList: "menulist#torPreferences-localProxy-builtinList",
-      proxyAddressLabel: "label#torPreferences-localProxy-address",
-      proxyAddressTextbox: "input#torPreferences-localProxy-textboxAddress",
-      proxyPortLabel: "label#torPreferences-localProxy-port",
-      proxyPortTextbox: "input#torPreferences-localProxy-textboxPort",
-      proxyUsernameLabel: "label#torPreferences-localProxy-username",
-      proxyUsernameTextbox: "input#torPreferences-localProxy-textboxUsername",
-      proxyPasswordLabel: "label#torPreferences-localProxy-password",
-      proxyPasswordTextbox: "input#torPreferences-localProxy-textboxPassword",
-      useFirewallCheckbox: "checkbox#torPreferences-connection-toggleFirewall",
-      firewallAllowedPortsLabel: "label#torPreferences-connection-allowedPorts",
-      firewallAllowedPortsTextbox:
-        "input#torPreferences-connection-textboxAllowedPorts",
-    };
-  }
+const gConnectionSettingsDialog = {
+  _useProxyCheckbox: null,
+  _proxyTypeLabel: null,
+  _proxyTypeMenulist: null,
+  _proxyAddressLabel: null,
+  _proxyAddressTextbox: null,
+  _proxyPortLabel: null,
+  _proxyPortTextbox: null,
+  _proxyUsernameLabel: null,
+  _proxyUsernameTextbox: null,
+  _proxyPasswordLabel: null,
+  _proxyPasswordTextbox: null,
+  _useFirewallCheckbox: null,
+  _allowedPortsLabel: null,
+  _allowedPortsTextbox: null,
+
+  selectors: {
+    header: "#torPreferences-connection-header",
+    useProxyCheckbox: "checkbox#torPreferences-connection-toggleProxy",
+    proxyTypeLabel: "label#torPreferences-localProxy-type",
+    proxyTypeList: "menulist#torPreferences-localProxy-builtinList",
+    proxyAddressLabel: "label#torPreferences-localProxy-address",
+    proxyAddressTextbox: "input#torPreferences-localProxy-textboxAddress",
+    proxyPortLabel: "label#torPreferences-localProxy-port",
+    proxyPortTextbox: "input#torPreferences-localProxy-textboxPort",
+    proxyUsernameLabel: "label#torPreferences-localProxy-username",
+    proxyUsernameTextbox: "input#torPreferences-localProxy-textboxUsername",
+    proxyPasswordLabel: "label#torPreferences-localProxy-password",
+    proxyPasswordTextbox: "input#torPreferences-localProxy-textboxPassword",
+    useFirewallCheckbox: "checkbox#torPreferences-connection-toggleFirewall",
+    firewallAllowedPortsLabel: "label#torPreferences-connection-allowedPorts",
+    firewallAllowedPortsTextbox:
+      "input#torPreferences-connection-textboxAllowedPorts",
+  },
 
   // disables the provided list of elements
   _setElementsDisabled(elements, disabled) {
     for (let currentElement of elements) {
       currentElement.disabled = disabled;
     }
-  }
+  },
 
-  _populateXUL(window, aDialog) {
-    const selectors = ConnectionSettingsDialog.selectors;
+  init() {
+    const selectors = this.selectors;
 
-    this._dialog = aDialog;
-    const dialogWin = this._dialog.parentElement;
-    dialogWin.setAttribute(
+    document.documentElement.setAttribute(
       "title",
       TorStrings.settings.connectionSettingsDialogTitle
     );
-    this._dialog.querySelector(selectors.header).textContent =
+    document.querySelector(selectors.header).textContent =
       TorStrings.settings.connectionSettingsDialogHeader;
 
     // Local Proxy
-    this._useProxyCheckbox = this._dialog.querySelector(
-      selectors.useProxyCheckbox
-    );
+    this._useProxyCheckbox = document.querySelector(selectors.useProxyCheckbox);
     this._useProxyCheckbox.setAttribute(
       "label",
       TorStrings.settings.useLocalProxy
@@ -76,7 +70,7 @@ export class ConnectionSettingsDialog {
       const checked = this._useProxyCheckbox.checked;
       this.onToggleProxy(checked);
     });
-    this._proxyTypeLabel = this._dialog.querySelector(selectors.proxyTypeLabel);
+    this._proxyTypeLabel = document.querySelector(selectors.proxyTypeLabel);
     this._proxyTypeLabel.setAttribute("value", TorStrings.settings.proxyType);
 
     let mockProxies = [
@@ -90,9 +84,7 @@ export class ConnectionSettingsDialog {
       },
       { value: TorProxyType.HTTPS, label: TorStrings.settings.proxyTypeHTTP },
     ];
-    this._proxyTypeMenulist = this._dialog.querySelector(
-      selectors.proxyTypeList
-    );
+    this._proxyTypeMenulist = document.querySelector(selectors.proxyTypeList);
     this._proxyTypeMenulist.addEventListener("command", e => {
       const value = this._proxyTypeMenulist.value;
       this.onSelectProxyType(value);
@@ -104,14 +96,14 @@ export class ConnectionSettingsDialog {
       this._proxyTypeMenulist.querySelector("menupopup").appendChild(menuEntry);
     }
 
-    this._proxyAddressLabel = this._dialog.querySelector(
+    this._proxyAddressLabel = document.querySelector(
       selectors.proxyAddressLabel
     );
     this._proxyAddressLabel.setAttribute(
       "value",
       TorStrings.settings.proxyAddress
     );
-    this._proxyAddressTextbox = this._dialog.querySelector(
+    this._proxyAddressTextbox = document.querySelector(
       selectors.proxyAddressTextbox
     );
     this._proxyAddressTextbox.setAttribute(
@@ -129,33 +121,31 @@ export class ConnectionSettingsDialog {
         }
       }
     });
-    this._proxyPortLabel = this._dialog.querySelector(selectors.proxyPortLabel);
+    this._proxyPortLabel = document.querySelector(selectors.proxyPortLabel);
     this._proxyPortLabel.setAttribute("value", TorStrings.settings.proxyPort);
-    this._proxyPortTextbox = this._dialog.querySelector(
-      selectors.proxyPortTextbox
-    );
-    this._proxyUsernameLabel = this._dialog.querySelector(
+    this._proxyPortTextbox = document.querySelector(selectors.proxyPortTextbox);
+    this._proxyUsernameLabel = document.querySelector(
       selectors.proxyUsernameLabel
     );
     this._proxyUsernameLabel.setAttribute(
       "value",
       TorStrings.settings.proxyUsername
     );
-    this._proxyUsernameTextbox = this._dialog.querySelector(
+    this._proxyUsernameTextbox = document.querySelector(
       selectors.proxyUsernameTextbox
     );
     this._proxyUsernameTextbox.setAttribute(
       "placeholder",
       TorStrings.settings.proxyUsernamePasswordPlaceholder
     );
-    this._proxyPasswordLabel = this._dialog.querySelector(
+    this._proxyPasswordLabel = document.querySelector(
       selectors.proxyPasswordLabel
     );
     this._proxyPasswordLabel.setAttribute(
       "value",
       TorStrings.settings.proxyPassword
     );
-    this._proxyPasswordTextbox = this._dialog.querySelector(
+    this._proxyPasswordTextbox = document.querySelector(
       selectors.proxyPasswordTextbox
     );
     this._proxyPasswordTextbox.setAttribute(
@@ -174,7 +164,7 @@ export class ConnectionSettingsDialog {
     }
 
     // Local firewall
-    this._useFirewallCheckbox = this._dialog.querySelector(
+    this._useFirewallCheckbox = document.querySelector(
       selectors.useFirewallCheckbox
     );
     this._useFirewallCheckbox.setAttribute(
@@ -185,14 +175,14 @@ export class ConnectionSettingsDialog {
       const checked = this._useFirewallCheckbox.checked;
       this.onToggleFirewall(checked);
     });
-    this._allowedPortsLabel = this._dialog.querySelector(
+    this._allowedPortsLabel = document.querySelector(
       selectors.firewallAllowedPortsLabel
     );
     this._allowedPortsLabel.setAttribute(
       "value",
       TorStrings.settings.allowedPorts
     );
-    this._allowedPortsTextbox = this._dialog.querySelector(
+    this._allowedPortsTextbox = document.querySelector(
       selectors.firewallAllowedPortsTextbox
     );
     this._allowedPortsTextbox.setAttribute(
@@ -207,10 +197,11 @@ export class ConnectionSettingsDialog {
         TorSettings.firewall.allowed_ports.join(", ");
     }
 
-    this._dialog.addEventListener("dialogaccept", e => {
+    const dialog = document.getElementById("torPreferences-connection-dialog");
+    dialog.addEventListener("dialogaccept", e => {
       this._applySettings();
     });
-  }
+  },
 
   // callback when proxy is toggled
   onToggleProxy(enabled) {
@@ -235,7 +226,7 @@ export class ConnectionSettingsDialog {
     if (enabled) {
       this.onSelectProxyType(this._proxyTypeMenulist.value);
     }
-  }
+  },
 
   // callback when proxy type is changed
   onSelectProxyType(value) {
@@ -308,7 +299,7 @@ export class ConnectionSettingsDialog {
         break;
       }
     }
-  }
+  },
 
   // callback when firewall proxy is toggled
   onToggleFirewall(enabled) {
@@ -319,7 +310,7 @@ export class ConnectionSettingsDialog {
       [this._allowedPortsLabel, this._allowedPortsTextbox],
       disabled
     );
-  }
+  },
 
   // pushes settings from UI to tor
   _applySettings() {
@@ -372,17 +363,13 @@ export class ConnectionSettingsDialog {
 
     TorSettings.saveToPrefs();
     TorSettings.applySettings();
-  }
+  },
+};
 
-  init(window, aDialog) {
-    this._populateXUL(window, aDialog);
-  }
-
-  openDialog(gSubDialog) {
-    gSubDialog.open(
-      "chrome://browser/content/torpreferences/connectionSettingsDialog.xhtml",
-      { features: "resizable=yes" },
-      this
-    );
-  }
-}
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    gConnectionSettingsDialog.init();
+  },
+  { once: true }
+);
