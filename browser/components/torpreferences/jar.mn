@@ -1,6 +1,8 @@
 browser.jar:
     content/browser/torpreferences/bridge.svg                        (content/bridge.svg)
     content/browser/torpreferences/bridge-qr.svg                     (content/bridge-qr.svg)
+    content/browser/torpreferences/telegram-logo.svg                 (content/telegram-logo.svg)
+    content/browser/torpreferences/bridge-bot.svg                    (content/bridge-bot.svg)
     content/browser/torpreferences/bridgeQrDialog.xhtml              (content/bridgeQrDialog.xhtml)
     content/browser/torpreferences/bridgeQrDialog.js                 (content/bridgeQrDialog.js)
     content/browser/torpreferences/builtinBridgeDialog.xhtml         (content/builtinBridgeDialog.xhtml)
