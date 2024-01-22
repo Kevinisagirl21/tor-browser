@@ -105,14 +105,6 @@ const Loader = {
       bridgeRemoveAllDialogTitle: "Remove all bridges?",
       bridgeRemoveAllDialogDescription:
         "If these bridges were received from torproject.org or added manually, this action cannot be undone",
-      bridgeAdd: "Add a New Bridge",
-      bridgeSelectBrowserBuiltin:
-        "Choose from one of Tor Browser’s built-in bridges",
-      bridgeSelectBuiltin: "Select a Built-In Bridge…",
-      bridgeRequestFromTorProject: "Request a bridge from torproject.org",
-      bridgeRequest: "Request a Bridge…",
-      bridgeEnterKnown: "Enter a bridge address you already know",
-      bridgeAddManually: "Add a Bridge Manually…",
       // Advanced settings
       advancedHeading: "Advanced",
       advancedLabel: "Configure how Tor Browser connects to the internet",
@@ -148,7 +140,6 @@ const Loader = {
       captchaTextboxPlaceholder: "Enter the characters from the image",
       incorrectCaptcha: "The solution is not correct. Please try again.",
       // Provide bridge dialog
-      provideBridgeTitleAdd: "Add a Bridge Manually",
       provideBridgeDescription:
         "Add a bridge provided by a trusted organization or someone you know. If you don’t have a bridge, you can request one from the Tor Project. %S",
       provideBridgePlaceholder: "type address:port (one per line)",
