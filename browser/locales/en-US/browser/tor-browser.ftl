@@ -121,3 +121,58 @@ tor-bridges-share-description = Share your bridges with trusted contacts.
 tor-bridges-copy-addresses-button = Copy addresses
 tor-bridges-qr-addresses-button =
     .title = Show QR code
+
+# Shown as a heading when the user has no current bridges.
+tor-bridges-add-bridges-heading = Add bridges
+# Shown as a heading when the user has existing bridges that can be replaced.
+tor-bridges-replace-bridges-heading = Replace your bridges
+
+tor-bridges-select-built-in-description = Choose from one of { -brand-short-name }’s built-in bridges
+tor-bridges-select-built-in-button = Select a built-in bridge…
+
+tor-bridges-add-addresses-description = Enter bridge addresses you already know
+# Shown when the user has no current bridges.
+# Opens a dialog where the user can provide a new bridge address or share code.
+tor-bridges-add-new-button = Add new bridges…
+# Shown when the user has existing bridges.
+# Opens a dialog where the user can provide a new bridge address or share code to replace their current bridges.
+tor-bridges-replace-button = Replace bridges…
+
+tor-bridges-find-more-heading = Find more bridges
+# "Tor Project" is the organisation name.
+tor-bridges-find-more-description = Since many bridge addresses aren’t public, you may need to request some from the Tor Project.
+
+# "Telegram" is the common brand name of the Telegram Messenger application
+tor-bridges-provider-telegram-name = Telegram
+# Here "Message" is a verb, short for "Send a message to". This is an instruction to send a message to the given Telegram Messenger user to receive a new bridge.
+# $telegramUserName (String) - The Telegram Messenger user name that should receive messages. Should be wrapped in '<a data-l10n-name="user">' and '</a>'.
+# E.g. in English, "Message GetBridgesBot".
+tor-bridges-provider-telegram-instruction = Message <a data-l10n-name="user">{ $telegramUserName }</a>
+
+# "Web" is the proper noun for the "World Wide Web".
+tor-bridges-provider-web-name = Web
+# Instructions to visit the given website.
+# $url (String) - The URL for Tor Project bridges. Should be wrapped in '<a data-l10n-name"url">' and '</a>'.
+tor-bridges-provider-web-instruction = Visit <a data-l10n-name="url">{ $url }</a>
+
+# "Gmail" is the Google brand name. "Riseup" refers to the Riseup organisation at riseup.net.
+tor-bridges-provider-email-name = Gmail or Riseup
+# Here "Email" is a verb, short for "Send an email to". This is an instruction to send an email to the given address to receive a new bridge.
+# $address (String) - The email address that should receive the email.
+# E.g. in English, "Email bridges@torproject.org".
+tor-bridges-provider-email-instruction = Email { $address }
+
+tor-bridges-request-from-browser = You can also get bridges from the bridge bot without leaving { -brand-short-name }.
+tor-bridges-request-button = Request bridges…
+
+## User provided bridge dialog.
+
+# Used when the user is editing their existing bridge addresses.
+user-provide-bridge-dialog-edit-title =
+    .title = Edit your bridges
+# Used when the user has no existing bridges.
+user-provide-bridge-dialog-add-title =
+    .title = Add new bridges
+# Used when the user is replacing their existing bridges with new ones.
+user-provide-bridge-dialog-replace-title =
+    .title = Replace your bridges
