@@ -16,15 +16,10 @@ import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,9 +63,9 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String COOKIE_AUTH_FILE = "/auth-file";
 
     private final String mLibraryDir;
-    private final Path mCacheDir;
+    private final String mCacheDir;
     private final String mIpcDirectory;
-    private final String mDataDir;
+    private final File mDataDir;
 
     private TorProcess mTorProcess = null;
     /**
@@ -90,9 +85,9 @@ public class TorIntegrationAndroid implements BundleEventListener {
 
     /* package */ TorIntegrationAndroid(Context context) {
         mLibraryDir = context.getApplicationInfo().nativeLibraryDir;
-        mCacheDir = context.getCacheDir().toPath();
+        mCacheDir = context.getCacheDir().getAbsolutePath();
         mIpcDirectory = mCacheDir + "/tor-private";
-        mDataDir = context.getDataDir().getAbsolutePath() + "/tor";
+        mDataDir = new File(context.getFilesDir(), "tor");
         registerListener();
     }
 
@@ -254,7 +249,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
             args.add("CookieAuthFile");
             args.add(ipcDir + COOKIE_AUTH_FILE);
             args.add("DataDirectory");
-            args.add(mDataDir);
+            args.add(mDataDir.getAbsolutePath());
             boolean copied = true;
             try {
                 copyAndUseConfigFile("--defaults-torrc", "torrc-defaults", args);
@@ -316,15 +311,19 @@ public class TorIntegrationAndroid implements BundleEventListener {
 
         private void cleanIpcDirectory() {
             File directory = new File(TorIntegrationAndroid.this.mIpcDirectory);
-            if (!Files.isDirectory(directory.toPath())) {
+            if (!directory.isDirectory()) {
                 if (!directory.mkdirs()) {
                     Log.e(TAG, "Failed to create the IPC directory.");
                     return;
                 }
                 try {
-                    Set<PosixFilePermission> chmod = PosixFilePermissions.fromString("rwx------");
-                    Files.setPosixFilePermissions(directory.toPath(), chmod);
-                } catch (IOException e) {
+                    directory.setReadable(false, false);
+                    directory.setReadable(true, true);
+                    directory.setWritable(false, false);
+                    directory.setWritable(true, true);
+                    directory.setExecutable(false, false);
+                    directory.setExecutable(true, true);
+                } catch (SecurityException e) {
                     Log.e(TAG, "Could not set the permissions to the IPC directory.", e);
                 }
                 return;
@@ -341,15 +340,46 @@ public class TorIntegrationAndroid implements BundleEventListener {
         }
 
         private void copyAndUseConfigFile(String option, String name, ArrayList<String> args) throws IOException {
-            final Path path = Paths.get(mCacheDir.toFile().getAbsolutePath(), name);
-            if (!mCopiedConfigFiles || !path.toFile().exists()) {
-                final Context context = GeckoAppShell.getApplicationContext();
-                final InputStream in = context.getAssets().open("common/" + name);
-                Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
-                in.close();
-            }
+            File file = copyConfigFile(name);
             args.add(option);
-            args.add(path.toString());
+            args.add(file.getAbsolutePath());
+        }
+
+        private File copyConfigFile(String name) throws IOException {
+            final File file = new File(mCacheDir, name);
+            if (mCopiedConfigFiles && file.exists()) {
+                return file;
+            }
+
+            final Context context = GeckoAppShell.getApplicationContext();
+            final InputStream in = context.getAssets().open("common/" + name);
+            // Files.copy is API 26+, so use java.io and a loop for now.
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream(file);
+            } catch (IOException e) {
+                in.close();
+                throw e;
+            }
+            try {
+                byte buffer[] = new byte[4096];
+                int read;
+                while ((read = in.read(buffer)) >= 0) {
+                    out.write(buffer, 0, read);
+                }
+            } finally {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    Log.w(TAG, "Cannot close the input stream for " + name);
+                }
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    Log.w(TAG, "Cannot close the output stream for " + name);
+                }
+            }
+            return file;
         }
 
         public void shutdown() {
@@ -400,9 +430,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
             setName("meek-" + id);
             final ProcessBuilder builder = new ProcessBuilder(mLibraryDir + "/libObfs4proxy.so");
             {
+                File ptStateDir = new File(mDataDir, "pt_state");
                 final Map<String, String> env = builder.environment();
                 env.put("TOR_PT_MANAGED_TRANSPORT_VER", "1");
-                env.put("TOR_PT_STATE_LOCATION", mDataDir + "/pt_state");
+                env.put("TOR_PT_STATE_LOCATION", ptStateDir.getAbsolutePath());
                 env.put("TOR_PT_EXIT_ON_STDIN_CLOSE", "1");
                 env.put("TOR_PT_CLIENT_TRANSPORTS", TRANSPORT);
             }
