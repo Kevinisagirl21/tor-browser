@@ -270,11 +270,14 @@
   grid-area: description;
 }
 
-#tor-bridges-grid-display {
+.tor-bridges-grid {
   display: grid;
   grid-template-columns: max-content repeat(4, max-content) 1fr;
   --tor-bridges-grid-column-gap: 8px;
   --tor-bridges-grid-column-short-gap: 4px;
+  /* For #tor-bridges-grid-display we want each grid item to have the same
+   * height so that their focus outlines match. */
+  align-items: stretch;
 }
 
 #tor-bridges-grid-display:not(.grid-active) {
@@ -283,11 +286,12 @@
 
 .tor-bridges-grid-row {
   /* We want each row to act as a row of three items in the
-   * #tor-bridges-grid-display grid layout.
+   * .tor-bridges-grid grid layout.
    * We also want a 16px spacing between rows, and 8px spacing between columns,
-   * which are outside the .tor-bridges-grid-cell's border area. So that
-   * clicking these gaps will not focus any item, and their focus outlines do
-   * not overlap.
+   * which are outside the .tor-bridges-grid-cell's border area.
+   *
+   * For #tor-bridges-grid-display this should ensure that clicking these gaps
+   * will not focus any item, and their focus outlines do not overlap.
    * Moreover, we also want each row to show its .tor-bridges-options-cell when
    * the .tor-bridges-grid-row has :hover.
    *
@@ -311,7 +315,8 @@
   padding-block: 8px;
 }
 
-.tor-bridges-grid-cell:focus-visible {
+#tor-bridges-grid-display .tor-bridges-grid-cell:focus-visible {
+  /* #tor-bridges-grid-display has focus management for its cells. */
   outline: var(--in-content-focus-outline);
   outline-offset: var(--in-content-focus-outline-offset);
 }
@@ -662,8 +667,77 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 /* Provide bridge dialog */
-#torPreferences-provideBridge-textarea {
-  margin-top: 16px;
+
+#user-provide-bridge-dialog:not(.show-entry-page) #user-provide-bridge-entry-page {
+  display: none;
+}
+
+#user-provide-bridge-dialog:not(.show-result-page) #user-provide-bridge-result-page {
+  display: none;
+}
+
+#user-provide-bridge-entry-page {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#user-provide-bridge-description {
+  flex: 0 0 auto;
+}
+
+#user-provide-bridge-textarea-label {
+  margin-block: 16px 6px;
+  flex: 0 0 auto;
+  align-self: start;
+}
+
+#user-provide-bridge-textarea {
+  flex: 1 0 auto;
+  align-self: stretch;
+  line-height: 1.3;
+  margin: 0;
+}
+
+#user-provide-bridge-message-area {
+  flex: 0 0 auto;
+  margin-block: 8px 12px;
+  align-self: end;
+}
+
+#user-provide-bridge-message-area::after {
+  /* Zero width space, to ensure we are always one line high. */
+  content: "\200B";
+}
+
+#user-provide-bridge-textarea.invalid-input {
+  border-color: var(--in-content-danger-button-background);
+  outline-color: var(--in-content-danger-button-background);
+}
+
+#user-provide-bridge-error-message {
+  color: var(--in-content-error-text-color);
+}
+
+#user-provide-bridge-error-message.not(.show-error) {
+  display: none;
+}
+
+#user-provide-bridge-result-page {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#user-provide-result-description {
+  flex: 0 0 auto;
+}
+
+#user-provide-bridge-grid-display {
+  flex: 0 1 auto;
+  overflow: auto;
+  margin-block: 8px;
 }
 
 /* Connection settings dialog */

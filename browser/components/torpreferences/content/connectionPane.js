@@ -299,12 +299,10 @@ const gBridgeGrid = {
 
     this._active = true;
 
-    Services.obs.addObserver(this, "intl:app-locales-changed");
     Services.obs.addObserver(this, TorProviderTopics.BridgeChanged);
 
     this._grid.classList.add("grid-active");
 
-    this._updateEmojiLangCode();
     this._updateConnectedBridge();
   },
 
@@ -322,7 +320,6 @@ const gBridgeGrid = {
 
     this._grid.classList.remove("grid-active");
 
-    Services.obs.removeObserver(this, "intl:app-locales-changed");
     Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
   },
 
@@ -336,9 +333,6 @@ const gBridgeGrid = {
         ) {
           this._updateRows();
         }
-        break;
-      case "intl:app-locales-changed":
-        this._updateEmojiLangCode();
         break;
       case TorProviderTopics.BridgeChanged:
         this._updateConnectedBridge();
@@ -574,97 +568,6 @@ const gBridgeGrid = {
   },
 
   /**
-   * The language code for emoji annotations.
-   *
-   * null if unset.
-   *
-   * @type {string?}
-   */
-  _emojiLangCode: null,
-  /**
-   * A promise that resolves to two JSON structures for bridge-emojis.json and
-   * annotations.json, respectively.
-   *
-   * @type {Promise}
-   */
-  _emojiPromise: Promise.all([
-    fetch(
-      "chrome://browser/content/torpreferences/bridgemoji/bridge-emojis.json"
-    ).then(response => response.json()),
-    fetch(
-      "chrome://browser/content/torpreferences/bridgemoji/annotations.json"
-    ).then(response => response.json()),
-  ]),
-
-  /**
-   * Update _emojiLangCode.
-   */
-  async _updateEmojiLangCode() {
-    let langCode;
-    const emojiAnnotations = (await this._emojiPromise)[1];
-    // Find the first desired locale we have annotations for.
-    // Add "en" as a fallback.
-    for (const bcp47 of [...Services.locale.appLocalesAsBCP47, "en"]) {
-      langCode = bcp47;
-      if (langCode in emojiAnnotations) {
-        break;
-      }
-      // Remove everything after the dash, if there is one.
-      langCode = bcp47.replace(/-.*/, "");
-      if (langCode in emojiAnnotations) {
-        break;
-      }
-    }
-    if (langCode !== this._emojiLangCode) {
-      this._emojiLangCode = langCode;
-      for (const row of this._rows) {
-        this._updateRowEmojis(row);
-      }
-    }
-  },
-
-  /**
-   * Update the bridge emojis to show their corresponding emoji with an
-   * annotation that matches the current locale.
-   *
-   * @param {BridgeGridRow} row - The row to update the emojis of.
-   */
-  async _updateRowEmojis(row) {
-    if (!this._emojiLangCode) {
-      // No lang code yet, wait until it is updated.
-      return;
-    }
-
-    const [emojiList, emojiAnnotations] = await this._emojiPromise;
-    const unknownString = await document.l10n.formatValue(
-      "tor-bridges-emoji-unknown"
-    );
-
-    for (const { cell, img, index } of row.emojis) {
-      const emoji = emojiList[index];
-      let emojiName;
-      if (!emoji) {
-        // Unexpected.
-        img.removeAttribute("src");
-      } else {
-        const cp = emoji.codePointAt(0).toString(16);
-        img.setAttribute(
-          "src",
-          `chrome://browser/content/torpreferences/bridgemoji/svgs/${cp}.svg`
-        );
-        emojiName = emojiAnnotations[this._emojiLangCode][cp];
-      }
-      if (!emojiName) {
-        console.error(`No emoji for index ${index}`);
-        emojiName = unknownString;
-      }
-      document.l10n.setAttributes(cell, "tor-bridges-emoji-cell", {
-        emojiName,
-      });
-    }
-  },
-
-  /**
    * Create a new row for the grid.
    *
    * @param {string} bridgeLine - The bridge line for this row, which also acts
@@ -688,23 +591,14 @@ const gBridgeGrid = {
     };
 
     const emojiBlock = row.element.querySelector(".tor-bridges-emojis-block");
-    row.emojis = makeBridgeId(bridgeLine).map(index => {
-      const cell = document.createElement("span");
-      // Each emoji is its own cell, we rely on the fact that makeBridgeId
-      // always returns four indices.
+    const BridgeEmoji = customElements.get("tor-bridge-emoji");
+    for (const cell of BridgeEmoji.createForAddress(bridgeLine)) {
+      // Each emoji is its own cell, we rely on the fact that createForAddress
+      // always returns four elements.
       cell.setAttribute("role", "gridcell");
       cell.classList.add("tor-bridges-grid-cell", "tor-bridges-emoji-cell");
-
-      const img = document.createElement("img");
-      img.classList.add("tor-bridges-emoji-icon");
-      // Accessible name will be set on the cell itself.
-      img.setAttribute("alt", "");
-
-      cell.appendChild(img);
-      emojiBlock.appendChild(cell);
-      // Image and text is set in _updateRowEmojis.
-      return { cell, img, index };
-    });
+      emojiBlock.append(cell);
+    }
 
     for (const [columnIndex, element] of row.element
       .querySelectorAll(".tor-bridges-grid-cell")
@@ -735,7 +629,6 @@ const gBridgeGrid = {
     this._initRowMenu(row);
 
     this._updateRowStatus(row);
-    this._updateRowEmojis(row);
     return row;
   },
 
@@ -1870,13 +1763,13 @@ const gBridgeSettings = {
       "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
       { mode },
       result => {
-        if (!result.bridgeStrings) {
+        if (!result.bridges?.length) {
           return null;
         }
         return setTorSettings(() => {
           TorSettings.bridges.enabled = true;
           TorSettings.bridges.source = TorBridgeSource.UserProvided;
-          TorSettings.bridges.bridge_strings = result.bridgeStrings;
+          TorSettings.bridges.bridge_strings = result.bridges;
         });
       }
     );
@@ -2292,32 +2185,3 @@ const gConnectionPane = (function () {
   };
   return retval;
 })(); /* gConnectionPane */
-
-/**
- * Convert the given bridgeString into an array of emoji indices between 0 and
- * 255.
- *
- * @param {string} bridgeString - The bridge string.
- *
- * @returns {integer[]} - A list of emoji indices between 0 and 255.
- */
-function makeBridgeId(bridgeString) {
-  // JS uses UTF-16. While most of these emojis are surrogate pairs, a few
-  // ones fit one UTF-16 character. So we could not use neither indices,
-  // nor substr, nor some function to split the string.
-  // FNV-1a implementation that is compatible with other languages
-  const prime = 0x01000193;
-  const offset = 0x811c9dc5;
-  let hash = offset;
-  const encoder = new TextEncoder();
-  for (const byte of encoder.encode(bridgeString)) {
-    hash = Math.imul(hash ^ byte, prime);
-  }
-
-  return [
-    ((hash & 0x7f000000) >> 24) | (hash < 0 ? 0x80 : 0),
-    (hash & 0x00ff0000) >> 16,
-    (hash & 0x0000ff00) >> 8,
-    hash & 0x000000ff,
-  ];
-}
