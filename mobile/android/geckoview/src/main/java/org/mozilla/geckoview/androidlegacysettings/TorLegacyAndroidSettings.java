@@ -1,11 +1,5 @@
 package org.mozilla.geckoview.androidlegacysettings;
 
-import java.io.IOException;
-
-import android.content.SharedPreferences;
-
-import org.mozilla.gecko.GeckoAppShell;
-
 import org.mozilla.geckoview.TorSettings;
 
 public class TorLegacyAndroidSettings {
@@ -54,10 +48,10 @@ public class TorLegacyAndroidSettings {
             switch (userDefinedBridgeList) {
                 case "obfs4":
                 case "snowflake":
-                    settings.bridgesBuiltinType = userDefinedBridgeList;
+                    settings.bridgesBuiltinType = TorSettings.BridgeBuiltinType.fromString(userDefinedBridgeList);
                     break;
                 case "meek":
-                    settings.bridgesBuiltinType = "meek-azure";
+                    settings.bridgesBuiltinType = TorSettings.BridgeBuiltinType.MeekAzure;
                     break;
                 default:
                     settings.bridgesSource = TorSettings.BridgeSource.Invalid;
