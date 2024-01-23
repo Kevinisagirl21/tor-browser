@@ -176,3 +176,19 @@ user-provide-bridge-dialog-add-title =
 # Used when the user is replacing their existing bridges with new ones.
 user-provide-bridge-dialog-replace-title =
     .title = Replace your bridges
+# Description shown when adding new bridges, replacing existing bridges, or editing existing bridges.
+user-provide-bridge-dialog-description = Use bridges provided by a trusted organisation or someone you know.
+# "Learn more" link shown in the "Add new bridges"/"Replace your bridges" dialog.
+user-provide-bridge-dialog-learn-more = Learn more
+# Short accessible name for the bridge addresses text area.
+user-provide-bridge-dialog-textarea-addresses-label = Bridge addresses
+# Placeholder shown when adding new bridge addresses.
+user-provide-bridge-dialog-textarea-addresses =
+    .placeholder = Paste your bridge addresses here
+# Error shown when one of the address lines is invalid.
+# $line (Number) - The line number for the invalid address.
+user-provide-bridge-dialog-address-error = Incorrectly formatted bridge address on line { $line }.
+
+user-provide-bridge-dialog-result-addresses = The following bridges were entered by you.
+user-provide-bridge-dialog-next-button =
+    .label = Next
