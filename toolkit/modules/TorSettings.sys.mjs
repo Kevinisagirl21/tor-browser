@@ -9,6 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   Lox: "resource://gre/modules/Lox.sys.mjs",
+  TorParsers: "resource://gre/modules/TorParsers.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
@@ -103,26 +104,61 @@ export const TorProxyType = Object.freeze({
  * Split a blob of bridge lines into an array with single lines.
  * Lines are delimited by \r\n or \n and each bridge string can also optionally
  * have 'bridge' at the beginning.
- * We split the text by \r\n, we trim the lines, remove the bridge prefix and
- * filter out any remaiing empty item.
+ * We split the text by \r\n, we trim the lines, remove the bridge prefix.
  *
- * @param {string} aBridgeStrings The text with the lines
+ * @param {string} bridgeLines The text with the lines
  * @returns {string[]} An array where each bridge line is an item
  */
-function parseBridgeStrings(aBridgeStrings) {
-  // replace carriage returns ('\r') with new lines ('\n')
-  aBridgeStrings = aBridgeStrings.replace(/\r/g, "\n");
-  // then replace contiguous new lines ('\n') with a single one
-  aBridgeStrings = aBridgeStrings.replace(/[\n]+/g, "\n");
-
+function splitBridgeLines(bridgeLines) {
   // Split on the newline and for each bridge string: trim, remove starting
   // 'bridge' string.
-  // Finally, discard entries that are empty strings; empty strings could occur
-  // if we receive a new line containing only whitespace.
-  const splitStrings = aBridgeStrings.split("\n");
-  return splitStrings
-    .map(val => val.trim().replace(/^bridge\s+/i, ""))
-    .filter(bridgeString => bridgeString !== "");
+  // Replace whitespace with standard " ".
+  // NOTE: We only remove the bridge string part if it is followed by a
+  // non-whitespace.
+  return bridgeLines.split(/\r?\n/).map(val =>
+    val
+      .trim()
+      .replace(/^bridge\s+(\S)/i, "$1")
+      .replace(/\s+/, " ")
+  );
+}
+
+/**
+ * @typedef {Object} BridgeValidationResult
+ *
+ * @property {integer[]} errorLines - The lines that contain errors. Counting
+ *   from 1.
+ * @property {boolean} empty - Whether the given string contains no bridges.
+ * @property {string[]} validBridges - The valid bridge lines found.
+ */
+/**
+ * Validate the given bridge lines.
+ *
+ * @param {string} bridgeLines - The bridge lines to validate, separated by
+ *   newlines.
+ *
+ * @returns {BridgeValidationResult}
+ */
+export function validateBridgeLines(bridgeLines) {
+  let empty = true;
+  const errorLines = [];
+  const validBridges = [];
+  for (const [index, bridge] of splitBridgeLines(bridgeLines).entries()) {
+    if (!bridge) {
+      // Empty line.
+      continue;
+    }
+    empty = false;
+    try {
+      // TODO: Have a more comprehensive validation parser.
+      lazy.TorParsers.parseBridgeLine(bridge);
+    } catch {
+      errorLines.push(index + 1);
+      continue;
+    }
+    validBridges.push(bridge);
+  }
+  return { empty, errorLines, validBridges };
 }
 
 /**
@@ -269,7 +305,8 @@ class TorSettingsImpl {
           if (Array.isArray(val)) {
             return [...val];
           }
-          return parseBridgeStrings(val);
+          // Split the bridge strings, discarding empty.
+          return splitBridgeLines(val).filter(val => val);
         },
         copy: val => [...val],
         equal: (val1, val2) => this.#arrayEqual(val1, val2),
