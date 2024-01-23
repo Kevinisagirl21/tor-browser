@@ -2,23 +2,7 @@ package org.mozilla.geckoview;
 
 import android.util.Log;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.mozilla.gecko.util.GeckoBundle;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.SequenceInputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
 
 public class TorSettings {
 
@@ -76,6 +60,35 @@ public class TorSettings {
         }
     }
 
+    public enum BridgeBuiltinType {
+        /* TorSettings.sys.mjs ~ln43:  string: obfs4|meek-azure|snowflake|etc */
+        Invalid("invalid"),
+        Obfs4("obfs4"),
+        MeekAzure("meek-azure"),
+        Snowflake("snowflake");
+
+
+        private String type;
+
+        BridgeBuiltinType(String type) {
+            this.type = type;
+        }
+
+        public String toString() {
+            return type;
+        }
+
+        public static BridgeBuiltinType fromString(String s) {
+            switch (s) {
+                case "obfs4": return Obfs4;
+                case "meek-azure": return MeekAzure;
+                case "snowflake": return Snowflake;
+            }
+            return Invalid;
+        }
+
+    }
+
     private boolean loaded = false;
 
     public boolean enabled = true;
@@ -85,7 +98,7 @@ public class TorSettings {
     // bridges section
     public boolean bridgesEnabled = false;
     public BridgeSource bridgesSource = BridgeSource.Invalid;
-    public String bridgesBuiltinType = "";
+    public BridgeBuiltinType bridgesBuiltinType = BridgeBuiltinType.Invalid;
     public String[] bridgeBridgeStrings;
 
     // proxy section
@@ -112,7 +125,7 @@ public class TorSettings {
 
             bridgesEnabled = bridges.getBoolean("enabled");
             bridgesSource = BridgeSource.fromInt(bridges.getInt("source"));
-            bridgesBuiltinType = bridges.getString("builtin_type");
+            bridgesBuiltinType = BridgeBuiltinType.fromString(bridges.getString("builtin_type"));
             bridgeBridgeStrings = bridges.getStringArray("bridge_strings");
 
             quickstart = qs.getBoolean("enabled");
@@ -143,7 +156,7 @@ public class TorSettings {
 
         bridges.putBoolean("enabled", bridgesEnabled);
         bridges.putInt("source", bridgesSource.toInt());
-        bridges.putString("builtin_type", bridgesBuiltinType);
+        bridges.putString("builtin_type", bridgesBuiltinType.toString());
         bridges.putStringArray("bridge_strings", bridgeBridgeStrings);
 
         qs.putBoolean("enabled", quickstart);

@@ -81,6 +81,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private final HashMap<Integer, MeekTransport> mMeeks = new HashMap<>();
     private int mMeekCounter;
 
+    // mSettings is a java side copy of the authoritative settings in the JS code.
+    // it's useful to maintain as the ui may be fetching these options often and
+    // we don't watch each fetch to be a passthrough to JS with JSON serialization and
+    // deserialization each time
     private TorSettings mSettings = null;
 
     /* package */ TorIntegrationAndroid(Context context) {
@@ -550,11 +554,38 @@ public class TorIntegrationAndroid implements BundleEventListener {
         void onBootstrapError(String message, String details);
     }
 
-    public @NonNull GeckoResult<GeckoBundle> getSettings() {
-        return EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET);
+    private @NonNull void reloadSettings() {
+        EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET).then( new GeckoResult.OnValueListener<GeckoBundle, Void>() {
+            public GeckoResult<Void> onValue(final GeckoBundle bundle) {
+                mSettings = new TorSettings(bundle);
+                return new GeckoResult<Void>();
+            }
+        });
     }
 
-    public @NonNull GeckoResult<Void> setSettings(final TorSettings settings, boolean save, boolean apply) {
+    public TorSettings getSettings() {
+        return mSettings;
+    }
+
+    public void setSettings(final TorSettings settings, boolean save, boolean apply) {
+        mSettings = settings;
+
+        emitSetSettings(settings, save, apply).then(
+            new GeckoResult.OnValueListener<Void, Void>() {
+                public GeckoResult<Void> onValue(Void v) {
+                    return new GeckoResult<Void>();
+                }
+            },
+            new GeckoResult.OnExceptionListener<Void>() {
+                public GeckoResult<Void> onException(final Throwable e) {
+                    Log.e(TAG, "Failed to set settings", e);
+                    reloadSettings();
+                    return new GeckoResult<Void>();
+                }
+            });
+    }
+
+    private @NonNull GeckoResult<Void> emitSetSettings(final TorSettings settings, boolean save, boolean apply) {
         GeckoBundle bundle = new GeckoBundle(3);
         bundle.putBoolean("save", save);
         bundle.putBoolean("apply", apply);
