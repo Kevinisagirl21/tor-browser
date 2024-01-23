@@ -40,7 +40,7 @@ const TorSettingsPrefs = Object.freeze({
     enabled: "torbrowser.settings.bridges.enabled",
     /* int: See TorBridgeSource */
     source: "torbrowser.settings.bridges.source",
-    /* string: obfs4|meek_azure|snowflake|etc */
+    /* string: obfs4|meek-azure|snowflake|etc */
     builtin_type: "torbrowser.settings.bridges.builtin_type",
     /* preference branch: each child branch should be a bridge string */
     bridge_strings: "torbrowser.settings.bridges.bridge_strings",
