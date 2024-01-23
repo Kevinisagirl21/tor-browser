@@ -139,10 +139,6 @@ const Loader = {
       solveTheCaptcha: "Solve the CAPTCHA to request a bridge.",
       captchaTextboxPlaceholder: "Enter the characters from the image",
       incorrectCaptcha: "The solution is not correct. Please try again.",
-      // Provide bridge dialog
-      provideBridgeDescription:
-        "Add a bridge provided by a trusted organization or someone you know. If you don’t have a bridge, you can request one from the Tor Project. %S",
-      provideBridgePlaceholder: "type address:port (one per line)",
       // Connection settings dialog
       connectionSettingsDialogTitle: "Connection Settings",
       connectionSettingsDialogHeader:
