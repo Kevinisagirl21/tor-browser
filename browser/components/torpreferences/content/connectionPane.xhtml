@@ -172,6 +172,10 @@
           id="tor-bridges-requested-label"
           data-l10n-id="tor-bridges-source-requested"
         ></html:span>
+        <html:span id="tor-bridges-lox-label">
+          <html:img id="tor-bridges-lox-label-icon" alt="" />
+          <html:span data-l10n-id="tor-bridges-source-lox"></html:span>
+        </html:span>
         <html:button
           id="tor-bridges-all-options-button"
           class="tor-bridges-options-button"
@@ -275,7 +279,7 @@
           </html:span>
         </html:div>
       </html:template>
-      <html:div id="tor-bridges-share">
+      <html:div id="tor-bridges-share" class="tor-bridges-details-box">
         <html:h3
           id="tor-bridges-share-heading"
           data-l10n-id="tor-bridges-share-heading"
@@ -292,6 +296,77 @@
           id="tor-bridges-qr-addresses-button"
           data-l10n-id="tor-bridges-qr-addresses-button"
         ></html:button>
+      </html:div>
+      <html:div id="tor-bridges-lox-status">
+        <html:div data-l10n-id="tor-bridges-lox-description"></html:div>
+        <html:div
+          id="tor-bridges-lox-details"
+          class="tor-bridges-details-box tor-bridges-lox-box"
+        >
+          <html:img alt="" class="tor-bridges-lox-image-inner" />
+          <html:img alt="" class="tor-bridges-lox-image-outer" />
+          <html:div
+            id="tor-bridges-lox-next-unlock-counter"
+            class="tor-bridges-lox-intro"
+            tabindex="-1"
+          ></html:div>
+          <html:ul class="tor-bridges-lox-list">
+            <html:li
+              id="tor-bridges-lox-next-unlock-gain-bridges"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
+              data-l10n-id="tor-bridges-lox-unlock-two-bridges"
+            ></html:li>
+            <html:li
+              id="tor-bridges-lox-next-unlock-first-invites"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
+              data-l10n-id="tor-bridges-lox-unlock-first-invites"
+            ></html:li>
+            <html:li
+              id="tor-bridges-lox-next-unlock-more-invites"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
+              data-l10n-id="tor-bridges-lox-unlock-more-invites"
+            ></html:li>
+          </html:ul>
+          <html:div id="tor-bridges-lox-remaining-invites"></html:div>
+          <html:button
+            id="tor-bridges-lox-show-invites-button"
+            class="tor-bridges-lox-button"
+            data-l10n-id="tor-bridges-lox-show-invites-button"
+          ></html:button>
+        </html:div>
+        <html:div
+          id="tor-bridges-lox-unlock-alert"
+          role="alert"
+          class="tor-bridges-details-box tor-bridges-lox-box"
+        >
+          <html:img alt="" class="tor-bridges-lox-image-inner" />
+          <html:img alt="" class="tor-bridges-lox-image-outer" />
+          <html:div
+            id="tor-bridge-unlock-alert-title"
+            class="tor-bridges-lox-intro"
+          ></html:div>
+          <html:ul class="tor-bridges-lox-list">
+            <html:li
+              id="tor-bridges-lox-unlock-alert-gain-bridges"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
+              data-l10n-id="tor-bridges-lox-gained-two-bridges"
+            ></html:li>
+            <html:li
+              id="tor-bridges-lox-unlock-alert-new-bridges"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
+              data-l10n-id="tor-bridges-lox-new-bridges"
+            ></html:li>
+            <html:li
+              id="tor-bridges-lox-unlock-alert-invites"
+              class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
+            ></html:li>
+          </html:ul>
+          <html:button
+            id="tor-bridges-lox-unlock-alert-button"
+            class="tor-bridges-lox-button"
+            data-l10n-id="tor-bridges-lox-got-it-button"
+          ></html:button>
+        </html:div>
       </html:div>
     </html:div>
     <html:h2 id="tor-bridges-change-heading"></html:h2>
