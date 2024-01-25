@@ -56,6 +56,10 @@ tor-bridges-your-bridges = Your bridges
 tor-bridges-source-user = Added by you
 tor-bridges-source-built-in = Built-in
 tor-bridges-source-requested = Requested from Tor
+# Here "Bridge pass" is a noun: a bridge pass gives users access to some tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+# This is shown when the user is getting their bridges from Lox.
+tor-bridges-source-lox = Bridge pass
 # The "..." menu button for all current bridges.
 tor-bridges-options-button =
     .title = All bridges
@@ -116,11 +120,74 @@ tor-bridges-update-changed-bridges = Your Tor bridges have changed.
 
 # Shown for requested bridges and bridges added by the user.
 tor-bridges-share-heading = Help others connect
-#
 tor-bridges-share-description = Share your bridges with trusted contacts.
 tor-bridges-copy-addresses-button = Copy addresses
 tor-bridges-qr-addresses-button =
     .title = Show QR code
+
+# Shown when using a "bridge pass", i.e. using Lox.
+# Here "bridge pass" is a noun: a bridge pass gives users access to some tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+# Here "bridge bot" refers to a service that automatically gives out bridges for the user to use, i.e. the Lox authority.
+tor-bridges-lox-description = With a bridge pass, the bridge bot will send you new bridges when your bridges get blocked. If your bridges don’t get blocked, you’ll unlock invites that let you share bridges with trusted contacts.
+# The number of days until the user's "bridge pass" is upgraded.
+# $numDays (Number) - The number of days until the next upgrade, an integer (1 or higher).
+# The "[one]" and "[other]" are special Fluent syntax to mark plural categories that depend on the value of "$numDays". You can use any number of plural categories that work for your locale: "[zero]", "[one]", "[two]", "[few]", "[many]" and/or "[other]". The "*" marks a category as default, and is required.
+# See https://projectfluent.org/fluent/guide/selectors.html .
+# So in English, the first form will be used if $numDays is "1" (singular) and the second form will be used if $numDays is anything else (plural).
+tor-bridges-lox-days-until-unlock =
+  { $numDays ->
+     [one] { $numDays } day until you unlock:
+    *[other] { $numDays } days until you unlock:
+  }
+# This is shown as a list item after "N days until you unlock:" when the user will gain two more bridges in the future.
+# Here "bridge bot" refers to a service that automatically gives out bridges for the user to use, i.e. the Lox authority.
+tor-bridges-lox-unlock-two-bridges = +2 bridges from the bridge bot
+# This is shown as a list item after "N days until you unlock:" when the user will gain access to invites for the first time.
+# Here "invites" is a noun, short for "invitations".
+tor-bridges-lox-unlock-first-invites = Invites for your trusted contacts
+# This is shown as a list item after "N days until you unlock:" when the user already has invites.
+# Here "invites" is a noun, short for "invitations".
+tor-bridges-lox-unlock-more-invites = More invites for your trusted contacts
+# Here "invite" is a noun, short for "invitation".
+# $numInvites (Number) - The number of invites remaining, an integer (0 or higher).
+# The "[one]" and "[other]" are special Fluent syntax to mark plural categories that depend on the value of "$numInvites". You can use any number of plural categories that work for your locale: "[zero]", "[one]", "[two]", "[few]", "[many]" and/or "[other]". The "*" marks a category as default, and is required.
+# See https://projectfluent.org/fluent/guide/selectors.html .
+# So in English, the first form will be used if $numInvites is "1" (singular) and the second form will be used if $numInvites is anything else (plural).
+tor-bridges-lox-remaining-invites =
+  { $numInvites ->
+     [one] { $numInvites } invite remaining
+    *[other] { $numInvites } invites remaining
+  }
+# Here "invites" is a noun, short for "invitations".
+tor-bridges-lox-show-invites-button = Show invites
+
+# Shown when the user's "bridge pass" has been upgraded.
+# Here "bridge pass" is a noun: a bridge pass gives users access to some tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+tor-bridges-lox-upgrade = Your bridge pass has been upgraded!
+# Shown when the user's bridges accessed through "bridge pass" have been blocked.
+tor-bridges-lox-blocked = Your blocked bridges have been replaced
+# Shown *after* the user has had their blocked bridges replaced.
+# Here "bridge bot" refers to a service that automatically gives out bridges for the user to use, i.e. the Lox authority.
+tor-bridges-lox-new-bridges = New bridges from the bridge bot
+# Shown *after* the user has gained two more bridges.
+# Here "bridge bot" refers to a service that automatically gives out bridges for the user to use, i.e. the Lox authority.
+tor-bridges-lox-gained-two-bridges = +2 bridges from the bridge bot
+# Shown *after* a user's "bridge pass" has changed.
+# Here "invite" is a noun, short for "invitation".
+# $numInvites (Number) - The number of invites remaining, an integer (0 or higher).
+# The "[one]" and "[other]" are special Fluent syntax to mark plural categories that depend on the value of "$numInvites". You can use any number of plural categories that work for your locale: "[zero]", "[one]", "[two]", "[few]", "[many]" and/or "[other]". The "*" marks a category as default, and is required.
+# See https://projectfluent.org/fluent/guide/selectors.html .
+# So in English, the first form will be used if $numInvites is "1" (singular) and the second form will be used if $numInvites is anything else (plural).
+tor-bridges-lox-new-invites =
+  { $numInvites ->
+     [one] You now have { $numInvites } remaining invite for your trusted contacts
+    *[other] You now have { $numInvites } remaining invites for your trusted contacts
+  }
+# Button for the user to acknowledge a change in their "bridge pass".
+tor-bridges-lox-got-it-button = Got it
+
 
 # Shown as a heading when the user has no current bridges.
 tor-bridges-add-bridges-heading = Add bridges
@@ -182,13 +249,50 @@ user-provide-bridge-dialog-description = Use bridges provided by a trusted organ
 user-provide-bridge-dialog-learn-more = Learn more
 # Short accessible name for the bridge addresses text area.
 user-provide-bridge-dialog-textarea-addresses-label = Bridge addresses
+# Here "invite" is a noun, short for "invitation".
+# Short accessible name for text area when it can accept either bridge address or a single "bridge pass" invite.
+user-provide-bridge-dialog-textarea-addresses-or-invite-label = Bridge addresses or invite
 # Placeholder shown when adding new bridge addresses.
 user-provide-bridge-dialog-textarea-addresses =
     .placeholder = Paste your bridge addresses here
+# Placeholder shown when the user can add new bridge addresses or a single "bridge pass" invite.
+# Here "bridge pass invite" is a noun: a bridge pass invite can be shared with other users to give them their own bridge pass, so they can get access to tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+# And "invite" is simply short for "invitation".
+# NOTE: "invite" is singular, whilst "addresses" is plural.
+user-provide-bridge-dialog-textarea-addresses-or-invite =
+    .placeholder = Paste your bridge addresses or a bridge pass invite here
 # Error shown when one of the address lines is invalid.
 # $line (Number) - The line number for the invalid address.
 user-provide-bridge-dialog-address-error = Incorrectly formatted bridge address on line { $line }.
+# Error shown when the user has entered more than one "bridge pass" invite.
+# Here "invite" is a noun, short for "invitation".
+user-provide-bridge-dialog-multiple-invites-error = Cannot include more than one invite.
+# Error shown when the user has mixed their invite with addresses.
+# Here "invite" is a noun, short for "invitation".
+user-provide-bridge-dialog-mixed-error = Cannot mix bridge addresses with an invite.
+# Error shown when the user has entered an invite when it is not supported.
+# Here "bridge pass invite" is a noun: a bridge pass invite can be shared with other users to give them their own bridge pass, so they can get access to tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+# And "invite" is simply short for "invitation".
+user-provide-bridge-dialog-invite-not-allowed-error = Cannot include a bridge pass invite.
+# Error shown when the invite was not accepted by the server.
+user-provide-bridge-dialog-bad-invite-error = Invite was not accepted. Try a different one.
+# Error shown when the "bridge pass" server does not respond.
+# Here "bridge pass" is a noun: a bridge pass gives users access to some tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+user-provide-bridge-dialog-no-server-error = Unable to connect to bridge pass server.
+# Generic error when an invite failed.
+# Here "invite" is a noun, short for "invitation".
+user-provide-bridge-dialog-generic-invite-error = Failed to redeem invite.
 
+# Here "bridge pass" is a noun: a bridge pass gives users access to some tor bridges.
+# So "pass" is referring to something that gives permission or access. Similar to "token", "permit" or "voucher", but for permanent use rather than one-time.
+user-provide-bridge-dialog-connecting = Connecting to bridge pass server…
+
+# Shown after the user has entered a "bridge pass" invite.
+user-provide-bridge-dialog-result-invite = The following bridges were shared with you.
+# Shown after the user has entered bridge addresses.
 user-provide-bridge-dialog-result-addresses = The following bridges were entered by you.
 user-provide-bridge-dialog-next-button =
     .label = Next
