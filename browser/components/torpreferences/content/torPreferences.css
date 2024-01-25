@@ -161,10 +161,18 @@
   display: none;
 }
 
+#tor-bridges-current:not(.source-lox) #tor-bridges-lox-label {
+  display: none;
+}
+
 #tor-bridges-current:not(
   .source-user,
   .source-requested
 ) #tor-bridges-share {
+  display: none;
+}
+
+#tor-bridges-current:not(.source-lox) #tor-bridges-lox-status {
   display: none;
 }
 
@@ -212,6 +220,24 @@
 
 #tor-bridges-current-header-bar > * {
   flex: 0 0 auto;
+}
+
+#tor-bridges-lox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#tor-bridges-lox-label > * {
+  flex: 0 0 auto;
+}
+
+#tor-bridges-lox-label-icon {
+  content: url("chrome://browser/content/torpreferences/lox-bridge-pass.svg");
+  width: 16px;
+  height: 16px;
+  -moz-context-properties: fill;
+  fill: var(--in-content-icon-color);
 }
 
 #tor-bridges-current-heading {
@@ -397,11 +423,14 @@
   clip-path: inset(50%);
 }
 
-#tor-bridges-share {
+.tor-bridges-details-box {
   margin-block-start: 24px;
   border-radius: 4px;
   border: 1px solid var(--in-content-border-color);
   padding: 16px;
+}
+
+#tor-bridges-share {
   display: grid;
   grid-template:
     "heading heading heading" min-content
@@ -450,6 +479,169 @@
   background-size: contain;
   -moz-context-properties: fill;
   fill: currentColor;
+}
+
+#tor-bridges-lox-status {
+  margin-block-start: 8px;
+}
+
+#tor-bridges-lox-status:not(.show-next-unlock) #tor-bridges-lox-details {
+  display: none;
+}
+
+#tor-bridges-lox-status:not(.show-unlock-alert) #tor-bridges-lox-unlock-alert {
+  display: none;
+}
+
+.tor-bridges-lox-box {
+  display: grid;
+  grid-template:
+    "image intro intro" min-content
+    ". list list" auto
+    ". invites button" min-content
+    / min-content 1fr max-content;
+  align-items: start;
+  gap: 0 8px;
+}
+
+.tor-bridges-lox-image-outer {
+  grid-area: image;
+  /* The ring is 36px by 36px, but has 4px of padding for a Gaussian blur. */
+  width: 44px;
+  height: 44px;
+  margin: -4px;
+  align-self: center;
+  justify-self: center;
+  /* fill is the progress, stroke is the empty ring. */
+  -moz-context-properties: fill, stroke;
+  fill: var(--in-content-success-icon-color);
+  stroke: var(--in-content-border-color);
+  content: url("chrome://browser/content/torpreferences/lox-progress-ring.svg");
+}
+
+#tor-bridges-lox-unlock-alert.lox-unlock-upgrade .tor-bridges-lox-image-outer {
+  content: url("chrome://browser/content/torpreferences/lox-complete-ring.svg");
+}
+
+.tor-bridges-lox-image-inner {
+  grid-area: image;
+  /* Extra 4px space for gaussian blur. */
+  width: 16px;
+  height: 16px;
+  align-self: center;
+  justify-self: center;
+  -moz-context-properties: fill;
+  fill: var(--in-content-icon-color);
+}
+
+#tor-bridges-lox-details .tor-bridges-lox-image-inner {
+  content: url("chrome://browser/content/torpreferences/lox-bridge-pass.svg");
+}
+
+#tor-bridges-lox-unlock-alert .tor-bridges-lox-image-inner {
+  content: url("chrome://browser/content/torpreferences/bridge.svg");
+}
+
+#tor-bridges-lox-unlock-alert.lox-unlock-upgrade .tor-bridges-lox-image-inner {
+  content: url("chrome://browser/content/torpreferences/lox-success.svg");
+}
+
+.tor-bridges-lox-intro {
+  grid-area: intro;
+  font-weight: 700;
+  align-self: center;
+}
+
+.tor-bridges-lox-list {
+  grid-area: list;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* Align the icons, as if list markers. */
+  grid-template-columns: max-content 1fr;
+  align-items: start;
+}
+
+.tor-bridges-lox-list-item {
+  display: contents;
+}
+
+.tor-bridges-lox-list-item::before {
+  /* We use ::before rather than list-style-image to have more control. */
+  display: block;
+  box-sizing: content-box;
+  width: 18px;
+  height: 18px;
+  margin-inline: 4px 6px;
+  /* We want the icons to be center-aligned relative to the *first* line. */
+  /* TODO: After firefox 120, can use line-height unit "lh" to do proper
+   * center-alignment: calc((1lh - 18px) / 2)
+   * For now, we use 3.4ex as an approximation for 1lh */
+  margin-block-start: calc((3.4ex - 18px) / 2);
+  /* fill is the icon color, stroke is the border color. */
+  -moz-context-properties: fill, stroke;
+  fill: var(--in-content-icon-color);
+}
+
+.tor-bridges-lox-list-item-bridge::before {
+  content: url("chrome://browser/content/torpreferences/lox-bridge-icon.svg");
+}
+
+.tor-bridges-lox-list-item-invite::before {
+  content: url("chrome://browser/content/torpreferences/lox-invite-icon.svg");
+}
+
+#tor-bridges-lox-details .tor-bridges-lox-list-item::before {
+  stroke: var(--in-content-border-color);
+}
+
+#tor-bridges-lox-unlock-alert .tor-bridges-lox-list-item::before {
+  stroke: var(--in-content-success-icon-color);
+}
+
+#tor-bridges-lox-details:not(.lox-next-gain-bridges) #tor-bridges-lox-next-unlock-gain-bridges {
+  display: none;
+}
+
+#tor-bridges-lox-details:not(.lox-next-first-invites) #tor-bridges-lox-next-unlock-first-invites {
+  display: none;
+}
+
+#tor-bridges-lox-details:not(.lox-next-more-invites) #tor-bridges-lox-next-unlock-more-invites {
+  display: none;
+}
+
+
+#tor-bridges-lox-unlock-alert:not(.lox-unlock-gain-bridges) #tor-bridges-lox-unlock-alert-gain-bridges {
+  display: none;
+}
+
+#tor-bridges-lox-unlock-alert:not(.lox-unlock-new-bridges) #tor-bridges-lox-unlock-alert-new-bridges {
+  display: none;
+}
+
+#tor-bridges-lox-unlock-alert:not(.lox-unlock-invites) #tor-bridges-lox-unlock-alert-invites {
+  display: none;
+}
+
+#tor-bridges-lox-remaining-invites {
+  grid-area: invites;
+  justify-self: end;
+  align-self: center;
+}
+
+#tor-bridges-lox-details:not(.lox-has-invites) :is(
+  #tor-bridges-lox-remaining-invites,
+  #tor-bridges-lox-show-invites-button
+) {
+  display: none;
+}
+
+.tor-bridges-lox-button {
+  grid-area: button;
+  margin: 0;
+  line-height: 1;
+  align-self: center;
 }
 
 #tor-bridges-provider-heading {
@@ -720,6 +912,15 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 #user-provide-bridge-error-message.not(.show-error) {
+  display: none;
+}
+
+#user-provide-bridge-connecting {
+  color: var(--text-color-deemphasized);
+  /* TODO: Add spinner ::before */
+}
+
+#user-provide-bridge-connecting:not(.show-connecting) {
   display: none;
 }
 

@@ -15,6 +15,46 @@ const { TorParsers } = ChromeUtils.importESModule(
   "resource://gre/modules/TorParsers.sys.mjs"
 );
 
+const { Lox, LoxErrors } = ChromeUtils.importESModule(
+  "resource://gre/modules/Lox.sys.mjs"
+);
+
+/*
+ * Fake Lox module:
+
+const LoxErrors = {
+  BadInvite: "BadInvite",
+  LoxServerUnreachable: "LoxServerUnreachable",
+  Other: "Other",
+};
+
+const Lox = {
+  failError: null,
+  // failError: LoxErrors.BadInvite,
+  // failError: LoxErrors.LoxServerUnreachable,
+  // failError: LoxErrors.Other,
+  redeemInvite(invite) {
+    return new Promise((res, rej) => {
+      setTimeout(() => {
+        if (this.failError) {
+          rej({ type: this.failError });
+        }
+        res("lox-id-000000");
+      }, 4000);
+    });
+  },
+  validateInvitation(invite) {
+    return invite.startsWith("lox-invite");
+  },
+  getBridges(id) {
+    return [
+      "0:0 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "0:1 BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+    ];
+  },
+};
+*/
+
 const gProvideBridgeDialog = {
   init() {
     this._result = window.arguments[0];
@@ -36,10 +76,14 @@ const gProvideBridgeDialog = {
 
     document.l10n.setAttributes(document.documentElement, titleId);
 
+    // TODO: Make conditional on Lox being enabled.
+    this._allowLoxInvite = mode !== "edit"; // && Lox.enabled
+
     document.l10n.setAttributes(
       document.getElementById("user-provide-bridge-textarea-label"),
-      // TODO change string when we can also accept Lox share codes.
-      "user-provide-bridge-dialog-textarea-addresses-label"
+      this._allowLoxInvite
+        ? "user-provide-bridge-dialog-textarea-addresses-or-invite-label"
+        : "user-provide-bridge-dialog-textarea-addresses-label"
     );
 
     this._dialog = document.getElementById("user-provide-bridge-dialog");
@@ -47,6 +91,9 @@ const gProvideBridgeDialog = {
     this._textarea = document.getElementById("user-provide-bridge-textarea");
     this._errorEl = document.getElementById(
       "user-provide-bridge-error-message"
+    );
+    this._connectingEl = document.getElementById(
+      "user-provide-bridge-connecting"
     );
     this._resultDescription = document.getElementById(
       "user-provide-result-description"
@@ -68,8 +115,9 @@ const gProvideBridgeDialog = {
       // Set placeholder if not editing.
       document.l10n.setAttributes(
         this._textarea,
-        // TODO: change string when we can also accept Lox share codes.
-        "user-provide-bridge-dialog-textarea-addresses"
+        this._allowLoxInvite
+          ? "user-provide-bridge-dialog-textarea-addresses-or-invite"
+          : "user-provide-bridge-dialog-textarea-addresses"
       );
     }
 
@@ -98,7 +146,17 @@ const gProvideBridgeDialog = {
     this._page = page;
     this._dialog.classList.toggle("show-entry-page", page === "entry");
     this._dialog.classList.toggle("show-result-page", page === "result");
-    if (page === "entry") {
+    this.takeFocus();
+    this.updateResult();
+    this.updateAcceptDisabled();
+    this.onAcceptStateChange();
+  },
+
+  /**
+   * Reset focus position in the dialog.
+   */
+  takeFocus() {
+    if (this._page === "entry") {
       this._textarea.focus();
     } else {
       // Move focus to the <xul:window> element.
@@ -106,9 +164,6 @@ const gProvideBridgeDialog = {
       // button (with now different text).
       document.documentElement.focus();
     }
-
-    this.updateAcceptDisabled();
-    this.onAcceptStateChange();
   },
 
   /**
@@ -149,7 +204,36 @@ const gProvideBridgeDialog = {
    */
   updateAcceptDisabled() {
     this._acceptButton.disabled =
-      this._page === "entry" && validateBridgeLines(this._textarea.value).empty;
+      this._page === "entry" && (this.isEmpty() || this._loxLoading);
+  },
+
+  /**
+   * The lox loading state.
+   *
+   * @type {boolean}
+   */
+  _loxLoading: false,
+
+  /**
+   * Set the lox loading state. I.e. whether we are connecting to the lox
+   * server.
+   *
+   * @param {boolean} isLoading - Whether we are loading or not.
+   */
+  setLoxLoading(isLoading) {
+    this._loxLoading = isLoading;
+    this._textarea.readOnly = isLoading;
+    this._connectingEl.classList.toggle("show-connecting", isLoading);
+    if (
+      isLoading &&
+      this._acceptButton.contains(
+        this._acceptButton.getRootNode().activeElement
+      )
+    ) {
+      // Move focus to the alert before we disable the button.
+      this._connectingEl.focus();
+    }
+    this.updateAcceptDisabled();
   },
 
   /**
@@ -166,22 +250,62 @@ const gProvideBridgeDialog = {
     // Prevent closing the dialog.
     event.preventDefault();
 
-    const bridges = this.checkValue();
-    if (!bridges.length) {
+    if (this._loxLoading) {
+      // User can still click Next whilst loading.
+      console.error("Already have a pending lox invite");
+      return;
+    }
+
+    // Clear the result from any previous attempt.
+    delete this._result.loxId;
+    delete this._result.addresses;
+    // Clear any previous error.
+    this.updateError(null);
+
+    const value = this.checkValue();
+    if (!value) {
+      // Not valid.
+      return;
+    }
+    if (value.loxInvite) {
+      this.setLoxLoading(true);
+      Lox.redeemInvite(value.loxInvite)
+        .finally(() => {
+          // Set set the loading to false before setting the errors.
+          this.setLoxLoading(false);
+        })
+        .then(
+          loxId => {
+            this._result.loxId = loxId;
+            this.setPage("result");
+          },
+          loxError => {
+            console.error("Redeeming failed", loxError);
+            switch (loxError.type) {
+              case LoxErrors.BadInvite:
+                // TODO: distinguish between a bad invite, an invite that has
+                // expired, and an invite that has already been redeemed.
+                this.updateError({ type: "bad-invite" });
+                break;
+              case LoxErrors.LoxServerUnreachable:
+                this.updateError({ type: "no-server" });
+                break;
+              default:
+                this.updateError({ type: "invite-error" });
+                break;
+            }
+          }
+        );
+      return;
+    }
+
+    if (!value.addresses?.length) {
       // Not valid
       return;
     }
-    this._result.bridges = bridges;
-    this.updateResult();
+    this._result.addresses = value.addresses;
     this.setPage("result");
   },
-
-  /**
-   * The current timeout for updating the error.
-   *
-   * @type {integer?}
-   */
-  _updateErrorTimeout: null,
 
   /**
    * Update the displayed error.
@@ -191,14 +315,13 @@ const gProvideBridgeDialog = {
    */
   updateError(error) {
     // First clear the existing error.
-    if (this._updateErrorTimeout !== null) {
-      clearTimeout(this._updateErrorTimeout);
-    }
-    this._updateErrorTimeout = null;
     this._errorEl.removeAttribute("data-l10n-id");
     this._errorEl.textContent = "";
     if (error) {
       this._textarea.setAttribute("aria-invalid", "true");
+      // Move focus back to the text area, likely away from the Next button or
+      // the "Connecting..." alert.
+      this._textarea.focus();
     } else {
       this._textarea.removeAttribute("aria-invalid");
     }
@@ -216,54 +339,122 @@ const gProvideBridgeDialog = {
         errorId = "user-provide-bridge-dialog-address-error";
         errorArgs = { line: error.line };
         break;
+      case "multiple-invites":
+        errorId = "user-provide-bridge-dialog-multiple-invites-error";
+        break;
+      case "mixed":
+        errorId = "user-provide-bridge-dialog-mixed-error";
+        break;
+      case "not-allowed-invite":
+        errorId = "user-provide-bridge-dialog-invite-not-allowed-error";
+        break;
+      case "bad-invite":
+        errorId = "user-provide-bridge-dialog-bad-invite-error";
+        break;
+      case "no-server":
+        errorId = "user-provide-bridge-dialog-no-server-error";
+        break;
+      case "invite-error":
+        // Generic invite error.
+        errorId = "user-provide-bridge-dialog-generic-invite-error";
+        break;
     }
 
-    // Wait a small amount of time to actually set the textContent. Otherwise
-    // the screen reader (tested with Orca) may not pick up on the change in
-    // text.
-    this._updateErrorTimeout = setTimeout(() => {
-      document.l10n.setAttributes(this._errorEl, errorId, errorArgs);
-    }, 500);
+    document.l10n.setAttributes(this._errorEl, errorId, errorArgs);
+  },
+
+  /**
+   * The condition for the value to be empty.
+   *
+   * @type {RegExp}
+   */
+  _emptyRegex: /^\s*$/,
+  /**
+   * Whether the input is considered empty.
+   *
+   * @returns {boolean} true if it is considered empty.
+   */
+  isEmpty() {
+    return this._emptyRegex.test(this._textarea.value);
   },
 
   /**
    * Check the current value in the textarea.
    *
-   * @returns {string[]} - The bridge addresses, if the entry is valid.
+   * @returns {object?} - The bridge addresses, or lox invite, or null if no
+   *   valid value.
    */
   checkValue() {
-    let bridges = [];
-    let error = null;
-    const validation = validateBridgeLines(this._textarea.value);
-    if (!validation.empty) {
+    if (this.isEmpty()) {
       // If empty, we just disable the button, rather than show an error.
-      if (validation.errorLines.length) {
-        // Report first error.
-        error = {
-          type: "invalid-address",
-          line: validation.errorLines[0],
-        };
-      } else {
-        bridges = validation.validBridges;
+      this.updateError(null);
+      return null;
+    }
+
+    let loxInvite = null;
+    for (let line of this._textarea.value.split(/\r?\n/)) {
+      line = line.trim();
+      if (!line) {
+        continue;
+      }
+      // TODO: Once we have a Lox invite encoding, distinguish between a valid
+      // invite and something that looks like it should be an invite.
+      const isLoxInvite = Lox.validateInvitation(line);
+      if (isLoxInvite) {
+        if (!this._allowLoxInvite) {
+          this.updateError({ type: "not-allowed-invite" });
+          return null;
+        }
+        if (loxInvite) {
+          this.updateError({ type: "multiple-invites" });
+          return null;
+        }
+        loxInvite = line;
+      } else if (loxInvite) {
+        this.updateError({ type: "mixed" });
+        return null;
       }
     }
-    this.updateError(error);
-    return bridges;
+
+    if (loxInvite) {
+      return { loxInvite };
+    }
+
+    const validation = validateBridgeLines(this._textarea.value);
+    if (validation.errorLines.length) {
+      // Report first error.
+      this.updateError({
+        type: "invalid-address",
+        line: validation.errorLines[0],
+      });
+      return null;
+    }
+
+    return { addresses: validation.validBridges };
   },
 
   /**
    * Update the shown result on the last page.
    */
   updateResult() {
+    if (this._page !== "result") {
+      return;
+    }
+
+    const loxId = this._result.loxId;
+
     document.l10n.setAttributes(
       this._resultDescription,
-      // TODO: Use a different id when added through Lox invite.
-      "user-provide-bridge-dialog-result-addresses"
+      loxId
+        ? "user-provide-bridge-dialog-result-invite"
+        : "user-provide-bridge-dialog-result-addresses"
     );
 
     this._bridgeGrid.replaceChildren();
 
-    for (const bridgeLine of this._result.bridges) {
+    const bridgeResult = loxId ? Lox.getBridges(loxId) : this._result.addresses;
+
+    for (const bridgeLine of bridgeResult) {
       let details;
       try {
         details = TorParsers.parseBridgeLine(bridgeLine);
@@ -303,6 +494,11 @@ const gProvideBridgeDialog = {
         break;
     }
   },
+};
+
+document.subDialogSetDefaultFocus = () => {
+  // Set the focus to the text area on load.
+  gProvideBridgeDialog.takeFocus();
 };
 
 window.addEventListener(

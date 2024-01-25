@@ -36,6 +36,60 @@ const { TorStrings } = ChromeUtils.importESModule(
   "resource://gre/modules/TorStrings.sys.mjs"
 );
 
+const { Lox } = ChromeUtils.importESModule(
+  "resource://gre/modules/Lox.sys.mjs"
+);
+
+/*
+ * Fake Lox module:
+
+const Lox = {
+  levelHistory: [0, 1],
+  // levelHistory: [1, 2],
+  // levelHistory: [2, 3],
+  // levelHistory: [3, 4],
+  // levelHistory: [0, 1, 2],
+  // levelHistory: [1, 2, 3],
+  // levelHistory: [4, 3],
+  // levelHistory: [4, 1],
+  // levelHistory: [2, 1],
+  //levelHistory: [2, 3, 4, 1, 2],
+  // Gain some invites and then loose them all. Shouldn't show any change.
+  // levelHistory: [0, 1, 2, 1],
+  // levelHistory: [1, 2, 3, 1],
+  getEventData() {
+    let prevLevel = this.levelHistory[0];
+    const events = [];
+    for (let i = 1; i < this.levelHistory.length; i++) {
+      const level = this.levelHistory[i];
+      events.push({ type: level > prevLevel ? "levelup" : "blockage", newLevel: level });
+      prevLevel = level;
+    }
+    return events;
+  },
+  clearEventData() {
+    this.levelHistory = [];
+  },
+  nextUnlock: { date: "2024-01-31T00:00:00Z", nextLevel: 1 },
+  //nextUnlock: { date: "2024-01-31T00:00:00Z", nextLevel: 2 },
+  //nextUnlock: { date: "2024-01-31T00:00:00Z", nextLevel: 3 },
+  //nextUnlock: { date: "2024-01-31T00:00:00Z", nextLevel: 4 },
+  getNextUnlock() {
+    return this.nextUnlock;
+  },
+  remainingInvites: 3,
+  // remainingInvites: 0,
+  getRemainingInviteCount() {
+    return this.remainingInvites;
+  },
+  invites: [],
+  // invites: ["a", "b"],
+  getInvites() {
+    return this.invites;
+  },
+};
+*/
+
 const InternetStatus = Object.freeze({
   Unknown: 0,
   Online: 1,
@@ -678,15 +732,23 @@ const gBridgeGrid = {
       row.optionsButton.focus();
     });
 
-    row.menu
-      .querySelector(".tor-bridges-options-qr-one-menu-item")
-      .addEventListener("click", () => {
-        const bridgeLine = row.bridgeLine;
-        if (!bridgeLine) {
-          return;
-        }
-        showBridgeQr(bridgeLine);
-      });
+    const qrItem = row.menu.querySelector(
+      ".tor-bridges-options-qr-one-menu-item"
+    );
+    row.menu.addEventListener("showing", () => {
+      qrItem.hidden = !(
+        this._bridgeSource === TorBridgeSource.UserProvided ||
+        this._bridgeSource === TorBridgeSource.BridgeDB
+      );
+    });
+
+    qrItem.addEventListener("click", () => {
+      const bridgeLine = row.bridgeLine;
+      if (!bridgeLine) {
+        return;
+      }
+      showBridgeQr(bridgeLine);
+    });
     row.menu
       .querySelector(".tor-bridges-options-copy-one-menu-item")
       .addEventListener("click", () => {
@@ -734,7 +796,11 @@ const gBridgeGrid = {
    *
    * @type {string[]}
    */
-  _supportedSources: [TorBridgeSource.BridgeDB, TorBridgeSource.UserProvided],
+  _supportedSources: [
+    TorBridgeSource.BridgeDB,
+    TorBridgeSource.UserProvided,
+    TorBridgeSource.Lox,
+  ],
 
   /**
    * Update the grid to show the latest bridge strings.
@@ -1170,6 +1236,335 @@ const gBuiltinBridgesArea = {
 };
 
 /**
+ * Controls the bridge pass area.
+ */
+const gLoxStatus = {
+  /**
+   * The status area.
+   *
+   * @type {Element?}
+   */
+  _area: null,
+  /**
+   * The area for showing the next unlock and invites.
+   *
+   * @type {Element?}
+   */
+  _detailsArea: null,
+  /**
+   * The day counter for the next unlock.
+   *
+   * @type {Element?}
+   */
+  _nextUnlockCounterEl: null,
+  /**
+   * Shows the number of remaining invites.
+   *
+   * @type {Element?}
+   */
+  _remainingInvitesEl: null,
+  /**
+   * The button to show the invites.
+   *
+   * @type {Element?}
+   */
+  _invitesButton: null,
+  /**
+   * The alert for new unlocks.
+   *
+   * @type {Element?}
+   */
+  _unlockAlert: null,
+  /**
+   * The alert title.
+   *
+   * @type {Element?}
+   */
+  _unlockAlertTitle: null,
+  /**
+   * The alert invites item.
+   *
+   * @type {Element?}
+   */
+  _unlockAlertInvitesItem: null,
+  /**
+   * Button for the user to dismiss the alert.
+   *
+   * @type {Element?}
+   */
+  _unlockAlertButton: null,
+
+  /**
+   * Initialize the bridge pass area.
+   */
+  init() {
+    this._area = document.getElementById("tor-bridges-lox-status");
+    this._detailsArea = document.getElementById("tor-bridges-lox-details");
+    this._nextUnlockCounterEl = document.getElementById(
+      "tor-bridges-lox-next-unlock-counter"
+    );
+    this._remainingInvitesEl = document.getElementById(
+      "tor-bridges-lox-remaining-invites"
+    );
+    this._invitesButton = document.getElementById(
+      "tor-bridges-lox-show-invites-button"
+    );
+    this._unlockAlert = document.getElementById("tor-bridges-lox-unlock-alert");
+    this._unlockAlertTitle = document.getElementById(
+      "tor-bridge-unlock-alert-title"
+    );
+    this._unlockAlertInviteItem = document.getElementById(
+      "tor-bridges-lox-unlock-alert-invites"
+    );
+    this._unlockAlertButton = document.getElementById(
+      "tor-bridges-lox-unlock-alert-button"
+    );
+
+    this._invitesButton.addEventListener("click", () => {
+      // TODO: Show invites.
+    });
+    this._unlockAlertButton.addEventListener("click", () => {
+      // TODO: Have a way to ensure that the cleared event data matches the
+      // current _loxId
+      Lox.clearEventData();
+      // TODO: Listen for events from Lox, rather than call _updateUnlocks
+      // directly.
+      this._updateUnlocks();
+    });
+
+    Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
+    // TODO: Listen for new events from Lox, when it is supported.
+
+    // NOTE: Before initializedPromise completes, this area is hidden.
+    TorSettings.initializedPromise.then(() => {
+      this._updateLoxId();
+    });
+  },
+
+  /**
+   * Uninitialize the built-in bridges area.
+   */
+  uninit() {
+    Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
+  },
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case TorSettingsTopics.SettingsChanged:
+        const { changes } = subject.wrappedJSObject;
+        if (
+          changes.includes("bridges.source") ||
+          changes.includes("bridges.lox_id")
+        ) {
+          this._updateLoxId();
+        }
+        break;
+    }
+  },
+
+  /**
+   * The Lox id currently shown. Empty if deactivated, and null if
+   * uninitialized.
+   *
+   * @type {string?}
+   */
+  _loxId: null,
+
+  /**
+   * Update the shown bridge pass.
+   */
+  async _updateLoxId() {
+    let loxId =
+      TorSettings.bridges.source === TorBridgeSource.Lox
+        ? TorSettings.bridges.lox_id
+        : "";
+    if (loxId !== this._loxId) {
+      this._loxId = loxId;
+      this._updateUnlocks();
+      this._updateInvites();
+    }
+  },
+
+  /**
+   * Update the display of the current or next unlock.
+   */
+  async _updateUnlocks() {
+    // Cache the loxId before we await.
+    const loxId = this._loxId;
+
+    if (!loxId) {
+      // NOTE: This area should already be hidden by the change in Lox source,
+      // but we clean up for the next non-empty id.
+      this._area.classList.remove("show-unlock-alert");
+      this._area.classList.remove("show-next-unlock");
+      return;
+    }
+
+    let pendingEvents;
+    let nextUnlock;
+    let numInvites;
+    // Fetch the latest events or details about the next unlock.
+    try {
+      nextUnlock = await Lox.getNextUnlock();
+      pendingEvents = Lox.getEventData();
+      numInvites = Lox.getRemainingInviteCount();
+    } catch (e) {
+      console.error("Failed get get lox updates", e);
+      return;
+    }
+
+    if (loxId !== this._loxId) {
+      // Replaced during await.
+      return;
+    }
+
+    // Grab focus state before changing visibility.
+    const alertHadFocus = this._unlockAlert.contains(document.activeElement);
+    const detailsHadFocus = this._detailsArea.contains(document.activeElement);
+
+    const showAlert = !!pendingEvents.length;
+    this._area.classList.toggle("show-unlock-alert", showAlert);
+    this._area.classList.toggle("show-next-unlock", !showAlert);
+
+    if (showAlert) {
+      // At level 0 and level 1, we do not have any invites.
+      // If the user starts and ends on level 0 or 1, then overall they would
+      // have had no change in their invites. So we do not want to show their
+      // latest updates.
+      // NOTE: If the user starts at level > 1 and ends with level 1 (levelling
+      // down to level 0 should not be possible), then we *do* want to show the
+      // user that they now have "0" invites.
+      // NOTE: pendingEvents are time-ordered, with the most recent event
+      // *last*.
+      const firstEvent = pendingEvents[0];
+      // NOTE: We cannot get a blockage event when the user starts at level 1 or
+      // 0.
+      const startingAtLowLevel =
+        firstEvent.type === "levelup" && firstEvent.newLevel <= 2;
+      const lastEvent = pendingEvents[pendingEvents.length - 1];
+      const endingAtLowLevel = lastEvent.newLevel <= 1;
+
+      const showInvites = !(startingAtLowLevel && endingAtLowLevel);
+
+      let blockage = false;
+      let levelUp = false;
+      let bridgeGain = false;
+      // Go through events, in the order that they occurred.
+      for (const loxEvent of pendingEvents) {
+        if (loxEvent.type === "levelup") {
+          levelUp = true;
+          if (loxEvent.newLevel === 1) {
+            // Gain 2 bridges from level 0 to 1.
+            bridgeGain = true;
+          }
+        } else {
+          blockage = true;
+        }
+      }
+      let alertTitleId;
+      if (levelUp && !blockage) {
+        alertTitleId = "tor-bridges-lox-upgrade";
+      } else {
+        // Show as blocked bridges replaced.
+        // Even if we have a mixture of level ups as well.
+        alertTitleId = "tor-bridges-lox-blocked";
+      }
+      document.l10n.setAttributes(this._unlockAlertTitle, alertTitleId);
+      document.l10n.setAttributes(
+        this._unlockAlertInviteItem,
+        "tor-bridges-lox-new-invites",
+        { numInvites }
+      );
+      this._unlockAlert.classList.toggle(
+        "lox-unlock-upgrade",
+        levelUp && !blockage
+      );
+      this._unlockAlert.classList.toggle("lox-unlock-new-bridges", blockage);
+      this._unlockAlert.classList.toggle("lox-unlock-gain-bridges", bridgeGain);
+      this._unlockAlert.classList.toggle("lox-unlock-invites", showInvites);
+    } else {
+      // Show next unlock.
+      // Number of days until the next unlock, rounded up.
+      const numDays = Math.max(
+        1,
+        Math.ceil(
+          (new Date(nextUnlock.date).getTime() - Date.now()) /
+            (24 * 60 * 60 * 1000)
+        )
+      );
+      document.l10n.setAttributes(
+        this._nextUnlockCounterEl,
+        "tor-bridges-lox-days-until-unlock",
+        { numDays }
+      );
+
+      // Gain 2 bridges from level 0 to 1. After that gain invites.
+      const bridgeGain = nextUnlock.nextLevel === 1;
+      const firstInvites = nextUnlock.nextLevel === 2;
+      const moreInvites = nextUnlock.nextLevel > 2;
+
+      this._detailsArea.classList.toggle("lox-next-gain-bridges", bridgeGain);
+      this._detailsArea.classList.toggle(
+        "lox-next-first-invites",
+        firstInvites
+      );
+      this._detailsArea.classList.toggle("lox-next-more-invites", moreInvites);
+    }
+
+    if (alertHadFocus && !showAlert) {
+      // Has become hidden.
+      this._nextUnlockCounterEl.focus();
+    } else if (detailsHadFocus && showAlert) {
+      this._unlockAlertButton.focus();
+    }
+  },
+
+  /**
+   * Update the invites area.
+   */
+  _updateInvites() {
+    if (!this._loxId) {
+      return;
+    }
+
+    let remainingInvites;
+    let existingInvites;
+    // Fetch the latest events or details about the next unlock.
+    try {
+      remainingInvites = Lox.getRemainingInviteCount();
+      existingInvites = Lox.getInvites().length;
+    } catch (e) {
+      console.error("Failed get get remaining invites", e);
+      return;
+    }
+
+    const hasInvites = !!existingInvites || !!remainingInvites;
+
+    if (!hasInvites) {
+      if (
+        this._remainingInvitesEl.contains(document.activeElement) ||
+        this._invitesButton.contains(document.activeElement)
+      ) {
+        // About to loose focus.
+        // Unexpected for the lox level to loose all invites.
+        // Move to the top of the details area, which should be visible if we
+        // just had focus.
+        this._nextUnlockCounterEl.focus();
+      }
+    }
+    // Hide the invite elements if we have no historic invites or a way of
+    // creating new ones.
+    this._detailsArea.classList.toggle("lox-has-invites", hasInvites);
+
+    document.l10n.setAttributes(
+      this._remainingInvitesEl,
+      "tor-bridges-lox-remaining-invites",
+      { numInvites: remainingInvites }
+    );
+  },
+};
+
+/**
  * Controls the bridge settings.
  */
 const gBridgeSettings = {
@@ -1295,6 +1690,7 @@ const gBridgeSettings = {
 
     gBridgeGrid.init();
     gBuiltinBridgesArea.init();
+    gLoxStatus.init();
 
     this._initBridgesMenu();
     this._initShareArea();
@@ -1315,6 +1711,7 @@ const gBridgeSettings = {
   uninit() {
     gBridgeGrid.uninit();
     gBuiltinBridgesArea.uninit();
+    gLoxStatus.uninit();
 
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
   },
@@ -1386,6 +1783,10 @@ const gBridgeSettings = {
     this._bridgesEl.classList.toggle(
       "source-requested",
       bridgeSource === TorBridgeSource.BridgeDB
+    );
+    this._bridgesEl.classList.toggle(
+      "source-lox",
+      bridgeSource === TorBridgeSource.Lox
     );
 
     // Force the menu to close whenever the source changes.
@@ -1615,7 +2016,10 @@ const gBridgeSettings = {
 
     this._bridgesMenu.addEventListener("showing", () => {
       const canCopy = this._bridgeSource !== TorBridgeSource.BuiltIn;
-      qrItem.hidden = !this._canQRBridges || !canCopy;
+      const canShare =
+        this._bridgeSource === TorBridgeSource.UserProvided ||
+        this._bridgeSource === TorBridgeSource.BridgeDB;
+      qrItem.hidden = !canShare || !this._canQRBridges;
       copyItem.hidden = !canCopy;
       editItem.hidden = this._bridgeSource !== TorBridgeSource.UserProvided;
     });
@@ -1763,13 +2167,19 @@ const gBridgeSettings = {
       "chrome://browser/content/torpreferences/provideBridgeDialog.xhtml",
       { mode },
       result => {
-        if (!result.bridges?.length) {
+        const loxId = result.loxId;
+        if (!loxId && !result.addresses?.length) {
           return null;
         }
         return setTorSettings(() => {
           TorSettings.bridges.enabled = true;
-          TorSettings.bridges.source = TorBridgeSource.UserProvided;
-          TorSettings.bridges.bridge_strings = result.bridges;
+          if (loxId) {
+            TorSettings.bridges.source = TorBridgeSource.Lox;
+            TorSettings.bridges.lox_id = loxId;
+          } else {
+            TorSettings.bridges.source = TorBridgeSource.UserProvided;
+            TorSettings.bridges.bridge_strings = result.addresses;
+          }
         });
       }
     );
