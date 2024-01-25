@@ -54,5 +54,6 @@ export class TorStartupService {
 
     lazy.TorProviderBuilder.uninit();
     lazy.TorLauncherUtil.cleanupTempDirectories();
+    lazy.TorSettings.uninit();
   }
 }
