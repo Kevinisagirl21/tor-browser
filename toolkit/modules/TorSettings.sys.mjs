@@ -8,6 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  Lox: "resource://gre/modules/Lox.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
@@ -40,6 +41,8 @@ const TorSettingsPrefs = Object.freeze({
     enabled: "torbrowser.settings.bridges.enabled",
     /* int: See TorBridgeSource */
     source: "torbrowser.settings.bridges.source",
+    /* string: output of crypto.randomUUID() */
+    lox_id: "torbrowser.settings.bridges.lox_id",
     /* string: obfs4|meek-azure|snowflake|etc */
     builtin_type: "torbrowser.settings.bridges.builtin_type",
     /* preference branch: each child branch should be a bridge string */
@@ -86,6 +89,7 @@ export const TorBridgeSource = Object.freeze({
   BuiltIn: 0,
   BridgeDB: 1,
   UserProvided: 2,
+  Lox: 3,
 });
 
 export const TorProxyType = Object.freeze({
@@ -159,6 +163,7 @@ class TorSettingsImpl {
     bridges: {
       enabled: false,
       source: TorBridgeSource.Invalid,
+      lox_id: "",
       builtin_type: "",
       bridge_strings: [],
     },
@@ -292,6 +297,20 @@ class TorSettingsImpl {
           this.bridges.source = TorBridgeSource.Invalid;
         },
       },
+      /**
+       * The lox id is used with the Lox "source", and remains set with the stored value when
+       * other sources are used.
+       *
+       * @type {string}
+       */
+      lox_id: {
+        callback: (val, addError) => {
+          if (!val) {
+            return;
+          }
+          this.bridges.bridge_strings = lazy.Lox.getBridges(val);
+        },
+      },
     });
     this.#addProperties("proxy", {
       enabled: {},
@@ -378,6 +397,9 @@ class TorSettingsImpl {
       }
       if (this.bridges.source !== TorBridgeSource.BuiltIn) {
         this.bridges.builtin_type = "";
+      }
+      if (this.bridges.source !== TorBridgeSource.Lox) {
+        this.bridges.lox_id = "";
       }
       if (!this.proxy.enabled) {
         this.proxy.type = TorProxyType.Invalid;
@@ -639,6 +661,14 @@ class TorSettingsImpl {
       lazy.logger.error("Could not load the built-in PT config.", e);
     }
 
+    // Initialize this before loading from prefs because we need Lox initialized before
+    // any calls to Lox.getBridges()
+    try {
+      await lazy.Lox.init();
+    } catch (e) {
+      lazy.logger.error("Could not initialize Lox.", e.type);
+    }
+
     // TODO: We could use a shared promise, and wait for it to be fullfilled
     // instead of Service.obs.
     if (lazy.TorLauncherUtil.shouldStartAndOwnTor) {
@@ -666,6 +696,13 @@ class TorSettingsImpl {
 
       Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
     }
+  }
+
+  /**
+   * Unload or uninit our settings, and unregister observers.
+   */
+  async uninit() {
+    await lazy.Lox.uninit();
   }
 
   /**
@@ -737,6 +774,10 @@ class TorSettingsImpl {
     this.bridges.source = Services.prefs.getIntPref(
       TorSettingsPrefs.bridges.source,
       TorBridgeSource.Invalid
+    );
+    this.bridges.lox_id = Services.prefs.getStringPref(
+      TorSettingsPrefs.bridges.lox_id,
+      ""
     );
     if (this.bridges.source == TorBridgeSource.BuiltIn) {
       this.bridges.builtin_type = Services.prefs.getStringPref(
@@ -822,6 +863,10 @@ class TorSettingsImpl {
     Services.prefs.setStringPref(
       TorSettingsPrefs.bridges.builtin_type,
       this.bridges.builtin_type
+    );
+    Services.prefs.setStringPref(
+      TorSettingsPrefs.bridges.lox_id,
+      this.bridges.lox_id
     );
     // erase existing bridge strings
     const bridgeBranchPrefs = Services.prefs
@@ -1012,6 +1057,9 @@ class TorSettingsImpl {
             break;
           case TorBridgeSource.BuiltIn:
             this.bridges.builtin_type = settings.bridges.builtin_type;
+            break;
+          case TorBridgeSource.Lox:
+            this.bridges.lox_id = settings.bridges.lox_id;
             break;
           case TorBridgeSource.Invalid:
             break;
