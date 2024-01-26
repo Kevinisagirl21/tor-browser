@@ -46,6 +46,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_BOOTSTRAP_PROGRESS = "GeckoView:Tor:BootstrapProgress";
     private static final String EVENT_BOOTSTRAP_COMPLETE = "GeckoView:Tor:BootstrapComplete";
     private static final String EVENT_BOOTSTRAP_ERROR = "GeckoView:Tor:BootstrapError";
+    private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
+    private static final String EVENT_SETTINGS_CHANGED = "GeckoView:Tor:SettingsChanged";
 
     // Events we emit
     private static final String EVENT_SETTINGS_GET = "GeckoView:Tor:SettingsGet";
@@ -56,7 +58,6 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_BOOTSTRAP_BEGIN_AUTO = "GeckoView:Tor:BootstrapBeginAuto";
     private static final String EVENT_BOOTSTRAP_CANCEL = "GeckoView:Tor:BootstrapCancel";
     private static final String EVENT_BOOTSTRAP_GET_STATE = "GeckoView:Tor:BootstrapGetState";
-    private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
 
     private static final String CONTROL_PORT_FILE = "/control-ipc";
     private static final String SOCKS_FILE = "/socks-ipc";
@@ -111,6 +112,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_MEEK_START,
                         EVENT_MEEK_STOP,
                         EVENT_SETTINGS_READY,
+                        EVENT_SETTINGS_CHANGED,
                         EVENT_BOOTSTRAP_STATE_CHANGED,
                         EVENT_BOOTSTRAP_PROGRESS,
                         EVENT_BOOTSTRAP_COMPLETE,
@@ -133,6 +135,14 @@ public class TorIntegrationAndroid implements BundleEventListener {
                 new SettingsLoader().execute(message);
             } catch(Exception e) {
                 Log.e(TAG, "SettingsLoader error: "+ e.toString());
+            }
+        } else if (EVENT_SETTINGS_CHANGED.equals(event)) {
+            GeckoBundle newSettings = message.getBundle("settings");
+            if (newSettings != null) {
+                // TODO: Should we notify listeners?
+                mSettings = new TorSettings(newSettings);
+            } else {
+                Log.w(TAG, "Ignoring a settings changed event that did not have the new settings.");
             }
         } else if (EVENT_BOOTSTRAP_STATE_CHANGED.equals(event)) {
             String state = message.getString("state");

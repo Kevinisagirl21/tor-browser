@@ -124,6 +124,15 @@ class TorAndroidIntegrationImpl {
           settings: lazy.TorSettings.getSettings(),
         });
         break;
+      case lazy.TorSettingsTopics.SettingsChanged:
+        // For Android we push also the settings object to avoid a round trip on
+        // the event dispatcher.
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.settingsChanged,
+          changes: subj.wrappedJSObject.changes ?? [],
+          settings: lazy.TorSettings.getSettings(),
+        });
+        break;
     }
   }
 
