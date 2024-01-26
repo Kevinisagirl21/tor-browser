@@ -992,6 +992,10 @@ class TorSettingsImpl {
     // Hold off on lots of notifications until all settings are changed.
     this.freezeNotifications();
     try {
+      if ("quickstart" in settings) {
+        this.quickstart.enabled = !!settings.quickstart.enabled;
+      }
+
       if ("bridges" in settings) {
         this.bridges.enabled = !!settings.bridges.enabled;
         // Currently, disabling bridges in the UI does not remove the lines,
