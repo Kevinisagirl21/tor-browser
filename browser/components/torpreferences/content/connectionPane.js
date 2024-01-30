@@ -1321,7 +1321,17 @@ const gLoxStatus = {
     );
 
     this._invitesButton.addEventListener("click", () => {
-      // TODO: Show invites.
+      gSubDialog.open(
+        "chrome://browser/content/torpreferences/loxInviteDialog.xhtml",
+        {
+          features: "resizable=yes",
+          closedCallback: () => {
+            // TODO: Listen for events from Lox, rather than call _updateInvites
+            // directly.
+            this._updateInvites();
+          },
+        }
+      );
     });
     this._unlockAlertButton.addEventListener("click", () => {
       // TODO: Have a way to ensure that the cleared event data matches the
