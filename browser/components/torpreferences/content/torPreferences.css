@@ -820,6 +820,75 @@ dialog#torPreferences-requestBridge-dialog > hbox {
   background: var(--qr-one);
 }
 
+/* Lox invite dialog */
+
+#lox-invite-dialog-generate-area {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template:
+    ". remaining button" min-content
+    "message message message" auto
+    / 1fr max-content max-content;
+  gap: 8px;
+  margin-block: 16px 8px;
+  align-items: center;
+}
+
+#lox-invite-dialog-remaining {
+  grid-area: remaining;
+}
+
+#lox-invite-dialog-generate-button {
+  grid-area: button;
+}
+
+#lox-invite-dialog-message-area {
+  grid-area: message;
+  justify-self: end;
+}
+
+#lox-invite-dialog-message-area::after {
+  /* Zero width space, to ensure we are always one line high. */
+  content: "\200B";
+}
+
+#lox-invite-dialog-error-message {
+  color: var(--in-content-error-text-color);
+}
+
+#lox-invite-dialog-error-message:not(.show-error) {
+  display: none;
+}
+
+#lox-invite-dialog-connecting {
+  color: var(--text-color-deemphasized);
+  /* TODO: Add spinner ::before */
+}
+
+#lox-invite-dialog-connecting:not(.show-connecting) {
+  display: none;
+}
+
+#lox-invite-dialog-list-label {
+  font-weight: 700;
+}
+
+#lox-invite-dialog-list {
+  flex: 1 1 auto;
+  /* basis height */
+  height: 10em;
+  margin-block: 8px;
+}
+
+.lox-invite-dialog-list-item {
+  white-space: nowrap;
+  overflow-x: hidden;
+  /* FIXME: ellipsis does not show. */
+  text-overflow: ellipsis;
+  padding-block: 6px;
+  padding-inline: 8px;
+}
+
 /* Builtin bridge dialog */
 #torPreferences-builtinBridge-header {
   margin: 8px 0 10px 0;

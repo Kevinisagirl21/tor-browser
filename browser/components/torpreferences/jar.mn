@@ -9,6 +9,8 @@ browser.jar:
     content/browser/torpreferences/lox-success.svg                   (content/lox-success.svg)
     content/browser/torpreferences/lox-complete-ring.svg             (content/lox-complete-ring.svg)
     content/browser/torpreferences/lox-progress-ring.svg             (content/lox-progress-ring.svg)
+    content/browser/torpreferences/loxInviteDialog.xhtml             (content/loxInviteDialog.xhtml)
+    content/browser/torpreferences/loxInviteDialog.js                (content/loxInviteDialog.js)
     content/browser/torpreferences/bridgeQrDialog.xhtml              (content/bridgeQrDialog.xhtml)
     content/browser/torpreferences/bridgeQrDialog.js                 (content/bridgeQrDialog.js)
     content/browser/torpreferences/builtinBridgeDialog.xhtml         (content/builtinBridgeDialog.xhtml)
