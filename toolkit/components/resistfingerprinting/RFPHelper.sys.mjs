@@ -447,8 +447,7 @@ class _RFPHelper {
       // find the rule applying the default letterboxing styles to browsers
       // preemptively in order to beat race conditions on tab/window creation
       const LETTERBOX_CSS_URL = "chrome://browser/content/browser.css";
-      const LETTERBOX_CSS_SELECTOR =
-        ".letterboxing .browserContainer:not(.responsive-mode) > .browserStack:not(.exclude-letterboxing) > browser";
+      const LETTERBOX_CSS_SELECTOR = ".letterboxing .browserContainer";
       for (let ss of document.styleSheets) {
         if (ss.href !== LETTERBOX_CSS_URL) {
           continue;
@@ -572,8 +571,8 @@ class _RFPHelper {
       const r = (width, height) => {
         lastRoundedSize = {width, height};
         return {
-          width: `var(--rdm-width, ${width}px)`,
-          height: `var(--rdm-height, ${height}px)`,
+          "--letterboxing-width": `var(--rdm-width, ${width}px)`,
+          "--letterboxing-height": `var(--rdm-height, ${height}px)`,
         }
       };
 
@@ -637,7 +636,7 @@ class _RFPHelper {
         for (let [name, value] of Object.entries(props)) {
           if (style[name] !== value) {
             this.push(() => {
-              style.setProperty(name, value, "important");
+              style.setProperty(name, value);
             });
           }
         }
@@ -668,8 +667,11 @@ class _RFPHelper {
         ? // optional UI components such as the notification box, the find bar
           // or devtools are constraining this browser's size: recompute custom
           roundDimensions(parentWidth, parentHeight)
-        : { width: "", height: "" }; // otherwise we can keep the default (rounded) size
-    styleChanges.queueIfNeeded(aBrowser, roundedInline);
+        : {
+          "--letterboxing-width": "",
+          "--letterboxing-height": "",
+        }; // otherwise we can keep the default (rounded) size
+    styleChanges.queueIfNeeded(browserParent, roundedInline);
 
     if (lastRoundedSize) {
       // check wether the letterboxing margin is less than the border radius, and if so flatten the borders
