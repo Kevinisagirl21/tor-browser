@@ -52,7 +52,11 @@ nsresult NumericInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
   MOZ_ASSERT(!maximum.isNaN());
 
   nsAutoString maxStr;
-  ConvertNumberToString(maximum, maxStr);
+  char buf[32];
+  DebugOnly<bool> ok = maximum.toString(buf, ArrayLength(buf));
+  maxStr.AssignASCII(buf);
+  MOZ_ASSERT(ok, "buf not big enough");
+
   return nsContentUtils::FormatMaybeLocalizedString(
       aMessage, nsContentUtils::eDOM_PROPERTIES,
       "FormValidationNumberRangeOverflow", mInputElement->OwnerDoc(), maxStr);
@@ -63,7 +67,11 @@ nsresult NumericInputTypeBase::GetRangeUnderflowMessage(nsAString& aMessage) {
   MOZ_ASSERT(!minimum.isNaN());
 
   nsAutoString minStr;
-  ConvertNumberToString(minimum, minStr);
+  char buf[32];
+  DebugOnly<bool> ok = minimum.toString(buf, ArrayLength(buf));
+  minStr.AssignASCII(buf);
+  MOZ_ASSERT(ok, "buf not big enough");
+
   return nsContentUtils::FormatMaybeLocalizedString(
       aMessage, nsContentUtils::eDOM_PROPERTIES,
       "FormValidationNumberRangeUnderflow", mInputElement->OwnerDoc(), minStr);
