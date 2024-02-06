@@ -1,6 +1,5 @@
 . $topsrcdir/browser/config/mozconfigs/base-browser
 
-mk_add_options MOZ_APP_DISPLAYNAME="Tor Browser"
 # If building outside tor-browser-build, you might want to customize this value.
 # On Linux, it influences the WM_CLASS value, which is shown on GNOME's ALT-TAB,
 # for example.
