@@ -487,7 +487,8 @@ const gProvideBridgeDialog = {
         });
       }
 
-      rowEl.querySelector(".tor-bridges-address-cell").textContent = bridgeLine;
+      rowEl.querySelector(".tor-bridges-address-cell-text").textContent =
+        bridgeLine;
 
       this._bridgeGrid.append(rowEl);
     }
