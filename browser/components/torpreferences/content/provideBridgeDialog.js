@@ -474,12 +474,18 @@ const gProvideBridgeDialog = {
         emojiBlock.append(cell);
       }
 
-      // TODO: properly handle "vanilla" bridges?
-      document.l10n.setAttributes(
-        rowEl.querySelector(".tor-bridges-type-cell"),
-        "tor-bridges-type-prefix",
-        { type: details?.transport ?? "vanilla" }
-      );
+      const transport = details?.transport ?? "vanilla";
+      const typeCell = rowEl.querySelector(".tor-bridges-type-cell");
+      if (transport === "vanilla") {
+        document.l10n.setAttributes(
+          typeCell,
+          "tor-bridges-type-prefix-generic"
+        );
+      } else {
+        document.l10n.setAttributes(typeCell, "tor-bridges-type-prefix", {
+          type: transport,
+        });
+      }
 
       rowEl.querySelector(".tor-bridges-address-cell").textContent = bridgeLine;
 
