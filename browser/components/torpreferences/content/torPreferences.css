@@ -395,6 +395,9 @@
   /* base size */
   width: 10em;
   flex: 1 0 auto;
+}
+
+.tor-bridges-address-cell-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

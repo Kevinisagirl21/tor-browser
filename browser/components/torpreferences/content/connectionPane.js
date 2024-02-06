@@ -675,7 +675,7 @@ const gBridgeGrid = {
       });
     }
 
-    row.element.querySelector(".tor-bridges-address-cell").textContent =
+    row.element.querySelector(".tor-bridges-address-cell-text").textContent =
       bridgeLine;
 
     row.statusEl = row.element.querySelector(
