@@ -665,12 +665,15 @@ const gBridgeGrid = {
       row.cells.push({ element, focusEl, columnIndex, row });
     }
 
-    // TODO: properly handle "vanilla" bridges?
-    document.l10n.setAttributes(
-      row.element.querySelector(".tor-bridges-type-cell"),
-      "tor-bridges-type-prefix",
-      { type: details?.transport ?? "vanilla" }
-    );
+    const transport = details?.transport ?? "vanilla";
+    const typeCell = row.element.querySelector(".tor-bridges-type-cell");
+    if (transport === "vanilla") {
+      document.l10n.setAttributes(typeCell, "tor-bridges-type-prefix-generic");
+    } else {
+      document.l10n.setAttributes(typeCell, "tor-bridges-type-prefix", {
+        type: transport,
+      });
+    }
 
     row.element.querySelector(".tor-bridges-address-cell").textContent =
       bridgeLine;
