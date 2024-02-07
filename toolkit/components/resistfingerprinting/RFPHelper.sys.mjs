@@ -684,6 +684,7 @@ class _RFPHelper {
         borderRadius = "";
       }
       styleChanges.queueIfNeeded(browserParent, {
+        "--letterboxing-decorator-visibility": borderRadius === 0 ? "hidden" : "",
         '--letterboxing-border-radius': borderRadius
       });
     }
