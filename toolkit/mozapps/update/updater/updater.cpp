@@ -2822,7 +2822,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
 #endif
 
   if (argc > callbackIndex) {
-#if defined(XP_WIN)
+#if defined(XP_WIN) && !defined(TOR_BROWSER)
     if (gSucceeded) {
       if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
         fprintf(stderr, "The post update process was not launched");
