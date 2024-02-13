@@ -67,7 +67,11 @@
 
   <!-- Bridges -->
   <hbox class="subcategory" data-category="paneConnection" hidden="true">
-    <html:h1 id="torPreferences-bridges-header" tabindex="-1" />
+    <html:h1
+      id="torPreferences-bridges-header"
+      class="tor-focusable-heading"
+      tabindex="-1"
+    ></html:h1>
   </hbox>
   <groupbox
     id="torPreferences-bridges-group"
@@ -157,22 +161,26 @@
       <html:div id="tor-bridges-current-header-bar">
         <html:h2
           id="tor-bridges-current-heading"
+          class="tor-focusable-heading"
           tabindex="-1"
           data-l10n-id="tor-bridges-your-bridges"
         ></html:h2>
         <html:span
           id="tor-bridges-user-label"
+          class="tor-bridges-source-label"
           data-l10n-id="tor-bridges-source-user"
         ></html:span>
         <html:span
           id="tor-bridges-built-in-label"
+          class="tor-bridges-source-label"
           data-l10n-id="tor-bridges-source-built-in"
         ></html:span>
         <html:span
           id="tor-bridges-requested-label"
+          class="tor-bridges-source-label"
           data-l10n-id="tor-bridges-source-requested"
         ></html:span>
-        <html:span id="tor-bridges-lox-label">
+        <html:span id="tor-bridges-lox-label" class="tor-bridges-source-label">
           <html:img id="tor-bridges-lox-label-icon" alt="" />
           <html:span data-l10n-id="tor-bridges-source-lox"></html:span>
         </html:span>
@@ -307,11 +315,11 @@
         >
           <html:img alt="" class="tor-bridges-lox-image-inner" />
           <html:img alt="" class="tor-bridges-lox-image-outer" />
-          <html:div
+          <html:h3
             id="tor-bridges-lox-next-unlock-counter"
-            class="tor-bridges-lox-intro"
+            class="tor-bridges-lox-intro tor-focusable-heading"
             tabindex="-1"
-          ></html:div>
+          ></html:h3>
           <html:ul class="tor-bridges-lox-list">
             <html:li
               id="tor-bridges-lox-next-unlock-gain-bridges"
