@@ -70,6 +70,10 @@
 
 /* Bridge settings */
 
+.tor-focusable-heading:focus-visible {
+  outline-offset: var(--in-content-focus-outline-offset);
+}
+
 .bridge-status-badge {
   display: flex;
   min-width: max-content;
@@ -210,16 +214,31 @@
 }
 
 #tor-bridges-current-header-bar {
-  display: flex;
+  display: grid;
   min-width: max-content;
+  grid-template: "heading source button" min-content / max-content 1fr max-content;
   align-items: center;
   border-block-end: 1px solid var(--in-content-border-color);
   padding-block-end: 16px;
   margin-block-end: 16px;
+  white-space: nowrap;
 }
 
-#tor-bridges-current-header-bar > * {
-  flex: 0 0 auto;
+#tor-bridges-current-heading {
+  margin: 0;
+  font-size: inherit;
+  grid-area: heading;
+}
+
+.tor-bridges-source-label {
+  margin-inline-start: 2em;
+  margin-inline-end: 8px;
+  grid-area: source;
+  justify-self: end;
+}
+
+#tor-bridges-all-options-button {
+  grid-area: button;
 }
 
 #tor-bridges-lox-label {
@@ -240,13 +259,6 @@
   fill: var(--in-content-icon-color);
 }
 
-#tor-bridges-current-heading {
-  margin: 0;
-  margin-inline-end: 2em;
-  font-size: inherit;
-  flex: 1 0 auto;
-}
-
 .tor-bridges-options-button {
   padding: 3px;
   margin: 0;
@@ -262,10 +274,6 @@
   background-size: contain;
   -moz-context-properties: fill;
   fill: currentColor;
-}
-
-#tor-bridges-all-options-button {
-  margin-inline-start: 8px;
 }
 
 #tor-bridges-built-in-display {
@@ -552,7 +560,10 @@
 .tor-bridges-lox-intro {
   grid-area: intro;
   font-weight: 700;
+  font-size: inherit;
   align-self: center;
+  justify-self: start;
+  margin: 0;
 }
 
 .tor-bridges-lox-list {

@@ -1525,7 +1525,8 @@ const gLoxStatus = {
     }
 
     if (alertHadFocus && !showAlert) {
-      // Has become hidden.
+      // Alert has become hidden, move focus back up to the now revealed details
+      // area.
       this._nextUnlockCounterEl.focus();
     } else if (detailsHadFocus && showAlert) {
       this._unlockAlertButton.focus();
