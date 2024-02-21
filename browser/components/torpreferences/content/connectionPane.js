@@ -730,11 +730,15 @@ const gBridgeGrid = {
     const qrItem = row.menu.querySelector(
       ".tor-bridges-options-qr-one-menu-item"
     );
+    const removeItem = row.menu.querySelector(
+      ".tor-bridges-options-remove-one-menu-item"
+    );
     row.menu.addEventListener("showing", () => {
-      qrItem.hidden = !(
+      const show =
         this._bridgeSource === TorBridgeSource.UserProvided ||
-        this._bridgeSource === TorBridgeSource.BridgeDB
-      );
+        this._bridgeSource === TorBridgeSource.BridgeDB;
+      qrItem.hidden = !show;
+      removeItem.hidden = !show;
     });
 
     qrItem.addEventListener("click", () => {
@@ -752,21 +756,19 @@ const gBridgeGrid = {
         ].getService(Ci.nsIClipboardHelper);
         clipboard.copyString(row.bridgeLine);
       });
-    row.menu
-      .querySelector(".tor-bridges-options-remove-one-menu-item")
-      .addEventListener("click", () => {
-        const bridgeLine = row.bridgeLine;
-        const strings = TorSettings.bridges.bridge_strings;
-        const index = strings.indexOf(bridgeLine);
-        if (index === -1) {
-          return;
-        }
-        strings.splice(index, 1);
+    removeItem.addEventListener("click", () => {
+      const bridgeLine = row.bridgeLine;
+      const strings = TorSettings.bridges.bridge_strings;
+      const index = strings.indexOf(bridgeLine);
+      if (index === -1) {
+        return;
+      }
+      strings.splice(index, 1);
 
-        setTorSettings(() => {
-          TorSettings.bridges.bridge_strings = strings;
-        });
+      setTorSettings(() => {
+        TorSettings.bridges.bridge_strings = strings;
       });
+    });
   },
 
   /**
@@ -2016,7 +2018,7 @@ const gBridgeSettings = {
         setTorSettings(() => {
           // This should always have the side effect of disabling bridges as
           // well.
-          TorSettings.bridges.bridge_strings = [];
+          TorSettings.bridges.source = TorBridgeSource.Invalid;
         });
       });
 
