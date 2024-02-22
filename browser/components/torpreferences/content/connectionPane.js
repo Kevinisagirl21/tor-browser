@@ -254,18 +254,10 @@ const gBridgeGrid = {
   _rowTemplate: null,
 
   /**
-   * @typedef {object} EmojiCell
-   *
-   * @property {Element} cell - The grid cell element.
-   * @property {Element} img - The grid cell icon.
-   * @property {Element} index - The emoji index.
-   */
-  /**
    * @typedef {object} BridgeGridRow
    *
    * @property {Element} element - The row element.
    * @property {Element} optionsButton - The options button.
-   * @property {EmojiCell[]} emojis - The emoji cells.
    * @property {Element} menu - The options menupopup.
    * @property {Element} statusEl - The bridge status element.
    * @property {Element} statusText - The status text.

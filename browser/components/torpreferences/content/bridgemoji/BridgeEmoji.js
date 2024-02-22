@@ -119,7 +119,7 @@
         doc.defaultView.console.error(`No emoji for index ${this.#index}`);
         emojiName = unknownString;
       }
-      doc.l10n.setAttributes(this, "tor-bridges-emoji-cell", {
+      doc.l10n.setAttributes(this.#img, "tor-bridges-emoji-image", {
         emojiName,
       });
     }
