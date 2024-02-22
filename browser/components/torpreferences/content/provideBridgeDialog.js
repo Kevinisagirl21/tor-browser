@@ -469,7 +469,7 @@ const gProvideBridgeDialog = {
       for (const cell of BridgeEmoji.createForAddress(bridgeLine)) {
         // Each emoji is its own cell, we rely on the fact that createForAddress
         // always returns four elements.
-        cell.setAttribute("role", "gridcell");
+        cell.setAttribute("role", "cell");
         cell.classList.add("tor-bridges-grid-cell", "tor-bridges-emoji-cell");
         emojiBlock.append(cell);
       }
