@@ -84,12 +84,11 @@ tor-bridges-built-in-status-connected = Connected
 tor-bridges-type-prefix = { $type } bridge:
 # Shown at the start of a Tor bridge line, when the transport type is unknown (or "vanilla").
 tor-bridges-type-prefix-generic = Tor bridge:
-# The name and accessible description for a bridge emoji cell. Each bridge address can be hashed into four emojis shown to the user (bridgemoji feature). This cell corresponds to a *single* such emoji. The "title" should just be emojiName. The "aria-description" should give screen reader users enough of a hint that the cell contains a single emoji.
+# Used for an image of a bridge emoji. Each bridge address can be hashed into four emojis shown to the user (bridgemoji feature). This string corresponds to a *single* such emoji. The "title" should just be emojiName. The "alt" should let screen readers know that the image is of a *single* emoji, as well as its name.
 # $emojiName (String) - The name of the emoji, already localized.
-# E.g. with Orca screen reader in en-US this would read "unicorn. Row 2 Column 2. Emoji".
-tor-bridges-emoji-cell =
+tor-bridges-emoji-image =
+    .alt = Emoji: { $emojiName }
     .title = { $emojiName }
-    .aria-description = Emoji
 # The emoji name to show on hover when a bridge emoji's name is unknown.
 tor-bridges-emoji-unknown = Unknown
 # Shown when the bridge has been used for the most recent Tor circuit, i.e. the most recent bridge we have connected to.
