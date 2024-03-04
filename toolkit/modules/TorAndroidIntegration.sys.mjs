@@ -150,7 +150,7 @@ class TorAndroidIntegrationImpl {
             lazy.TorSettings.saveToPrefs();
           }
           if (data.apply) {
-            lazy.TorSettings.applySettings();
+            await lazy.TorSettings.applySettings();
           }
           break;
         case ListenedEvents.settingsApply:
