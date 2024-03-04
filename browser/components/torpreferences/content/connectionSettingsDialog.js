@@ -362,6 +362,8 @@ const gConnectionSettingsDialog = {
     }
 
     TorSettings.saveToPrefs();
+    // FIXME: What if this fails? Should we prevent the dialog to close and show
+    // an error?
     TorSettings.applySettings();
   },
 };

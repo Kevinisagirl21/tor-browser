@@ -114,10 +114,9 @@ async function setTorSettings(changes) {
     // This will trigger TorSettings.#cleanupSettings()
     TorSettings.saveToPrefs();
     try {
-      // May throw.
       await TorSettings.applySettings();
     } catch (e) {
-      console.error("Failed to save Tor settings", e);
+      console.error("Failed to apply Tor settings", e);
     }
   } finally {
     TorSettings.thawNotifications();
