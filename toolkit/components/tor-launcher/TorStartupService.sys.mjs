@@ -31,9 +31,9 @@ export class TorStartupService {
   async #init() {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
 
-    // Do not await on this init. build() is expected to await the
-    // initialization, so anything that should need the Tor Provider should
-    // block there, instead.
+    // Theoretically, build() is expected to await the initialization of the
+    // provider, and anything needing the Tor Provider should be able to just
+    // await on TorProviderBuilder.build().
     lazy.TorProviderBuilder.init();
 
     gInited = true;

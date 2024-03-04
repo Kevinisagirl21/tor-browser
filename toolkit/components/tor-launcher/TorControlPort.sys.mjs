@@ -838,10 +838,12 @@ export class TorController {
   /**
    * Send multiple configuration values to tor.
    *
-   * @param {object} values The values to set
+   * @param {Array} values The values to set. It should be an array of
+   * [key, value] pairs to pass to SETCONF. Keys can be repeated, and array
+   * values will be automatically unrolled.
    */
   async setConf(values) {
-    const args = Object.entries(values)
+    const args = values
       .flatMap(([key, value]) => {
         if (value === undefined || value === null) {
           return [key];
@@ -871,7 +873,7 @@ export class TorController {
    * @param {boolean} enabled Tell whether the network should be enabled
    */
   async setNetworkEnabled(enabled) {
-    return this.setConf({ DisableNetwork: !enabled });
+    return this.setConf([["DisableNetwork", !enabled]]);
   }
 
   /**

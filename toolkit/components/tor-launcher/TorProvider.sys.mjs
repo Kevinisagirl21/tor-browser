@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorController: "resource://gre/modules/TorControlPort.sys.mjs",
   TorProcess: "resource://gre/modules/TorProcess.sys.mjs",
   TorProcessAndroid: "resource://gre/modules/TorProcessAndroid.sys.mjs",
+  TorProxyType: "resource://gre/modules/TorSettings.sys.mjs",
+  TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
 const logger = new ConsoleAPI({
@@ -71,6 +73,20 @@ const Preferences = Object.freeze({
   ControlPort: "extensions.torlauncher.control_port",
   MaxLogEntries: "extensions.torlauncher.max_tor_log_entries",
   PromptAtStartup: "extensions.torlauncher.prompt_at_startup",
+});
+
+/* Config Keys used to configure tor daemon */
+const TorConfigKeys = Object.freeze({
+  useBridges: "UseBridges",
+  bridgeList: "Bridge",
+  socks4Proxy: "Socks4Proxy",
+  socks5Proxy: "Socks5Proxy",
+  socks5ProxyUsername: "Socks5ProxyUsername",
+  socks5ProxyPassword: "Socks5ProxyPassword",
+  httpsProxy: "HTTPSProxy",
+  httpsProxyAuthenticator: "HTTPSProxyAuthenticator",
+  reachableAddresses: "ReachableAddresses",
+  clientTransportPlugin: "ClientTransportPlugin",
 });
 
 /**
@@ -167,15 +183,6 @@ export class TorProvider {
   #currentBridge = null;
 
   /**
-   * Maintain a map of tor settings set by Tor Browser so that we don't
-   * repeatedly set the same key/values over and over.
-   * This map contains string keys to primitives or array values.
-   *
-   * @type {Map<string, any>}
-   */
-  #settingsCache = new Map();
-
-  /**
    * Starts a new tor process and connect to its control port, or connect to the
    * control port of an existing tor daemon.
    */
@@ -219,12 +226,21 @@ export class TorProvider {
       throw e;
     }
 
+    try {
+      await lazy.TorSettings.initializedPromise;
+      await this.writeSettings(lazy.TorSettings.getSettings());
+    } catch (e) {
+      logger.warn(
+        "Failed to initialize TorSettings or to write our settings, so uninitializing.",
+        e
+      );
+      this.uninit();
+      throw e;
+    }
+
     TorLauncherUtil.setProxyConfiguration(this.#socksSettings);
 
     logger.info("The Tor provider is ready.");
-
-    logger.debug(`Notifying ${TorProviderTopics.ProcessIsReady}`);
-    Services.obs.notifyObservers(null, TorProviderTopics.ProcessIsReady);
 
     // If we are using an external Tor daemon, we might need to fetch circuits
     // already, in case streams use them. Do not await because we do not want to
@@ -252,42 +268,74 @@ export class TorProvider {
 
   // Provider API
 
-  async writeSettings(settingsObj) {
-    // TODO: Move the translation from settings object to settings understood by
-    // tor here.
-    const entries =
-      settingsObj instanceof Map
-        ? Array.from(settingsObj.entries())
-        : Object.entries(settingsObj);
-    // only write settings that have changed
-    const newSettings = entries.filter(([setting, value]) => {
-      if (!this.#settingsCache.has(setting)) {
-        // no cached setting, so write
-        return true;
-      }
+  /**
+   * Send settings to the tor daemon.
+   *
+   * @param {object} settings A settings object, as returned by
+   * TorSettings.getSettings(). This allow to try settings without passing
+   * through TorSettings.
+   */
+  async writeSettings(settings) {
+    logger.debug("TorProvider.writeSettings", settings);
+    const torSettings = new Map();
 
-      const cachedValue = this.#settingsCache.get(setting);
-      // Arrays are the only special case for which === could fail.
-      // The other values we accept (strings, booleans, numbers, null and
-      // undefined) work correctly with ===.
-      if (Array.isArray(value) && Array.isArray(cachedValue)) {
-        return (
-          value.length !== cachedValue.length ||
-          value.some((val, idx) => val !== cachedValue[idx])
-        );
-      }
-      return value !== cachedValue;
-    });
-
-    // only write if new setting to save
-    if (newSettings.length) {
-      await this.#controller.setConf(Object.fromEntries(newSettings));
-
-      // save settings to cache after successfully writing to Tor
-      for (const [setting, value] of newSettings) {
-        this.#settingsCache.set(setting, value);
-      }
+    // Bridges
+    const haveBridges =
+      settings.bridges?.enabled && !!settings.bridges.bridge_strings.length;
+    torSettings.set(TorConfigKeys.useBridges, haveBridges);
+    if (haveBridges) {
+      torSettings.set(
+        TorConfigKeys.bridgeList,
+        settings.bridges.bridge_strings
+      );
+    } else {
+      torSettings.set(TorConfigKeys.bridgeList, null);
     }
+
+    // Proxy
+    torSettings.set(TorConfigKeys.socks4Proxy, null);
+    torSettings.set(TorConfigKeys.socks5Proxy, null);
+    torSettings.set(TorConfigKeys.socks5ProxyUsername, null);
+    torSettings.set(TorConfigKeys.socks5ProxyPassword, null);
+    torSettings.set(TorConfigKeys.httpsProxy, null);
+    torSettings.set(TorConfigKeys.httpsProxyAuthenticator, null);
+    if (settings.proxy && !settings.proxy.enabled) {
+      settings.proxy.type = null;
+    }
+    const address = settings.proxy?.address;
+    const port = settings.proxy?.port;
+    const username = settings.proxy?.username;
+    const password = settings.proxy?.password;
+    switch (settings.proxy?.type) {
+      case lazy.TorProxyType.Socks4:
+        torSettings.set(TorConfigKeys.socks4Proxy, `${address}:${port}`);
+        break;
+      case lazy.TorProxyType.Socks5:
+        torSettings.set(TorConfigKeys.socks5Proxy, `${address}:${port}`);
+        torSettings.set(TorConfigKeys.socks5ProxyUsername, username);
+        torSettings.set(TorConfigKeys.socks5ProxyPassword, password);
+        break;
+      case lazy.TorProxyType.HTTPS:
+        torSettings.set(TorConfigKeys.httpsProxy, `${address}:${port}`);
+        torSettings.set(
+          TorConfigKeys.httpsProxyAuthenticator,
+          `${username}:${password}`
+        );
+        break;
+    }
+
+    // Firewall
+    if (settings.firewall?.enabled) {
+      const reachableAddresses = settings.firewall.allowed_ports
+        .map(port => `*:${port}`)
+        .join(",");
+      torSettings.set(TorConfigKeys.reachableAddresses, reachableAddresses);
+    } else {
+      torSettings.set(TorConfigKeys.reachableAddresses, null);
+    }
+
+    logger.debug("Mapped settings object", settings, torSettings);
+    await this.#controller.setConf(Array.from(torSettings));
   }
 
   async flushSettings() {

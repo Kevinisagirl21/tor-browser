@@ -9,7 +9,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 export const TorProviderTopics = Object.freeze({
-  ProcessIsReady: "TorProcessIsReady",
   ProcessExited: "TorProcessExited",
   BootstrapStatus: "TorBootstrapStatus",
   BootstrapError: "TorBootstrapError",
