@@ -9,6 +9,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 // TODO: Should we move this to the about:torconnect actor?
@@ -19,10 +20,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
-import {
-  TorSettings,
-  TorSettingsTopics,
-} from "resource://gre/modules/TorSettings.sys.mjs";
+import { TorSettings } from "resource://gre/modules/TorSettings.sys.mjs";
 
 import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
@@ -650,10 +648,22 @@ export const TorConnect = (() => {
                   }
                 }
 
+                const restoreOriginalSettings = async () => {
+                  try {
+                    await TorSettings.applySettings();
+                  } catch (e) {
+                    // We cannot do much if the original settings were bad or
+                    // if the connection closed, so just report it in the
+                    // console.
+                    console.warn(
+                      "TorConnect: Failed to restore original settings.",
+                      e
+                    );
+                  }
+                };
+
                 // apply each of our settings and try to bootstrap with each
                 try {
-                  this.originalSettings = TorSettings.getSettings();
-
                   for (const [
                     index,
                     currentSetting,
@@ -669,8 +679,26 @@ export const TorConnect = (() => {
                       }/${this.settings.length}`
                     );
 
-                    TorSettings.setSettings(currentSetting);
-                    await TorSettings.applySettings();
+                    // Send the new settings directly to the provider. We will
+                    // save them only if the bootstrap succeeds.
+                    // FIXME: We should somehow signal TorSettings users that we
+                    // have set custom settings, and they should not apply
+                    // theirs until we are done with trying ours.
+                    // Otherwise, the new settings provided by the user while we
+                    // were bootstrapping could be the ones that cause the
+                    // bootstrap to succeed, but we overwrite them (unless we
+                    // backup the original settings, and then save our new
+                    // settings only if they have not changed).
+                    // Another idea (maybe easier to implement) is to disable
+                    // the settings UI while *any* bootstrap is going on.
+                    // This is also documented in tor-browser#41921.
+                    const provider = await lazy.TorProviderBuilder.build();
+                    // We need to merge with old settings, in case the user is
+                    // using a proxy or is behind a firewall.
+                    await provider.writeSettings({
+                      ...TorSettings.getSettings(),
+                      ...currentSetting,
+                    });
 
                     // build out our bootstrap request
                     const tbr = new lazy.TorBootstrapRequest();
@@ -687,6 +715,7 @@ export const TorConnect = (() => {
                     this.on_transition = async nextState => {
                       if (nextState === TorConnectState.Configuring) {
                         await tbr.cancel();
+                        await restoreOriginalSettings();
                       }
                       resolve();
                     };
@@ -694,23 +723,20 @@ export const TorConnect = (() => {
                     // begin bootstrap
                     if (await tbr.bootstrap()) {
                       // persist the current settings to preferences
+                      TorSettings.setSettings(currentSetting);
                       TorSettings.saveToPrefs();
+                      await TorSettings.applySettings();
                       TorConnect._changeState(TorConnectState.Bootstrapped);
                       return;
                     }
                   }
 
-                  // bootstrapped failed for all potential settings, so reset daemon to use original
-                  TorSettings.setSettings(this.originalSettings);
-                  // The original settings should be good, so we save them to
-                  // preferences before trying to apply them, as it might fail
-                  // if the actual problem is with the connection to the control
-                  // port.
-                  // FIXME: We should handle this case in a better way.
-                  TorSettings.saveToPrefs();
-                  await TorSettings.applySettings();
+                  // Bootstrap failed for all potential settings, so restore the
+                  // original settings the provider.
+                  await restoreOriginalSettings();
 
-                  // only explicitly change state here if something else has not transitioned us
+                  // Only explicitly change state here if something else has not
+                  // transitioned us.
                   if (!this.transitioning) {
                     throw_error(
                       TorStrings.torConnect.autoBootstrappingFailed,
@@ -719,18 +745,8 @@ export const TorConnect = (() => {
                   }
                   return;
                 } catch (err) {
-                  // restore original settings in case of error
-                  try {
-                    TorSettings.setSettings(this.originalSettings);
-                    // As above
-                    TorSettings.saveToPrefs();
-                    await TorSettings.applySettings();
-                  } catch (errRestore) {
-                    console.log(
-                      `TorConnect: Failed to restore original settings => ${errRestore}`
-                    );
-                  }
-                  // throw to outer catch to transition us
+                  await restoreOriginalSettings();
+                  // throw to outer catch to transition us.
                   throw err;
                 }
               } catch (err) {
@@ -877,6 +893,14 @@ export const TorConnect = (() => {
           console.log(`TorConnect: Observing topic '${addTopic}'`);
         };
 
+        // Wait for TorSettings, as we will need it.
+        // We will wait for a TorProvider only after TorSettings is ready,
+        // because the TorProviderBuilder initialization might not have finished
+        // at this point, and TorSettings initialization is a prerequisite for
+        // having a provider.
+        // So, we prefer initializing TorConnect as soon as possible, so that
+        // the UI will be able to detect it is in the Initializing state and act
+        // consequently.
         TorSettings.initializedPromise.then(() => this._settingsInitialized());
 
         // register the Tor topics we always care about
@@ -918,19 +942,25 @@ export const TorConnect = (() => {
       }
     },
 
-    _settingsInitialized() {
+    async _settingsInitialized() {
+      // TODO: Handle failures here, instead of the prompt to restart the
+      // daemon when it exits (tor-browser#21053, tor-browser#41921).
+      await lazy.TorProviderBuilder.build();
+
       // tor-browser#41907: This is only a workaround to avoid users being
       // bounced back to the initial panel without any explanation.
       // Longer term we should disable the clickable elements, or find a UX
       // to prevent this from happening (e.g., allow buttons to be clicked,
       // but show an intermediate starting state, or a message that tor is
       // starting while the butons are disabled, etc...).
+      // See also tor-browser#41921.
       if (this.state !== TorConnectState.Initial) {
         console.warn(
-          "TorConnect: Seen the torsettings:ready after the state has already changed, ignoring the notification."
+          "TorConnect: The TorProvider was built after the state had already changed."
         );
         return;
       }
+      console.log("TorConnect: The TorProvider is ready, changing state.");
       if (this.shouldQuickStart) {
         // Quickstart
         this._changeState(TorConnectState.Bootstrapping);

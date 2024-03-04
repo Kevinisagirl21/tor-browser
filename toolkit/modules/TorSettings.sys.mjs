@@ -6,10 +6,9 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
-  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
-  TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   Lox: "resource://gre/modules/Lox.sys.mjs",
   TorParsers: "resource://gre/modules/TorParsers.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
@@ -69,20 +68,6 @@ const TorSettingsPrefs = Object.freeze({
     /* string: comma-delimitted list of port numbers */
     allowed_ports: "torbrowser.settings.firewall.allowed_ports",
   },
-});
-
-/* Config Keys used to configure tor daemon */
-const TorConfigKeys = Object.freeze({
-  useBridges: "UseBridges",
-  bridgeList: "Bridge",
-  socks4Proxy: "Socks4Proxy",
-  socks5Proxy: "Socks5Proxy",
-  socks5ProxyUsername: "Socks5ProxyUsername",
-  socks5ProxyPassword: "Socks5ProxyPassword",
-  httpsProxy: "HTTPSProxy",
-  httpsProxyAuthenticator: "HTTPSProxyAuthenticator",
-  reachableAddresses: "ReachableAddresses",
-  clientTransportPlugin: "ClientTransportPlugin",
 });
 
 export const TorBridgeSource = Object.freeze({
@@ -322,7 +307,7 @@ class TorSettingsImpl {
           if (!val) {
             return;
           }
-          const bridgeStrings = this.#getBuiltinBridges(val);
+          const bridgeStrings = this.getBuiltinBridges(val);
           if (bridgeStrings.length) {
             this.bridges.bridge_strings = bridgeStrings;
             return;
@@ -659,14 +644,17 @@ class TorSettingsImpl {
    * @param {string} pt The pluggable transport to return the lines for
    * @returns {string[]} The bridge lines in random order
    */
-  #getBuiltinBridges(pt) {
+  getBuiltinBridges(pt) {
+    if (!this.#allowUninitialized) {
+      this.#checkIfInitialized();
+    }
     // Shuffle so that Tor Browser users do not all try the built-in bridges in
     // the same order.
     return arrayShuffle(this.#builtinBridges[pt] ?? []);
   }
 
   /**
-   * Load or init our settings, and register observers.
+   * Load or init our settings.
    */
   async init() {
     if (this.#initialized) {
@@ -677,6 +665,7 @@ class TorSettingsImpl {
       await this.#initInternal();
       this.#initialized = true;
       this.#initComplete();
+      Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
     } catch (e) {
       this.#initFailed(e);
       throw e;
@@ -698,45 +687,35 @@ class TorSettingsImpl {
       lazy.logger.error("Could not load the built-in PT config.", e);
     }
 
-    // Initialize this before loading from prefs because we need Lox initialized before
-    // any calls to Lox.getBridges()
+    // Initialize this before loading from prefs because we need Lox initialized
+    // before any calls to Lox.getBridges().
     try {
       await lazy.Lox.init();
     } catch (e) {
       lazy.logger.error("Could not initialize Lox.", e.type);
     }
 
-    // TODO: We could use a shared promise, and wait for it to be fullfilled
-    // instead of Service.obs.
-    if (lazy.TorLauncherUtil.shouldStartAndOwnTor) {
-      // if the settings branch exists, load settings from prefs
-      if (Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)) {
-        // Do not want notifications for initially loaded prefs.
-        this.freezeNotifications();
-        try {
-          this.#allowUninitialized = true;
-          this.#loadFromPrefs();
-        } finally {
-          this.#allowUninitialized = false;
-          this.#notificationQueue.clear();
-          this.thawNotifications();
-        }
-      }
+    if (
+      lazy.TorLauncherUtil.shouldStartAndOwnTor &&
+      Services.prefs.getBoolPref(TorSettingsPrefs.enabled, false)
+    ) {
+      // Do not want notifications for initially loaded prefs.
+      this.freezeNotifications();
       try {
-        const provider = await lazy.TorProviderBuilder.build();
-        if (provider.isRunning) {
-          this.#handleProcessReady();
-          // No need to add an observer to call this again.
-          return;
-        }
-      } catch {}
-
-      Services.obs.addObserver(this, lazy.TorProviderTopics.ProcessIsReady);
+        this.#allowUninitialized = true;
+        this.#loadFromPrefs();
+      } finally {
+        this.#allowUninitialized = false;
+        this.#notificationQueue.clear();
+        this.thawNotifications();
+      }
     }
+
+    lazy.logger.info("Ready");
   }
 
   /**
-   * Unload or uninit our settings, and unregister observers.
+   * Unload or uninit our settings.
    */
   async uninit() {
     await lazy.Lox.uninit();
@@ -762,34 +741,6 @@ class TorSettingsImpl {
    */
   get initialized() {
     return this.#initialized;
-  }
-
-  /**
-   * Wait for relevant life-cycle events to apply saved settings.
-   */
-  async observe(subject, topic, data) {
-    lazy.logger.debug(`Observed ${topic}`);
-
-    switch (topic) {
-      case lazy.TorProviderTopics.ProcessIsReady:
-        Services.obs.removeObserver(
-          this,
-          lazy.TorProviderTopics.ProcessIsReady
-        );
-        await this.#handleProcessReady();
-        break;
-    }
-  }
-
-  /**
-   * Apply the settings once the tor provider is ready and notify any observer
-   * that the settings can be used.
-   */
-  async #handleProcessReady() {
-    // push down settings to tor
-    await this.#applySettings(true);
-    lazy.logger.info("Ready");
-    Services.obs.notifyObservers(null, TorSettingsTopics.Ready);
   }
 
   /**
@@ -972,85 +923,14 @@ class TorSettingsImpl {
 
   /**
    * Push our settings down to the tor provider.
+   *
+   * Even though this introduces a circular depdency, it makes the API nicer for
+   * frontend consumers.
    */
   async applySettings() {
     this.#checkIfInitialized();
-    return this.#applySettings(false);
-  }
-
-  /**
-   * Internal implementation of applySettings that does not check if we are
-   * initialized.
-   */
-  async #applySettings(allowUninitialized) {
-    lazy.logger.debug("#applySettings()");
-
-    this.#cleanupSettings();
-
-    const settingsMap = new Map();
-
-    // #applySettings can be called only when #allowUninitialized is false
-    this.#allowUninitialized = allowUninitialized;
-
-    try {
-      /* Bridges */
-      const haveBridges =
-        this.bridges.enabled && !!this.bridges.bridge_strings.length;
-      settingsMap.set(TorConfigKeys.useBridges, haveBridges);
-      if (haveBridges) {
-        settingsMap.set(TorConfigKeys.bridgeList, this.bridges.bridge_strings);
-      } else {
-        settingsMap.set(TorConfigKeys.bridgeList, null);
-      }
-
-      /* Proxy */
-      settingsMap.set(TorConfigKeys.socks4Proxy, null);
-      settingsMap.set(TorConfigKeys.socks5Proxy, null);
-      settingsMap.set(TorConfigKeys.socks5ProxyUsername, null);
-      settingsMap.set(TorConfigKeys.socks5ProxyPassword, null);
-      settingsMap.set(TorConfigKeys.httpsProxy, null);
-      settingsMap.set(TorConfigKeys.httpsProxyAuthenticator, null);
-      if (this.proxy.enabled) {
-        const address = this.proxy.address;
-        const port = this.proxy.port;
-        const username = this.proxy.username;
-        const password = this.proxy.password;
-
-        switch (this.proxy.type) {
-          case TorProxyType.Socks4:
-            settingsMap.set(TorConfigKeys.socks4Proxy, `${address}:${port}`);
-            break;
-          case TorProxyType.Socks5:
-            settingsMap.set(TorConfigKeys.socks5Proxy, `${address}:${port}`);
-            settingsMap.set(TorConfigKeys.socks5ProxyUsername, username);
-            settingsMap.set(TorConfigKeys.socks5ProxyPassword, password);
-            break;
-          case TorProxyType.HTTPS:
-            settingsMap.set(TorConfigKeys.httpsProxy, `${address}:${port}`);
-            settingsMap.set(
-              TorConfigKeys.httpsProxyAuthenticator,
-              `${username}:${password}`
-            );
-            break;
-        }
-      }
-
-      /* Firewall */
-      if (this.firewall.enabled) {
-        const reachableAddresses = this.firewall.allowed_ports
-          .map(port => `*:${port}`)
-          .join(",");
-        settingsMap.set(TorConfigKeys.reachableAddresses, reachableAddresses);
-      } else {
-        settingsMap.set(TorConfigKeys.reachableAddresses, null);
-      }
-    } finally {
-      this.#allowUninitialized = false;
-    }
-
-    /* Push to Tor */
     const provider = await lazy.TorProviderBuilder.build();
-    await provider.writeSettings(settingsMap);
+    await provider.writeSettings(this.getSettings());
   }
 
   /**

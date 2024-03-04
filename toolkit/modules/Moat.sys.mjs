@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { TorBridgeSource } from "resource://gre/modules/TorSettings.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   DomainFrontRequestBuilder:
     "resource://gre/modules/DomainFrontedRequests.sys.mjs",
+  TorBridgeSource: "resource://gre/modules/TorSettings.sys.mjs",
+  TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
 const TorLauncherPrefs = Object.freeze({
@@ -211,13 +211,23 @@ export class MoatRPC {
     };
     switch (settings.bridges.source) {
       case "builtin":
-        retval.bridges.source = TorBridgeSource.BuiltIn;
+        retval.bridges.source = lazy.TorBridgeSource.BuiltIn;
         retval.bridges.builtin_type = settings.bridges.type;
         // TorSettings will ignore strings for built-in bridges, and use the
-        // ones it already knows, instead.
+        // ones it already knows, instead. However, when we try these settings
+        // in the connect assist, we skip TorSettings. Therefore, we set the
+        // lines also here (the ones we already known, not the ones we receive
+        // from Moat). This needs TorSettings to be initialized, which by now
+        // should have already happened (this method is used only by TorConnect,
+        // that needs TorSettings to be initialized).
+        // In any case, getBuiltinBridges will throw if the data is not ready,
+        // yet.
+        retval.bridges.bridge_strings = lazy.TorSettings.getBuiltinBridges(
+          settings.bridges.type
+        );
         break;
       case "bridgedb":
-        retval.bridges.source = TorBridgeSource.BridgeDB;
+        retval.bridges.source = lazy.TorBridgeSource.BridgeDB;
         if (settings.bridges.bridge_strings) {
           retval.bridges.bridge_strings = settings.bridges.bridge_strings;
         } else {
