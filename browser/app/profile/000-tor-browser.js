@@ -109,6 +109,6 @@ pref("extensions.torlauncher.torrc_path", "");
 pref("extensions.torlauncher.tordatadir_path", "");
 
 // BridgeDB-related preferences (used for Moat).
-pref("extensions.torlauncher.bridgedb_front", "foursquare.com");
-pref("extensions.torlauncher.bridgedb_reflector", "https://moat.torproject.org.global.prod.fastly.net/");
+pref("extensions.torlauncher.bridgedb_front", "www.phpmyadmin.net");
+pref("extensions.torlauncher.bridgedb_reflector", "https://1723079976.rsc.cdn77.org");
 pref("extensions.torlauncher.moat_service", "https://bridges.torproject.org/moat");
