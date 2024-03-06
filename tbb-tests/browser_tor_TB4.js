@@ -11,9 +11,6 @@ let expectedPrefs = [
 
    // Disable the "Refresh" prompt that is displayed for stale profiles.
    ["browser.disableResetPrompt", true],
-
-   // Version placeholder
-   ["torbrowser.version", "dev-build"],
   ];
 
 let getPref = function (prefName) {
