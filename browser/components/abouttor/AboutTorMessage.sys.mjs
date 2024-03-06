@@ -27,7 +27,9 @@ export const AboutTorMessage = {
     if (Services.prefs.getBoolPref(shouldNotifyPref, false)) {
       Services.prefs.clearUserPref(shouldNotifyPref);
       return {
-        updateVersion: Services.prefs.getCharPref("torbrowser.version"),
+        updateVersion: Services.prefs.getCharPref(
+          "browser.startup.homepage_override.torbrowser.version"
+        ),
         updateURL:
           Services.prefs.getCharPref("torbrowser.post_update.url", "") ||
           Services.urlFormatter.formatURLPref("startup.homepage_override_url"),
