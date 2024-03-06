@@ -18,6 +18,8 @@ const kPrefLetterboxingVcenter =
   "privacy.resistFingerprinting.letterboxing.vcenter";
 const kPrefLetterboxingGradient =
   "privacy.resistFingerprinting.letterboxing.gradient";
+const  kPrefLetterboxingDidForceSize =
+  "privacy.resistFingerprinting.letterboxing.didForceSize";
 
 const kTopicDOMWindowOpened = "domwindowopened";
 
@@ -221,6 +223,7 @@ class _RFPHelper {
   _handlePrefChanged(data) {
     switch (data) {
       case kPrefResistFingerprinting:
+        Service.prefs.clearUserPref(kPrefLetterboxingDidForceSize);
         this._handleResistFingerprintingChanged();
         break;
       case kPrefSpoofEnglish:
@@ -228,6 +231,7 @@ class _RFPHelper {
         this._handleSpoofEnglishChanged();
         break;
       case kPrefLetterboxing:
+        Service.prefs.clearUserPref(kPrefLetterboxingDidForceSize);
       case kPrefLetterboxingVcenter:
       case kPrefLetterboxingGradient:
         this._handleLetterboxingPrefChanged();
