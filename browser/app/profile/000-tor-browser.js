@@ -46,8 +46,6 @@ pref("network.http.http3.enable", false);
 // 0 = do not use a second connection, see all.js and #7656
 pref("network.http.connection-retry-timeout", 0);
 
-#expand pref("torbrowser.version", __BASE_BROWSER_VERSION_QUOTED__);
-
 // Tor Browser used to be compatible with non-Tor proxies. This feature is not
 // available anymore, but this legacy preference can be still used to disable
 // first-party domain circuit isolation.
