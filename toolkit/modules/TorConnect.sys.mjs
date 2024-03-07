@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
@@ -38,6 +40,7 @@ const TorLauncherPrefs = Object.freeze({
 const TorConnectPrefs = Object.freeze({
   censorship_level: "torbrowser.debug.censorship_level",
   allow_internet_test: "torbrowser.bootstrap.allow_internet_test",
+  log_level: "torbrowser.bootstrap.log_level",
 });
 
 export const TorConnectState = Object.freeze({
@@ -56,6 +59,17 @@ export const TorConnectState = Object.freeze({
   /* If we are using System tor or the legacy Tor-Launcher */
   Disabled: "Disabled",
 });
+
+XPCOMUtils.defineLazyGetter(
+  lazy,
+  "logger",
+  () =>
+    new lazy.ConsoleAPI({
+      maxLogLevel: "info",
+      maxLogLevelPref: TorConnectPrefs.log_level,
+      prefix: "TorConnect",
+    })
+);
 
 /*
                              TorConnect State Transitions
@@ -192,12 +206,12 @@ class StateCallback {
   }
 
   async begin(...args) {
-    console.log(`TorConnect: Entering ${this._state} state`);
+    lazy.logger.trace(`Entering ${this._state} state`);
     this._init();
     try {
       // this Promise will block until this StateCallback has completed its work
       await Promise.resolve(this._callback.call(this._context, ...args));
-      console.log(`TorConnect: Exited ${this._state} state`);
+      lazy.logger.info(`Exited ${this._state} state`);
 
       // handled state transition
       Services.obs.notifyObservers(
@@ -265,16 +279,14 @@ class InternetTest {
     this.cancel();
     this._pending = true;
 
-    console.log("TorConnect: starting the Internet test");
+    lazy.logger.info("Starting the Internet test");
     this._testAsync()
       .then(status => {
         this._pending = false;
         this._status = status.successful
           ? InternetStatus.Online
           : InternetStatus.Offline;
-        console.log(
-          `TorConnect: performed Internet test, outcome ${this._status}`
-        );
+        lazy.logger.info(`Performed Internet test, outcome ${this._status}`);
         this.onResult(this.status, status.date);
       })
       .catch(error => {
@@ -303,7 +315,7 @@ class InternetTest {
       await mrpc.init();
       status = await mrpc.testInternetConnection();
     } catch (err) {
-      console.error("Error while checking the Internet connection", err);
+      lazy.logger.error("Error while checking the Internet connection", err);
       error = err;
     } finally {
       mrpc.uninit();
@@ -521,8 +533,8 @@ export const TorConnect = (() => {
                   // get "Building circuits: Establishing a Tor circuit failed".
                   // TODO: Maybe move this logic deeper in the process to know
                   // when to filter out such errors triggered by cancelling.
-                  console.log(
-                    `TorConnect: Post-cancel error => ${message}; ${details}`
+                  lazy.logger.warn(
+                    `Post-cancel error => ${message}; ${details}`
                   );
                   return;
                 }
@@ -626,7 +638,7 @@ export const TorConnect = (() => {
                       "vanilla",
                     ]);
                   } catch (err) {
-                    console.error(
+                    lazy.logger.error(
                       "We did not get localized settings, and default settings failed as well",
                       err
                     );
@@ -656,10 +668,7 @@ export const TorConnect = (() => {
                     // We cannot do much if the original settings were bad or
                     // if the connection closed, so just report it in the
                     // console.
-                    console.warn(
-                      "TorConnect: Failed to restore original settings.",
-                      e
-                    );
+                    lazy.logger.warn("Failed to restore original settings.", e);
                   }
                 };
 
@@ -674,10 +683,10 @@ export const TorConnect = (() => {
                       break;
                     }
 
-                    console.log(
-                      `TorConnect: Attempting Bootstrap with configuration ${
-                        index + 1
-                      }/${this.settings.length}`
+                    lazy.logger.info(
+                      `Attempting Bootstrap with configuration ${index + 1}/${
+                        this.settings.length
+                      }`
                     );
 
                     // Send the new settings directly to the provider. We will
@@ -707,8 +716,8 @@ export const TorConnect = (() => {
                       TorConnect._updateBootstrapStatus(progress, status);
                     };
                     tbr.onbootstraperror = (message, details) => {
-                      console.log(
-                        `TorConnect: Auto-Bootstrap error => ${message}; ${details}`
+                      lazy.logger.error(
+                        `Auto-Bootstrap error => ${message}; ${details}`
                       );
                     };
 
@@ -764,8 +773,8 @@ export const TorConnect = (() => {
                     true
                   );
                 } else {
-                  console.error(
-                    "TorConnect: Received AutoBootstrapping error after transitioning",
+                  lazy.logger.error(
+                    "Received AutoBootstrapping error after transitioning",
                     err
                   );
                 }
@@ -809,8 +818,8 @@ export const TorConnect = (() => {
 
               TorConnect._errorMessage = errorMessage;
               TorConnect._errorDetails = errorDetails;
-              console.error(
-                `[TorConnect] Entering error state (${errorMessage}, ${errorDetails})`
+              lazy.logger.error(
+                `Entering error state (${errorMessage}, ${errorDetails})`
               );
 
               Services.obs.notifyObservers(
@@ -851,9 +860,7 @@ export const TorConnect = (() => {
         );
       }
 
-      console.log(
-        `TorConnect: Try transitioning from ${prevState} to ${newState}`
-      );
+      lazy.logger.trace(`Try transitioning from ${prevState} to ${newState}`);
 
       // set our new state first so that state transitions can themselves trigger
       // a state transition
@@ -867,8 +874,8 @@ export const TorConnect = (() => {
       this._bootstrapProgress = progress;
       this._bootstrapStatus = status;
 
-      console.log(
-        `TorConnect: Bootstrapping ${this._bootstrapProgress}% complete (${this._bootstrapStatus})`
+      lazy.logger.info(
+        `Bootstrapping ${this._bootstrapProgress}% complete (${this._bootstrapStatus})`
       );
       Services.obs.notifyObservers(
         {
@@ -882,7 +889,7 @@ export const TorConnect = (() => {
 
     // init should be called by TorStartupService
     init() {
-      console.log("TorConnect: init()");
+      lazy.logger.debug("TorConnect.init()");
       this._callback(TorConnectState.Initial).begin();
 
       if (!this.enabled) {
@@ -891,7 +898,7 @@ export const TorConnect = (() => {
       } else {
         let observeTopic = addTopic => {
           Services.obs.addObserver(this, addTopic);
-          console.log(`TorConnect: Observing topic '${addTopic}'`);
+          lazy.logger.debug(`Observing topic '${addTopic}'`);
         };
 
         // Wait for TorSettings, as we will need it.
@@ -911,7 +918,7 @@ export const TorConnect = (() => {
     },
 
     async observe(subject, topic, data) {
-      console.log(`TorConnect: Observed ${topic}`);
+      lazy.logger.debug(`Observed ${topic}`);
 
       switch (topic) {
         case TorTopics.LogHasWarnOrErr: {
@@ -956,12 +963,12 @@ export const TorConnect = (() => {
       // starting while the butons are disabled, etc...).
       // See also tor-browser#41921.
       if (this.state !== TorConnectState.Initial) {
-        console.warn(
-          "TorConnect: The TorProvider was built after the state had already changed."
+        lazy.logger.warn(
+          "The TorProvider was built after the state had already changed."
         );
         return;
       }
-      console.log("TorConnect: The TorProvider is ready, changing state.");
+      lazy.logger.debug("The TorProvider is ready, changing state.");
       if (this.shouldQuickStart) {
         // Quickstart
         this._changeState(TorConnectState.Bootstrapping);
@@ -1104,17 +1111,17 @@ export const TorConnect = (() => {
         */
 
     beginBootstrap() {
-      console.log("TorConnect: beginBootstrap()");
+      lazy.logger.debug("TorConnect.beginBootstrap()");
       this._changeState(TorConnectState.Bootstrapping);
     },
 
     cancelBootstrap() {
-      console.log("TorConnect: cancelBootstrap()");
+      lazy.logger.debug("TorConnect.cancelBootstrap()");
       this._changeState(TorConnectState.Configuring);
     },
 
     beginAutoBootstrap(countryCode) {
-      console.log("TorConnect: beginAutoBootstrap()");
+      lazy.logger.debug("TorConnect.beginAutoBootstrap()");
       this._changeState(TorConnectState.AutoBootstrapping, countryCode);
     },
 
@@ -1184,7 +1191,10 @@ export const TorConnect = (() => {
         await mrpc.init();
         this._countryCodes = await mrpc.circumvention_countries();
       } catch (err) {
-        console.log("An error occurred while fetching country codes", err);
+        lazy.logger.error(
+          "An error occurred while fetching country codes",
+          err
+        );
       } finally {
         mrpc.uninit();
       }
@@ -1217,8 +1227,8 @@ export const TorConnect = (() => {
         uriArray = uriVariant;
       } else {
         // about:tor as safe fallback
-        console.error(
-          `TorConnect: received unknown variant '${JSON.stringify(uriVariant)}'`
+        lazy.logger.error(
+          `Received unknown variant '${JSON.stringify(uriVariant)}'`
         );
         uriArray = ["about:tor"];
       }
@@ -1239,9 +1249,7 @@ export const TorConnect = (() => {
     // which redirect after bootstrapping
     getURIsToLoad(uriVariant) {
       const uris = this.fixupURIs(uriVariant);
-      console.log(
-        `TorConnect: Will load after bootstrap => [${uris.join(", ")}]`
-      );
+      lazy.logger.debug(`Will load after bootstrap => [${uris.join(", ")}]`);
       return uris.map(uri => this.getRedirectURL(uri));
     },
   };
