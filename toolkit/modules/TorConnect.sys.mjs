@@ -245,442 +245,419 @@ const debug_sleep = async ms => {
   });
 };
 
-          async function initialCallback() {
-            // The initial state doesn't actually do anything, so here is a skeleton for other
-            // states which do perform work
-            await new Promise(async (resolve, reject) => {
-              // This function is provided to signal to the callback that it is complete.
-              // It is called as a result of _changeState and at the very least must
-              // resolve the root Promise object within the StateCallback function
-              // The on_transition callback may also perform necessary cleanup work
-              this.on_transition = nextState => {
-                resolve();
-              };
+async function initialCallback() {
+  // The initial state doesn't actually do anything, so here is a skeleton for other
+  // states which do perform work
+  await new Promise(async (resolve, reject) => {
+    // This function is provided to signal to the callback that it is complete.
+    // It is called as a result of _changeState and at the very least must
+    // resolve the root Promise object within the StateCallback function
+    // The on_transition callback may also perform necessary cleanup work
+    this.on_transition = nextState => {
+      resolve();
+    };
 
-              try {
-                // each state may have a sequence of async work to do
-                let asyncWork = async () => {};
-                await asyncWork();
+    try {
+      // each state may have a sequence of async work to do
+      let asyncWork = async () => {};
+      await asyncWork();
 
-                // after each block we may check for an opportunity to early-out
-                if (this.transitioning) {
-                  return;
-                }
+      // after each block we may check for an opportunity to early-out
+      if (this.transitioning) {
+        return;
+      }
 
-                // repeat the above pattern as necessary
-              } catch (err) {
-                // any thrown exceptions here will trigger a transition to the Error state
-                TorConnect._changeState(
-                  TorConnectState.Error,
-                  err?.message,
-                  err?.details
-                );
-              }
-            });
+      // repeat the above pattern as necessary
+    } catch (err) {
+      // any thrown exceptions here will trigger a transition to the Error state
+      TorConnect._changeState(
+        TorConnectState.Error,
+        err?.message,
+        err?.details
+      );
+    }
+  });
+}
+
+async function configuringCallback() {
+  await new Promise(async (resolve, reject) => {
+    this.on_transition = nextState => {
+      resolve();
+    };
+  });
+}
+
+async function bootstrappingCallback() {
+  // wait until bootstrap completes or we get an error
+  await new Promise(async (resolve, reject) => {
+    // debug hook to simulate censorship preventing bootstrapping
+    if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) > 0) {
+      this.on_transition = nextState => {
+        resolve();
+      };
+      await debug_sleep(1500);
+      TorConnect._hasBootstrapEverFailed = true;
+      if (
+        Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) === 2
+      ) {
+        const codes = Object.keys(TorConnect._countryNames);
+        TorConnect._detectedLocation =
+          codes[Math.floor(Math.random() * codes.length)];
+      }
+      TorConnect._changeState(
+        TorConnectState.Error,
+        "Bootstrap failed (for debugging purposes)",
+        "Error: Censorship simulation",
+        true
+      );
+      return;
+    }
+
+    const tbr = new lazy.TorBootstrapRequest();
+    const internetTest = new InternetTest();
+    let cancelled = false;
+
+    let bootstrapError = "";
+    let bootstrapErrorDetails = "";
+    const maybeTransitionToError = () => {
+      if (
+        internetTest.status === InternetStatus.Unknown &&
+        internetTest.error === null &&
+        internetTest.enabled
+      ) {
+        // We have been called by a failed bootstrap, but the internet test has not run yet - force
+        // it to run immediately!
+        internetTest.test();
+        // Return from this call, because the Internet test's callback will call us again
+        return;
+      }
+      // Do not transition to the offline error until we are sure that also the bootstrap failed, in
+      // case Moat is down but the bootstrap can proceed anyway.
+      if (bootstrapError === "") {
+        return;
+      }
+      if (internetTest.status === InternetStatus.Offline) {
+        TorConnect._changeState(
+          TorConnectState.Error,
+          TorStrings.torConnect.offline,
+          "",
+          true
+        );
+      } else {
+        // Give priority to the bootstrap error, in case the Internet test fails
+        TorConnect._hasBootstrapEverFailed = true;
+        TorConnect._changeState(
+          TorConnectState.Error,
+          bootstrapError,
+          bootstrapErrorDetails,
+          true
+        );
+      }
+    };
+
+    this.on_transition = async nextState => {
+      if (nextState === TorConnectState.Configuring) {
+        // stop bootstrap process if user cancelled
+        cancelled = true;
+        internetTest.cancel();
+        await tbr.cancel();
+      }
+      resolve();
+    };
+
+    tbr.onbootstrapstatus = (progress, status) => {
+      TorConnect._updateBootstrapStatus(progress, status);
+    };
+    tbr.onbootstrapcomplete = () => {
+      internetTest.cancel();
+      TorConnect._changeState(TorConnectState.Bootstrapped);
+    };
+    tbr.onbootstraperror = (message, details) => {
+      if (cancelled) {
+        // We ignore this error since it occurred after cancelling (by
+        // the user). We assume the error is just a side effect of the
+        // cancelling.
+        // E.g. If the cancelling is triggered late in the process, we
+        // get "Building circuits: Establishing a Tor circuit failed".
+        // TODO: Maybe move this logic deeper in the process to know
+        // when to filter out such errors triggered by cancelling.
+        lazy.logger.warn(`Post-cancel error => ${message}; ${details}`);
+        return;
+      }
+      // We have to wait for the Internet test to finish before sending the bootstrap error
+      bootstrapError = message;
+      bootstrapErrorDetails = details;
+      maybeTransitionToError();
+    };
+
+    internetTest.onResult = (status, date) => {
+      // TODO: Use the date to save the clock skew?
+      TorConnect._internetStatus = status;
+      maybeTransitionToError();
+    };
+    internetTest.onError = () => {
+      maybeTransitionToError();
+    };
+
+    tbr.bootstrap();
+  });
+}
+
+async function autoBootstrappingCallback(countryCode) {
+  await new Promise(async (resolve, reject) => {
+    this.on_transition = nextState => {
+      resolve();
+    };
+
+    // debug hook to simulate censorship preventing bootstrapping
+    {
+      const censorshipLevel = Services.prefs.getIntPref(
+        TorConnectPrefs.censorship_level,
+        0
+      );
+      if (censorshipLevel > 1) {
+        this.on_transition = nextState => {
+          resolve();
+        };
+        // always fail even after manually selecting location specific settings
+        if (censorshipLevel == 3) {
+          await debug_sleep(2500);
+          TorConnect._changeState(
+            TorConnectState.Error,
+            "Error: censorship simulation",
+            "",
+            true
+          );
+          return;
+          // only fail after auto selecting, manually selecting succeeds
+        } else if (censorshipLevel == 2 && !countryCode) {
+          await debug_sleep(2500);
+          TorConnect._changeState(
+            TorConnectState.Error,
+            "Error: Severe Censorship simulation",
+            "",
+            true
+          );
+          return;
+        }
+      }
+    }
+
+    const throw_error = (message, details) => {
+      let err = new Error(message);
+      err.details = details;
+      throw err;
+    };
+
+    // lookup user's potential censorship circumvention settings from Moat service
+    try {
+      this.mrpc = new lazy.MoatRPC();
+      await this.mrpc.init();
+
+      if (this.transitioning) {
+        return;
+      }
+
+      const settings = await this.mrpc.circumvention_settings(
+        [...TorSettings.builtinBridgeTypes, "vanilla"],
+        countryCode
+      );
+
+      if (this.transitioning) {
+        return;
+      }
+
+      if (settings?.country) {
+        TorConnect._detectedLocation = settings.country;
+      }
+      if (settings?.settings && settings.settings.length) {
+        this.settings = settings.settings;
+      } else {
+        try {
+          this.settings = await this.mrpc.circumvention_defaults([
+            ...TorSettings.builtinBridgeTypes,
+            "vanilla",
+          ]);
+        } catch (err) {
+          lazy.logger.error(
+            "We did not get localized settings, and default settings failed as well",
+            err
+          );
+        }
+      }
+      if (this.settings === null || this.settings.length === 0) {
+        // The fallback has failed as well, so throw the original error
+        if (!TorConnect._detectedLocation) {
+          // unable to determine country
+          throw_error(
+            TorStrings.torConnect.autoBootstrappingFailed,
+            TorStrings.torConnect.cannotDetermineCountry
+          );
+        } else {
+          // no settings available for country
+          throw_error(
+            TorStrings.torConnect.autoBootstrappingFailed,
+            TorStrings.torConnect.noSettingsForCountry
+          );
+        }
+      }
+
+      const restoreOriginalSettings = async () => {
+        try {
+          await TorSettings.applySettings();
+        } catch (e) {
+          // We cannot do much if the original settings were bad or
+          // if the connection closed, so just report it in the
+          // console.
+          lazy.logger.warn("Failed to restore original settings.", e);
+        }
+      };
+
+      // apply each of our settings and try to bootstrap with each
+      try {
+        for (const [index, currentSetting] of this.settings.entries()) {
+          // we want to break here so we can fall through and restore original settings
+          if (this.transitioning) {
+            break;
           }
 
-          async function configuringCallback() {
-            await new Promise(async (resolve, reject) => {
-              this.on_transition = nextState => {
-                resolve();
-              };
-            });
+          lazy.logger.info(
+            `Attempting Bootstrap with configuration ${index + 1}/${
+              this.settings.length
+            }`
+          );
+
+          // Send the new settings directly to the provider. We will
+          // save them only if the bootstrap succeeds.
+          // FIXME: We should somehow signal TorSettings users that we
+          // have set custom settings, and they should not apply
+          // theirs until we are done with trying ours.
+          // Otherwise, the new settings provided by the user while we
+          // were bootstrapping could be the ones that cause the
+          // bootstrap to succeed, but we overwrite them (unless we
+          // backup the original settings, and then save our new
+          // settings only if they have not changed).
+          // Another idea (maybe easier to implement) is to disable
+          // the settings UI while *any* bootstrap is going on.
+          // This is also documented in tor-browser#41921.
+          const provider = await lazy.TorProviderBuilder.build();
+          // We need to merge with old settings, in case the user is
+          // using a proxy or is behind a firewall.
+          await provider.writeSettings({
+            ...TorSettings.getSettings(),
+            ...currentSetting,
+          });
+
+          // build out our bootstrap request
+          const tbr = new lazy.TorBootstrapRequest();
+          tbr.onbootstrapstatus = (progress, status) => {
+            TorConnect._updateBootstrapStatus(progress, status);
+          };
+          tbr.onbootstraperror = (message, details) => {
+            lazy.logger.error(`Auto-Bootstrap error => ${message}; ${details}`);
+          };
+
+          // update transition callback for user cancel
+          this.on_transition = async nextState => {
+            if (nextState === TorConnectState.Configuring) {
+              await tbr.cancel();
+              await restoreOriginalSettings();
+            }
+            resolve();
+          };
+
+          // begin bootstrap
+          if (await tbr.bootstrap()) {
+            // persist the current settings to preferences
+            TorSettings.setSettings(currentSetting);
+            TorSettings.saveToPrefs();
+            await TorSettings.applySettings();
+            TorConnect._changeState(TorConnectState.Bootstrapped);
+            return;
           }
+        }
 
-          async function bootstrappingCallback() {
-            // wait until bootstrap completes or we get an error
-            await new Promise(async (resolve, reject) => {
-              // debug hook to simulate censorship preventing bootstrapping
-              if (
-                Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) >
-                0
-              ) {
-                this.on_transition = nextState => {
-                  resolve();
-                };
-                await debug_sleep(1500);
-                TorConnect._hasBootstrapEverFailed = true;
-                if (
-                  Services.prefs.getIntPref(
-                    TorConnectPrefs.censorship_level,
-                    0
-                  ) === 2
-                ) {
-                  const codes = Object.keys(TorConnect._countryNames);
-                  TorConnect._detectedLocation =
-                    codes[Math.floor(Math.random() * codes.length)];
-                }
-                TorConnect._changeState(
-                  TorConnectState.Error,
-                  "Bootstrap failed (for debugging purposes)",
-                  "Error: Censorship simulation",
-                  true
-                );
-                return;
-              }
+        // Bootstrap failed for all potential settings, so restore the
+        // original settings the provider.
+        await restoreOriginalSettings();
 
-              const tbr = new lazy.TorBootstrapRequest();
-              const internetTest = new InternetTest();
-              let cancelled = false;
+        // Only explicitly change state here if something else has not
+        // transitioned us.
+        if (!this.transitioning) {
+          throw_error(
+            TorStrings.torConnect.autoBootstrappingFailed,
+            TorStrings.torConnect.autoBootstrappingAllFailed
+          );
+        }
+        return;
+      } catch (err) {
+        await restoreOriginalSettings();
+        // throw to outer catch to transition us.
+        throw err;
+      }
+    } catch (err) {
+      if (this.mrpc?.inited) {
+        // lookup countries which have settings available
+        TorConnect._countryCodes = await this.mrpc.circumvention_countries();
+      }
+      if (!this.transitioning) {
+        TorConnect._changeState(
+          TorConnectState.Error,
+          err?.message,
+          err?.details,
+          true
+        );
+      } else {
+        lazy.logger.error(
+          "Received AutoBootstrapping error after transitioning",
+          err
+        );
+      }
+    } finally {
+      // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
+      this.mrpc?.uninit();
+    }
+  });
+}
 
-              let bootstrapError = "";
-              let bootstrapErrorDetails = "";
-              const maybeTransitionToError = () => {
-                if (
-                  internetTest.status === InternetStatus.Unknown &&
-                  internetTest.error === null &&
-                  internetTest.enabled
-                ) {
-                  // We have been called by a failed bootstrap, but the internet test has not run yet - force
-                  // it to run immediately!
-                  internetTest.test();
-                  // Return from this call, because the Internet test's callback will call us again
-                  return;
-                }
-                // Do not transition to the offline error until we are sure that also the bootstrap failed, in
-                // case Moat is down but the bootstrap can proceed anyway.
-                if (bootstrapError === "") {
-                  return;
-                }
-                if (internetTest.status === InternetStatus.Offline) {
-                  TorConnect._changeState(
-                    TorConnectState.Error,
-                    TorStrings.torConnect.offline,
-                    "",
-                    true
-                  );
-                } else {
-                  // Give priority to the bootstrap error, in case the Internet test fails
-                  TorConnect._hasBootstrapEverFailed = true;
-                  TorConnect._changeState(
-                    TorConnectState.Error,
-                    bootstrapError,
-                    bootstrapErrorDetails,
-                    true
-                  );
-                }
-              };
+async function bootstrappedCallback() {
+  await new Promise((resolve, reject) => {
+    // We may need to leave the bootstrapped state if the tor daemon
+    // exits (if it is restarted, we will have to bootstrap again).
+    this.on_transition = nextState => {
+      resolve();
+    };
+    // notify observers of bootstrap completion
+    Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
+  });
+}
 
-              this.on_transition = async nextState => {
-                if (nextState === TorConnectState.Configuring) {
-                  // stop bootstrap process if user cancelled
-                  cancelled = true;
-                  internetTest.cancel();
-                  await tbr.cancel();
-                }
-                resolve();
-              };
+async function errorCallback(errorMessage, errorDetails, bootstrappingFailure) {
+  await new Promise((resolve, reject) => {
+    this.on_transition = async nextState => {
+      resolve();
+    };
 
-              tbr.onbootstrapstatus = (progress, status) => {
-                TorConnect._updateBootstrapStatus(progress, status);
-              };
-              tbr.onbootstrapcomplete = () => {
-                internetTest.cancel();
-                TorConnect._changeState(TorConnectState.Bootstrapped);
-              };
-              tbr.onbootstraperror = (message, details) => {
-                if (cancelled) {
-                  // We ignore this error since it occurred after cancelling (by
-                  // the user). We assume the error is just a side effect of the
-                  // cancelling.
-                  // E.g. If the cancelling is triggered late in the process, we
-                  // get "Building circuits: Establishing a Tor circuit failed".
-                  // TODO: Maybe move this logic deeper in the process to know
-                  // when to filter out such errors triggered by cancelling.
-                  lazy.logger.warn(
-                    `Post-cancel error => ${message}; ${details}`
-                  );
-                  return;
-                }
-                // We have to wait for the Internet test to finish before sending the bootstrap error
-                bootstrapError = message;
-                bootstrapErrorDetails = details;
-                maybeTransitionToError();
-              };
+    TorConnect._errorMessage = errorMessage;
+    TorConnect._errorDetails = errorDetails;
+    lazy.logger.error(
+      `Entering error state (${errorMessage}, ${errorDetails})`
+    );
 
-              internetTest.onResult = (status, date) => {
-                // TODO: Use the date to save the clock skew?
-                TorConnect._internetStatus = status;
-                maybeTransitionToError();
-              };
-              internetTest.onError = () => {
-                maybeTransitionToError();
-              };
+    Services.obs.notifyObservers(
+      { message: errorMessage, details: errorDetails },
+      TorConnectTopics.BootstrapError
+    );
 
-              tbr.bootstrap();
-            });
-          }
+    TorConnect._changeState(TorConnectState.Configuring);
+  });
+}
 
-          async function autoBootstrappingCallback(
-            countryCode
-          ) {
-            await new Promise(async (resolve, reject) => {
-              this.on_transition = nextState => {
-                resolve();
-              };
-
-              // debug hook to simulate censorship preventing bootstrapping
-              {
-                const censorshipLevel = Services.prefs.getIntPref(
-                  TorConnectPrefs.censorship_level,
-                  0
-                );
-                if (censorshipLevel > 1) {
-                  this.on_transition = nextState => {
-                    resolve();
-                  };
-                  // always fail even after manually selecting location specific settings
-                  if (censorshipLevel == 3) {
-                    await debug_sleep(2500);
-                    TorConnect._changeState(
-                      TorConnectState.Error,
-                      "Error: censorship simulation",
-                      "",
-                      true
-                    );
-                    return;
-                    // only fail after auto selecting, manually selecting succeeds
-                  } else if (censorshipLevel == 2 && !countryCode) {
-                    await debug_sleep(2500);
-                    TorConnect._changeState(
-                      TorConnectState.Error,
-                      "Error: Severe Censorship simulation",
-                      "",
-                      true
-                    );
-                    return;
-                  }
-                }
-              }
-
-              const throw_error = (message, details) => {
-                let err = new Error(message);
-                err.details = details;
-                throw err;
-              };
-
-              // lookup user's potential censorship circumvention settings from Moat service
-              try {
-                this.mrpc = new lazy.MoatRPC();
-                await this.mrpc.init();
-
-                if (this.transitioning) {
-                  return;
-                }
-
-                const settings = await this.mrpc.circumvention_settings(
-                  [...TorSettings.builtinBridgeTypes, "vanilla"],
-                  countryCode
-                );
-
-                if (this.transitioning) {
-                  return;
-                }
-
-                if (settings?.country) {
-                  TorConnect._detectedLocation = settings.country;
-                }
-                if (settings?.settings && settings.settings.length) {
-                  this.settings = settings.settings;
-                } else {
-                  try {
-                    this.settings = await this.mrpc.circumvention_defaults([
-                      ...TorSettings.builtinBridgeTypes,
-                      "vanilla",
-                    ]);
-                  } catch (err) {
-                    lazy.logger.error(
-                      "We did not get localized settings, and default settings failed as well",
-                      err
-                    );
-                  }
-                }
-                if (this.settings === null || this.settings.length === 0) {
-                  // The fallback has failed as well, so throw the original error
-                  if (!TorConnect._detectedLocation) {
-                    // unable to determine country
-                    throw_error(
-                      TorStrings.torConnect.autoBootstrappingFailed,
-                      TorStrings.torConnect.cannotDetermineCountry
-                    );
-                  } else {
-                    // no settings available for country
-                    throw_error(
-                      TorStrings.torConnect.autoBootstrappingFailed,
-                      TorStrings.torConnect.noSettingsForCountry
-                    );
-                  }
-                }
-
-                const restoreOriginalSettings = async () => {
-                  try {
-                    await TorSettings.applySettings();
-                  } catch (e) {
-                    // We cannot do much if the original settings were bad or
-                    // if the connection closed, so just report it in the
-                    // console.
-                    lazy.logger.warn("Failed to restore original settings.", e);
-                  }
-                };
-
-                // apply each of our settings and try to bootstrap with each
-                try {
-                  for (const [
-                    index,
-                    currentSetting,
-                  ] of this.settings.entries()) {
-                    // we want to break here so we can fall through and restore original settings
-                    if (this.transitioning) {
-                      break;
-                    }
-
-                    lazy.logger.info(
-                      `Attempting Bootstrap with configuration ${index + 1}/${
-                        this.settings.length
-                      }`
-                    );
-
-                    // Send the new settings directly to the provider. We will
-                    // save them only if the bootstrap succeeds.
-                    // FIXME: We should somehow signal TorSettings users that we
-                    // have set custom settings, and they should not apply
-                    // theirs until we are done with trying ours.
-                    // Otherwise, the new settings provided by the user while we
-                    // were bootstrapping could be the ones that cause the
-                    // bootstrap to succeed, but we overwrite them (unless we
-                    // backup the original settings, and then save our new
-                    // settings only if they have not changed).
-                    // Another idea (maybe easier to implement) is to disable
-                    // the settings UI while *any* bootstrap is going on.
-                    // This is also documented in tor-browser#41921.
-                    const provider = await lazy.TorProviderBuilder.build();
-                    // We need to merge with old settings, in case the user is
-                    // using a proxy or is behind a firewall.
-                    await provider.writeSettings({
-                      ...TorSettings.getSettings(),
-                      ...currentSetting,
-                    });
-
-                    // build out our bootstrap request
-                    const tbr = new lazy.TorBootstrapRequest();
-                    tbr.onbootstrapstatus = (progress, status) => {
-                      TorConnect._updateBootstrapStatus(progress, status);
-                    };
-                    tbr.onbootstraperror = (message, details) => {
-                      lazy.logger.error(
-                        `Auto-Bootstrap error => ${message}; ${details}`
-                      );
-                    };
-
-                    // update transition callback for user cancel
-                    this.on_transition = async nextState => {
-                      if (nextState === TorConnectState.Configuring) {
-                        await tbr.cancel();
-                        await restoreOriginalSettings();
-                      }
-                      resolve();
-                    };
-
-                    // begin bootstrap
-                    if (await tbr.bootstrap()) {
-                      // persist the current settings to preferences
-                      TorSettings.setSettings(currentSetting);
-                      TorSettings.saveToPrefs();
-                      await TorSettings.applySettings();
-                      TorConnect._changeState(TorConnectState.Bootstrapped);
-                      return;
-                    }
-                  }
-
-                  // Bootstrap failed for all potential settings, so restore the
-                  // original settings the provider.
-                  await restoreOriginalSettings();
-
-                  // Only explicitly change state here if something else has not
-                  // transitioned us.
-                  if (!this.transitioning) {
-                    throw_error(
-                      TorStrings.torConnect.autoBootstrappingFailed,
-                      TorStrings.torConnect.autoBootstrappingAllFailed
-                    );
-                  }
-                  return;
-                } catch (err) {
-                  await restoreOriginalSettings();
-                  // throw to outer catch to transition us.
-                  throw err;
-                }
-              } catch (err) {
-                if (this.mrpc?.inited) {
-                  // lookup countries which have settings available
-                  TorConnect._countryCodes =
-                    await this.mrpc.circumvention_countries();
-                }
-                if (!this.transitioning) {
-                  TorConnect._changeState(
-                    TorConnectState.Error,
-                    err?.message,
-                    err?.details,
-                    true
-                  );
-                } else {
-                  lazy.logger.error(
-                    "Received AutoBootstrapping error after transitioning",
-                    err
-                  );
-                }
-              } finally {
-                // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
-                this.mrpc?.uninit();
-              }
-            });
-          }
-
-          async function bootstrappedCallback() {
-            await new Promise((resolve, reject) => {
-              // We may need to leave the bootstrapped state if the tor daemon
-              // exits (if it is restarted, we will have to bootstrap again).
-              this.on_transition = nextState => {
-                resolve();
-              };
-              // notify observers of bootstrap completion
-              Services.obs.notifyObservers(
-                null,
-                TorConnectTopics.BootstrapComplete
-              );
-            });
-          }
-
-          async function errorCallback(
-            errorMessage,
-            errorDetails,
-            bootstrappingFailure
-          ) {
-            await new Promise((resolve, reject) => {
-              this.on_transition = async nextState => {
-                resolve();
-              };
-
-              TorConnect._errorMessage = errorMessage;
-              TorConnect._errorDetails = errorDetails;
-              lazy.logger.error(
-                `Entering error state (${errorMessage}, ${errorDetails})`
-              );
-
-              Services.obs.notifyObservers(
-                { message: errorMessage, details: errorDetails },
-                TorConnectTopics.BootstrapError
-              );
-
-              TorConnect._changeState(TorConnectState.Configuring);
-            });
-          }
-
-          async function disabledCallback() {
-            await new Promise((resolve, reject) => {
-              // no-op, on_transition not defined because no way to leave Disabled state
-            });
-          }
+async function disabledCallback() {
+  await new Promise((resolve, reject) => {
+    // no-op, on_transition not defined because no way to leave Disabled state
+  });
+}
 
 export const InternetStatus = Object.freeze({
   Unknown: -1,
@@ -824,12 +801,18 @@ export const TorConnect = (() => {
         /* Bootstrapping */
         [
           TorConnectState.Bootstrapping,
-          new StateCallback(TorConnectState.Bootstrapping, bootstrappingCallback),
+          new StateCallback(
+            TorConnectState.Bootstrapping,
+            bootstrappingCallback
+          ),
         ],
         /* AutoBootstrapping */
         [
           TorConnectState.AutoBootstrapping,
-          new StateCallback(TorConnectState.AutoBootstrapping, autoBootstrappingCallback),
+          new StateCallback(
+            TorConnectState.AutoBootstrapping,
+            autoBootstrappingCallback
+          ),
         ],
         /* Bootstrapped */
         [
