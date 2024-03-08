@@ -132,6 +132,7 @@ export const TorConnectTopics = Object.freeze({
 // cancels a bootstrap attempt)
 class StateCallback {
   #state;
+  #promise;
   #transitioning = false;
 
   on_transition = nextState => {};
@@ -142,17 +143,16 @@ class StateCallback {
 
   async begin(...args) {
     lazy.logger.trace(`Entering ${this.#state} state`);
+    // Make sure we always have an actual promise.
     try {
-      // this Promise will block until this StateCallback has completed its work
-      await Promise.resolve(this._callback(...args));
-      lazy.logger.info(`Exited ${this.#state} state`);
-
-      // handled state transition
-      Services.obs.notifyObservers(
-        { state: this._nextState.state },
-        TorConnectTopics.StateChange
-      );
-      this._nextState.begin(...this._nextStateArgs);
+      this.#promise = Promise.resolve(this._callback(...args));
+    } catch (err) {
+      this.#promise = Promise.reject(err);
+    }
+    try {
+      // If the callback throws, transition to error as soon as possible.
+      await this.#promise;
+      lazy.logger.info(`${this.#state}'s callback is done`);
     } catch (obj) {
       TorConnect._changeState(
         TorConnectState.Error,
@@ -162,19 +162,47 @@ class StateCallback {
     }
   }
 
-  transition(nextState, ...args) {
+  async transition(nextState, ...args) {
     lazy.logger.trace(
       `Transition requested from ${this.#state} to ${nextState.state}`,
       args
     );
 
-    this._nextState = nextState;
-    this._nextStateArgs = [...args];
+    if (this.#transitioning) {
+      // Should we check turn this into an error?
+      // It will make dealing with the error state harder.
+      lazy.logger.warn("this.#transitioning is already true.");
+    }
+
+    // Signal we should bail out ASAP.
+    this.#transitioning = true;
 
     // calls the on_transition callback to resolve any async work or do per-state cleanup
     // this call to on_transition should resolve the async work currentlying going on in this.begin()
     this.on_transition(nextState.state);
-    this.#transitioning = true;
+
+    lazy.logger.debug(
+      "Waiting for the previous state's callback to return before the transition."
+    );
+    try {
+      await this.#promise;
+    } catch (e) {
+      // begin should already transform exceptions into the error state.
+      if (nextState.state !== TorConnectState.Error) {
+        lazy.logger.error(
+          `Refusing the transition to ${nextState.state} because the callback threw.`,
+          e
+        );
+        return;
+      }
+    }
+    lazy.logger.debug("Ready to transition");
+
+    Services.obs.notifyObservers(
+      { state: nextState.state },
+      TorConnectTopics.StateChange
+    );
+    nextState.begin(...args);
   }
 
   get transitioning() {
