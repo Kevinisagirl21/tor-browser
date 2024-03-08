@@ -245,139 +245,7 @@ const debug_sleep = async ms => {
   });
 };
 
-export const InternetStatus = Object.freeze({
-  Unknown: -1,
-  Offline: 0,
-  Online: 1,
-});
-
-class InternetTest {
-  #enabled;
-  #status = InternetStatus.Unknown;
-  #error = null;
-  #pending = false;
-  #timeout = 0;
-
-  constructor() {
-    this.#enabled = Services.prefs.getBoolPref(
-      TorConnectPrefs.allow_internet_test,
-      true
-    );
-    if (this.#enabled) {
-      this.#timeout = setTimeout(() => {
-        this.#timeout = 0;
-        this.test();
-      }, this.#timeoutRand());
-    }
-    this.onResult = (online, date) => {};
-    this.onError = err => {};
-  }
-
-  /**
-   * Perform the internet test.
-   *
-   * While this is an async method, the callers are not expected to await it,
-   * as we are also using callbacks.
-   */
-  async test() {
-    if (this.#pending || !this.#enabled) {
-      return;
-    }
-    this.cancel();
-    this.#pending = true;
-
-    lazy.logger.info("Starting the Internet test");
-    const mrpc = new lazy.MoatRPC();
-    try {
-      await mrpc.init();
-      const status = await mrpc.testInternetConnection();
-      this.#status = status.successful
-        ? InternetStatus.Online
-        : InternetStatus.Offline;
-      lazy.logger.info(`Performed Internet test, outcome ${this.#status}`);
-      setTimeout(() => {
-        this.onResult(this.#status, status.date);
-      });
-    } catch (err) {
-      lazy.logger.error("Error while checking the Internet connection", err);
-      this.#error = err;
-      this.#pending = false;
-      setTimeout(() => {
-        this.onError(err);
-      });
-    } finally {
-      mrpc.uninit();
-    }
-  }
-
-  cancel() {
-    if (this.#timeout) {
-      clearTimeout(this.#timeout);
-      this.#timeout = 0;
-    }
-  }
-
-  get status() {
-    return this.#status;
-  }
-
-  get error() {
-    return this.#error;
-  }
-
-  get enabled() {
-    return this.#enabled;
-  }
-
-  // We randomize the Internet test timeout to make fingerprinting it harder, at
-  // least a little bit...
-  #timeoutRand() {
-    const offset = 30000;
-    const randRange = 5000;
-    return offset + randRange * (Math.random() * 2 - 1);
-  }
-}
-
-export const TorConnect = (() => {
-  let retval = {
-    _state: TorConnectState.Initial,
-    _bootstrapProgress: 0,
-    _bootstrapStatus: null,
-    _internetStatus: InternetStatus.Unknown,
-    // list of country codes Moat has settings for
-    _countryCodes: [],
-    _countryNames: Object.freeze(
-      (() => {
-        const codes = Services.intl.getAvailableLocaleDisplayNames("region");
-        const names = Services.intl.getRegionDisplayNames(undefined, codes);
-        let codesNames = {};
-        for (let i = 0; i < codes.length; i++) {
-          codesNames[codes[i]] = names[i];
-        }
-        return codesNames;
-      })()
-    ),
-    _detectedLocation: "",
-    _errorMessage: null,
-    _errorDetails: null,
-    _logHasWarningOrError: false,
-    _hasEverFailed: false,
-    _hasBootstrapEverFailed: false,
-    _transitionPromise: null,
-
-    // This is used as a helper to make the state of about:torconnect persistent
-    // during a session, but TorConnect does not use this data at all.
-    _uiState: {},
-
-    /* These functions represent ongoing work associated with one of our states
-           Some of these functions are mostly empty, apart from defining an
-           on_transition function used to resolve their Promise */
-    _stateCallbacks: Object.freeze(
-      new Map([
-        /* Initial is never transitioned to */
-        [
-          TorConnectState.Initial,
-          new StateCallback(TorConnectState.Initial, async function () {
+          async function initialCallback() {
             // The initial state doesn't actually do anything, so here is a skeleton for other
             // states which do perform work
             await new Promise(async (resolve, reject) => {
@@ -409,23 +277,17 @@ export const TorConnect = (() => {
                 );
               }
             });
-          }),
-        ],
-        /* Configuring */
-        [
-          TorConnectState.Configuring,
-          new StateCallback(TorConnectState.Configuring, async function () {
+          }
+
+          async function configuringCallback() {
             await new Promise(async (resolve, reject) => {
               this.on_transition = nextState => {
                 resolve();
               };
             });
-          }),
-        ],
-        /* Bootstrapping */
-        [
-          TorConnectState.Bootstrapping,
-          new StateCallback(TorConnectState.Bootstrapping, async function () {
+          }
+
+          async function bootstrappingCallback() {
             // wait until bootstrap completes or we get an error
             await new Promise(async (resolve, reject) => {
               // debug hook to simulate censorship preventing bootstrapping
@@ -547,12 +409,9 @@ export const TorConnect = (() => {
 
               tbr.bootstrap();
             });
-          }),
-        ],
-        /* AutoBootstrapping */
-        [
-          TorConnectState.AutoBootstrapping,
-          new StateCallback(TorConnectState.AutoBootstrapping, async function (
+          }
+
+          async function autoBootstrappingCallback(
             countryCode
           ) {
             await new Promise(async (resolve, reject) => {
@@ -775,12 +634,9 @@ export const TorConnect = (() => {
                 this.mrpc?.uninit();
               }
             });
-          }),
-        ],
-        /* Bootstrapped */
-        [
-          TorConnectState.Bootstrapped,
-          new StateCallback(TorConnectState.Bootstrapped, async function () {
+          }
+
+          async function bootstrappedCallback() {
             await new Promise((resolve, reject) => {
               // We may need to leave the bootstrapped state if the tor daemon
               // exits (if it is restarted, we will have to bootstrap again).
@@ -793,12 +649,9 @@ export const TorConnect = (() => {
                 TorConnectTopics.BootstrapComplete
               );
             });
-          }),
-        ],
-        /* Error */
-        [
-          TorConnectState.Error,
-          new StateCallback(TorConnectState.Error, async function (
+          }
+
+          async function errorCallback(
             errorMessage,
             errorDetails,
             bootstrappingFailure
@@ -821,16 +674,177 @@ export const TorConnect = (() => {
 
               TorConnect._changeState(TorConnectState.Configuring);
             });
-          }),
+          }
+
+          async function disabledCallback() {
+            await new Promise((resolve, reject) => {
+              // no-op, on_transition not defined because no way to leave Disabled state
+            });
+          }
+
+export const InternetStatus = Object.freeze({
+  Unknown: -1,
+  Offline: 0,
+  Online: 1,
+});
+
+class InternetTest {
+  #enabled;
+  #status = InternetStatus.Unknown;
+  #error = null;
+  #pending = false;
+  #timeout = 0;
+
+  constructor() {
+    this.#enabled = Services.prefs.getBoolPref(
+      TorConnectPrefs.allow_internet_test,
+      true
+    );
+    if (this.#enabled) {
+      this.#timeout = setTimeout(() => {
+        this.#timeout = 0;
+        this.test();
+      }, this.#timeoutRand());
+    }
+    this.onResult = (online, date) => {};
+    this.onError = err => {};
+  }
+
+  /**
+   * Perform the internet test.
+   *
+   * While this is an async method, the callers are not expected to await it,
+   * as we are also using callbacks.
+   */
+  async test() {
+    if (this.#pending || !this.#enabled) {
+      return;
+    }
+    this.cancel();
+    this.#pending = true;
+
+    lazy.logger.info("Starting the Internet test");
+    const mrpc = new lazy.MoatRPC();
+    try {
+      await mrpc.init();
+      const status = await mrpc.testInternetConnection();
+      this.#status = status.successful
+        ? InternetStatus.Online
+        : InternetStatus.Offline;
+      lazy.logger.info(`Performed Internet test, outcome ${this.#status}`);
+      setTimeout(() => {
+        this.onResult(this.#status, status.date);
+      });
+    } catch (err) {
+      lazy.logger.error("Error while checking the Internet connection", err);
+      this.#error = err;
+      this.#pending = false;
+      setTimeout(() => {
+        this.onError(err);
+      });
+    } finally {
+      mrpc.uninit();
+    }
+  }
+
+  cancel() {
+    if (this.#timeout) {
+      clearTimeout(this.#timeout);
+      this.#timeout = 0;
+    }
+  }
+
+  get status() {
+    return this.#status;
+  }
+
+  get error() {
+    return this.#error;
+  }
+
+  get enabled() {
+    return this.#enabled;
+  }
+
+  // We randomize the Internet test timeout to make fingerprinting it harder, at
+  // least a little bit...
+  #timeoutRand() {
+    const offset = 30000;
+    const randRange = 5000;
+    return offset + randRange * (Math.random() * 2 - 1);
+  }
+}
+
+export const TorConnect = (() => {
+  let retval = {
+    _state: TorConnectState.Initial,
+    _bootstrapProgress: 0,
+    _bootstrapStatus: null,
+    _internetStatus: InternetStatus.Unknown,
+    // list of country codes Moat has settings for
+    _countryCodes: [],
+    _countryNames: Object.freeze(
+      (() => {
+        const codes = Services.intl.getAvailableLocaleDisplayNames("region");
+        const names = Services.intl.getRegionDisplayNames(undefined, codes);
+        let codesNames = {};
+        for (let i = 0; i < codes.length; i++) {
+          codesNames[codes[i]] = names[i];
+        }
+        return codesNames;
+      })()
+    ),
+    _detectedLocation: "",
+    _errorMessage: null,
+    _errorDetails: null,
+    _logHasWarningOrError: false,
+    _hasEverFailed: false,
+    _hasBootstrapEverFailed: false,
+    _transitionPromise: null,
+
+    // This is used as a helper to make the state of about:torconnect persistent
+    // during a session, but TorConnect does not use this data at all.
+    _uiState: {},
+
+    /* These functions represent ongoing work associated with one of our states
+           Some of these functions are mostly empty, apart from defining an
+           on_transition function used to resolve their Promise */
+    _stateCallbacks: Object.freeze(
+      new Map([
+        /* Initial is never transitioned to */
+        [
+          TorConnectState.Initial,
+          new StateCallback(TorConnectState.Initial, initialCallback),
+        ],
+        /* Configuring */
+        [
+          TorConnectState.Configuring,
+          new StateCallback(TorConnectState.Configuring, configuringCallback),
+        ],
+        /* Bootstrapping */
+        [
+          TorConnectState.Bootstrapping,
+          new StateCallback(TorConnectState.Bootstrapping, bootstrappingCallback),
+        ],
+        /* AutoBootstrapping */
+        [
+          TorConnectState.AutoBootstrapping,
+          new StateCallback(TorConnectState.AutoBootstrapping, autoBootstrappingCallback),
+        ],
+        /* Bootstrapped */
+        [
+          TorConnectState.Bootstrapped,
+          new StateCallback(TorConnectState.Bootstrapped, bootstrappedCallback),
+        ],
+        /* Error */
+        [
+          TorConnectState.Error,
+          new StateCallback(TorConnectState.Error, errorCallback),
         ],
         /* Disabled */
         [
           TorConnectState.Disabled,
-          new StateCallback(TorConnectState.Disabled, async function () {
-            await new Promise((resolve, reject) => {
-              // no-op, on_transition not defined because no way to leave Disabled state
-            });
-          }),
+          new StateCallback(TorConnectState.Disabled, disabledCallback),
         ],
       ])
     ),
