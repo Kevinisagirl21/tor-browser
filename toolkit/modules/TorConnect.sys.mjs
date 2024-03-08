@@ -131,6 +131,8 @@ export const TorConnectTopics = Object.freeze({
 // other states when the run function is complete etc...
 // A system is also provided to allow this function to early-out. The runner
 // should check the transitioning getter when appropriate and return.
+// In addition to that, a state can implement a transitionRequested callback,
+// which can be used in conjunction with a mechanism like Promise.race.
 // This allows to handle, for example, users' requests to cancel a bootstrap
 // attempt.
 // A state can optionally define a cleanup function, that will be run in all
@@ -179,6 +181,9 @@ class StateCallback {
 
     // Signal we should bail out ASAP.
     this.#transitioning = true;
+    if (this.transitionRequested) {
+      this.transitionRequested();
+    }
 
     lazy.logger.debug(
       `Waiting for the ${
@@ -431,6 +436,12 @@ class BootstrappingState extends StateCallback {
 }
 
 class AutoBootstrappingState extends StateCallback {
+  #bootstrap = null;
+  #moat = null;
+  #settings;
+  #transitionPromise;
+  #transitionResolve;
+
   allowedTransitions = Object.freeze([
     TorConnectState.Configuring,
     TorConnectState.Bootstrapped,
@@ -439,41 +450,17 @@ class AutoBootstrappingState extends StateCallback {
 
   constructor() {
     super(TorConnectState.AutoBootstrapping);
+    this.#transitionPromise = new Promise(resolve => {
+      this.#transitionResolve = resolve;
+    });
   }
 
   async run(countryCode) {
-    // debug hook to simulate censorship preventing bootstrapping
-    {
-      const censorshipLevel = Services.prefs.getIntPref(
-        TorConnectPrefs.censorship_level,
-        0
-      );
-      if (censorshipLevel > 1) {
-        // always fail even after manually selecting location specific settings
-        if (censorshipLevel == 3) {
-          await debugSleep(2500);
-          this.changeState(
-            TorConnectState.Error,
-            "Error: censorship simulation",
-            "",
-            true
-          );
-          return;
-          // only fail after auto selecting, manually selecting succeeds
-        } else if (censorshipLevel == 2 && !countryCode) {
-          await debugSleep(2500);
-          this.changeState(
-            TorConnectState.Error,
-            "Error: Severe Censorship simulation",
-            "",
-            true
-          );
-          return;
-        }
-      }
+    if (await this.#simulateCensorship(countryCode)) {
+      return;
     }
 
-    const throw_error = (message, details) => {
+    const throwError = (message, details) => {
       let err = new Error(message);
       err.details = details;
       throw err;
@@ -481,17 +468,20 @@ class AutoBootstrappingState extends StateCallback {
 
     // lookup user's potential censorship circumvention settings from Moat service
     try {
-      this.mrpc = new lazy.MoatRPC();
-      await this.mrpc.init();
+      this.#moat = new lazy.MoatRPC();
+      await Promise.race([this.#moat.init(), this.#transitionPromise]);
 
       if (this.transitioning) {
         return;
       }
 
-      const settings = await this.mrpc.circumvention_settings(
-        [...TorSettings.builtinBridgeTypes, "vanilla"],
-        countryCode
-      );
+      const settings = await Promise.race([
+        this.#moat.circumvention_settings(
+          [...TorSettings.builtinBridgeTypes, "vanilla"],
+          countryCode
+        ),
+        this.#transitionPromise,
+      ]);
 
       if (this.transitioning) {
         return;
@@ -501,12 +491,15 @@ class AutoBootstrappingState extends StateCallback {
         TorConnect._detectedLocation = settings.country;
       }
       if (settings?.settings && settings.settings.length) {
-        this.settings = settings.settings;
+        this.#settings = settings.settings;
       } else {
         try {
-          this.settings = await this.mrpc.circumvention_defaults([
-            ...TorSettings.builtinBridgeTypes,
-            "vanilla",
+          this.#settings = await Promise.race([
+            this.#moat.circumvention_defaults([
+              ...TorSettings.builtinBridgeTypes,
+              "vanilla",
+            ]),
+            this.#transitionPromise,
           ]);
         } catch (err) {
           lazy.logger.error(
@@ -515,37 +508,31 @@ class AutoBootstrappingState extends StateCallback {
           );
         }
       }
-      if (this.settings === null || this.settings.length === 0) {
+
+      if (this.transitioning) {
+        return;
+      }
+
+      if (!this.#settings || this.#settings.length === 0) {
         // The fallback has failed as well, so throw the original error
         if (!TorConnect._detectedLocation) {
           // unable to determine country
-          throw_error(
+          throwError(
             TorStrings.torConnect.autoBootstrappingFailed,
             TorStrings.torConnect.cannotDetermineCountry
           );
         } else {
           // no settings available for country
-          throw_error(
+          throwError(
             TorStrings.torConnect.autoBootstrappingFailed,
             TorStrings.torConnect.noSettingsForCountry
           );
         }
       }
 
-      const restoreOriginalSettings = async () => {
-        try {
-          await TorSettings.applySettings();
-        } catch (e) {
-          // We cannot do much if the original settings were bad or
-          // if the connection closed, so just report it in the
-          // console.
-          lazy.logger.warn("Failed to restore original settings.", e);
-        }
-      };
-
       // apply each of our settings and try to bootstrap with each
       try {
-        for (const [index, currentSetting] of this.settings.entries()) {
+        for (const [index, currentSetting] of this.#settings.entries()) {
           // we want to break here so we can fall through and restore original settings
           if (this.transitioning) {
             break;
@@ -553,7 +540,7 @@ class AutoBootstrappingState extends StateCallback {
 
           lazy.logger.info(
             `Attempting Bootstrap with configuration ${index + 1}/${
-              this.settings.length
+              this.#settings.length
             }`
           );
 
@@ -579,24 +566,21 @@ class AutoBootstrappingState extends StateCallback {
           });
 
           // build out our bootstrap request
-          const tbr = new lazy.TorBootstrapRequest();
-          tbr.onbootstrapstatus = (progress, status) => {
+          this.#bootstrap = new lazy.TorBootstrapRequest();
+          this.#bootstrap.onbootstrapstatus = (progress, status) => {
             TorConnect._updateBootstrapStatus(progress, status);
           };
-          tbr.onbootstraperror = (message, details) => {
+          this.#bootstrap.onbootstraperror = (message, details) => {
             lazy.logger.error(`Auto-Bootstrap error => ${message}; ${details}`);
           };
 
-          // update transition callback for user cancel
-          this.cleanup = async nextState => {
-            if (nextState === TorConnectState.Configuring) {
-              await tbr.cancel();
-              await restoreOriginalSettings();
-            }
-          };
-
           // begin bootstrap
-          if (await tbr.bootstrap()) {
+          if (
+            await Promise.race([
+              this.#bootstrap.bootstrap(),
+              this.#transitionPromise,
+            ])
+          ) {
             // persist the current settings to preferences
             TorSettings.setSettings(currentSetting);
             TorSettings.saveToPrefs();
@@ -608,27 +592,35 @@ class AutoBootstrappingState extends StateCallback {
 
         // Bootstrap failed for all potential settings, so restore the
         // original settings the provider.
-        await restoreOriginalSettings();
+        await this.#restoreOriginalSettings();
 
         // Only explicitly change state here if something else has not
         // transitioned us.
         if (!this.transitioning) {
-          throw_error(
+          throwError(
             TorStrings.torConnect.autoBootstrappingFailed,
             TorStrings.torConnect.autoBootstrappingAllFailed
           );
         }
         return;
       } catch (err) {
-        await restoreOriginalSettings();
+        await this.#restoreOriginalSettings();
         // throw to outer catch to transition us.
         throw err;
       }
     } catch (err) {
-      if (this.mrpc?.inited) {
+      if (this.#moat?.inited && TorConnect._countryCodes?.length) {
         // lookup countries which have settings available
-        TorConnect._countryCodes = await this.mrpc.circumvention_countries();
+        try {
+          TorConnect._countryCodes = await this.#moat.circumvention_countries();
+        } catch (e) {
+          lazy.logger.warn(
+            "Could not get the list of countried for which we have circumvention data",
+            e
+          );
+        }
       }
+
       if (!this.transitioning) {
         this.changeState(
           TorConnectState.Error,
@@ -643,9 +635,83 @@ class AutoBootstrappingState extends StateCallback {
         );
       }
     } finally {
-      // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
-      this.mrpc?.uninit();
+      // important to uninit MoatRPC object or else the pt process will live
+      // as long as the browser.
+      this.#moat?.uninit();
     }
+  }
+
+  transitionRequested() {
+    this.#transitionResolve();
+  }
+
+  async cleanup(nextState) {
+    // No need to await.
+    this.#moat?.uninit();
+    this.#moat = null;
+
+    // If next state is configuring, it means the user canceled the bootstrap
+    if (nextState === TorConnectState.Configuring) {
+      await this.#bootstrap?.cancel();
+      await this.#restoreOriginalSettings();
+    }
+  }
+
+  async #restoreOriginalSettings() {
+    try {
+      await TorSettings.applySettings();
+    } catch (e) {
+      // We cannot do much if the original settings were bad or
+      // if the connection closed, so just report it in the
+      // console.
+      lazy.logger.warn("Failed to restore original settings.", e);
+    }
+  }
+
+  /**
+   * Simulate a censorship event, if needed.
+   *
+   * @param {string} countryCode The country code passed to the state
+   * @returns {Promise<boolean>} true if we are simulating the censorship and
+   * the bootstrap should stop immediately, or false if the bootstrap should
+   * continue normally.
+   */
+  async #simulateCensorship(countryCode) {
+    const censorshipLevel = Services.prefs.getIntPref(
+      TorConnectPrefs.censorship_level,
+      0
+    );
+    if (censorshipLevel <= 0) {
+      return false;
+    }
+
+    // Very severe censorship: always fail even after manually selecting
+    // location specific settings.
+    if (censorshipLevel === 3) {
+      await debugSleep(2500);
+      this.changeState(
+        TorConnectState.Error,
+        "Error: censorship simulation",
+        "",
+        true
+      );
+      return true;
+    }
+
+    // Severe censorship: only fail after auto selecting, but succeed after
+    // manually selecting a country.
+    if (censorshipLevel === 2 && !countryCode) {
+      await debugSleep(2500);
+      this.changeState(
+        TorConnectState.Error,
+        "Error: Severe Censorship simulation",
+        "",
+        true
+      );
+      return true;
+    }
+
+    return false;
   }
 }
 
