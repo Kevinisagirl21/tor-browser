@@ -252,93 +252,86 @@ export const InternetStatus = Object.freeze({
 });
 
 class InternetTest {
+  #enabled;
+  #status = InternetStatus.Unknown;
+  #error = null;
+  #pending = false;
+  #timeout = 0;
+
   constructor() {
-    this._enabled = Services.prefs.getBoolPref(
+    this.#enabled = Services.prefs.getBoolPref(
       TorConnectPrefs.allow_internet_test,
       true
     );
-
-    this._status = InternetStatus.Unknown;
-    this._error = null;
-    this._pending = false;
-    if (this._enabled) {
-      this._timeout = setTimeout(() => {
-        this._timeout = null;
+    if (this.#enabled) {
+      this.#timeout = setTimeout(() => {
+        this.#timeout = 0;
         this.test();
-      }, this.timeoutRand());
+      }, this.#timeoutRand());
     }
     this.onResult = (online, date) => {};
     this.onError = err => {};
   }
 
-  test() {
-    if (this._pending || !this._enabled) {
+  /**
+   * Perform the internet test.
+   *
+   * While this is an async method, the callers are not expected to await it,
+   * as we are also using callbacks.
+   */
+  async test() {
+    if (this.#pending || !this.#enabled) {
       return;
     }
     this.cancel();
-    this._pending = true;
+    this.#pending = true;
 
     lazy.logger.info("Starting the Internet test");
-    this._testAsync()
-      .then(status => {
-        this._pending = false;
-        this._status = status.successful
-          ? InternetStatus.Online
-          : InternetStatus.Offline;
-        lazy.logger.info(`Performed Internet test, outcome ${this._status}`);
-        this.onResult(this.status, status.date);
-      })
-      .catch(error => {
-        this._error = error;
-        this._pending = false;
-        this.onError(error);
-      });
-  }
-
-  cancel() {
-    if (this._timeout !== null) {
-      clearTimeout(this._timeout);
-      this._timeout = null;
-    }
-  }
-
-  async _testAsync() {
-    // Callbacks for the Internet test are desirable, because we will be
-    // waiting both for the bootstrap, and for the Internet test.
-    // However, managing Moat with async/await is much easier as it avoids a
-    // callback hell, and it makes extra explicit that we are uniniting it.
     const mrpc = new lazy.MoatRPC();
-    let status = null;
-    let error = null;
     try {
       await mrpc.init();
-      status = await mrpc.testInternetConnection();
+      const status = await mrpc.testInternetConnection();
+      this.#status = status.successful
+        ? InternetStatus.Online
+        : InternetStatus.Offline;
+      lazy.logger.info(`Performed Internet test, outcome ${this.#status}`);
+      setTimeout(() => {
+        this.onResult(this.#status, status.date);
+      });
     } catch (err) {
       lazy.logger.error("Error while checking the Internet connection", err);
-      error = err;
+      this.#error = err;
+      this.#pending = false;
+      setTimeout(() => {
+        this.onError(err);
+      });
     } finally {
       mrpc.uninit();
     }
-    if (error !== null) {
-      throw error;
+  }
+
+  cancel() {
+    if (this.#timeout) {
+      clearTimeout(this.#timeout);
+      this.#timeout = 0;
     }
-    return status;
   }
 
   get status() {
-    return this._status;
+    return this.#status;
   }
 
   get error() {
-    return this._error;
+    return this.#error;
   }
 
   get enabled() {
-    return this._enabled;
+    return this.#enabled;
   }
 
-  // We randomize the Internet test timeout to make fingerprinting it harder, at least a little bit...
-  timeoutRand() {
+  // We randomize the Internet test timeout to make fingerprinting it harder, at
+  // least a little bit...
+  #timeoutRand() {
     const offset = 30000;
     const randRange = 5000;
     return offset + randRange * (Math.random() * 2 - 1);
