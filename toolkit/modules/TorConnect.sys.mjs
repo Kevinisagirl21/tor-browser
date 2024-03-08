@@ -116,52 +116,6 @@ XPCOMUtils.defineLazyGetter(
             └───────────────────────┘
 */
 
-/* Maps allowed state transitions
-   TorConnectStateTransitions[state] maps to an array of allowed states to transition to
-   This is just an encoding of the above transition diagram that we verify at runtime
-*/
-const TorConnectStateTransitions = Object.freeze(
-  new Map([
-    [
-      TorConnectState.Initial,
-      [
-        TorConnectState.Disabled,
-        TorConnectState.Bootstrapping,
-        TorConnectState.Configuring,
-        TorConnectState.Error,
-      ],
-    ],
-    [
-      TorConnectState.Configuring,
-      [
-        TorConnectState.AutoBootstrapping,
-        TorConnectState.Bootstrapping,
-        TorConnectState.Error,
-      ],
-    ],
-    [
-      TorConnectState.AutoBootstrapping,
-      [
-        TorConnectState.Configuring,
-        TorConnectState.Bootstrapped,
-        TorConnectState.Error,
-      ],
-    ],
-    [
-      TorConnectState.Bootstrapping,
-      [
-        TorConnectState.Configuring,
-        TorConnectState.Bootstrapped,
-        TorConnectState.Error,
-      ],
-    ],
-    [TorConnectState.Error, [TorConnectState.Configuring]],
-    [TorConnectState.Bootstrapped, [TorConnectState.Configuring]],
-    // terminal states
-    [TorConnectState.Disabled, []],
-  ])
-);
-
 /* Topics Notified by the TorConnect module */
 export const TorConnectTopics = Object.freeze({
   StateChange: "torconnect:state-change",
@@ -177,9 +131,8 @@ export const TorConnectTopics = Object.freeze({
 // state (for example, from Bootstrapping to Configuring in the event the user
 // cancels a bootstrap attempt)
 class StateCallback {
-  constructor(state, callback) {
+  constructor(state) {
     this._state = state;
-    this._callback = callback;
     this._init();
   }
 
@@ -245,6 +198,23 @@ const debug_sleep = async ms => {
   });
 };
 
+// The initial state doesn't actually do anything, so here is a
+// skeleton for other states which do perform work
+class InitialState extends StateCallback {
+  allowedTransitions = Object.freeze([
+    TorConnectState.Disabled,
+    TorConnectState.Bootstrapping,
+    TorConnectState.Configuring,
+    TorConnectState.Error,
+  ]);
+
+  _callback = initialCallback;
+
+  constructor() {
+    super(TorConnectState.Initial);
+  }
+}
+
 async function initialCallback() {
   // The initial state doesn't actually do anything, so here is a skeleton for other
   // states which do perform work
@@ -279,12 +249,40 @@ async function initialCallback() {
   });
 }
 
+class ConfiguringState extends StateCallback {
+  allowedTransitions = Object.freeze([
+    TorConnectState.AutoBootstrapping,
+    TorConnectState.Bootstrapping,
+    TorConnectState.Error,
+  ]);
+
+  _callback = configuringCallback;
+
+  constructor() {
+    super(TorConnectState.Configuring);
+  }
+}
+
 async function configuringCallback() {
   await new Promise(async (resolve, reject) => {
     this.on_transition = nextState => {
       resolve();
     };
   });
+}
+
+class BootstrappingState extends StateCallback {
+  allowedTransitions = Object.freeze([
+    TorConnectState.Configuring,
+    TorConnectState.Bootstrapped,
+    TorConnectState.Error,
+  ]);
+
+  _callback = bootstrappingCallback;
+
+  constructor() {
+    super(TorConnectState.Bootstrapping);
+  }
 }
 
 async function bootstrappingCallback() {
@@ -401,6 +399,20 @@ async function bootstrappingCallback() {
 
     tbr.bootstrap();
   });
+}
+
+class AutoBootstrappingState extends StateCallback {
+  allowedTransitions = Object.freeze([
+    TorConnectState.Configuring,
+    TorConnectState.Bootstrapped,
+    TorConnectState.Error,
+  ]);
+
+  _callback = autoBootstrappingCallback;
+
+  constructor() {
+    super(TorConnectState.AutoBootstrapping);
+  }
 }
 
 async function autoBootstrappingCallback(countryCode) {
@@ -620,6 +632,16 @@ async function autoBootstrappingCallback(countryCode) {
   });
 }
 
+class BootstrappedState extends StateCallback {
+  allowedTransitions = Object.freeze([TorConnectState.Configuring]);
+
+  _callback = bootstrappedCallback;
+
+  constructor() {
+    super(TorConnectState.Bootstrapped);
+  }
+}
+
 async function bootstrappedCallback() {
   await new Promise((resolve, reject) => {
     // We may need to leave the bootstrapped state if the tor daemon
@@ -630,6 +652,16 @@ async function bootstrappedCallback() {
     // notify observers of bootstrap completion
     Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
   });
+}
+
+class ErrorState extends StateCallback {
+  allowedTransitions = Object.freeze([TorConnectState.Configuring]);
+
+  _callback = errorCallback;
+
+  constructor() {
+    super(TorConnectState.Error);
+  }
 }
 
 async function errorCallback(errorMessage, errorDetails, bootstrappingFailure) {
@@ -651,6 +683,16 @@ async function errorCallback(errorMessage, errorDetails, bootstrappingFailure) {
 
     TorConnect._changeState(TorConnectState.Configuring);
   });
+}
+
+class DisabledState extends StateCallback {
+  allowedTransitions = Object.freeze([]);
+
+  _callback = disabledCallback;
+
+  constructor() {
+    super(TorConnectState.DisabledState);
+  }
 }
 
 async function disabledCallback() {
@@ -788,47 +830,14 @@ export const TorConnect = (() => {
            on_transition function used to resolve their Promise */
     _stateCallbacks: Object.freeze(
       new Map([
-        /* Initial is never transitioned to */
-        [
-          TorConnectState.Initial,
-          new StateCallback(TorConnectState.Initial, initialCallback),
-        ],
-        /* Configuring */
-        [
-          TorConnectState.Configuring,
-          new StateCallback(TorConnectState.Configuring, configuringCallback),
-        ],
-        /* Bootstrapping */
-        [
-          TorConnectState.Bootstrapping,
-          new StateCallback(
-            TorConnectState.Bootstrapping,
-            bootstrappingCallback
-          ),
-        ],
-        /* AutoBootstrapping */
-        [
-          TorConnectState.AutoBootstrapping,
-          new StateCallback(
-            TorConnectState.AutoBootstrapping,
-            autoBootstrappingCallback
-          ),
-        ],
-        /* Bootstrapped */
-        [
-          TorConnectState.Bootstrapped,
-          new StateCallback(TorConnectState.Bootstrapped, bootstrappedCallback),
-        ],
-        /* Error */
-        [
-          TorConnectState.Error,
-          new StateCallback(TorConnectState.Error, errorCallback),
-        ],
-        /* Disabled */
-        [
-          TorConnectState.Disabled,
-          new StateCallback(TorConnectState.Disabled, disabledCallback),
-        ],
+        // Initial is never transitioned to
+        [TorConnectState.Initial, new InitialState()],
+        [TorConnectState.Configuring, new ConfiguringState()],
+        [TorConnectState.Bootstrapping, new BootstrappingState()],
+        [TorConnectState.AutoBootstrapping, new AutoBootstrappingState()],
+        [TorConnectState.Bootstrapped, new BootstrappedState()],
+        [TorConnectState.Error, new ErrorState()],
+        [TorConnectState.Disabled, new DisabledState()],
       ])
     ),
 
@@ -841,9 +850,10 @@ export const TorConnect = (() => {
         this._hasEverFailed = true;
       }
       const prevState = this._state;
+      const prevCallback = this._callback(prevState);
 
       // ensure this is a valid state transition
-      if (!TorConnectStateTransitions.get(prevState)?.includes(newState)) {
+      if (!prevCallback?.allowedTransitions.includes(newState)) {
         throw Error(
           `TorConnect: Attempted invalid state transition from ${prevState} to ${newState}`
         );
@@ -856,7 +866,7 @@ export const TorConnect = (() => {
       this._state = newState;
 
       // call our state function and forward any args
-      this._callback(prevState).transition(newState, ...args);
+      prevCallback.transition(newState, ...args);
     },
 
     _updateBootstrapStatus(progress, status) {
@@ -1000,7 +1010,7 @@ export const TorConnect = (() => {
      * @param {boolean}
      */
     get canBeginBootstrap() {
-      return TorConnectStateTransitions.get(this.state).includes(
+      return this._callback(this.state)?.allowedTransitions.includes(
         TorConnectState.Bootstrapping
       );
     },
@@ -1013,7 +1023,7 @@ export const TorConnect = (() => {
      * @param {boolean}
      */
     get canBeginAutoBootstrap() {
-      return TorConnectStateTransitions.get(this.state).includes(
+      return this._callback(this.state)?.allowedTransitions.includes(
         TorConnectState.AutoBootstrapping
       );
     },
