@@ -6976,14 +6976,7 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     nsCOMPtr<nsIURI> onionURI;
     if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(onionURI), aData)) &&
         IsValidOnionLocation(Document::GetDocumentURI(), onionURI)) {
-      if (StaticPrefs::privacy_prioritizeonions_enabled()) {
-        nsCOMPtr<nsIRefreshURI> refresher(mDocumentContainer);
-        if (refresher) {
-          refresher->RefreshURI(onionURI, NodePrincipal(), 0);
-        }
-      } else {
-        mOnionLocationURI = onionURI;
-      }
+      mOnionLocationURI = onionURI;
     }
   }
 }

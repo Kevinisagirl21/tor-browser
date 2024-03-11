@@ -8,8 +8,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TorStrings } = ChromeUtils.import("resource:///modules/TorStrings.jsm");
 
 // Prefs
+
+// We keep the "prioritizeonions" name, even if obsolete, in order to
+// prevent the notification from being shown again to upgrading users.
 const NOTIFICATION_PREF = "privacy.prioritizeonions.showNotification";
-const PRIORITIZE_ONIONS_PREF = "privacy.prioritizeonions.enabled";
 
 // Element IDs
 const ONIONLOCATION_BOX_ID = "onion-location-box";
@@ -23,9 +25,8 @@ const NOTIFICATION_ANCHOR_ID = "onion-location-box";
 const STRING_ONION_AVAILABLE = TorStrings.onionLocation.onionAvailable;
 const NOTIFICATION_CANCEL_LABEL = TorStrings.onionLocation.notNow;
 const NOTIFICATION_CANCEL_ACCESSKEY = TorStrings.onionLocation.notNowAccessKey;
-const NOTIFICATION_OK_LABEL = TorStrings.onionLocation.alwaysPrioritize;
-const NOTIFICATION_OK_ACCESSKEY =
-  TorStrings.onionLocation.alwaysPrioritizeAccessKey;
+const NOTIFICATION_OK_LABEL = TorStrings.onionLocation.loadOnion;
+const NOTIFICATION_OK_ACCESSKEY = TorStrings.onionLocation.loadOnionAccessKey;
 const NOTIFICATION_TITLE = TorStrings.onionLocation.tryThis;
 const NOTIFICATION_DESCRIPTION = TorStrings.onionLocation.description;
 const NOTIFICATION_LEARN_MORE_URL =
@@ -95,9 +96,7 @@ class OnionLocationParent extends JSWindowActorParent {
       label: NOTIFICATION_OK_LABEL,
       accessKey: NOTIFICATION_OK_ACCESSKEY,
       callback() {
-        Services.prefs.setBoolPref(PRIORITIZE_ONIONS_PREF, true);
         OnionLocationParent.redirect(browser);
-        win.openPreferences("privacy-onionservices");
       },
     };
 
