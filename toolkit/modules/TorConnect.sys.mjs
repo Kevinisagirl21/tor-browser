@@ -861,462 +861,456 @@ class InternetTest {
   }
 }
 
-export const TorConnect = (() => {
-  let retval = {
-    _state: new InitialState(),
-    _bootstrapProgress: 0,
-    _bootstrapStatus: null,
-    _internetStatus: InternetStatus.Unknown,
-    // list of country codes Moat has settings for
-    _countryCodes: [],
-    _countryNames: Object.freeze(
-      (() => {
-        const codes = Services.intl.getAvailableLocaleDisplayNames("region");
-        const names = Services.intl.getRegionDisplayNames(undefined, codes);
-        let codesNames = {};
-        for (let i = 0; i < codes.length; i++) {
-          codesNames[codes[i]] = names[i];
+export const TorConnect = {
+  _state: new InitialState(),
+  _bootstrapProgress: 0,
+  _bootstrapStatus: null,
+  _internetStatus: InternetStatus.Unknown,
+  // list of country codes Moat has settings for
+  _countryCodes: [],
+  _countryNames: Object.freeze(
+    (() => {
+      const codes = Services.intl.getAvailableLocaleDisplayNames("region");
+      const names = Services.intl.getRegionDisplayNames(undefined, codes);
+      let codesNames = {};
+      for (let i = 0; i < codes.length; i++) {
+        codesNames[codes[i]] = names[i];
+      }
+      return codesNames;
+    })()
+  ),
+  _detectedLocation: "",
+  _errorMessage: null,
+  _errorDetails: null,
+  _logHasWarningOrError: false,
+  _hasEverFailed: false,
+  _hasBootstrapEverFailed: false,
+  _transitionPromise: null,
+
+  // This is used as a helper to make the state of about:torconnect persistent
+  // during a session, but TorConnect does not use this data at all.
+  _uiState: {},
+
+  _stateCallbacks: Object.freeze(
+    new Map([
+      // Initial is never transitioned to
+      [TorConnectState.Initial, InitialState],
+      [TorConnectState.Configuring, ConfiguringState],
+      [TorConnectState.Bootstrapping, BootstrappingState],
+      [TorConnectState.AutoBootstrapping, AutoBootstrappingState],
+      [TorConnectState.Bootstrapped, BootstrappedState],
+      [TorConnectState.Error, ErrorState],
+      [TorConnectState.Disabled, DisabledState],
+    ])
+  ),
+
+  _makeState(state) {
+    const klass = this._stateCallbacks.get(state);
+    if (!klass) {
+      throw new Error(`${state} is not a valid state.`);
+    }
+    return new klass();
+  },
+
+  _changeState(newState, ...args) {
+    if (newState === TorConnectState.Error) {
+      this._hasEverFailed = true;
+    }
+    const prevState = this._state;
+
+    // ensure this is a valid state transition
+    if (!prevState.allowedTransitions.includes(newState)) {
+      throw Error(
+        `TorConnect: Attempted invalid state transition from ${prevState.state} to ${newState}`
+      );
+    }
+
+    lazy.logger.trace(
+      `Try transitioning from ${prevState.state} to ${newState}`,
+      args
+    );
+
+    // Set our new state first so that state transitions can themselves
+    // trigger a state transition.
+    this._state = this._makeState(newState);
+
+    // Call our state run function and forward any args.
+    prevState.transition(this._state, ...args);
+  },
+
+  _updateBootstrapStatus(progress, status) {
+    this._bootstrapProgress = progress;
+    this._bootstrapStatus = status;
+
+    lazy.logger.info(
+      `Bootstrapping ${this._bootstrapProgress}% complete (${this._bootstrapStatus})`
+    );
+    Services.obs.notifyObservers(
+      {
+        progress: TorConnect._bootstrapProgress,
+        status: TorConnect._bootstrapStatus,
+        hasWarnings: TorConnect._logHasWarningOrError,
+      },
+      TorConnectTopics.BootstrapProgress
+    );
+  },
+
+  // init should be called by TorStartupService
+  init() {
+    lazy.logger.debug("TorConnect.init()");
+    this._state.begin();
+
+    if (!this.enabled) {
+      // Disabled
+      this._changeState(TorConnectState.Disabled);
+    } else {
+      let observeTopic = addTopic => {
+        Services.obs.addObserver(this, addTopic);
+        lazy.logger.debug(`Observing topic '${addTopic}'`);
+      };
+
+      // Wait for TorSettings, as we will need it.
+      // We will wait for a TorProvider only after TorSettings is ready,
+      // because the TorProviderBuilder initialization might not have finished
+      // at this point, and TorSettings initialization is a prerequisite for
+      // having a provider.
+      // So, we prefer initializing TorConnect as soon as possible, so that
+      // the UI will be able to detect it is in the Initializing state and act
+      // consequently.
+      TorSettings.initializedPromise.then(() => this._settingsInitialized());
+
+      // register the Tor topics we always care about
+      observeTopic(TorTopics.ProcessExited);
+      observeTopic(TorTopics.LogHasWarnOrErr);
+    }
+  },
+
+  async observe(subject, topic, data) {
+    lazy.logger.debug(`Observed ${topic}`);
+
+    switch (topic) {
+      case TorTopics.LogHasWarnOrErr: {
+        this._logHasWarningOrError = true;
+        break;
+      }
+      case TorTopics.ProcessExited: {
+        // Treat a failure as a possibly broken configuration.
+        // So, prevent quickstart at the next start.
+        Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
+        switch (this._state) {
+          case TorConnectState.Bootstrapping:
+          case TorConnectState.AutoBootstrapping:
+          case TorConnectState.Bootstrapped:
+            // If we are in the bootstrap or auto bootstrap, we could go
+            // through the error phase (and eventually we might do it, if some
+            // transition calls fail). However, this would start the
+            // connection assist, so we go directly to configuring.
+            // FIXME: Find a better way to handle this.
+            this._changeState(TorConnectState.Configuring);
+            break;
+          // Other states naturally resolve in configuration.
         }
-        return codesNames;
-      })()
-    ),
-    _detectedLocation: "",
-    _errorMessage: null,
-    _errorDetails: null,
-    _logHasWarningOrError: false,
-    _hasEverFailed: false,
-    _hasBootstrapEverFailed: false,
-    _transitionPromise: null,
-
-    // This is used as a helper to make the state of about:torconnect persistent
-    // during a session, but TorConnect does not use this data at all.
-    _uiState: {},
-
-    _stateCallbacks: Object.freeze(
-      new Map([
-        // Initial is never transitioned to
-        [TorConnectState.Initial, InitialState],
-        [TorConnectState.Configuring, ConfiguringState],
-        [TorConnectState.Bootstrapping, BootstrappingState],
-        [TorConnectState.AutoBootstrapping, AutoBootstrappingState],
-        [TorConnectState.Bootstrapped, BootstrappedState],
-        [TorConnectState.Error, ErrorState],
-        [TorConnectState.Disabled, DisabledState],
-      ])
-    ),
-
-    _makeState(state) {
-      const klass = this._stateCallbacks.get(state);
-      if (!klass) {
-        throw new Error(`${state} is not a valid state.`);
+        break;
       }
-      return new klass();
-    },
+      default:
+        // ignore
+        break;
+    }
+  },
 
-    _changeState(newState, ...args) {
-      if (newState === TorConnectState.Error) {
-        this._hasEverFailed = true;
-      }
-      const prevState = this._state;
+  async _settingsInitialized() {
+    // TODO: Handle failures here, instead of the prompt to restart the
+    // daemon when it exits (tor-browser#21053, tor-browser#41921).
+    await lazy.TorProviderBuilder.build();
 
-      // ensure this is a valid state transition
-      if (!prevState.allowedTransitions.includes(newState)) {
-        throw Error(
-          `TorConnect: Attempted invalid state transition from ${prevState.state} to ${newState}`
-        );
-      }
-
-      lazy.logger.trace(
-        `Try transitioning from ${prevState.state} to ${newState}`,
-        args
+    // tor-browser#41907: This is only a workaround to avoid users being
+    // bounced back to the initial panel without any explanation.
+    // Longer term we should disable the clickable elements, or find a UX
+    // to prevent this from happening (e.g., allow buttons to be clicked,
+    // but show an intermediate starting state, or a message that tor is
+    // starting while the butons are disabled, etc...).
+    // Notice that currently the initial state does not do anything.
+    // Instead of just waiting, we could move this code in its callback.
+    // See also tor-browser#41921.
+    if (this.state !== TorConnectState.Initial) {
+      lazy.logger.warn(
+        "The TorProvider was built after the state had already changed."
       );
-
-      // Set our new state first so that state transitions can themselves
-      // trigger a state transition.
-      this._state = this._makeState(newState);
-
-      // Call our state run function and forward any args.
-      prevState.transition(this._state, ...args);
-    },
-
-    _updateBootstrapStatus(progress, status) {
-      this._bootstrapProgress = progress;
-      this._bootstrapStatus = status;
-
-      lazy.logger.info(
-        `Bootstrapping ${this._bootstrapProgress}% complete (${this._bootstrapStatus})`
-      );
-      Services.obs.notifyObservers(
-        {
-          progress: TorConnect._bootstrapProgress,
-          status: TorConnect._bootstrapStatus,
-          hasWarnings: TorConnect._logHasWarningOrError,
-        },
-        TorConnectTopics.BootstrapProgress
-      );
-    },
-
-    // init should be called by TorStartupService
-    init() {
-      lazy.logger.debug("TorConnect.init()");
-      this._state.begin();
-
-      if (!this.enabled) {
-        // Disabled
-        this._changeState(TorConnectState.Disabled);
-      } else {
-        let observeTopic = addTopic => {
-          Services.obs.addObserver(this, addTopic);
-          lazy.logger.debug(`Observing topic '${addTopic}'`);
-        };
-
-        // Wait for TorSettings, as we will need it.
-        // We will wait for a TorProvider only after TorSettings is ready,
-        // because the TorProviderBuilder initialization might not have finished
-        // at this point, and TorSettings initialization is a prerequisite for
-        // having a provider.
-        // So, we prefer initializing TorConnect as soon as possible, so that
-        // the UI will be able to detect it is in the Initializing state and act
-        // consequently.
-        TorSettings.initializedPromise.then(() => this._settingsInitialized());
-
-        // register the Tor topics we always care about
-        observeTopic(TorTopics.ProcessExited);
-        observeTopic(TorTopics.LogHasWarnOrErr);
-      }
-    },
-
-    async observe(subject, topic, data) {
-      lazy.logger.debug(`Observed ${topic}`);
-
-      switch (topic) {
-        case TorTopics.LogHasWarnOrErr: {
-          this._logHasWarningOrError = true;
-          break;
-        }
-        case TorTopics.ProcessExited: {
-          // Treat a failure as a possibly broken configuration.
-          // So, prevent quickstart at the next start.
-          Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
-          switch (this._state) {
-            case TorConnectState.Bootstrapping:
-            case TorConnectState.AutoBootstrapping:
-            case TorConnectState.Bootstrapped:
-              // If we are in the bootstrap or auto bootstrap, we could go
-              // through the error phase (and eventually we might do it, if some
-              // transition calls fail). However, this would start the
-              // connection assist, so we go directly to configuring.
-              // FIXME: Find a better way to handle this.
-              this._changeState(TorConnectState.Configuring);
-              break;
-            // Other states naturally resolve in configuration.
-          }
-          break;
-        }
-        default:
-          // ignore
-          break;
-      }
-    },
-
-    async _settingsInitialized() {
-      // TODO: Handle failures here, instead of the prompt to restart the
-      // daemon when it exits (tor-browser#21053, tor-browser#41921).
-      await lazy.TorProviderBuilder.build();
-
-      // tor-browser#41907: This is only a workaround to avoid users being
-      // bounced back to the initial panel without any explanation.
-      // Longer term we should disable the clickable elements, or find a UX
-      // to prevent this from happening (e.g., allow buttons to be clicked,
-      // but show an intermediate starting state, or a message that tor is
-      // starting while the butons are disabled, etc...).
-      // Notice that currently the initial state does not do anything.
-      // Instead of just waiting, we could move this code in its callback.
-      // See also tor-browser#41921.
-      if (this.state !== TorConnectState.Initial) {
-        lazy.logger.warn(
-          "The TorProvider was built after the state had already changed."
-        );
-        return;
-      }
-      lazy.logger.debug("The TorProvider is ready, changing state.");
-      if (this.shouldQuickStart) {
-        // Quickstart
-        this._changeState(TorConnectState.Bootstrapping);
-      } else {
-        // Configuring
-        this._changeState(TorConnectState.Configuring);
-      }
-    },
-
-    /*
-        Various getters
-        */
-
-    /**
-     * Whether TorConnect is enabled.
-     *
-     * @type {boolean}
-     */
-    get enabled() {
-      // FIXME: This is called before the TorProvider is ready.
-      // As a matter of fact, at the moment it is equivalent to the following
-      // line, but this might become a problem in the future.
-      return TorLauncherUtil.shouldStartAndOwnTor;
-    },
-
-    get shouldShowTorConnect() {
-      // TorBrowser must control the daemon
-      return (
-        this.enabled &&
-        // if we have succesfully bootstraped, then no need to show TorConnect
-        this.state !== TorConnectState.Bootstrapped
-      );
-    },
-
-    /**
-     * Whether bootstrapping can currently begin.
-     *
-     * The value may change with TorConnectTopics.StateChanged.
-     *
-     * @param {boolean}
-     */
-    get canBeginBootstrap() {
-      return this._state.allowedTransitions.includes(
-        TorConnectState.Bootstrapping
-      );
-    },
-
-    /**
-     * Whether auto-bootstrapping can currently begin.
-     *
-     * The value may change with TorConnectTopics.StateChanged.
-     *
-     * @param {boolean}
-     */
-    get canBeginAutoBootstrap() {
-      return this._state.allowedTransitions.includes(
-        TorConnectState.AutoBootstrapping
-      );
-    },
-
-    get shouldQuickStart() {
-      // quickstart must be enabled
-      return (
-        TorSettings.quickstart.enabled &&
-        // and the previous bootstrap attempt must have succeeded
-        !Services.prefs.getBoolPref(TorLauncherPrefs.prompt_at_startup, true)
-      );
-    },
-
-    get state() {
-      return this._state.state;
-    },
-
-    get bootstrapProgress() {
-      return this._bootstrapProgress;
-    },
-
-    get bootstrapStatus() {
-      return this._bootstrapStatus;
-    },
-
-    get internetStatus() {
-      return this._internetStatus;
-    },
-
-    get countryCodes() {
-      return this._countryCodes;
-    },
-
-    get countryNames() {
-      return this._countryNames;
-    },
-
-    get detectedLocation() {
-      return this._detectedLocation;
-    },
-
-    get errorMessage() {
-      return this._errorMessage;
-    },
-
-    get errorDetails() {
-      return this._errorDetails;
-    },
-
-    get logHasWarningOrError() {
-      return this._logHasWarningOrError;
-    },
-
-    /**
-     * Whether we have ever entered the Error state.
-     *
-     * @type {boolean}
-     */
-    get hasEverFailed() {
-      return this._hasEverFailed;
-    },
-
-    /**
-     * Whether the Bootstrapping process has ever failed, not including when it
-     * failed due to not being connected to the internet.
-     *
-     * This does not include a failure in AutoBootstrapping.
-     *
-     * @type {boolean}
-     */
-    get potentiallyBlocked() {
-      return this._hasBootstrapEverFailed;
-    },
-
-    get uiState() {
-      return this._uiState;
-    },
-    set uiState(newState) {
-      this._uiState = newState;
-    },
-
-    /*
-        These functions allow external consumers to tell TorConnect to transition states
-        */
-
-    beginBootstrap() {
-      lazy.logger.debug("TorConnect.beginBootstrap()");
+      return;
+    }
+    lazy.logger.debug("The TorProvider is ready, changing state.");
+    if (this.shouldQuickStart) {
+      // Quickstart
       this._changeState(TorConnectState.Bootstrapping);
-    },
-
-    cancelBootstrap() {
-      lazy.logger.debug("TorConnect.cancelBootstrap()");
+    } else {
+      // Configuring
       this._changeState(TorConnectState.Configuring);
-    },
+    }
+  },
 
-    beginAutoBootstrap(countryCode) {
-      lazy.logger.debug("TorConnect.beginAutoBootstrap()");
-      this._changeState(TorConnectState.AutoBootstrapping, countryCode);
-    },
+  /*
+    Various getters
+   */
 
-    /*
-        Further external commands and helper methods
-        */
-    openTorPreferences() {
-      const win = lazy.BrowserWindowTracker.getTopWindow();
-      win.switchToTabHavingURI("about:preferences#connection", true);
-    },
+  /**
+   * Whether TorConnect is enabled.
+   *
+   * @type {boolean}
+   */
+  get enabled() {
+    // FIXME: This is called before the TorProvider is ready.
+    // As a matter of fact, at the moment it is equivalent to the following
+    // line, but this might become a problem in the future.
+    return TorLauncherUtil.shouldStartAndOwnTor;
+  },
 
-    /**
-     * Open the "about:torconnect" tab.
-     *
-     * Bootstrapping or AutoBootstrapping can also be automatically triggered at
-     * the same time, if the current state allows for it.
-     *
-     * Bootstrapping will not be triggered if the connection is
-     * potentially blocked.
-     *
-     * @param {object} [options] - extra options.
-     * @property {boolean} [options.beginBootstrap=false] - Whether to try and
-     *   begin Bootstrapping.
-     * @property {string} [options.beginAutoBootstrap] - The location to use to
-     *   begin AutoBootstrapping, if possible.
-     */
-    openTorConnect(options) {
-      const win = lazy.BrowserWindowTracker.getTopWindow();
-      win.switchToTabHavingURI("about:torconnect", true, {
-        ignoreQueryString: true,
-      });
-      if (
-        options?.beginBootstrap &&
-        this.canBeginBootstrap &&
-        !this.potentiallyBlocked
-      ) {
-        this.beginBootstrap();
-      }
-      // options.beginAutoBootstrap can be an empty string.
-      if (
-        options?.beginAutoBootstrap !== undefined &&
-        this.canBeginAutoBootstrap
-      ) {
-        this.beginAutoBootstrap(options.beginAutoBootstrap);
-      }
-    },
+  get shouldShowTorConnect() {
+    // TorBrowser must control the daemon
+    return (
+      this.enabled &&
+      // if we have succesfully bootstraped, then no need to show TorConnect
+      this.state !== TorConnectState.Bootstrapped
+    );
+  },
 
-    viewTorLogs() {
-      const win = lazy.BrowserWindowTracker.getTopWindow();
-      win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
-    },
+  /**
+   * Whether bootstrapping can currently begin.
+   *
+   * The value may change with TorConnectTopics.StateChanged.
+   *
+   * @param {boolean}
+   */
+  get canBeginBootstrap() {
+    return this._state.allowedTransitions.includes(
+      TorConnectState.Bootstrapping
+    );
+  },
 
-    async getCountryCodes() {
-      // Difference with the getter: this is to be called by TorConnectParent, and downloads
-      // the country codes if they are not already in cache.
-      if (this._countryCodes.length) {
-        return this._countryCodes;
-      }
-      const mrpc = new lazy.MoatRPC();
-      try {
-        await mrpc.init();
-        this._countryCodes = await mrpc.circumvention_countries();
-      } catch (err) {
-        lazy.logger.error(
-          "An error occurred while fetching country codes",
-          err
-        );
-      } finally {
-        mrpc.uninit();
-      }
+  /**
+   * Whether auto-bootstrapping can currently begin.
+   *
+   * The value may change with TorConnectTopics.StateChanged.
+   *
+   * @param {boolean}
+   */
+  get canBeginAutoBootstrap() {
+    return this._state.allowedTransitions.includes(
+      TorConnectState.AutoBootstrapping
+    );
+  },
+
+  get shouldQuickStart() {
+    // quickstart must be enabled
+    return (
+      TorSettings.quickstart.enabled &&
+      // and the previous bootstrap attempt must have succeeded
+      !Services.prefs.getBoolPref(TorLauncherPrefs.prompt_at_startup, true)
+    );
+  },
+
+  get state() {
+    return this._state.state;
+  },
+
+  get bootstrapProgress() {
+    return this._bootstrapProgress;
+  },
+
+  get bootstrapStatus() {
+    return this._bootstrapStatus;
+  },
+
+  get internetStatus() {
+    return this._internetStatus;
+  },
+
+  get countryCodes() {
+    return this._countryCodes;
+  },
+
+  get countryNames() {
+    return this._countryNames;
+  },
+
+  get detectedLocation() {
+    return this._detectedLocation;
+  },
+
+  get errorMessage() {
+    return this._errorMessage;
+  },
+
+  get errorDetails() {
+    return this._errorDetails;
+  },
+
+  get logHasWarningOrError() {
+    return this._logHasWarningOrError;
+  },
+
+  /**
+   * Whether we have ever entered the Error state.
+   *
+   * @type {boolean}
+   */
+  get hasEverFailed() {
+    return this._hasEverFailed;
+  },
+
+  /**
+   * Whether the Bootstrapping process has ever failed, not including when it
+   * failed due to not being connected to the internet.
+   *
+   * This does not include a failure in AutoBootstrapping.
+   *
+   * @type {boolean}
+   */
+  get potentiallyBlocked() {
+    return this._hasBootstrapEverFailed;
+  },
+
+  get uiState() {
+    return this._uiState;
+  },
+  set uiState(newState) {
+    this._uiState = newState;
+  },
+
+  /*
+    These functions allow external consumers to tell TorConnect to transition states
+   */
+
+  beginBootstrap() {
+    lazy.logger.debug("TorConnect.beginBootstrap()");
+    this._changeState(TorConnectState.Bootstrapping);
+  },
+
+  cancelBootstrap() {
+    lazy.logger.debug("TorConnect.cancelBootstrap()");
+    this._changeState(TorConnectState.Configuring);
+  },
+
+  beginAutoBootstrap(countryCode) {
+    lazy.logger.debug("TorConnect.beginAutoBootstrap()");
+    this._changeState(TorConnectState.AutoBootstrapping, countryCode);
+  },
+
+  /*
+    Further external commands and helper methods
+   */
+  openTorPreferences() {
+    const win = lazy.BrowserWindowTracker.getTopWindow();
+    win.switchToTabHavingURI("about:preferences#connection", true);
+  },
+
+  /**
+   * Open the "about:torconnect" tab.
+   *
+   * Bootstrapping or AutoBootstrapping can also be automatically triggered at
+   * the same time, if the current state allows for it.
+   *
+   * Bootstrapping will not be triggered if the connection is
+   * potentially blocked.
+   *
+   * @param {object} [options] - extra options.
+   * @property {boolean} [options.beginBootstrap=false] - Whether to try and
+   *   begin Bootstrapping.
+   * @property {string} [options.beginAutoBootstrap] - The location to use to
+   *   begin AutoBootstrapping, if possible.
+   */
+  openTorConnect(options) {
+    const win = lazy.BrowserWindowTracker.getTopWindow();
+    win.switchToTabHavingURI("about:torconnect", true, {
+      ignoreQueryString: true,
+    });
+    if (
+      options?.beginBootstrap &&
+      this.canBeginBootstrap &&
+      !this.potentiallyBlocked
+    ) {
+      this.beginBootstrap();
+    }
+    // options.beginAutoBootstrap can be an empty string.
+    if (
+      options?.beginAutoBootstrap !== undefined &&
+      this.canBeginAutoBootstrap
+    ) {
+      this.beginAutoBootstrap(options.beginAutoBootstrap);
+    }
+  },
+
+  viewTorLogs() {
+    const win = lazy.BrowserWindowTracker.getTopWindow();
+    win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
+  },
+
+  async getCountryCodes() {
+    // Difference with the getter: this is to be called by TorConnectParent, and downloads
+    // the country codes if they are not already in cache.
+    if (this._countryCodes.length) {
       return this._countryCodes;
-    },
+    }
+    const mrpc = new lazy.MoatRPC();
+    try {
+      await mrpc.init();
+      this._countryCodes = await mrpc.circumvention_countries();
+    } catch (err) {
+      lazy.logger.error("An error occurred while fetching country codes", err);
+    } finally {
+      mrpc.uninit();
+    }
+    return this._countryCodes;
+  },
 
-    getRedirectURL(url) {
-      return `about:torconnect?redirect=${encodeURIComponent(url)}`;
-    },
+  getRedirectURL(url) {
+    return `about:torconnect?redirect=${encodeURIComponent(url)}`;
+  },
 
-    /**
-     * Convert the given object into a list of valid URIs.
-     *
-     * The object is either from the user's homepage preference (which may
-     * contain multiple domains separated by "|") or uris passed to the browser
-     * via command-line.
-     *
-     * @param {string|string[]} uriVariant - The string to extract uris from.
-     *
-     * @return {string[]} - The array of uris found.
-     */
-    fixupURIs(uriVariant) {
-      let uriArray;
-      if (typeof uriVariant === "string") {
-        uriArray = uriVariant.split("|");
-      } else if (
-        Array.isArray(uriVariant) &&
-        uriVariant.every(entry => typeof entry === "string")
-      ) {
-        uriArray = uriVariant;
-      } else {
-        // about:tor as safe fallback
-        lazy.logger.error(
-          `Received unknown variant '${JSON.stringify(uriVariant)}'`
-        );
-        uriArray = ["about:tor"];
-      }
-
-      // Attempt to convert user-supplied string to a uri, fallback to
-      // about:tor if cannot convert to valid uri object
-      return uriArray.map(
-        uriString =>
-          Services.uriFixup.getFixupURIInfo(
-            uriString,
-            Ci.nsIURIFixup.FIXUP_FLAG_NONE
-          ).preferredURI?.spec ?? "about:tor"
+  /**
+   * Convert the given object into a list of valid URIs.
+   *
+   * The object is either from the user's homepage preference (which may
+   * contain multiple domains separated by "|") or uris passed to the browser
+   * via command-line.
+   *
+   * @param {string|string[]} uriVariant - The string to extract uris from.
+   *
+   * @return {string[]} - The array of uris found.
+   */
+  fixupURIs(uriVariant) {
+    let uriArray;
+    if (typeof uriVariant === "string") {
+      uriArray = uriVariant.split("|");
+    } else if (
+      Array.isArray(uriVariant) &&
+      uriVariant.every(entry => typeof entry === "string")
+    ) {
+      uriArray = uriVariant;
+    } else {
+      // about:tor as safe fallback
+      lazy.logger.error(
+        `Received unknown variant '${JSON.stringify(uriVariant)}'`
       );
-    },
+      uriArray = ["about:tor"];
+    }
 
-    // called from browser.js on browser startup, passed in either the user's homepage(s)
-    // or uris passed via command-line; we want to replace them with about:torconnect uris
-    // which redirect after bootstrapping
-    getURIsToLoad(uriVariant) {
-      const uris = this.fixupURIs(uriVariant);
-      lazy.logger.debug(`Will load after bootstrap => [${uris.join(", ")}]`);
-      return uris.map(uri => this.getRedirectURL(uri));
-    },
-  };
-  return retval;
-})(); /* TorConnect */
+    // Attempt to convert user-supplied string to a uri, fallback to
+    // about:tor if cannot convert to valid uri object
+    return uriArray.map(
+      uriString =>
+        Services.uriFixup.getFixupURIInfo(
+          uriString,
+          Ci.nsIURIFixup.FIXUP_FLAG_NONE
+        ).preferredURI?.spec ?? "about:tor"
+    );
+  },
+
+  // called from browser.js on browser startup, passed in either the user's homepage(s)
+  // or uris passed via command-line; we want to replace them with about:torconnect uris
+  // which redirect after bootstrapping
+  getURIsToLoad(uriVariant) {
+    const uris = this.fixupURIs(uriVariant);
+    lazy.logger.debug(`Will load after bootstrap => [${uris.join(", ")}]`);
+    return uris.map(uri => this.getRedirectURL(uri));
+  },
+};
