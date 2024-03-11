@@ -9,6 +9,10 @@
   xmlns:html="http://www.w3.org/1999/xhtml"
 >
   <dialog id="torPreferences-builtinBridge-dialog" buttons="accept,cancel">
+    <linkset>
+      <html:link rel="localization" href="browser/tor-browser.ftl" />
+    </linkset>
+
     <script src="chrome://browser/content/torpreferences/builtinBridgeDialog.js" />
 
     <description id="torPreferences-builtinBridge-description"> </description>
@@ -18,15 +22,13 @@
           <!-- The radio option is described by both the "Current bridge" label
           - and the full description. If the "Connected" label is hidden, then
            - only the latter description should contribute. -->
-          <radio
-            aria-describedby="obfs-bridges-current obfs-bridges-description"
-            value="obfs4"
-          />
+          <radio value="obfs4" />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
               id="obfs-bridges-current"
               class="torPreferences-current-bridge-label"
+              data-l10n-id="built-in-dialog-current-bridge-label"
             >
             </html:span>
           </html:span>
@@ -39,15 +41,13 @@
       </vbox>
       <vbox class="builtin-bridges-option">
         <hbox>
-          <radio
-            aria-describedby="snowflake-bridges-current snowflake-bridges-description"
-            value="snowflake"
-          />
+          <radio value="snowflake" />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
               id="snowflake-bridges-current"
               class="torPreferences-current-bridge-label"
+              data-l10n-id="built-in-dialog-current-bridge-label"
             >
             </html:span>
           </html:span>
@@ -60,15 +60,13 @@
       </vbox>
       <vbox class="builtin-bridges-option">
         <hbox>
-          <radio
-            aria-describedby="meek-bridges-current meek-bridges-description"
-            value="meek-azure"
-          />
+          <radio value="meek-azure" />
           <html:span class="bridge-status-badge">
             <html:div class="bridge-status-icon"></html:div>
             <html:span
               id="meek-bridges-current"
               class="torPreferences-current-bridge-label"
+              data-l10n-id="built-in-dialog-current-bridge-label"
             >
             </html:span>
           </html:span>
