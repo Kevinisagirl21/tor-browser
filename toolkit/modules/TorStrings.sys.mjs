@@ -98,7 +98,6 @@ const Loader = {
       bridgeLocationFrequent: "Frequently selected locations",
       bridgeLocationOther: "Other locations",
       bridgeChooseForMe: "Choose a Bridge For Me…",
-      currentBridge: "Current bridge",
       remove: "Remove",
       bridgeDisableBuiltIn: "Disable built-in bridges",
       copied: "Copied!",
