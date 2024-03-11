@@ -57,18 +57,27 @@ const gBuiltinBridgeDialog = {
       const type = radio.value;
       optionEl.hidden = !TorSettings.builtinBridgeTypes.includes(type);
       radio.label = typeStrings[type].label;
-      optionEl.querySelector(
+      const descriptionEl = optionEl.querySelector(
         ".builtin-bridges-option-description"
-      ).textContent = typeStrings[type].descr;
-      optionEl.querySelector(
-        ".torPreferences-current-bridge-label"
-      ).textContent = TorStrings.settings.currentBridge;
-      optionEl
-        .querySelector(".bridge-status-badge")
-        .classList.toggle(
-          "bridge-status-current-built-in",
-          type === currentBuiltinType
+      );
+      descriptionEl.textContent = typeStrings[type].descr;
+      const currentBadge = optionEl.querySelector(".bridge-status-badge");
+      if (type === currentBuiltinType) {
+        const currentLabelEl = optionEl.querySelector(
+          ".torPreferences-current-bridge-label"
         );
+        // Described by both the current badge and the full description.
+        // These will be concatenated together in the screen reader output.
+        radio.setAttribute(
+          "aria-describedby",
+          `${currentLabelEl.id} ${descriptionEl.id}`
+        );
+        // Make visible.
+        currentBadge.classList.add("bridge-status-current-built-in");
+      } else {
+        // No visible badge.
+        radio.setAttribute("aria-describedby", descriptionEl.id);
+      }
     }
 
     if (currentBuiltinType) {
