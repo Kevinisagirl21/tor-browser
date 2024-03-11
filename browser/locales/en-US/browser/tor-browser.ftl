@@ -297,3 +297,10 @@ user-provide-bridge-dialog-result-invite = The following bridges were shared wit
 user-provide-bridge-dialog-result-addresses = The following bridges were entered by you.
 user-provide-bridge-dialog-next-button =
     .label = Next
+
+## Built-in bridges dialog.
+
+# Label attached to the built-in bridge option that is already in use.
+# The "aria-label" should use the same text, but include some ending punctuation to separate it from the sentence that follows. This is used for screen reader users.
+built-in-dialog-current-bridge-label = Current bridge
+    .aria-label = Current bridge.
