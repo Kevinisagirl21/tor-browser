@@ -296,6 +296,12 @@ class ConfiguringState extends StateCallback {
 }
 
 class BootstrappingState extends StateCallback {
+  #bootstrap = null;
+  #bootstrapError = "";
+  #bootstrapErrorDetails = "";
+  #internetTest = null;
+  #cancelled = false;
+
   allowedTransitions = Object.freeze([
     TorConnectState.Configuring,
     TorConnectState.Bootstrapped,
@@ -307,112 +313,120 @@ class BootstrappingState extends StateCallback {
   }
 
   async run() {
-    // debug hook to simulate censorship preventing bootstrapping
-    if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) > 0) {
-      await debugSleep(1500);
-      TorConnect._hasBootstrapEverFailed = true;
-      if (
-        Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) === 2
-      ) {
-        const codes = Object.keys(TorConnect._countryNames);
-        TorConnect._detectedLocation =
-          codes[Math.floor(Math.random() * codes.length)];
-      }
-      TorConnect._changeState(
-        TorConnectState.Error,
-        "Bootstrap failed (for debugging purposes)",
-        "Error: Censorship simulation",
-        true
-      );
+    if (await this.#simulateCensorship()) {
       return;
     }
 
-    const tbr = new lazy.TorBootstrapRequest();
-    const internetTest = new InternetTest();
-    let cancelled = false;
-
-    let bootstrapError = "";
-    let bootstrapErrorDetails = "";
-    const maybeTransitionToError = () => {
-      if (
-        internetTest.status === InternetStatus.Unknown &&
-        internetTest.error === null &&
-        internetTest.enabled
-      ) {
-        // We have been called by a failed bootstrap, but the internet test has not run yet - force
-        // it to run immediately!
-        internetTest.test();
-        // Return from this call, because the Internet test's callback will call us again
-        return;
-      }
-      // Do not transition to the offline error until we are sure that also the bootstrap failed, in
-      // case Moat is down but the bootstrap can proceed anyway.
-      if (bootstrapError === "") {
-        return;
-      }
-      if (internetTest.status === InternetStatus.Offline) {
-        this.changeState(
-          TorConnectState.Error,
-          TorStrings.torConnect.offline,
-          "",
-          true
-        );
-      } else {
-        // Give priority to the bootstrap error, in case the Internet test fails
-        TorConnect._hasBootstrapEverFailed = true;
-        this.changeState(
-          TorConnectState.Error,
-          bootstrapError,
-          bootstrapErrorDetails,
-          true
-        );
-      }
-    };
-
-    this.cleanup = async nextState => {
-      if (nextState === TorConnectState.Configuring) {
-        // stop bootstrap process if user cancelled
-        cancelled = true;
-        internetTest.cancel();
-        await tbr.cancel();
-      }
-    };
-
-    tbr.onbootstrapstatus = (progress, status) => {
+    this.#bootstrap = new lazy.TorBootstrapRequest();
+    this.#bootstrap.onbootstrapstatus = (progress, status) => {
       TorConnect._updateBootstrapStatus(progress, status);
     };
-    tbr.onbootstrapcomplete = () => {
-      internetTest.cancel();
+    this.#bootstrap.onbootstrapcomplete = () => {
+      this.#internetTest.cancel();
       this.changeState(TorConnectState.Bootstrapped);
     };
-    tbr.onbootstraperror = (message, details) => {
-      if (cancelled) {
-        // We ignore this error since it occurred after cancelling (by
-        // the user). We assume the error is just a side effect of the
-        // cancelling.
-        // E.g. If the cancelling is triggered late in the process, we
-        // get "Building circuits: Establishing a Tor circuit failed".
-        // TODO: Maybe move this logic deeper in the process to know
-        // when to filter out such errors triggered by cancelling.
+    this.#bootstrap.onbootstraperror = (message, details) => {
+      if (this.#cancelled) {
+        // We ignore this error since it occurred after cancelling (by the
+        // user). We assume the error is just a side effect of the cancelling.
+        // E.g. If the cancelling is triggered late in the process, we get
+        // "Building circuits: Establishing a Tor circuit failed".
+        // TODO: Maybe move this logic deeper in the process to know when to
+        // filter out such errors triggered by cancelling.
         lazy.logger.warn(`Post-cancel error => ${message}; ${details}`);
         return;
       }
-      // We have to wait for the Internet test to finish before sending the bootstrap error
-      bootstrapError = message;
-      bootstrapErrorDetails = details;
-      maybeTransitionToError();
+      // We have to wait for the Internet test to finish before sending the
+      // bootstrap error
+      this.#bootstrapError = message;
+      this.#bootstrapErrorDetails = details;
+      this.#maybeTransitionToError();
     };
 
-    internetTest.onResult = (status, date) => {
+    this.#internetTest = new InternetTest();
+    this.#internetTest.onResult = (status, date) => {
       // TODO: Use the date to save the clock skew?
       TorConnect._internetStatus = status;
-      maybeTransitionToError();
+      this.#maybeTransitionToError();
     };
-    internetTest.onError = () => {
-      maybeTransitionToError();
+    this.#internetTest.onError = () => {
+      this.#maybeTransitionToError();
     };
 
-    tbr.bootstrap();
+    this.#bootstrap.bootstrap();
+  }
+
+  async cleanup(nextState) {
+    if (nextState === TorConnectState.Configuring) {
+      // stop bootstrap process if user cancelled
+      this.#cancelled = true;
+      this.#internetTest?.cancel();
+      await this.#bootstrap?.cancel();
+    }
+  }
+
+  #maybeTransitionToError() {
+    if (
+      this.#internetTest.status === InternetStatus.Unknown &&
+      this.#internetTest.error === null &&
+      this.#internetTest.enabled
+    ) {
+      // We have been called by a failed bootstrap, but the internet test has
+      // not run yet - force it to run immediately!
+      this.#internetTest.test();
+      // Return from this call, because the Internet test's callback will call
+      // us again.
+      return;
+    }
+    // Do not transition to the offline error until we are sure that also the
+    // bootstrap failed, in case Moat is down but the bootstrap can proceed
+    // anyway.
+    if (this.#bootstrapError === "") {
+      return;
+    }
+    if (this.#internetTest.status === InternetStatus.Offline) {
+      this.changeState(
+        TorConnectState.Error,
+        TorStrings.torConnect.offline,
+        "",
+        true
+      );
+    } else {
+      // Give priority to the bootstrap error, in case the Internet test fails
+      TorConnect._hasBootstrapEverFailed = true;
+      this.changeState(
+        TorConnectState.Error,
+        this.#bootstrapError,
+        this.#bootstrapErrorDetails,
+        true
+      );
+    }
+  }
+
+  async #simulateCensorship() {
+    // debug hook to simulate censorship preventing bootstrapping
+    const censorshipLevel = Services.prefs.getIntPref(
+      TorConnectPrefs.censorship_level,
+      0
+    );
+    if (censorshipLevel <= 0) {
+      return false;
+    }
+
+    await debugSleep(1500);
+    TorConnect._hasBootstrapEverFailed = true;
+    if (censorshipLevel === 2) {
+      const codes = Object.keys(TorConnect._countryNames);
+      TorConnect._detectedLocation =
+        codes[Math.floor(Math.random() * codes.length)];
+    }
+    this.changeState(
+      TorConnectState.Error,
+      "Bootstrap failed (for debugging purposes)",
+      "Error: Censorship simulation",
+      true
+    );
+    return true;
   }
 }
 
