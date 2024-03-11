@@ -124,18 +124,21 @@ export const TorConnectTopics = Object.freeze({
   BootstrapError: "torconnect:bootstrap-error",
 });
 
-// The StateCallback is a wrapper around an async function which executes during
-// the lifetime of a TorConnect State. A system is also provided to allow this
-// ongoing function to early-out via a per StateCallback on_transition callback
-// which may be called externally when we need to early-out and move on to another
-// state (for example, from Bootstrapping to Configuring in the event the user
-// cancels a bootstrap attempt)
+// The StateCallback is the base class to implement the various states.
+// All states should extend it and implement a `run` function, which can
+// optionally be async, and define an array of valid transitions.
+// The parent class will handle everything else, including the transition to
+// other states when the run function is complete etc...
+// A system is also provided to allow this function to early-out. The runner
+// should check the transitioning getter when appropriate and return.
+// This allows to handle, for example, users' requests to cancel a bootstrap
+// attempt.
+// A state can optionally define a cleanup function, that will be run in all
+// cases before transitioning to the next state.
 class StateCallback {
   #state;
   #promise;
   #transitioning = false;
-
-  on_transition = nextState => {};
 
   constructor(stateName) {
     this.#state = stateName;
@@ -145,7 +148,7 @@ class StateCallback {
     lazy.logger.trace(`Entering ${this.#state} state`);
     // Make sure we always have an actual promise.
     try {
-      this.#promise = Promise.resolve(this._callback(...args));
+      this.#promise = Promise.resolve(this.run(...args));
     } catch (err) {
       this.#promise = Promise.reject(err);
     }
@@ -177,12 +180,10 @@ class StateCallback {
     // Signal we should bail out ASAP.
     this.#transitioning = true;
 
-    // calls the on_transition callback to resolve any async work or do per-state cleanup
-    // this call to on_transition should resolve the async work currentlying going on in this.begin()
-    this.on_transition(nextState.state);
-
     lazy.logger.debug(
-      "Waiting for the previous state's callback to return before the transition."
+      `Waiting for the ${
+        this.#state
+      }'s callback to return before the transition.`
     );
     try {
       await this.#promise;
@@ -196,8 +197,20 @@ class StateCallback {
         return;
       }
     }
-    lazy.logger.debug("Ready to transition");
+    lazy.logger.debug(`Ready to run ${this.#state} cleanup, if implemented.`);
 
+    if (this.cleanup) {
+      try {
+        await this.cleanup(nextState.state);
+        lazy.logger.debug(`${this.#state}'s cleanup function done.`);
+      } catch (e) {
+        lazy.logger.warn(`${this.#state}'s cleanup function threw.`, e);
+      }
+    }
+
+    lazy.logger.debug(
+      `Transitioning from ${this.#state} to ${nextState.state}`
+    );
     Services.obs.notifyObservers(
       { state: nextState.state },
       TorConnectTopics.StateChange
@@ -231,25 +244,13 @@ class InitialState extends StateCallback {
     TorConnectState.Error,
   ]);
 
-  _callback = initialCallback;
-
   constructor() {
     super(TorConnectState.Initial);
   }
-}
 
-async function initialCallback() {
   // The initial state doesn't actually do anything, so here is a skeleton for other
   // states which do perform work
-  await new Promise(async (resolve, reject) => {
-    // This function is provided to signal to the callback that it is complete.
-    // It is called as a result of _changeState and at the very least must
-    // resolve the root Promise object within the StateCallback function
-    // The on_transition callback may also perform necessary cleanup work
-    this.on_transition = nextState => {
-      resolve();
-    };
-
+  async run() {
     try {
       // each state may have a sequence of async work to do
       let asyncWork = async () => {};
@@ -269,7 +270,12 @@ async function initialCallback() {
         err?.details
       );
     }
-  });
+  }
+
+  async cleanup(nextState) {
+    // Optionally, a state can define a cleanup function, which can also be
+    // async. nextState contains the name of the state we are transitioning to.
+  }
 }
 
 class ConfiguringState extends StateCallback {
@@ -279,19 +285,13 @@ class ConfiguringState extends StateCallback {
     TorConnectState.Error,
   ]);
 
-  _callback = configuringCallback;
-
   constructor() {
     super(TorConnectState.Configuring);
   }
-}
 
-async function configuringCallback() {
-  await new Promise(async (resolve, reject) => {
-    this.on_transition = nextState => {
-      resolve();
-    };
-  });
+  run() {
+    // The configuring state does not do anything.
+  }
 }
 
 class BootstrappingState extends StateCallback {
@@ -301,21 +301,13 @@ class BootstrappingState extends StateCallback {
     TorConnectState.Error,
   ]);
 
-  _callback = bootstrappingCallback;
-
   constructor() {
     super(TorConnectState.Bootstrapping);
   }
-}
 
-async function bootstrappingCallback() {
-  // wait until bootstrap completes or we get an error
-  await new Promise(async (resolve, reject) => {
+  async run() {
     // debug hook to simulate censorship preventing bootstrapping
     if (Services.prefs.getIntPref(TorConnectPrefs.censorship_level, 0) > 0) {
-      this.on_transition = nextState => {
-        resolve();
-      };
       await debug_sleep(1500);
       TorConnect._hasBootstrapEverFailed = true;
       if (
@@ -376,14 +368,13 @@ async function bootstrappingCallback() {
       }
     };
 
-    this.on_transition = async nextState => {
+    this.cleanup = async nextState => {
       if (nextState === TorConnectState.Configuring) {
         // stop bootstrap process if user cancelled
         cancelled = true;
         internetTest.cancel();
         await tbr.cancel();
       }
-      resolve();
     };
 
     tbr.onbootstrapstatus = (progress, status) => {
@@ -421,7 +412,7 @@ async function bootstrappingCallback() {
     };
 
     tbr.bootstrap();
-  });
+  }
 }
 
 class AutoBootstrappingState extends StateCallback {
@@ -431,19 +422,11 @@ class AutoBootstrappingState extends StateCallback {
     TorConnectState.Error,
   ]);
 
-  _callback = autoBootstrappingCallback;
-
   constructor() {
     super(TorConnectState.AutoBootstrapping);
   }
-}
 
-async function autoBootstrappingCallback(countryCode) {
-  await new Promise(async (resolve, reject) => {
-    this.on_transition = nextState => {
-      resolve();
-    };
-
+  async run(countryCode) {
     // debug hook to simulate censorship preventing bootstrapping
     {
       const censorshipLevel = Services.prefs.getIntPref(
@@ -451,9 +434,6 @@ async function autoBootstrappingCallback(countryCode) {
         0
       );
       if (censorshipLevel > 1) {
-        this.on_transition = nextState => {
-          resolve();
-        };
         // always fail even after manually selecting location specific settings
         if (censorshipLevel == 3) {
           await debug_sleep(2500);
@@ -593,12 +573,11 @@ async function autoBootstrappingCallback(countryCode) {
           };
 
           // update transition callback for user cancel
-          this.on_transition = async nextState => {
+          this.cleanup = async nextState => {
             if (nextState === TorConnectState.Configuring) {
               await tbr.cancel();
               await restoreOriginalSettings();
             }
-            resolve();
           };
 
           // begin bootstrap
@@ -652,47 +631,30 @@ async function autoBootstrappingCallback(countryCode) {
       // important to uninit MoatRPC object or else the pt process will live as long as tor-browser
       this.mrpc?.uninit();
     }
-  });
+  }
 }
 
 class BootstrappedState extends StateCallback {
   allowedTransitions = Object.freeze([TorConnectState.Configuring]);
 
-  _callback = bootstrappedCallback;
-
   constructor() {
     super(TorConnectState.Bootstrapped);
   }
-}
 
-async function bootstrappedCallback() {
-  await new Promise((resolve, reject) => {
-    // We may need to leave the bootstrapped state if the tor daemon
-    // exits (if it is restarted, we will have to bootstrap again).
-    this.on_transition = nextState => {
-      resolve();
-    };
+  run() {
     // notify observers of bootstrap completion
     Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
-  });
+  }
 }
 
 class ErrorState extends StateCallback {
   allowedTransitions = Object.freeze([TorConnectState.Configuring]);
 
-  _callback = errorCallback;
-
   constructor() {
     super(TorConnectState.Error);
   }
-}
 
-async function errorCallback(errorMessage, errorDetails, bootstrappingFailure) {
-  await new Promise((resolve, reject) => {
-    this.on_transition = async nextState => {
-      resolve();
-    };
-
+  run(errorMessage, errorDetails, bootstrappingFailure) {
     TorConnect._errorMessage = errorMessage;
     TorConnect._errorDetails = errorDetails;
     lazy.logger.error(
@@ -705,23 +667,22 @@ async function errorCallback(errorMessage, errorDetails, bootstrappingFailure) {
     );
 
     TorConnect._changeState(TorConnectState.Configuring);
-  });
+  }
 }
 
 class DisabledState extends StateCallback {
   allowedTransitions = Object.freeze([]);
 
-  _callback = disabledCallback;
-
   constructor() {
     super(TorConnectState.DisabledState);
   }
-}
 
-async function disabledCallback() {
-  await new Promise((resolve, reject) => {
-    // no-op, on_transition not defined because no way to leave Disabled state
-  });
+  async run() {
+    await new Promise(() => {
+      // Trap state: no way to leave the Disabled state.
+      lazy.logger.debug("Entered the disabled state.");
+    });
+  }
 }
 
 export const InternetStatus = Object.freeze({
@@ -848,9 +809,6 @@ export const TorConnect = (() => {
     // during a session, but TorConnect does not use this data at all.
     _uiState: {},
 
-    /* These functions represent ongoing work associated with one of our states
-           Some of these functions are mostly empty, apart from defining an
-           on_transition function used to resolve their Promise */
     _stateCallbacks: Object.freeze(
       new Map([
         // Initial is never transitioned to
