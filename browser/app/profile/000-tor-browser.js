@@ -10,7 +10,7 @@ pref("app.releaseNotesURL", "about:blank");
 // easily found in about:tor
 pref("app.releaseNotesURL.aboutDialog", "about:blank");
 // point to our feedback url rather than Mozilla's
-pref("app.feedback.baseURL", "https://support.torproject.org/%LOCALE%/get-in-touch/");
+pref("app.feedback.baseURL", "https://support.torproject.org/%LOCALE%/misc/bug-or-feedback/");
 
 pref("browser.shell.checkDefaultBrowser", false);
 
