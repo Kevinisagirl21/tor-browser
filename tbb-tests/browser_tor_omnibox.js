@@ -17,7 +17,8 @@ add_task(async function() {
   is(engineIDs[3], "blockchair", "Blockchair is fourth search engine");
   is(engineIDs[4], "ddg-onion", "Duck Duck Go Onion is fifth search engine");
   is(engineIDs[5], "startpage", "Startpage is sixth search engine");
-  is(engineIDs[6], "twitter", "Twitter is sixth search engine");
-  is(engineIDs[7], "wikipedia", "Wikipedia is seventh search engine");
-  is(engineIDs[8], "yahoo", "Yahoo is eighth search engine");
+  is(engineIDs[6], "startpage-onion", "Startpage Onion is the seventh search engine");
+  is(engineIDs[7], "twitter", "Twitter is eighth search engine");
+  is(engineIDs[8], "wikipedia", "Wikipedia is ninth search engine");
+  is(engineIDs[9], "yahoo", "Yahoo is tenth search engine");
 });
