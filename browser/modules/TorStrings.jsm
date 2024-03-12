@@ -471,20 +471,15 @@ const Loader = {
   */
   onionLocation() {
     const strings = {
-      alwaysPrioritize: "Always Prioritize Onionsites",
-      alwaysPrioritizeAccessKey: "a",
+      learnMore: "Learn more…",
+      loadOnion: "Visit the .onion",
+      loadOnionAccessKey: "V",
       notNow: "Not Now",
       notNowAccessKey: "n",
       description:
-        "Website publishers can protect users by adding a security layer. This prevents eavesdroppers from knowing that you are the one visiting that website.",
-      tryThis: "Try this: Onionsite",
-      onionAvailable: "Onionsite available",
-      learnMore: "Learn more",
-      always: "Always",
-      askEverytime: "Ask you every time",
-      prioritizeOnionsDescription:
-        "Prioritize onionsites when they are available.",
-      onionServicesTitle: "Onion Services",
+        "There's a more private and secure version of this site available over the Tor network via onion services. Onion services help website publishers and their visitors defeat surveillance and censorship.",
+      tryThis: "Try Onion Services",
+      onionAvailable: ".onion available",
     };
 
     const tsb = new TorPropertyStringBundle(
