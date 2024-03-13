@@ -306,8 +306,7 @@ class BootstrappingState extends StateCallback {
     };
 
     this.#internetTest = new InternetTest();
-    this.#internetTest.onResult = (status, date) => {
-      // TODO: Use the date to save the clock skew?
+    this.#internetTest.onResult = status => {
       TorConnect._internetStatus = status;
       this.#maybeTransitionToError();
     };
@@ -749,7 +748,7 @@ class InternetTest {
         this.test();
       }, this.#timeoutRand());
     }
-    this.onResult = (online, date) => {};
+    this.onResult = online => {};
     this.onError = err => {};
   }
 
@@ -775,23 +774,24 @@ class InternetTest {
       this.#status = status.successful
         ? InternetStatus.Online
         : InternetStatus.Offline;
+      // TODO: We could consume the date we got from the HTTP request to detect
+      // big clock skews that might prevent a successfull bootstrap.
       lazy.logger.info(`Performed Internet test, outcome ${this.#status}`);
-      if (!this.#canceled) {
-        setTimeout(() => {
-          this.onResult(this.#status, status.date);
-        });
-      }
     } catch (err) {
       lazy.logger.error("Error while checking the Internet connection", err);
       this.#error = err;
       this.#pending = false;
-      if (!this.#canceled) {
-        setTimeout(() => {
-          this.onError(err);
-        });
-      }
     } finally {
       mrpc.uninit();
+    }
+
+    if (this.#canceled) {
+      return;
+    }
+    if (this.#error) {
+      this.onError(this.#error);
+    } else {
+      this.onResult(this.#status);
     }
   }
 
