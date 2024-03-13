@@ -167,10 +167,9 @@ class StateCallback {
     }
   }
 
-  async transition(nextState, ...args) {
+  async end(nextState) {
     lazy.logger.trace(
-      `Transition requested from ${this.#state} to ${nextState.state}`,
-      args
+      `Ending state ${this.#state} (to transition to ${nextState.state})`
     );
 
     if (this.#transitioning) {
@@ -192,40 +191,20 @@ class StateCallback {
     );
     try {
       await this.#promise;
-    } catch (e) {
-      // begin should already transform exceptions into the error state.
-      if (nextState.state !== TorConnectState.Error) {
-        lazy.logger.error(
-          `Refusing the transition to ${nextState.state} because the callback threw.`,
-          e
-        );
-        return;
+    } finally {
+      lazy.logger.debug(`Calling ${this.#state}'s cleanup, if implemented.`);
+      if (this.cleanup) {
+        try {
+          await this.cleanup(nextState.state);
+          lazy.logger.debug(`${this.#state}'s cleanup function done.`);
+        } catch (e) {
+          lazy.logger.warn(`${this.#state}'s cleanup function threw.`, e);
+        }
       }
     }
-    lazy.logger.debug(`Ready to run ${this.#state} cleanup, if implemented.`);
-
-    if (this.cleanup) {
-      try {
-        await this.cleanup(nextState.state);
-        lazy.logger.debug(`${this.#state}'s cleanup function done.`);
-      } catch (e) {
-        lazy.logger.warn(`${this.#state}'s cleanup function threw.`, e);
-      }
-    }
-
-    lazy.logger.debug(
-      `Transitioning from ${this.#state} to ${nextState.state}`
-    );
-    Services.obs.notifyObservers(
-      { state: nextState.state },
-      TorConnectTopics.StateChange
-    );
-    nextState.begin(...args);
   }
 
   changeState(stateName, ...args) {
-    // TODO: We could reverse the role, and have TorConnect go through this
-    // function insatead.
     TorConnect._changeState(stateName, ...args);
   }
 
@@ -245,8 +224,6 @@ const debugSleep = async ms => {
   });
 };
 
-// The initial state doesn't actually do anything, so here is a
-// skeleton for other states which do perform work
 class InitialState extends StateCallback {
   allowedTransitions = Object.freeze([
     TorConnectState.Disabled,
@@ -259,28 +236,8 @@ class InitialState extends StateCallback {
     super(TorConnectState.Initial);
   }
 
-  async run() {
-    // Each state may have a sequence of async work to do.
-    let asyncWork = async () => {
-      // throw new Error("An error occurred");
-    };
-    // Any error of thrown will make the state machine move to the error state.
-    await asyncWork();
-
-    // After each block we may check for an opportunity to early-out.
-    if (this.transitioning) {
-      return;
-    }
-
-    await asyncWork();
-
-    // Whenever needed, a state can request a transition.
-    // this.changeState(TorConnectState.StateName, args, forThe, newState);
-  }
-
-  async cleanup(nextState) {
-    // Optionally, a state can define a cleanup function, which can also be
-    // async. nextState contains the name of the state we are transitioning to.
+  run() {
+    // TODO: Block this transition until we successfully build a TorProvider.
   }
 }
 
@@ -393,8 +350,7 @@ class BootstrappingState extends StateCallback {
       this.changeState(
         TorConnectState.Error,
         TorStrings.torConnect.offline,
-        "",
-        true
+        ""
       );
     } else {
       // Give priority to the bootstrap error, in case the Internet test fails
@@ -402,8 +358,7 @@ class BootstrappingState extends StateCallback {
       this.changeState(
         TorConnectState.Error,
         this.#bootstrapError,
-        this.#bootstrapErrorDetails,
-        true
+        this.#bootstrapErrorDetails
       );
     }
   }
@@ -428,8 +383,7 @@ class BootstrappingState extends StateCallback {
     this.changeState(
       TorConnectState.Error,
       "Bootstrap failed (for debugging purposes)",
-      "Error: Censorship simulation",
-      true
+      "Error: Censorship simulation"
     );
     return true;
   }
@@ -466,10 +420,14 @@ class AutoBootstrappingState extends StateCallback {
       throw err;
     };
 
-    // lookup user's potential censorship circumvention settings from Moat service
+    // Lookup user's potential censorship circumvention settings from Moat
+    // service.
     try {
       this.#moat = new lazy.MoatRPC();
-      await Promise.race([this.#moat.init(), this.#transitionPromise]);
+      // We need to wait Moat's initialization even when we are requested to
+      // transition to another state to be sure its uninit will have its
+      // intended effect. So, do not use Promise.race here.
+      await this.#moat.init();
 
       if (this.transitioning) {
         return;
@@ -609,7 +567,7 @@ class AutoBootstrappingState extends StateCallback {
         throw err;
       }
     } catch (err) {
-      if (this.#moat?.inited && TorConnect._countryCodes?.length) {
+      if (this.#moat?.inited && !TorConnect._countryCodes?.length) {
         // lookup countries which have settings available
         try {
           TorConnect._countryCodes = await this.#moat.circumvention_countries();
@@ -622,12 +580,7 @@ class AutoBootstrappingState extends StateCallback {
       }
 
       if (!this.transitioning) {
-        this.changeState(
-          TorConnectState.Error,
-          err?.message,
-          err?.details,
-          true
-        );
+        this.changeState(TorConnectState.Error, err?.message, err?.details);
       } else {
         lazy.logger.error(
           "Received AutoBootstrapping error after transitioning",
@@ -692,8 +645,7 @@ class AutoBootstrappingState extends StateCallback {
       this.changeState(
         TorConnectState.Error,
         "Error: censorship simulation",
-        "",
-        true
+        ""
       );
       return true;
     }
@@ -705,8 +657,7 @@ class AutoBootstrappingState extends StateCallback {
       this.changeState(
         TorConnectState.Error,
         "Error: Severe Censorship simulation",
-        "",
-        true
+        ""
       );
       return true;
     }
@@ -733,11 +684,14 @@ class BootstrappedState extends StateCallback {
 class ErrorState extends StateCallback {
   allowedTransitions = Object.freeze([TorConnectState.Configuring]);
 
+  static #hasEverHappened = false;
+
   constructor() {
     super(TorConnectState.Error);
+    ErrorState.#hasEverHappened = true;
   }
 
-  run(errorMessage, errorDetails, bootstrappingFailure) {
+  run(errorMessage, errorDetails) {
     TorConnect._errorMessage = errorMessage;
     TorConnect._errorDetails = errorDetails;
     lazy.logger.error(
@@ -751,9 +705,14 @@ class ErrorState extends StateCallback {
 
     this.changeState(TorConnectState.Configuring);
   }
+
+  static get hasEverHappened() {
+    return ErrorState.#hasEverHappened;
+  }
 }
 
 class DisabledState extends StateCallback {
+  // Trap state: no way to leave the Disabled state.
   allowedTransitions = Object.freeze([]);
 
   constructor() {
@@ -761,10 +720,7 @@ class DisabledState extends StateCallback {
   }
 
   async run() {
-    await new Promise(() => {
-      // Trap state: no way to leave the Disabled state.
-      lazy.logger.debug("Entered the disabled state.");
-    });
+    lazy.logger.debug("Entered the disabled state.");
   }
 }
 
@@ -779,6 +735,7 @@ class InternetTest {
   #status = InternetStatus.Unknown;
   #error = null;
   #pending = false;
+  #canceled = false;
   #timeout = 0;
 
   constructor() {
@@ -808,6 +765,7 @@ class InternetTest {
     }
     this.cancel();
     this.#pending = true;
+    this.#canceled = false;
 
     lazy.logger.info("Starting the Internet test");
     const mrpc = new lazy.MoatRPC();
@@ -818,22 +776,27 @@ class InternetTest {
         ? InternetStatus.Online
         : InternetStatus.Offline;
       lazy.logger.info(`Performed Internet test, outcome ${this.#status}`);
-      setTimeout(() => {
-        this.onResult(this.#status, status.date);
-      });
+      if (!this.#canceled) {
+        setTimeout(() => {
+          this.onResult(this.#status, status.date);
+        });
+      }
     } catch (err) {
       lazy.logger.error("Error while checking the Internet connection", err);
       this.#error = err;
       this.#pending = false;
-      setTimeout(() => {
-        this.onError(err);
-      });
+      if (!this.#canceled) {
+        setTimeout(() => {
+          this.onError(err);
+        });
+      }
     } finally {
       mrpc.uninit();
     }
   }
 
   cancel() {
+    this.#canceled = true;
     if (this.#timeout) {
       clearTimeout(this.#timeout);
       this.#timeout = 0;
@@ -862,7 +825,7 @@ class InternetTest {
 }
 
 export const TorConnect = {
-  _state: new InitialState(),
+  _stateHandler: new InitialState(),
   _bootstrapProgress: 0,
   _bootstrapStatus: null,
   _internetStatus: InternetStatus.Unknown,
@@ -883,7 +846,6 @@ export const TorConnect = {
   _errorMessage: null,
   _errorDetails: null,
   _logHasWarningOrError: false,
-  _hasEverFailed: false,
   _hasBootstrapEverFailed: false,
   _transitionPromise: null,
 
@@ -912,11 +874,8 @@ export const TorConnect = {
     return new klass();
   },
 
-  _changeState(newState, ...args) {
-    if (newState === TorConnectState.Error) {
-      this._hasEverFailed = true;
-    }
-    const prevState = this._state;
+  async _changeState(newState, ...args) {
+    const prevState = this._stateHandler;
 
     // ensure this is a valid state transition
     if (!prevState.allowedTransitions.includes(newState)) {
@@ -929,13 +888,27 @@ export const TorConnect = {
       `Try transitioning from ${prevState.state} to ${newState}`,
       args
     );
+    try {
+      await prevState.end(this._stateHandler);
+    } catch (e) {
+      // We take for granted that the begin of this state will call us again,
+      // to request the transition to the error state.
+      if (newState !== TorConnectState.Error) {
+        lazy.logger.debug(
+          `Refusing the transition from ${prevState.state} to ${newState} because the previous state threw.`
+        );
+        return;
+      }
+    }
 
     // Set our new state first so that state transitions can themselves
     // trigger a state transition.
-    this._state = this._makeState(newState);
-
-    // Call our state run function and forward any args.
-    prevState.transition(this._state, ...args);
+    this._stateHandler = this._makeState(newState);
+    Services.obs.notifyObservers(
+      { state: newState },
+      TorConnectTopics.StateChange
+    );
+    this._stateHandler.begin(...args);
   },
 
   _updateBootstrapStatus(progress, status) {
@@ -958,7 +931,7 @@ export const TorConnect = {
   // init should be called by TorStartupService
   init() {
     lazy.logger.debug("TorConnect.init()");
-    this._state.begin();
+    this._stateHandler.begin();
 
     if (!this.enabled) {
       // Disabled
@@ -997,7 +970,7 @@ export const TorConnect = {
         // Treat a failure as a possibly broken configuration.
         // So, prevent quickstart at the next start.
         Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
-        switch (this._state) {
+        switch (this.state) {
           case TorConnectState.Bootstrapping:
           case TorConnectState.AutoBootstrapping:
           case TorConnectState.Bootstrapped:
@@ -1081,7 +1054,7 @@ export const TorConnect = {
    * @param {boolean}
    */
   get canBeginBootstrap() {
-    return this._state.allowedTransitions.includes(
+    return this._stateHandler.allowedTransitions.includes(
       TorConnectState.Bootstrapping
     );
   },
@@ -1094,7 +1067,7 @@ export const TorConnect = {
    * @param {boolean}
    */
   get canBeginAutoBootstrap() {
-    return this._state.allowedTransitions.includes(
+    return this._stateHandler.allowedTransitions.includes(
       TorConnectState.AutoBootstrapping
     );
   },
@@ -1109,7 +1082,7 @@ export const TorConnect = {
   },
 
   get state() {
-    return this._state.state;
+    return this._stateHandler.state;
   },
 
   get bootstrapProgress() {
@@ -1154,7 +1127,7 @@ export const TorConnect = {
    * @type {boolean}
    */
   get hasEverFailed() {
-    return this._hasEverFailed;
+    return ErrorState.hasEverHappened;
   },
 
   /**
