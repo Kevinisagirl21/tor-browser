@@ -398,8 +398,7 @@ class BootstrappingState extends StateCallback {
 }
 
 class AutoBootstrappingState extends StateCallback {
-  #bootstrap = null;
-  #moat = null;
+  #moat;
   #settings;
   #changedSettings = false;
   #transitionPromise;
@@ -497,19 +496,20 @@ class AutoBootstrappingState extends StateCallback {
     // unable to detect user's country/region.
     // If we use specialized error objects, we could pass the original errors to
     // them.
-    const settings = await Promise.resolve([
+    const maybeSettings = await Promise.race([
       this.#moat.circumvention_settings(
         [...TorSettings.builtinBridgeTypes, "vanilla"],
         countryCode
       ),
+      // This might set maybeSettings to undefined.
       this.#transitionPromise,
     ]);
-    if (settings?.country) {
-      TorConnect._detectedLocation = settings.country;
+    if (maybeSettings?.country) {
+      TorConnect._detectedLocation = maybeSettings.country;
     }
 
-    if (settings?.settings && settings.settings.length) {
-      this.#settings = settings.settings;
+    if (maybeSettings?.settings && maybeSettings.settings.length) {
+      this.#settings = maybeSettings.settings;
     } else if (!this.transitioning) {
       // Keep consistency with the other call.
       this.#settings = await Promise.race([
@@ -517,14 +517,12 @@ class AutoBootstrappingState extends StateCallback {
           ...TorSettings.builtinBridgeTypes,
           "vanilla",
         ]),
+        // This might set this.#settings to undefined.
         this.#transitionPromise,
       ]);
     }
 
-    if (
-      (!this.#settings || this.#settings.length === 0) &&
-      !this.transitioning
-    ) {
+    if (!this.#settings?.length && !this.transitioning) {
       // Both localized and fallback have, we can just throw to transition to
       // the error state (but only if we aren't already transitioning).
       // TODO: Let the UI layer localize the strings.
@@ -583,21 +581,35 @@ class AutoBootstrappingState extends StateCallback {
       });
 
       // Build out our bootstrap request.
-      this.#bootstrap = new lazy.TorBootstrapRequest();
-      this.#bootstrap.onbootstrapstatus = (progress, status) => {
+      const bootstrap = new lazy.TorBootstrapRequest();
+      bootstrap.onbootstrapstatus = (progress, status) => {
         TorConnect._updateBootstrapStatus(progress, status);
       };
-      this.#bootstrap.onbootstraperror = (message, details) => {
+      bootstrap.onbootstraperror = (message, details) => {
         lazy.logger.error(`Auto-Bootstrap error => ${message}; ${details}`);
       };
 
       // Begin the bootstrap.
-      if (
-        await Promise.race([
-          this.#bootstrap.bootstrap(),
-          this.#transitionPromise,
-        ])
-      ) {
+      const success = await Promise.race([
+        bootstrap.bootstrap(),
+        this.#transitionPromise,
+      ]);
+      // Either the bootstrap request has finished, or a transition (caused by
+      // an error or by user's cancelation) started.
+      // However, we cannot be already transitioning in case of success, so if
+      // we are we should cancel the current bootstrap.
+      // With the current TorProvider, this will set DisableNetwork=1 again,
+      // which is what the user wanted if they canceled.
+      if (this.transitioning) {
+        if (success) {
+          lazy.logger.warn(
+            "We were already transitioning after a success, we were not expecting this."
+          );
+        }
+        bootstrap.cancel();
+        return;
+      }
+      if (success) {
         // Persist the current settings to preferences.
         TorSettings.setSettings(currentSetting);
         TorSettings.saveToPrefs();
@@ -641,11 +653,6 @@ class AutoBootstrappingState extends StateCallback {
         // console.
         lazy.logger.warn("Failed to restore original settings.", e);
       }
-    }
-
-    // If next state is configuring, it means the user canceled the bootstrap
-    if (nextState === TorConnectState.Configuring) {
-      await this.#bootstrap?.cancel();
     }
   }
 }
