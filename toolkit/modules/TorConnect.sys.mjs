@@ -383,6 +383,10 @@ class BootstrappingState extends StateCallback {
     }
 
     await debugSleep(1500);
+    if (this.transitioning) {
+      // Already left this state.
+      return true;
+    }
     TorConnect._hasBootstrapEverFailed = true;
     if (censorshipLevel === 2) {
       const codes = Object.keys(TorConnect._countryNames);
@@ -454,11 +458,13 @@ class AutoBootstrappingState extends StateCallback {
     // location specific settings.
     if (censorshipLevel === 3) {
       await debugSleep(2500);
-      this.changeState(
-        TorConnectState.Error,
-        "Error: censorship simulation",
-        ""
-      );
+      if (!this.transitioning) {
+        this.changeState(
+          TorConnectState.Error,
+          "Error: censorship simulation",
+          ""
+        );
+      }
       return true;
     }
 
@@ -466,11 +472,13 @@ class AutoBootstrappingState extends StateCallback {
     // manually selecting a country.
     if (censorshipLevel === 2 && !countryCode) {
       await debugSleep(2500);
-      this.changeState(
-        TorConnectState.Error,
-        "Error: Severe Censorship simulation",
-        ""
-      );
+      if (!this.transitioning) {
+        this.changeState(
+          TorConnectState.Error,
+          "Error: Severe Censorship simulation",
+          ""
+        );
+      }
       return true;
     }
 
