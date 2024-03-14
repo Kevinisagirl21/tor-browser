@@ -85,9 +85,13 @@ export class MoatRPC {
       TorLauncherPrefs.bridgedb_reflector
     );
     const front = Services.prefs.getStringPref(TorLauncherPrefs.bridgedb_front);
-    const builder = new lazy.DomainFrontRequestBuilder();
-    await builder.init(reflector, front);
-    this.#requestBuilder = builder;
+    this.#requestBuilder = new lazy.DomainFrontRequestBuilder();
+    try {
+      await this.#requestBuilder.init(reflector, front);
+    } catch (e) {
+      this.#requestBuilder = null;
+      throw e;
+    }
   }
 
   async uninit() {
