@@ -178,7 +178,7 @@ class StateCallback {
 
   async end(nextState) {
     lazy.logger.trace(
-      `Ending state ${this.#state} (to transition to ${nextState.state})`
+      `Ending state ${this.#state} (to transition to ${nextState})`
     );
 
     if (this.#transitioning) {
@@ -204,7 +204,7 @@ class StateCallback {
       lazy.logger.debug(`Calling ${this.#state}'s cleanup, if implemented.`);
       if (this.cleanup) {
         try {
-          await this.cleanup(nextState.state);
+          await this.cleanup(nextState);
           lazy.logger.debug(`${this.#state}'s cleanup function done.`);
         } catch (e) {
           lazy.logger.warn(`${this.#state}'s cleanup function threw.`, e);
@@ -902,7 +902,7 @@ export const TorConnect = {
       args
     );
     try {
-      await prevState.end(this._stateHandler);
+      await prevState.end(newState);
     } catch (e) {
       // We take for granted that the begin of this state will call us again,
       // to request the transition to the error state.
