@@ -1173,6 +1173,15 @@ export const TorConnect = {
 
   cancelBootstrap() {
     lazy.logger.debug("TorConnect.cancelBootstrap()");
+    if (
+      this.state !== TorConnectState.AutoBootstrapping &&
+      this.state !== TorConnectState.Bootstrapping
+    ) {
+      lazy.logger.warn(
+        `Cannot cancel bootstrapping in the ${this.state} state`
+      );
+      return;
+    }
     this._changeState(TorConnectState.Configuring);
   },
 
