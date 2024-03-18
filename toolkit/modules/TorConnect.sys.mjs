@@ -875,6 +875,12 @@ export const TorConnect = {
   },
 
   async _changeState(newState, ...args) {
+    if (this._stateHandler.transitioning) {
+      // Avoid an exception to prevent it to be propagated to the original
+      // begin call.
+      lazy.logger.warn("Already transitioning");
+      return;
+    }
     const prevState = this._stateHandler;
 
     // ensure this is a valid state transition
