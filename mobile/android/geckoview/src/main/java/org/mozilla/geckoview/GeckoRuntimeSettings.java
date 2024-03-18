@@ -476,9 +476,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mSecurityLevel.set(level);
       return this;
     }
-
-      return this;
-    }
   }
 
   private GeckoRuntime mRuntime;
@@ -1319,9 +1316,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    */
   public @NonNull GeckoRuntimeSettings setTorSecurityLevel(final int level) {
     mSecurityLevel.commit(level);
-    return this;
-  }
-
     return this;
   }
 
