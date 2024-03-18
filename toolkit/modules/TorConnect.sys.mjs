@@ -621,7 +621,14 @@ class AutoBootstrappingState extends StateCallback {
         // Persist the current settings to preferences.
         TorSettings.setSettings(currentSetting);
         TorSettings.saveToPrefs();
-        await TorSettings.applySettings();
+        // Do not await `applySettings`. Otherwise this opens up a window of
+        // time where the user can still "Cancel" the bootstrap.
+        // We are calling `applySettings` just to be on the safe side, but the
+        // settings we are passing now should be exactly the same we already
+        // passed earlier.
+        TorSettings.applySettings().catch(e =>
+          lazy.logger.error("TorSettings.applySettings threw unexpectedly.", e)
+        );
         this.changeState(TorConnectState.Bootstrapped);
         return;
       }
