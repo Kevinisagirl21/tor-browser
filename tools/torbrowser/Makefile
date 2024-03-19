@@ -47,9 +47,6 @@ build:
 deploy:
 	./deploy.sh $(BINARIES) $(BUILD_OUTPUT)
 
-fat-aar:
-	./fataar.py $(DEV_ROOT) $(ARCHS)
-
 all: build deploy
 
 run:
