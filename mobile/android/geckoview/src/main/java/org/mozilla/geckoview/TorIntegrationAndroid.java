@@ -181,8 +181,6 @@ public class TorIntegrationAndroid implements BundleEventListener {
             TorSettings settings;
             if (TorLegacyAndroidSettings.unmigrated()) {
                 settings = TorLegacyAndroidSettings.loadTorSettings();
-                setSettings(settings, true, true);
-                TorLegacyAndroidSettings.setMigrated();
             } else {
                 GeckoBundle bundle = message.getBundle("settings");
                 settings = new TorSettings(bundle);
@@ -193,6 +191,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
         @Override
         protected void onPostExecute(TorSettings torSettings) {
             mSettings = torSettings;
+            if (TorLegacyAndroidSettings.unmigrated()) {
+                setSettings(mSettings, true, true);
+                TorLegacyAndroidSettings.setMigrated();
+            }
         }
     }
 
