@@ -323,10 +323,6 @@ about-dialog-grow-tor-network-link = Help the Tor Network Grow!
 # Link text for the Tor Browser license page (about:license).
 about-dialog-browser-license-link = Licensing Information
 
-# "Tor" and "The Onion Logo" are trademark names, so should not be translated (not including the quote marks, which can be localized).
-# "The Tor Project, Inc." is an organisation name.
-about-dialog-trademark-statement = “Tor” and “The Onion Logo” are registered trademarks of The Tor Project, Inc.
-
 ## New tor circuit.
 
 # Shown in the File menu.
