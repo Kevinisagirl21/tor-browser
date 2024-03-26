@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
   TorSettingsTopics: "resource://gre/modules/TorSettings.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
@@ -32,6 +33,7 @@ const EmittedEvents = Object.freeze({
   bootstrapProgress: "GeckoView:Tor:BootstrapProgress",
   bootstrapComplete: "GeckoView:Tor:BootstrapComplete",
   bootstrapError: "GeckoView:Tor:BootstrapError",
+  torLogs: "GeckoView:Tor:Logs",
 });
 
 const ListenedEvents = Object.freeze({
@@ -58,6 +60,8 @@ class TorAndroidIntegrationImpl {
 
     this.#bootstrapMethodReset();
     Services.prefs.addObserver(Prefs.useNewBootstrap, this);
+
+    Services.obs.addObserver(this, lazy.TorProviderTopics.TorLog);
 
     for (const topic in lazy.TorConnectTopics) {
       Services.obs.addObserver(this, lazy.TorConnectTopics[topic]);
@@ -116,6 +120,13 @@ class TorAndroidIntegrationImpl {
           type: EmittedEvents.bootstrapError,
           message: subj.wrappedJSObject.message ?? "",
           details: subj.wrappedJSObject.details ?? "",
+        });
+        break;
+      case lazy.TorProviderTopics.TorLog:
+        lazy.EventDispatcher.instance.sendRequest({
+          type: EmittedEvents.torLogs,
+          logType: subj.wrappedJSObject.type ?? "",
+          message: subj.wrappedJSObject.msg ?? "",
         });
         break;
       case lazy.TorSettingsTopics.Ready:
