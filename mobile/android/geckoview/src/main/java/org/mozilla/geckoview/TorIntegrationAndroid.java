@@ -46,6 +46,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_BOOTSTRAP_PROGRESS = "GeckoView:Tor:BootstrapProgress";
     private static final String EVENT_BOOTSTRAP_COMPLETE = "GeckoView:Tor:BootstrapComplete";
     private static final String EVENT_BOOTSTRAP_ERROR = "GeckoView:Tor:BootstrapError";
+    private static final String EVENT_TOR_LOGS = "GeckoView:Tor:Logs";
     private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
     private static final String EVENT_SETTINGS_CHANGED = "GeckoView:Tor:SettingsChanged";
 
@@ -116,7 +117,8 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_BOOTSTRAP_STATE_CHANGED,
                         EVENT_BOOTSTRAP_PROGRESS,
                         EVENT_BOOTSTRAP_COMPLETE,
-                        EVENT_BOOTSTRAP_ERROR);
+                        EVENT_BOOTSTRAP_ERROR,
+                        EVENT_TOR_LOGS);
     }
 
     @Override // BundleEventListener
@@ -165,6 +167,12 @@ public class TorIntegrationAndroid implements BundleEventListener {
             String details = message.getString("details");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
                 listener.onBootstrapError(msg, details);
+            }
+        } else if (EVENT_TOR_LOGS.equals(event)) {
+            String msg = message.getString("message");
+            String type = message.getString("logType");
+            for (TorLogListener listener: mLogListeners) {
+                    listener.onLog(type, msg);
             }
         }
     }
@@ -566,6 +574,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
         void onBootstrapError(String message, String details);
     }
 
+    public interface TorLogListener {
+        void onLog(String logType, String message);
+    }
+
     private @NonNull void reloadSettings() {
         EventDispatcher.getInstance().queryBundle(EVENT_SETTINGS_GET).then( new GeckoResult.OnValueListener<GeckoBundle, Void>() {
             public GeckoResult<Void> onValue(final GeckoBundle bundle) {
@@ -640,4 +652,14 @@ public class TorIntegrationAndroid implements BundleEventListener {
     }
 
     private final HashSet<BootstrapStateChangeListener> mBootstrapStateListeners = new HashSet<>();
+
+    public void registerLogListener(TorLogListener listener) {
+        mLogListeners.add(listener);
+    }
+
+    public void unregisterLogListener(TorLogListener listener) {
+        mLogListeners.remove(listener);
+    }
+
+    private final HashSet<TorLogListener> mLogListeners = new HashSet<>();
 }
