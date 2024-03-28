@@ -311,10 +311,10 @@ class AsyncSocket {
  * @param {string} message The message to handle
  */
 
-class TorError extends Error {
+class TorProtocolError extends Error {
   constructor(command, reply) {
     super(`${command} -> ${reply}`);
-    this.name = "TorError";
+    this.name = "TorProtocolError";
     const info = reply.match(/(?<code>\d{3})(?:\s(?<message>.+))?/);
     this.torStatusCode = info.groups.code;
     if (info.groups.message) {
@@ -591,7 +591,7 @@ export class TorController {
   async #sendCommandSimple(command) {
     const reply = await this.#sendCommand(command);
     if (!/^250 OK\s*$/i.test(reply)) {
-      throw new TorError(command, reply);
+      throw new TorProtocolError(command, reply);
     }
   }
 
@@ -672,7 +672,7 @@ export class TorController {
       reply.match(/^250-([^=]+)=(.*)$/m) ||
       reply.match(/^250\+([^=]+)=\r?\n(.*?)\r?\n^\.\r?\n^250 OK\s*$/ms);
     if (!match || match[1] !== key) {
-      throw new TorError(cmd, reply);
+      throw new TorProtocolError(cmd, reply);
     }
     return match[2];
   }
@@ -784,7 +784,7 @@ export class TorController {
       TorParsers.unescapeString(m[1])
     );
     if (!values.length) {
-      throw new TorError(cmd, reply);
+      throw new TorProtocolError(cmd, reply);
     }
     return values;
   }
@@ -896,7 +896,7 @@ export class TorController {
     const message = await this.#sendCommand(cmd);
     // Either `250-CLIENT`, or `250 OK` if no keys are available.
     if (!message.startsWith("250")) {
-      throw new TorError(cmd, message);
+      throw new TorProtocolError(cmd, message);
     }
     const re =
       /^250-CLIENT\s+(?<HSAddress>[A-Za-z2-7]+)\s+(?<KeyType>[^:]+):(?<PrivateKeyBlob>\S+)(?:\s(?<other>.+))?$/gim;
@@ -936,7 +936,7 @@ export class TorController {
     const reply = await this.#sendCommand(cmd);
     const status = reply.substring(0, 3);
     if (status !== "250" && status !== "251" && status !== "252") {
-      throw new TorError(cmd, reply);
+      throw new TorProtocolError(cmd, reply);
     }
   }
 
@@ -952,7 +952,7 @@ export class TorController {
     const reply = await this.#sendCommand(cmd);
     const status = reply.substring(0, 3);
     if (status !== "250" && status !== "251") {
-      throw new TorError(cmd, reply);
+      throw new TorProtocolError(cmd, reply);
     }
   }
 
@@ -1085,6 +1085,7 @@ export class TorController {
       );
     }
     const status = {
+      // Type is actually StatusSeverity in the specifications.
       TYPE: match[1],
       ...this.#getKeyValues(match[2]),
     };
