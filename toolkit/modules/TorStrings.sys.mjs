@@ -51,11 +51,11 @@ class TorPropertyStringBundle {
     return `$(${key})`;
   }
 
-  getStrings(strings) {
+  getStrings(strings, additionalPrefix = "") {
     return Object.fromEntries(
       Object.entries(strings).map(([key, fallback]) => [
         key,
-        this.getString(key, fallback),
+        this.getString(additionalPrefix + key, fallback),
       ])
     );
   }
@@ -143,7 +143,7 @@ const Loader = {
       frequentLocations: "Frequently selected locations",
       otherLocations: "Other locations",
 
-      // TorConnect.jsm error messages
+      // TorConnect error messages
       offline: "Internet not reachable",
       autoBootstrappingFailed: "Automatic configuration failed",
       autoBootstrappingAllFailed: "None of the configurations we tried worked",
@@ -158,11 +158,67 @@ const Loader = {
       titlebarStatusConnected: "Connected",
     };
 
+    // Some strings were used through TorLauncherUtils.
+    // However, we need to use them in about:torconnect, which cannot access
+    // privileged code.
+    const bootstrapStatus = {
+      starting: "Starting",
+      conn_pt: "Connecting to bridge",
+      conn_done_pt: "Connected to bridge",
+      conn_proxy: "Connecting to proxy",
+      conn_done_proxy: "Connected to proxy",
+      conn: "Connecting to a Tor relay",
+      conn_done: "Connected to a Tor relay",
+      handshake: "Negotiating with a Tor relay",
+      handshake_done: "Finished negotiating with a Tor relay",
+      onehop_create: "Establishing an encrypted directory connection",
+      requesting_status: "Retrieving network status",
+      loading_status: "Loading network status",
+      loading_keys: "Loading authority certificates",
+      requesting_descriptors: "Requesting relay information",
+      loading_descriptors: "Loading relay information",
+      enough_dirinfo: "Finished loading relay information",
+      ap_conn_pt: "Building circuits: Connecting to bridge",
+      ap_conn_done_pt: "Building circuits: Connected to bridge",
+      ap_conn_proxy: "Building circuits: Connecting to proxy",
+      ap_conn_done_proxy: "Building circuits: Connected to proxy",
+      ap_conn: "Building circuits: Connecting to a Tor relay",
+      ap_conn_done: "Building circuits: Connected to a Tor relay",
+      ap_handshake: "Building circuits: Negotiating with a Tor relay",
+      ap_handshake_done:
+        "Building circuits: Finished negotiating with a Tor relay",
+      circuit_create: "Building circuits: Establishing a Tor circuit",
+      done: "Connected to the Tor network!",
+    };
+    const bootstrapWarning = {
+      done: "done",
+      connectrefused: "connection refused",
+      misc: "miscellaneous",
+      resourcelimit: "insufficient resources",
+      identity: "identity mismatch",
+      timeout: "connection timeout",
+      noroute: "no route to host",
+      ioerror: "read/write error",
+      pt_missing: "missing pluggable transport",
+    };
+
     const tsb = new TorPropertyStringBundle(
       "chrome://torbutton/locale/torConnect.properties",
       "torConnect."
     );
-    return tsb.getStrings(strings);
+    const tlsb = new TorPropertyStringBundle(
+      "chrome://torbutton/locale/torlauncher.properties",
+      "torlauncher."
+    );
+    return {
+      ...tsb.getStrings(strings),
+      bootstrapFailedDetails: tlsb.getString(
+        "tor_bootstrap_failed_details",
+        "%1$S failed (%2$S)."
+      ),
+      bootstrapStatus: tlsb.getStrings(bootstrapStatus, "bootstrapStatus."),
+      bootstrapWarning: tlsb.getStrings(bootstrapWarning, "bootstrapWarning."),
+    };
   },
 
   /*
