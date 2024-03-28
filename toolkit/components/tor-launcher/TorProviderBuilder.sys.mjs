@@ -148,6 +148,7 @@ export class TorProviderBuilder {
       return;
     }
     let running = false;
+    let error;
     try {
       const provider = await this.#provider;
       // The initialization might have succeeded, but so far we have ignored any
@@ -155,14 +156,17 @@ export class TorProviderBuilder {
       // provider has been initialized successfully, but the UI was not ready
       // yet.
       running = provider.isRunning;
-    } catch {
+    } catch (e) {
       // Not even initialized, running is already false.
+      error = e;
     }
-    while (!running && lazy.TorLauncherUtil.showRestartPrompt(true)) {
+    while (!running && lazy.TorLauncherUtil.showRestartPrompt(true, error)) {
       try {
         await this.#initTorProvider();
         running = true;
-      } catch {}
+      } catch (e) {
+        error = e;
+      }
     }
     // The user might have canceled the restart, but at this point the UI is
     // ready in any case.
@@ -176,11 +180,14 @@ export class TorProviderBuilder {
       );
       return;
     }
-    while (lazy.TorLauncherUtil.showRestartPrompt(false)) {
+    let error = null;
+    while (lazy.TorLauncherUtil.showRestartPrompt(false, error)) {
       try {
         await this.#initTorProvider();
         break;
-      } catch {}
+      } catch (e) {
+        error = e;
+      }
     }
   }
 
