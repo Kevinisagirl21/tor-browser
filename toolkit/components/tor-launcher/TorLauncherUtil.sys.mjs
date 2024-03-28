@@ -441,58 +441,6 @@ export const TorLauncherUtil = Object.freeze({
     return aStringName;
   },
 
-  getLocalizedBootstrapStatus(aStatusObj, aKeyword) {
-    if (!aStatusObj || !aKeyword) {
-      return "";
-    }
-
-    let result;
-    let fallbackStr;
-    if (aStatusObj[aKeyword]) {
-      let val = aStatusObj[aKeyword].toLowerCase();
-      let key;
-      if (aKeyword === "TAG") {
-        // The bootstrap status tags in tagMap below are used by Tor
-        // versions prior to 0.4.0.x. We map each one to the tag that will
-        // produce the localized string that is the best fit.
-        const tagMap = {
-          conn_dir: "conn",
-          handshake_dir: "onehop_create",
-          conn_or: "enough_dirinfo",
-          handshake_or: "ap_conn",
-        };
-        if (val in tagMap) {
-          val = tagMap[val];
-        }
-
-        key = "bootstrapStatus." + val;
-        fallbackStr = aStatusObj.SUMMARY;
-      } else if (aKeyword === "REASON") {
-        if (val === "connectreset") {
-          val = "connectrefused";
-        }
-
-        key = "bootstrapWarning." + val;
-        fallbackStr = aStatusObj.WARNING;
-      }
-
-      result = TorLauncherUtil.getLocalizedString(key);
-      if (result === key) {
-        result = undefined;
-      }
-    }
-
-    if (!result) {
-      result = fallbackStr;
-    }
-
-    if (aKeyword === "REASON" && aStatusObj.HOSTADDR) {
-      result += " - " + aStatusObj.HOSTADDR;
-    }
-
-    return result ? result : "";
-  },
-
   /**
    * Determine what kind of SOCKS port has been requested for this session or
    * the browser has been configured for.

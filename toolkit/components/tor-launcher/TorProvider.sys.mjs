@@ -911,6 +911,7 @@ export class TorProvider {
    * @param {object} status The status object
    */
   onBootstrapStatus(status) {
+    logger.debug("Received bootstrap status update", status);
     this.#processBootstrapStatus(status, true);
   }
 
@@ -939,6 +940,7 @@ export class TorProvider {
 
     this.#isBootstrapDone = false;
 
+    // Can TYPE ever be ERR for STATUS_CLIENT?
     if (
       isNotification &&
       statusObj.TYPE === "WARN" &&
@@ -959,20 +961,7 @@ export class TorProvider {
     } catch (e) {
       logger.warn(`Cannot set ${Preferences.PromptAtStartup}`, e);
     }
-    // TODO: Move l10n to the above layers?
-    const phase = TorLauncherUtil.getLocalizedBootstrapStatus(statusObj, "TAG");
-    const reason = TorLauncherUtil.getLocalizedBootstrapStatus(
-      statusObj,
-      "REASON"
-    );
-    const details = TorLauncherUtil.getFormattedLocalizedString(
-      "tor_bootstrap_failed_details",
-      [phase, reason],
-      2
-    );
-    logger.error(
-      `Tor bootstrap error: [${statusObj.TAG}/${statusObj.REASON}] ${details}`
-    );
+    logger.error("Tor bootstrap error", statusObj);
 
     if (
       statusObj.TAG !== this.#lastWarning.phase ||
@@ -981,11 +970,19 @@ export class TorProvider {
       this.#lastWarning.phase = statusObj.TAG;
       this.#lastWarning.reason = statusObj.REASON;
 
-      const message = TorLauncherUtil.getLocalizedString(
-        "tor_bootstrap_failed"
-      );
+      // FIXME: currently, this is observed only by TorBoostrapRequest.
+      // We should remove that class, and use an async method to do the
+      // bootstrap here.
+      // At that point, the lastWarning mechanism will probably not be necessary
+      // anymore, since the first error eligible for notification will as a
+      // matter of fact cancel the bootstrap.
       Services.obs.notifyObservers(
-        { message, details },
+        {
+          phase: statusObj.TAG,
+          reason: statusObj.REASON,
+          summary: statusObj.SUMMARY,
+          warning: statusObj.WARNING,
+        },
         TorProviderTopics.BootstrapError
       );
     }

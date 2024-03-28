@@ -1,17 +1,16 @@
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 import { TorProviderBuilder } from "resource://gre/modules/TorProviderBuilder.sys.mjs";
-import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 
 /* tor-launcher observer topics */
 export const TorTopics = Object.freeze({
   BootstrapStatus: "TorBootstrapStatus",
   BootstrapError: "TorBootstrapError",
-  LogHasWarnOrErr: "TorLogHasWarnOrErr",
 });
 
 // modeled after XMLHttpRequest
 // nicely encapsulates the observer register/unregister logic
+// TODO: Remove this class, and move its logic inside the TorProvider.
 export class TorBootstrapRequest {
   // number of ms to wait before we abandon the bootstrap attempt
   // a value of 0 implies we never wait
@@ -20,7 +19,7 @@ export class TorBootstrapRequest {
   // callbacks for bootstrap process status updates
   onbootstrapstatus = (progress, status) => {};
   onbootstrapcomplete = () => {};
-  onbootstraperror = (message, details) => {};
+  onbootstraperror = error => {};
 
   // internal resolve() method for bootstrap
   #bootstrapPromiseResolve = null;
@@ -32,8 +31,8 @@ export class TorBootstrapRequest {
     switch (topic) {
       case TorTopics.BootstrapStatus: {
         const progress = obj.PROGRESS;
-        const status = TorLauncherUtil.getLocalizedBootstrapStatus(obj, "TAG");
         if (this.onbootstrapstatus) {
+          const status = obj.TAG;
           this.onbootstrapstatus(progress, status);
         }
         if (progress === 100) {
@@ -49,7 +48,9 @@ export class TorBootstrapRequest {
       }
       case TorTopics.BootstrapError: {
         console.info("TorBootstrapRequest: observerd TorBootstrapError", obj);
-        this.#stop(obj?.message, obj?.details);
+        const error = new Error(obj.summary);
+        error.details = obj;
+        this.#stop(error);
         break;
       }
     }
@@ -103,7 +104,7 @@ export class TorBootstrapRequest {
   }
 
   // Internal implementation. Do not use directly, but call cancel, instead.
-  async #stop(message, details) {
+  async #stop(error) {
     // first stop our bootstrap timeout before handling the error
     if (this.#timeoutID !== null) {
       clearTimeout(this.#timeoutID);
@@ -121,14 +122,13 @@ export class TorBootstrapRequest {
       await provider?.stopBootstrap();
     } catch (e) {
       console.error("Failed to stop the bootstrap.", e);
-      if (!message) {
-        message = e.message;
-        details = "";
+      if (!error) {
+        error = e;
       }
     }
 
-    if (this.onbootstraperror && message) {
-      this.onbootstraperror(message, details);
+    if (this.onbootstraperror && error) {
+      this.onbootstraperror(error);
     }
 
     this.#bootstrapPromiseResolve(false);
