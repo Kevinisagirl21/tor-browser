@@ -165,10 +165,12 @@ public class TorIntegrationAndroid implements BundleEventListener {
                 listener.onBootstrapComplete();
             }
         } else if (EVENT_BOOTSTRAP_ERROR.equals(event)) {
+            String code = message.getString("code");
             String msg = message.getString("message");
-            String details = message.getString("details");
+            String phase = message.getString("phase");
+            String reason = message.getString("reason");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
-                listener.onBootstrapError(msg, details);
+                listener.onBootstrapError(code, msg, phase, reason);
             }
         } else if (EVENT_TOR_LOGS.equals(event)) {
             String msg = message.getString("message");
@@ -577,7 +579,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
         void onBootstrapStateChange(String state);
         void onBootstrapProgress(double progress, String status, boolean hasWarnings);
         void onBootstrapComplete();
-        void onBootstrapError(String message, String details);
+        void onBootstrapError(String code, String message, String phase, String reason);
         void onSettingsRequested();
     }
 
