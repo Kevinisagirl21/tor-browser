@@ -537,27 +537,17 @@ class _RFPHelper {
       ])
     );
 
-    if (
-      !win._rfpSizeOffset ||
-      (win._rfpOriginalSize &&
-        win.outerWidth === win._rfpOriginalSize.width &&
-        win.outerHeight === win._rfpOriginalSize.height)
-    ) {
-      const BASELINE_ROUNDING = 10;
-      const offset = s =>
-        s - Math.round(s / BASELINE_ROUNDING) * BASELINE_ROUNDING;
+    const isInitialSize =
+      win._rfpOriginalSize &&
+      win.outerWidth === win._rfpOriginalSize.width &&
+      win.outerHeight === win._rfpOriginalSize.height;
 
-      win._rfpSizeOffset = {
-        width: offset(parentWidth),
-        height: offset(parentHeight),
-      };
-      log(
-        `${logPrefix} Window size offsets %o (from %s, %s)`,
-        win._rfpSizeOffset,
-        parentWidth,
-        parentHeight
-      );
-    }
+    // We may need to shrink this window to rounded size if the browser container
+    // area is taller than the original, meaning extra chrome (like the optional
+    // "Only Show on New Tab" bookmarks toobar) was present and now gone.
+    const needToShrink =
+      isInitialSize && containerHeight > win._rfpOriginalSize.containerHeight;
+
     log(
       `${logPrefix} contentWidth=${contentWidth} contentHeight=${contentHeight} parentWidth=${parentWidth} parentHeight=${parentHeight} containerWidth=${containerWidth} containerHeight=${containerHeight}${
         isNewTab ? " (new tab)." : "."
@@ -573,33 +563,27 @@ class _RFPHelper {
 
     const roundDimensions = (aWidth, aHeight) => {
       const r = (width, height) => {
-        lastRoundedSize = {width, height};
+        lastRoundedSize = { width, height };
+        log(
+          `${logPrefix} roundDimensions(${aWidth}, ${aHeight}) = ${width} x ${height}`
+        );
         return {
           "--letterboxing-width": `var(--rdm-width, ${width}px)`,
           "--letterboxing-height": `var(--rdm-height, ${height}px)`,
-        }
+        };
       };
 
-      let result;
+      log(`${logPrefix} roundDimensions(${aWidth}, ${aHeight})`);
 
-      if (!this.letterboxingEnabled) {
-        const offset = win._rfpSizeOffset;
-        result = r(aWidth - offset.width, aHeight - offset.height);
-        log(
-          `${logPrefix} Letterboxing disabled, applying baseline rounding offsets: (${aWidth}, ${aHeight}) => ${result.width} x ${result.height})`
-        );
-        return result;
+      if (!(isInitialSize || this.letterboxingEnabled)) {
+        // just round size to int
+        return r(aWidth, aHeight);
       }
 
-      log(`${logPrefix} roundDimensions(${aWidth}, ${aHeight})`);
       // If the set is empty, we will round the content with the default
       // stepping size.
       if (!this._letterboxingDimensions.length) {
-        result = r(this.steppedSize(aWidth, true), this.steppedSize(aHeight));
-        log(
-          `${logPrefix} roundDimensions(${aWidth}, ${aHeight}) = ${result.width} x ${result.height}`
-        );
-        return result;
+        return r(this.steppedSize(aWidth, true), this.steppedSize(aHeight));
       }
 
       let matchingArea = aWidth * aHeight;
@@ -625,14 +609,9 @@ class _RFPHelper {
       // If we cannot find any dimensions match to the real content window, this
       // means the content area is smaller the smallest size in the set. In this
       // case, we won't round the size and default to the max.
-      result = targetDimensions
+      return targetDimensions
         ? r(targetDimensions.width, targetDimensions.height)
         : r(aWidth, aHeight);
-
-      log(
-        `${logPrefix} roundDimensions(${aWidth}, ${aHeight}) = ${result.width} x ${result.height}`
-      );
-      return result;
     };
 
     const styleChanges = Object.assign([], {
@@ -653,6 +632,10 @@ class _RFPHelper {
             } catch (e) {
               lazy.logConsole.error(e);
             }
+          }
+          if (needToShrink) {
+            win.shrinkToLetterbox();
+            this._recordWindowSize(win);
           }
         });
       },
@@ -741,13 +724,18 @@ class _RFPHelper {
     aWindow.setTimeout(() => {
       tabBrowser.tabpanels?.classList.add("letterboxing-ready");
       if (!aWindow._rfpOriginalSize) {
-        aWindow._rfpOriginalSize = {
-          width: aWindow.outerWidth,
-          height: aWindow.outerHeight,
-        };
-        log("Recording original window size", aWindow._rfpOriginalSize);
+        this._recordWindowSize(aWindow);
       }
     });
+  }
+
+  _recordWindowSize(aWindow) {
+    aWindow._rfpOriginalSize = {
+      width: aWindow.outerWidth,
+      height: aWindow.outerHeight,
+      containerHeight: aWindow.gBrowser.getBrowserContainer()?.clientHeight,
+    };
+    log("Recording original window size", aWindow._rfpOriginalSize);
   }
 
   // We will attach this method to each browser window. When called
