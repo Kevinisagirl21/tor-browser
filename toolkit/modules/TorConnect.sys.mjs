@@ -1195,7 +1195,7 @@ export const TorConnect = {
     Further external commands and helper methods
    */
   openTorPreferences() {
-    if (TorLauncherUtil.isAndroid) {
+    if (lazy.TorLauncherUtil.isAndroid) {
       lazy.EventDispatcher.instance.sendRequest({
         type: "GeckoView:Tor:OpenSettings",
       });

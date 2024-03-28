@@ -666,7 +666,7 @@ class AboutTorConnect {
   }
 
   initElements(direction) {
-    const isAndroid = navigator.userAgent.indexOf("Android") !== -1;
+    const isAndroid = navigator.userAgent.includes("Android");
     document.body.classList.toggle("android", isAndroid);
 
     document.documentElement.setAttribute("dir", direction);
