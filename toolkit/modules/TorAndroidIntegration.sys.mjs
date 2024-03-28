@@ -118,8 +118,10 @@ class TorAndroidIntegrationImpl {
       case lazy.TorConnectTopics.BootstrapError:
         lazy.EventDispatcher.instance.sendRequest({
           type: EmittedEvents.bootstrapError,
+          code: subj.wrappedJSObject.code ?? "",
           message: subj.wrappedJSObject.message ?? "",
-          details: subj.wrappedJSObject.details ?? "",
+          phase: subj.wrappedJSObject.details?.details?.phase ?? "",
+          reason: subj.wrappedJSObject.details?.details?.reason ?? "",
         });
         break;
       case lazy.TorProviderTopics.TorLog:
