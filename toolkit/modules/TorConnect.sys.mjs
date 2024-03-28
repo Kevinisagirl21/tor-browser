@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 const lazy = {};
@@ -12,6 +11,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
+  TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
 // TODO: Should we move this to the about:torconnect actor?
@@ -20,9 +21,6 @@ ChromeUtils.defineModuleGetter(
   "BrowserWindowTracker",
   "resource:///modules/BrowserWindowTracker.jsm"
 );
-
-import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
-import { TorSettings } from "resource://gre/modules/TorSettings.sys.mjs";
 
 import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 
@@ -59,7 +57,7 @@ export const TorConnectState = Object.freeze({
   Disabled: "Disabled",
 });
 
-XPCOMUtils.defineLazyGetter(
+ChromeUtils.defineLazyGetter(
   lazy,
   "logger",
   () =>
@@ -506,7 +504,7 @@ class AutoBootstrappingState extends StateCallback {
     // them.
     const maybeSettings = await Promise.race([
       this.#moat.circumvention_settings(
-        [...TorSettings.builtinBridgeTypes, "vanilla"],
+        [...lazy.TorSettings.builtinBridgeTypes, "vanilla"],
         countryCode
       ),
       // This might set maybeSettings to undefined.
@@ -522,7 +520,7 @@ class AutoBootstrappingState extends StateCallback {
       // Keep consistency with the other call.
       this.#settings = await Promise.race([
         this.#moat.circumvention_defaults([
-          ...TorSettings.builtinBridgeTypes,
+          ...lazy.TorSettings.builtinBridgeTypes,
           "vanilla",
         ]),
         // This might set this.#settings to undefined.
@@ -584,7 +582,7 @@ class AutoBootstrappingState extends StateCallback {
       // We need to merge with old settings, in case the user is using a proxy
       // or is behind a firewall.
       await provider.writeSettings({
-        ...TorSettings.getSettings(),
+        ...lazy.TorSettings.getSettings(),
         ...currentSetting,
       });
 
@@ -619,14 +617,14 @@ class AutoBootstrappingState extends StateCallback {
       }
       if (success) {
         // Persist the current settings to preferences.
-        TorSettings.setSettings(currentSetting);
-        TorSettings.saveToPrefs();
+        lazy.TorSettings.setSettings(currentSetting);
+        lazy.TorSettings.saveToPrefs();
         // Do not await `applySettings`. Otherwise this opens up a window of
         // time where the user can still "Cancel" the bootstrap.
         // We are calling `applySettings` just to be on the safe side, but the
         // settings we are passing now should be exactly the same we already
         // passed earlier.
-        TorSettings.applySettings().catch(e =>
+        lazy.TorSettings.applySettings().catch(e =>
           lazy.logger.error("TorSettings.applySettings threw unexpectedly.", e)
         );
         this.changeState(TorConnectState.Bootstrapped);
@@ -661,7 +659,7 @@ class AutoBootstrappingState extends StateCallback {
 
     if (this.#changedSettings && nextState !== TorConnectState.Bootstrapped) {
       try {
-        await TorSettings.applySettings();
+        await lazy.TorSettings.applySettings();
       } catch (e) {
         // We cannot do much if the original settings were bad or
         // if the connection closed, so just report it in the
@@ -963,7 +961,9 @@ export const TorConnect = {
       // So, we prefer initializing TorConnect as soon as possible, so that
       // the UI will be able to detect it is in the Initializing state and act
       // consequently.
-      TorSettings.initializedPromise.then(() => this._settingsInitialized());
+      lazy.TorSettings.initializedPromise.then(() =>
+        this._settingsInitialized()
+      );
 
       // register the Tor topics we always care about
       observeTopic(TorTopics.ProcessExited);
@@ -1047,7 +1047,7 @@ export const TorConnect = {
     // FIXME: This is called before the TorProvider is ready.
     // As a matter of fact, at the moment it is equivalent to the following
     // line, but this might become a problem in the future.
-    return TorLauncherUtil.shouldStartAndOwnTor;
+    return lazy.TorLauncherUtil.shouldStartAndOwnTor;
   },
 
   get shouldShowTorConnect() {
@@ -1088,7 +1088,7 @@ export const TorConnect = {
   get shouldQuickStart() {
     // quickstart must be enabled
     return (
-      TorSettings.quickstart.enabled &&
+      lazy.TorSettings.quickstart.enabled &&
       // and the previous bootstrap attempt must have succeeded
       !Services.prefs.getBoolPref(TorLauncherPrefs.prompt_at_startup, true)
     );
