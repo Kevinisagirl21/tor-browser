@@ -9,3 +9,7 @@ ac_add_options --enable-nss-mar
 ac_add_options --disable-update-agent
 
 ac_add_options --with-relative-data-dir=../TorBrowser-Data/Browser
+
+# Let's make sure no preference is enabling either Adobe's or Google's CDM.
+ac_add_options --disable-eme
+
