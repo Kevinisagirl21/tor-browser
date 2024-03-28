@@ -201,46 +201,51 @@ export class TorProcess {
       "toronionauthdir",
       true
     );
-    let detailsKey;
+
+    let errorCode;
     if (!this.#exeFile) {
-      detailsKey = "tor_missing";
+      errorCode = "tor_missing";
     } else if (!torrcFile) {
-      detailsKey = "torrc_missing";
+      errorCode = "torrc_missing";
     } else if (!this.#dataDir) {
-      detailsKey = "datadir_missing";
+      errorCode = "datadir_missing";
     } else if (!onionAuthDir) {
-      detailsKey = "onionauthdir_missing";
+      errorCode = "onionauthdir_missing";
     }
-    if (detailsKey) {
-      const details = lazy.TorLauncherUtil.getLocalizedString(detailsKey);
-      const key = "unable_to_start_tor";
-      const err = lazy.TorLauncherUtil.getFormattedLocalizedString(
-        key,
-        [details],
-        1
-      );
-      throw new Error(err);
+    if (errorCode) {
+      const error = new Error(`An essential file is missing (${errorCode})`);
+      error.code = errorCode;
+      throw error;
     }
 
+    this.#args = [
+      "-f",
+      torrcFile.path,
+      "DataDirectory",
+      this.#dataDir.path,
+      "ClientOnionAuthDir",
+      onionAuthDir.path,
+    ];
+
+    // TODO: Create this starting from pt_config.json (tor-browser#42357).
     const torrcDefaultsFile = lazy.TorLauncherUtil.getTorFile(
       "torrc-defaults",
       false
     );
-    // The geoip and geoip6 files are in the same directory as torrc-defaults.
-    const geoipFile = torrcDefaultsFile.clone();
-    geoipFile.leafName = "geoip";
-    const geoip6File = torrcDefaultsFile.clone();
-    geoip6File.leafName = "geoip6";
-
-    this.#args = [];
     if (torrcDefaultsFile) {
       this.#args.push("--defaults-torrc", torrcDefaultsFile.path);
+      // The geoip and geoip6 files are in the same directory as torrc-defaults.
+      const geoipFile = torrcDefaultsFile.clone();
+      geoipFile.leafName = "geoip";
+      this.#args.push("GeoIPFile", geoipFile.path);
+      const geoip6File = torrcDefaultsFile.clone();
+      geoip6File.leafName = "geoip6";
+      this.#args.push("GeoIPv6File", geoip6File.path);
+    } else {
+      logger.warn(
+        "torrc-defaults not found, some functionalities will be disabled."
+      );
     }
-    this.#args.push("-f", torrcFile.path);
-    this.#args.push("DataDirectory", this.#dataDir.path);
-    this.#args.push("ClientOnionAuthDir", onionAuthDir.path);
-    this.#args.push("GeoIPFile", geoipFile.path);
-    this.#args.push("GeoIPv6File", geoip6File.path);
   }
 
   /**
