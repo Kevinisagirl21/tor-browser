@@ -37,10 +37,9 @@ export class TorConnectParent extends JSWindowActorParent {
       State: TorConnect.state,
       StateChanged: false,
       PreviousState: TorConnectState.Initial,
-      ErrorMessage: TorConnect.errorMessage,
+      ErrorCode: TorConnect.errorCode,
       ErrorDetails: TorConnect.errorDetails,
       BootstrapProgress: TorConnect.bootstrapProgress,
-      BootstrapStatus: TorConnect.bootstrapStatus,
       InternetStatus: TorConnect.internetStatus,
       DetectedLocation: TorConnect.detectedLocation,
       ShowViewLog: TorConnect.logHasWarningOrError,
@@ -79,15 +78,16 @@ export class TorConnectParent extends JSWindowActorParent {
             self.state.StateChanged = true;
             // Clear any previous error information if we are bootstrapping.
             if (self.state.State === TorConnectState.Bootstrapping) {
-              self.state.ErrorMessage = null;
+              self.state.ErrorCode = null;
               self.state.ErrorDetails = null;
             }
+            self.state.BootstrapProgress = TorConnect.bootstrapProgress;
+            self.state.ShowViewLog = TorConnect.logHasWarningOrError;
             self.state.HasEverFailed = TorConnect.hasEverFailed;
             break;
           }
           case TorConnectTopics.BootstrapProgress: {
             self.state.BootstrapProgress = obj.progress;
-            self.state.BootstrapStatus = obj.status;
             self.state.ShowViewLog = obj.hasWarnings;
             break;
           }
@@ -96,7 +96,7 @@ export class TorConnectParent extends JSWindowActorParent {
             break;
           }
           case TorConnectTopics.BootstrapError: {
-            self.state.ErrorMessage = obj.message;
+            self.state.ErrorCode = obj.code;
             self.state.ErrorDetails = obj.details;
             self.state.InternetStatus = TorConnect.internetStatus;
             self.state.DetectedLocation = TorConnect.detectedLocation;

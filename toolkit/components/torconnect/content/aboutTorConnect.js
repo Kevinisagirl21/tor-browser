@@ -347,6 +347,56 @@ class AboutTorConnect {
     this.elements.breadcrumbContainer.classList.add("hidden");
   }
 
+  getLocalizedStatus(status) {
+    const aliases = {
+      conn_dir: "conn",
+      handshake_dir: "onehop_create",
+      conn_or: "enough_dirinfo",
+      handshake_or: "ap_conn",
+    };
+    if (status in aliases) {
+      status = aliases[status];
+    }
+    return TorStrings.torConnect.bootstrapStatus[status] ?? status;
+  }
+
+  getMaybeLocalizedError(state) {
+    switch (state.ErrorCode) {
+      case "Offline":
+        return TorStrings.torConnect.offline;
+      case "BootstrapError": {
+        const details = state.ErrorDetails?.details;
+        if (!details || !details.phase || !details.reason) {
+          return TorStrings.torConnect.torBootstrapFailed;
+        }
+        let status = this.getLocalizedStatus(details.phase);
+        const reason =
+          TorStrings.torConnect.bootstrapWarning[details.reason] ??
+          details.reason;
+        return TorStrings.torConnect.bootstrapFailedDetails
+          .replace("%1$S", status)
+          .replace("%2$S", reason);
+      }
+      case "CannotDetermineCountry":
+        return TorStrings.torConnect.cannotDetermineCountry;
+      case "NoSettingsForCountry":
+        return TorStrings.torConnect.noSettingsForCountry;
+      case "AllSettingsFailed":
+        return TorStrings.torConnect.autoBootstrappingAllFailed;
+      case "ExternaError":
+        // A standard JS error, or something for which we do probably do not
+        // have a translation. Returning the original message is the best we can
+        // do.
+        return state.ErrorDetails.message;
+      default:
+        console.warn(
+          `Unknown error code: ${state.ErrorCode}`,
+          state.ErrorDetails
+        );
+        return state.ErrorDetails?.message ?? state.ErrorCode;
+    }
+  }
+
   /*
   These methods update the UI based on the current TorConnect state
   */
@@ -524,7 +574,7 @@ class AboutTorConnect {
   showConnectionAssistant(state) {
     this.setTitle(TorStrings.torConnect.couldNotConnect, "assist");
     this.showConfigureConnectionLink(TorStrings.torConnect.assistDescription);
-    this.setProgress(state?.ErrorDetails, false);
+    this.setProgress(this.getMaybeLocalizedError(state), false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active,
@@ -544,7 +594,7 @@ class AboutTorConnect {
     this.showConfigureConnectionLink(
       TorStrings.torConnect.errorLocationDescription
     );
-    this.setProgress(state.ErrorMessage, false);
+    this.setProgress(TorStrings.torConnect.cannotDetermineCountry, false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active,
@@ -564,7 +614,7 @@ class AboutTorConnect {
     this.showConfigureConnectionLink(
       TorStrings.torConnect.isLocationCorrectDescription
     );
-    this.setProgress(state.ErrorMessage, false);
+    this.setProgress(this.getMaybeLocalizedError(state), false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Default,
@@ -582,7 +632,7 @@ class AboutTorConnect {
   showFinalError(state) {
     this.setTitle(TorStrings.torConnect.finalError, "final");
     this.setLongText(TorStrings.torConnect.finalErrorDescription);
-    this.setProgress(state ? state.ErrorDetails : "", false);
+    this.setProgress(state ? this.getMaybeLocalizedError(state) : "", false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Default,
