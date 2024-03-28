@@ -59,26 +59,25 @@ export class TorConnectParent extends JSWindowActorParent {
       this.state.QuickStartEnabled = false;
     }
 
-    // JSWindowActiveParent derived objects cannot observe directly, so create a member
-    // object to do our observing for us
+    // JSWindowActiveParent derived objects cannot observe directly, so create a
+    // member object to do our observing for us.
     //
-    // This object converts the various lifecycle events from the TorConnect module, and
-    // maintains a state object which we pass down to our about:torconnect page, which uses
-    // the state object to update its UI
+    // This object converts the various lifecycle events from the TorConnect
+    // module, and maintains a state object which we pass down to our
+    // about:torconnect page, which uses the state object to update its UI.
     this.torConnectObserver = {
       observe(aSubject, aTopic, aData) {
         let obj = aSubject?.wrappedJSObject;
 
-        // update our state struct based on received torconnect topics and forward on
-        // to aboutTorConnect.js
+        // Update our state struct based on received torconnect topics and
+        // forward on to aboutTorConnect.js.
         self.state.StateChanged = false;
         switch (aTopic) {
           case TorConnectTopics.StateChange: {
             self.state.PreviousState = self.state.State;
             self.state.State = obj.state;
             self.state.StateChanged = true;
-
-            // clear any previous error information if we are bootstrapping
+            // Clear any previous error information if we are bootstrapping.
             if (self.state.State === TorConnectState.Bootstrapping) {
               self.state.ErrorMessage = null;
               self.state.ErrorDetails = null;
@@ -134,7 +133,7 @@ export class TorConnectParent extends JSWindowActorParent {
       },
     };
 
-    // observe all of the torconnect:.* topics
+    // Observe all of the torconnect:.* topics.
     for (const key in TorConnectTopics) {
       const topic = TorConnectTopics[key];
       Services.obs.addObserver(this.torConnectObserver, topic);
@@ -158,7 +157,7 @@ export class TorConnectParent extends JSWindowActorParent {
   }
 
   willDestroy() {
-    // stop observing all of our torconnect:.* topics
+    // Stop observing all of our torconnect:.* topics.
     for (const key in TorConnectTopics) {
       const topic = TorConnectTopics[key];
       Services.obs.removeObserver(this.torConnectObserver, topic);
@@ -213,7 +212,8 @@ export class TorConnectParent extends JSWindowActorParent {
         Services.obs.notifyObservers(message.data, BroadcastTopic);
         break;
       case "torconnect:get-init-args":
-        // called on AboutTorConnect.init(), pass down all state data it needs to init
+        // Called on AboutTorConnect.init(), pass down all state data it needs
+        // to init.
 
         // pretend this is a state transition on init
         // so we always get fresh UI
