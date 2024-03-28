@@ -10,3 +10,7 @@ ac_add_options --disable-update-agent
 
 # For base-browser we do not enable portable mode on macOS.
 ac_add_options --without-relative-data-dir
+
+# Let's make sure no preference is enabling either Adobe's or Google's CDM.
+ac_add_options --disable-eme
+
