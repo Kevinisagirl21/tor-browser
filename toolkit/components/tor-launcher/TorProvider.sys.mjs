@@ -1004,8 +1004,6 @@ export class TorProvider {
       Services.obs.notifyObservers(null, TorProviderTopics.HasWarnOrErr);
     }
 
-    Services.obs.notifyObservers({ type, msg }, TorProviderTopics.TorLog);
-
     const date = new Date();
     const maxEntries = Services.prefs.getIntPref(
       Preferences.MaxLogEntries,
