@@ -526,7 +526,8 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    return this.#invites;
+    // Return a copy.
+    return structuredClone(this.#invites);
   }
 
   /**
@@ -578,7 +579,7 @@ class LoxImpl {
       if (this.#invites.len > 50) {
         this.#invites.shift();
       }
-      return invite;
+      return structuredClone(invite);
     }
   }
 
@@ -775,7 +776,8 @@ class LoxImpl {
       );
       return [];
     }
-    return this.#events;
+    // Return a copy.
+    return structuredClone(this.#events);
   }
 
   /**
