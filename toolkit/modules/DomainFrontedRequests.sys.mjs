@@ -348,6 +348,31 @@ class MeekTransportAndroid {
 }
 
 /**
+ * Corresponds to a Network error with the request.
+ */
+export class DomainFrontRequestNetworkError extends Error {
+  constructor(request, statusCode) {
+    super(`Error fetching ${request.name}: ${statusCode}`);
+    this.name = "DomainFrontRequestNetworkError";
+    this.statusCode = statusCode;
+  }
+}
+
+/**
+ * Corresponds to a non-ok response from the server.
+ */
+export class DomainFrontRequestResponseError extends Error {
+  constructor(request) {
+    super(
+      `Error response from ${request.name} server: ${request.responseStatus}`
+    );
+    this.name = "DomainFrontRequestResponseError";
+    this.status = request.responseStatus;
+    this.statusText = request.responseStatusText;
+  }
+}
+
+/**
  * Callback object to promisify the XPCOM request.
  */
 class ResponseListener {
@@ -379,12 +404,11 @@ class ResponseListener {
   onStopRequest(request, status) {
     try {
       if (!Components.isSuccessCode(status)) {
-        const errorMessage =
-          lazy.TorLauncherUtil.getLocalizedStringForError(status);
-        this.#reject(new Error(errorMessage));
+        // Assume this is a network error.
+        this.#reject(new DomainFrontRequestNetworkError(request, status));
       }
       if (request.responseStatus !== 200) {
-        this.#reject(new Error(request.responseStatusText));
+        this.#reject(new DomainFrontRequestResponseError(request));
       }
     } catch (err) {
       this.#reject(err);

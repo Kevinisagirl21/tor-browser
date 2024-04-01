@@ -7,6 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   Lox: "resource://gre/modules/Lox.sys.mjs",
+  LoxTopics: "resource://gre/modules/Lox.sys.mjs",
   TorParsers: "resource://gre/modules/TorParsers.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
@@ -330,7 +331,17 @@ class TorSettingsImpl {
           if (!val) {
             return;
           }
-          this.bridges.bridge_strings = lazy.Lox.getBridges(val);
+          let bridgeStrings;
+          try {
+            bridgeStrings = lazy.Lox.getBridges(val);
+          } catch (error) {
+            addError(`No bridges for lox_id ${val}: ${error?.message}`);
+            // Set as invalid, which will make the builtin_type "" and set the
+            // bridge_strings to be empty at the next #cleanupSettings.
+            this.bridges.source = TorBridgeSource.Invalid;
+            return;
+          }
+          this.bridges.bridge_strings = bridgeStrings;
         },
       },
     });
@@ -692,7 +703,7 @@ class TorSettingsImpl {
     try {
       await lazy.Lox.init();
     } catch (e) {
-      lazy.logger.error("Could not initialize Lox.", e.type);
+      lazy.logger.error("Could not initialize Lox.", e);
     }
 
     if (
@@ -711,6 +722,8 @@ class TorSettingsImpl {
       }
     }
 
+    Services.obs.addObserver(this, lazy.LoxTopics.UpdateBridges);
+
     lazy.logger.info("Ready");
   }
 
@@ -718,7 +731,26 @@ class TorSettingsImpl {
    * Unload or uninit our settings.
    */
   async uninit() {
+    Services.obs.removeObserver(this, lazy.LoxTopics.UpdateBridges);
     await lazy.Lox.uninit();
+  }
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case lazy.LoxTopics.UpdateBridges:
+        if (this.bridges.lox_id) {
+          // Fetch the newest bridges.
+          this.bridges.bridge_strings = lazy.Lox.getBridges(
+            this.bridges.lox_id
+          );
+          // No need to save to prefs since bridge_strings is not stored for Lox
+          // source. But we do pass on the changes to TorProvider.
+          // FIXME: This can compete with TorConnect to reach TorProvider.
+          // tor-browser#42316
+          this.applySettings();
+        }
+        break;
+    }
   }
 
   /**
@@ -763,24 +795,32 @@ class TorSettingsImpl {
       TorSettingsPrefs.bridges.source,
       TorBridgeSource.Invalid
     );
-    this.bridges.lox_id = Services.prefs.getStringPref(
-      TorSettingsPrefs.bridges.lox_id,
-      ""
-    );
-    if (this.bridges.source == TorBridgeSource.BuiltIn) {
-      this.bridges.builtin_type = Services.prefs.getStringPref(
-        TorSettingsPrefs.bridges.builtin_type,
-        ""
-      );
-    } else {
-      const bridgeBranchPrefs = Services.prefs
-        .getBranch(TorSettingsPrefs.bridges.bridge_strings)
-        .getChildList("");
-      this.bridges.bridge_strings = Array.from(bridgeBranchPrefs, pref =>
-        Services.prefs.getStringPref(
-          `${TorSettingsPrefs.bridges.bridge_strings}${pref}`
-        )
-      );
+    switch (this.bridges.source) {
+      case TorBridgeSource.BridgeDB:
+      case TorBridgeSource.UserProvided:
+        this.bridges.bridge_strings = Services.prefs
+          .getBranch(TorSettingsPrefs.bridges.bridge_strings)
+          .getChildList("")
+          .map(pref =>
+            Services.prefs.getStringPref(
+              `${TorSettingsPrefs.bridges.bridge_strings}${pref}`
+            )
+          );
+        break;
+      case TorBridgeSource.BuiltIn:
+        // bridge_strings is set via builtin_type.
+        this.bridges.builtin_type = Services.prefs.getStringPref(
+          TorSettingsPrefs.bridges.builtin_type,
+          ""
+        );
+        break;
+      case TorBridgeSource.Lox:
+        // bridge_strings is set via lox id.
+        this.bridges.lox_id = Services.prefs.getStringPref(
+          TorSettingsPrefs.bridges.lox_id,
+          ""
+        );
+        break;
     }
     /* Proxy */
     this.proxy.enabled = Services.prefs.getBoolPref(
@@ -866,7 +906,10 @@ class TorSettingsImpl {
       );
     });
     // write new ones
-    if (this.bridges.source !== TorBridgeSource.BuiltIn) {
+    if (
+      this.bridges.source !== TorBridgeSource.Lox &&
+      this.bridges.source !== TorBridgeSource.BuiltIn
+    ) {
       this.bridges.bridge_strings.forEach((string, index) => {
         Services.prefs.setStringPref(
           `${TorSettingsPrefs.bridges.bridge_strings}.${index}`,
