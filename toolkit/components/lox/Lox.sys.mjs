@@ -143,25 +143,25 @@ class LoxImpl {
   /**
    * Formats and returns bridges from the stored Lox credential.
    *
-   * @param {string} loxid The id string associated with a lox credential.
+   * @param {string} loxId The id string associated with a lox credential.
    *
    * @returns {string[]} An array of formatted bridge lines. The array is empty
    *   if there are no bridges.
    */
-  getBridges(loxid) {
+  getBridges(loxId) {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    if (loxid === null) {
+    if (loxId === null) {
       return [];
     }
-    if (!this.#credentials[loxid]) {
+    if (!this.#credentials[loxId]) {
       // This lox id doesn't correspond to a stored credential
       throw new LoxError(LoxErrors.MissingCredential);
     }
     // Note: this is messy now but can be mostly removed after we have
     // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/46
-    let bridgelines = JSON.parse(this.#credentials[loxid]).bridgelines;
+    let bridgelines = JSON.parse(this.#credentials[loxId]).bridgelines;
     let bridges = [];
     for (const bridge of bridgelines) {
       let addr = bridge.addr;
@@ -318,11 +318,11 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    const loxid = lazy.TorSettings.bridges.lox_id;
+    const loxId = lazy.TorSettings.bridges.lox_id;
     try {
-      const levelup = await this.#attemptUpgrade(loxid);
+      const levelup = await this.#attemptUpgrade(loxId);
       if (levelup) {
-        const level = lazy.get_trust_level(this.#credentials[loxid]);
+        const level = lazy.get_trust_level(this.#credentials[loxId]);
         const newEvent = {
           type: "levelup",
           newlevel: level,
@@ -334,9 +334,9 @@ class LoxImpl {
       lazy.logger.error(err);
     }
     try {
-      const leveldown = await this.#blockageMigration(loxid);
+      const leveldown = await this.#blockageMigration(loxId);
       if (leveldown) {
-        let level = lazy.get_trust_level(this.#credentials[loxid]);
+        let level = lazy.get_trust_level(this.#credentials[loxId]);
         const newEvent = {
           type: "blockage",
           newlevel: level,
@@ -438,7 +438,7 @@ class LoxImpl {
    * Redeems a Lox invitation to obtain a credential and bridges.
    *
    * @param {string} invite A Lox invitation.
-   * @returns {string} The loxid of the associated credential on success.
+   * @returns {string} The loxId of the associated credential on success.
    */
   async redeemInvite(invite) {
     if (!this.#initialized) {
@@ -496,18 +496,18 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    const loxid = lazy.TorSettings.bridges.lox_id;
-    if (!loxid || !this.#credentials[loxid]) {
+    const loxId = lazy.TorSettings.bridges.lox_id;
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     await this.#getPubKeys();
     await this.#getEncTable();
-    let level = lazy.get_trust_level(this.#credentials[loxid]);
+    let level = lazy.get_trust_level(this.#credentials[loxId]);
     if (level < 1) {
       throw new LoxError(LoxErrors.NoInvitations);
     }
     let request = lazy.issue_invite(
-      JSON.stringify(this.#credentials[loxid]),
+      JSON.stringify(this.#credentials[loxId]),
       this.#encTable,
       this.#pubKeys
     );
@@ -524,7 +524,7 @@ class LoxImpl {
       lazy.logger.error(response.error);
       throw new LoxError(LoxErrors.NoInvitations);
     } else {
-      this.#credentials[loxid] = response;
+      this.#credentials[loxId] = response;
       const invite = lazy.prepare_invite(response);
       this.#invites.push(invite);
       // cap length of stored invites
@@ -545,21 +545,21 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    const loxid = lazy.TorSettings.bridges.lox_id;
-    if (!loxid || !this.#credentials[loxid]) {
+    const loxId = lazy.TorSettings.bridges.lox_id;
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
-    return parseInt(lazy.get_invites_remaining(this.#credentials[loxid]));
+    return parseInt(lazy.get_invites_remaining(this.#credentials[loxId]));
   }
 
-  async #blockageMigration(loxid) {
-    if (!loxid || !this.#credentials[loxid]) {
+  async #blockageMigration(loxId) {
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     await this.#getPubKeys();
     let request;
     try {
-      request = lazy.check_blockage(this.#credentials[loxid], this.#pubKeys);
+      request = lazy.check_blockage(this.#credentials[loxId], this.#pubKeys);
     } catch {
       lazy.logger.log("Not ready for blockage migration");
       return false;
@@ -570,11 +570,11 @@ class LoxImpl {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const migrationCred = lazy.handle_check_blockage(
-      this.#credentials[loxid],
+      this.#credentials[loxId],
       JSON.stringify(response)
     );
     request = lazy.blockage_migration(
-      this.#credentials[loxid],
+      this.#credentials[loxId],
       migrationCred,
       this.#pubKeys
     );
@@ -584,11 +584,11 @@ class LoxImpl {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const cred = lazy.handle_blockage_migration(
-      this.#credentials[loxid],
+      this.#credentials[loxId],
       JSON.stringify(response),
       this.#pubKeys
     );
-    this.#credentials[loxid] = cred;
+    this.#credentials[loxId] = cred;
     this.#store();
     return true;
   }
@@ -598,15 +598,15 @@ class LoxImpl {
    *
    *  @returns {boolean} whether a levelup event occured
    */
-  async #attemptUpgrade(loxid) {
-    if (!loxid || !this.#credentials[loxid]) {
+  async #attemptUpgrade(loxId) {
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     await this.#getPubKeys();
     await this.#getEncTable();
     await this.#getConstants();
     let success = false;
-    let level = lazy.get_trust_level(this.#credentials[loxid]);
+    let level = lazy.get_trust_level(this.#credentials[loxId]);
     if (level < 1) {
       // attempt trust promotion instead
       try {
@@ -617,7 +617,7 @@ class LoxImpl {
       }
     } else {
       let request = lazy.level_up(
-        this.#credentials[loxid],
+        this.#credentials[loxId],
         this.#encTable,
         this.#pubKeys
       );
@@ -631,7 +631,7 @@ class LoxImpl {
         JSON.stringify(response),
         this.#pubKeys
       );
-      this.#credentials[loxid] = cred;
+      this.#credentials[loxId] = cred;
       return true;
     }
     return success;
@@ -644,15 +644,15 @@ class LoxImpl {
    *    was successfully migrated.
    */
   async #trustMigration() {
-    const loxid = lazy.TorSettings.bridges.lox_id;
-    if (!loxid || !this.#credentials[loxid]) {
+    const loxId = lazy.TorSettings.bridges.lox_id;
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     await this.#getPubKeys();
     return new Promise((resolve, reject) => {
       let request = "";
       try {
-        request = lazy.trust_promotion(this.#credentials[loxid], this.#pubKeys);
+        request = lazy.trust_promotion(this.#credentials[loxId], this.#pubKeys);
       } catch (err) {
         lazy.logger.debug("Not ready to upgrade");
         resolve(false);
@@ -670,7 +670,7 @@ class LoxImpl {
           );
           lazy.logger.debug("Formatted promotion cred");
           request = lazy.trust_migration(
-            this.#credentials[loxid],
+            this.#credentials[loxId],
             promoCred,
             this.#pubKeys
           );
@@ -686,7 +686,7 @@ class LoxImpl {
               }
               lazy.logger.debug("Got new credential");
               let cred = lazy.handle_trust_migration(request, response);
-              this.#credentials[loxid] = cred;
+              this.#credentials[loxId] = cred;
               this.#store();
               resolve(true);
             })
@@ -722,8 +722,8 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    const loxid = lazy.TorSettings.bridges.lox_id;
-    if (!loxid || !this.#credentials[loxid]) {
+    const loxId = lazy.TorSettings.bridges.lox_id;
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     return this.#events;
@@ -768,15 +768,15 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    const loxid = lazy.TorSettings.bridges.lox_id;
-    if (!loxid || !this.#credentials[loxid]) {
+    const loxId = lazy.TorSettings.bridges.lox_id;
+    if (!loxId || !this.#credentials[loxId]) {
       throw new LoxError(LoxErrors.MissingCredential);
     }
     await this.#getConstants();
     let nextUnlocks = JSON.parse(
-      lazy.get_next_unlock(this.#constants, this.#credentials[loxid])
+      lazy.get_next_unlock(this.#constants, this.#credentials[loxId])
     );
-    const level = parseInt(lazy.get_trust_level(this.#credentials[loxid]));
+    const level = parseInt(lazy.get_trust_level(this.#credentials[loxId]));
     const unlocks = {
       date: nextUnlocks.trust_level_unlock_date,
       nextLevel: level + 1,
