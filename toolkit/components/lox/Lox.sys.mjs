@@ -488,7 +488,6 @@ class LoxImpl {
     }
     await this.#getPubKeys();
     let request = await lazy.open_invite(JSON.parse(invite).invite);
-    let id = this.#genLoxId();
     let response;
     try {
       response = await this.#makeRequest(
@@ -507,9 +506,15 @@ class LoxImpl {
       JSON.stringify(response),
       this.#pubKeys
     );
-    this.#credentials[id] = cred;
+    // Generate an id that is not already in the #credentials map.
+    let loxId;
+    do {
+      loxId = this.#genLoxId();
+    } while (Object.hasOwn(this.#credentials, loxId));
+    // Set new credentials.
+    this.#credentials[loxId] = cred;
     this.#store();
-    return id;
+    return loxId;
   }
 
   /**
