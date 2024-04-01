@@ -200,6 +200,15 @@ class LoxImpl {
     }
   }
 
+  /**
+   * Assert that the module is initialized.
+   */
+  #assertInitialized() {
+    if (!this.#initialized) {
+      throw new LoxError(LoxErrors.NotInitialized);
+    }
+  }
+
   get #inuse() {
     return (
       Boolean(this.#activeLoxId) &&
@@ -267,9 +276,7 @@ class LoxImpl {
    *   if there are no bridges.
    */
   getBridges(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     // Note: this is messy now but can be mostly removed after we have
     // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/46
     let bridgelines = JSON.parse(this.#getCredentials(loxId)).bridgelines;
@@ -424,9 +431,7 @@ class LoxImpl {
    * If either blockages or a levelup happened, add an event to the event queue
    */
   async #backgroundTasks() {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     let addedEvent = false;
     // Only run background tasks for the active lox ID.
     const loxId = this.#activeLoxId;
@@ -529,9 +534,7 @@ class LoxImpl {
    * @returns {bool} Whether the value passed in was a Lox invitation.
    */
   validateInvitation(invite) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     try {
       lazy.invitation_is_trusted(invite);
     } catch (err) {
@@ -544,9 +547,7 @@ class LoxImpl {
   // Note: This is only here for testing purposes. We're going to be using telegram
   // to issue open invitations for Lox bridges.
   async requestOpenInvite() {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     let invite = await this.#makeRequest("invite", []);
     lazy.logger.debug(invite);
     return invite;
@@ -559,9 +560,7 @@ class LoxImpl {
    * @returns {string} The loxId of the associated credential on success.
    */
   async redeemInvite(invite) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     await this.#getPubKeys();
     let request = await lazy.open_invite(JSON.parse(invite).invite);
     let response;
@@ -599,9 +598,7 @@ class LoxImpl {
    * @returns {string[]} A list of all historical invites.
    */
   getInvites() {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     // Return a copy.
     return structuredClone(this.#invites);
   }
@@ -618,9 +615,7 @@ class LoxImpl {
    * @returns {string} A valid Lox invitation.
    */
   async generateInvite(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     await this.#getPubKeys();
     await this.#getEncTable();
     let level = lazy.get_trust_level(this.#getCredentials(loxId));
@@ -668,9 +663,7 @@ class LoxImpl {
    *   user's credential.
    */
   getRemainingInviteCount(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     return parseInt(lazy.get_invites_remaining(this.#getCredentials(loxId)));
   }
 
@@ -834,9 +827,7 @@ class LoxImpl {
    *   associated with a user's credential.
    */
   getEventData(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     if (loxId !== this.#activeLoxId) {
       lazy.logger.warn(
         `No event data for loxId ${loxId} since it was replaced by ${
@@ -857,9 +848,7 @@ class LoxImpl {
    * @param {string} loxId - The ID to clear events for.
    */
   clearEventData(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     if (loxId !== this.#activeLoxId) {
       lazy.logger.warn(
         `Not clearing event data for loxId ${loxId} since it was replaced by ${
@@ -891,9 +880,7 @@ class LoxImpl {
    * @returns {UnlockData} - Details about the next unlock.
    */
   async getNextUnlock(loxId) {
-    if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
-    }
+    this.#assertInitialized();
     await this.#getConstants();
     let nextUnlock = JSON.parse(
       lazy.get_next_unlock(this.#constants, this.#getCredentials(loxId))
