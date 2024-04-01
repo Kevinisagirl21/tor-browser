@@ -36,7 +36,7 @@ const { TorStrings } = ChromeUtils.importESModule(
   "resource://gre/modules/TorStrings.sys.mjs"
 );
 
-const { Lox } = ChromeUtils.importESModule(
+const { Lox, LoxTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/Lox.sys.mjs"
 );
 
@@ -1319,27 +1319,18 @@ const gLoxStatus = {
     this._invitesButton.addEventListener("click", () => {
       gSubDialog.open(
         "chrome://browser/content/torpreferences/loxInviteDialog.xhtml",
-        {
-          features: "resizable=yes",
-          closedCallback: () => {
-            // TODO: Listen for events from Lox, rather than call _updateInvites
-            // directly.
-            this._updateInvites();
-          },
-        }
+        { features: "resizable=yes" }
       );
     });
     this._unlockAlertButton.addEventListener("click", () => {
-      // TODO: Have a way to ensure that the cleared event data matches the
-      // current _loxId
-      Lox.clearEventData();
-      // TODO: Listen for events from Lox, rather than call _updateUnlocks
-      // directly.
-      this._updateUnlocks();
+      Lox.clearEventData(this._loxId);
     });
 
     Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
-    // TODO: Listen for new events from Lox, when it is supported.
+    Services.obs.addObserver(this, LoxTopics.UpdateEvents);
+    Services.obs.addObserver(this, LoxTopics.UpdateNextUnlock);
+    Services.obs.addObserver(this, LoxTopics.UpdateRemainingInvites);
+    Services.obs.addObserver(this, LoxTopics.NewInvite);
 
     // NOTE: Before initializedPromise completes, this area is hidden.
     TorSettings.initializedPromise.then(() => {
@@ -1352,6 +1343,10 @@ const gLoxStatus = {
    */
   uninit() {
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.removeObserver(this, LoxTopics.UpdateEvents);
+    Services.obs.removeObserver(this, LoxTopics.UpdateNextUnlock);
+    Services.obs.removeObserver(this, LoxTopics.UpdateRemainingInvites);
+    Services.obs.removeObserver(this, LoxTopics.NewInvite);
   },
 
   observe(subject, topic, data) {
@@ -1364,6 +1359,18 @@ const gLoxStatus = {
         ) {
           this._updateLoxId();
         }
+        break;
+      case LoxTopics.UpdateNextUnlock:
+        this._updateNextUnlock();
+        break;
+      case LoxTopics.UpdateEvents:
+        this._updatePendingEvents();
+        break;
+      case LoxTopics.UpdateRemainingInvites:
+        this._updateRemainingInvites();
+        break;
+      case LoxTopics.NewInvite:
+        this._updateHaveExistingInvites();
         break;
     }
   },
@@ -1384,43 +1391,126 @@ const gLoxStatus = {
       TorSettings.bridges.source === TorBridgeSource.Lox
         ? TorSettings.bridges.lox_id
         : "";
-    if (loxId !== this._loxId) {
-      this._loxId = loxId;
-      this._updateUnlocks();
-      this._updateInvites();
+    if (loxId === this._loxId) {
+      return;
     }
+    this._loxId = loxId;
+    // We unset _nextUnlock to ensure the areas no longer use the old value for
+    // the new loxId.
+    this._updateNextUnlock(true);
+    this._updateRemainingInvites();
+    this._updateHaveExistingInvites();
+    this._updatePendingEvents();
+  },
+
+  /**
+   * The remaining invites shown, or null if uninitialized or no loxId.
+   *
+   * @type {integer?}
+   */
+  _remainingInvites: null,
+  /**
+   * Update the shown value.
+   */
+  _updateRemainingInvites() {
+    const numInvites = this._loxId
+      ? Lox.getRemainingInviteCount(this._loxId)
+      : null;
+    if (numInvites === this._remainingInvites) {
+      return;
+    }
+    this._remainingInvites = numInvites;
+    this._updateUnlockArea();
+    this._updateInvitesArea();
+  },
+  /**
+   * Whether we have existing invites, or null if uninitialized or no loxId.
+   *
+   * @type {boolean?}
+   */
+  _haveExistingInvites: null,
+  /**
+   * Update the shown value.
+   */
+  _updateHaveExistingInvites() {
+    const haveInvites = this._loxId ? !!Lox.getInvites().length : null;
+    if (haveInvites === this._haveExistingInvites) {
+      return;
+    }
+    this._haveExistingInvites = haveInvites;
+    this._updateInvitesArea();
+  },
+  /**
+   * Details about the next unlock, or null if uninitialized or no loxId.
+   *
+   * @type {UnlockData?}
+   */
+  _nextUnlock: null,
+  /**
+   * Tracker id to ensure that the results from later calls to _updateNextUnlock
+   * take priority over earlier calls.
+   *
+   * @type {integer}
+   */
+  _nextUnlockCallId: 0,
+  /**
+   * Update the shown value asynchronously.
+   *
+   * @param {boolean} [unset=false] - Whether to set the _nextUnlock value to
+   *   null before waiting for the new value. I.e. ensure that the current value
+   *   will not be used.
+   */
+  async _updateNextUnlock(unset = false) {
+    // NOTE: We do not expect the integer to exceed the maximum integer.
+    this._nextUnlockCallId++;
+    const callId = this._nextUnlockCallId;
+    if (unset) {
+      this._nextUnlock = null;
+    }
+    const nextUnlock = this._loxId
+      ? await Lox.getNextUnlock(this._loxId)
+      : null;
+    if (callId !== this._nextUnlockCallId) {
+      // Replaced by another update.
+      // E.g. if the _loxId changed. Or if getNextUnlock triggered
+      // LoxTopics.UpdateNextUnlock.
+      return;
+    }
+    // Should be safe to trigger the update, even when the value hasn't changed.
+    this._nextUnlock = nextUnlock;
+    this._updateUnlockArea();
+  },
+  /**
+   * The list of events the user has not yet cleared, or null if uninitialized
+   * or no loxId.
+   *
+   * @type {EventData[]?}
+   */
+  _pendingEvents: null,
+  /**
+   * Update the shown value.
+   */
+  _updatePendingEvents() {
+    // Should be safe to trigger the update, even when the value hasn't changed.
+    this._pendingEvents = this._loxId ? Lox.getEventData(this._loxId) : null;
+    this._updateUnlockArea();
   },
 
   /**
    * Update the display of the current or next unlock.
    */
-  async _updateUnlocks() {
-    // Cache the loxId before we await.
-    const loxId = this._loxId;
-
-    if (!loxId) {
-      // NOTE: This area should already be hidden by the change in Lox source,
+  _updateUnlockArea() {
+    if (
+      !this._loxId ||
+      this._pendingEvents === null ||
+      this._remainingInvites === null ||
+      this._nextUnlock === null
+    ) {
+      // Uninitialized or no Lox source.
+      // NOTE: This area may already be hidden by the change in Lox source,
       // but we clean up for the next non-empty id.
       this._area.classList.remove("show-unlock-alert");
       this._area.classList.remove("show-next-unlock");
-      return;
-    }
-
-    let pendingEvents;
-    let nextUnlock;
-    let numInvites;
-    // Fetch the latest events or details about the next unlock.
-    try {
-      nextUnlock = await Lox.getNextUnlock();
-      pendingEvents = Lox.getEventData();
-      numInvites = Lox.getRemainingInviteCount();
-    } catch (e) {
-      console.error("Failed get get lox updates", e);
-      return;
-    }
-
-    if (loxId !== this._loxId) {
-      // Replaced during await.
       return;
     }
 
@@ -1428,6 +1518,7 @@ const gLoxStatus = {
     const alertHadFocus = this._unlockAlert.contains(document.activeElement);
     const detailsHadFocus = this._detailsArea.contains(document.activeElement);
 
+    const pendingEvents = this._pendingEvents;
     const showAlert = !!pendingEvents.length;
     this._area.classList.toggle("show-unlock-alert", showAlert);
     this._area.classList.toggle("show-next-unlock", !showAlert);
@@ -1479,7 +1570,7 @@ const gLoxStatus = {
       document.l10n.setAttributes(
         this._unlockAlertInviteItem,
         "tor-bridges-lox-new-invites",
-        { numInvites }
+        { numInvites: this._remainingInvites }
       );
       this._unlockAlert.classList.toggle(
         "lox-unlock-upgrade",
@@ -1494,7 +1585,7 @@ const gLoxStatus = {
       const numDays = Math.max(
         1,
         Math.ceil(
-          (new Date(nextUnlock.date).getTime() - Date.now()) /
+          (new Date(this._nextUnlock.date).getTime() - Date.now()) /
             (24 * 60 * 60 * 1000)
         )
       );
@@ -1505,9 +1596,9 @@ const gLoxStatus = {
       );
 
       // Gain 2 bridges from level 0 to 1. After that gain invites.
-      const bridgeGain = nextUnlock.nextLevel === 1;
-      const firstInvites = nextUnlock.nextLevel === 2;
-      const moreInvites = nextUnlock.nextLevel > 2;
+      const bridgeGain = this._nextUnlock.nextLevel === 1;
+      const firstInvites = this._nextUnlock.nextLevel === 2;
+      const moreInvites = this._nextUnlock.nextLevel > 2;
 
       this._detailsArea.classList.toggle("lox-next-gain-bridges", bridgeGain);
       this._detailsArea.classList.toggle(
@@ -1529,23 +1620,18 @@ const gLoxStatus = {
   /**
    * Update the invites area.
    */
-  _updateInvites() {
-    if (!this._loxId) {
-      return;
+  _updateInvitesArea() {
+    let hasInvites;
+    if (
+      !this._loxId ||
+      this._remainingInvites === null ||
+      this._haveExistingInvites === null
+    ) {
+      // Not initialized yet.
+      hasInvites = false;
+    } else {
+      hasInvites = this._haveExistingInvites || !!this._remainingInvites;
     }
-
-    let remainingInvites;
-    let existingInvites;
-    // Fetch the latest events or details about the next unlock.
-    try {
-      remainingInvites = Lox.getRemainingInviteCount();
-      existingInvites = Lox.getInvites().length;
-    } catch (e) {
-      console.error("Failed get get remaining invites", e);
-      return;
-    }
-
-    const hasInvites = !!existingInvites || !!remainingInvites;
 
     if (!hasInvites) {
       if (
@@ -1563,11 +1649,13 @@ const gLoxStatus = {
     // creating new ones.
     this._detailsArea.classList.toggle("lox-has-invites", hasInvites);
 
-    document.l10n.setAttributes(
-      this._remainingInvitesEl,
-      "tor-bridges-lox-remaining-invites",
-      { numInvites: remainingInvites }
-    );
+    if (hasInvites) {
+      document.l10n.setAttributes(
+        this._remainingInvitesEl,
+        "tor-bridges-lox-remaining-invites",
+        { numInvites: this._remainingInvites }
+      );
+    }
   },
 };
 

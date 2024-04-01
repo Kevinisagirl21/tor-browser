@@ -15,14 +15,14 @@ const { TorParsers } = ChromeUtils.importESModule(
   "resource://gre/modules/TorParsers.sys.mjs"
 );
 
-const { Lox, LoxErrors } = ChromeUtils.importESModule(
+const { Lox, LoxError } = ChromeUtils.importESModule(
   "resource://gre/modules/Lox.sys.mjs"
 );
 
 /*
  * Fake Lox module:
 
-const LoxErrors = {
+const LoxError = {
   BadInvite: "BadInvite",
   LoxServerUnreachable: "LoxServerUnreachable",
   Other: "Other",
@@ -30,9 +30,9 @@ const LoxErrors = {
 
 const Lox = {
   failError: null,
-  // failError: LoxErrors.BadInvite,
-  // failError: LoxErrors.LoxServerUnreachable,
-  // failError: LoxErrors.Other,
+  // failError: LoxError.BadInvite,
+  // failError: LoxError.LoxServerUnreachable,
+  // failError: LoxError.Other,
   redeemInvite(invite) {
     return new Promise((res, rej) => {
       setTimeout(() => {
@@ -281,13 +281,13 @@ const gProvideBridgeDialog = {
           },
           loxError => {
             console.error("Redeeming failed", loxError);
-            switch (loxError.type) {
-              case LoxErrors.BadInvite:
+            switch (loxError instanceof LoxError ? loxError.code : null) {
+              case LoxError.BadInvite:
                 // TODO: distinguish between a bad invite, an invite that has
                 // expired, and an invite that has already been redeemed.
                 this.updateError({ type: "bad-invite" });
                 break;
-              case LoxErrors.LoxServerUnreachable:
+              case LoxError.LoxServerUnreachable:
                 this.updateError({ type: "no-server" });
                 break;
               default:
