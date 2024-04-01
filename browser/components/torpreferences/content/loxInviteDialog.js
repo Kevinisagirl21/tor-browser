@@ -3,14 +3,14 @@
 const { TorSettings, TorSettingsTopics, TorBridgeSource } =
   ChromeUtils.importESModule("resource://gre/modules/TorSettings.sys.mjs");
 
-const { Lox, LoxErrors } = ChromeUtils.importESModule(
+const { Lox, LoxError, LoxTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/Lox.sys.mjs"
 );
 
 /**
  * Fake Lox module
 
-const LoxErrors = {
+const LoxError = {
   LoxServerUnreachable: "LoxServerUnreachable",
   Other: "Other",
 };
@@ -36,7 +36,7 @@ const Lox = {
           return;
         }
         if (!this.remainingInvites) {
-          rej({ type: LoxErrors.Other });
+          rej({ type: LoxError.Other });
           return;
         }
         const invite = JSON.stringify({
@@ -104,7 +104,8 @@ const gLoxInvites = {
     // NOTE: TorSettings should already be initialized when this dialog is
     // opened.
     Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
-    // TODO: Listen for new invites from Lox, when supported.
+    Services.obs.addObserver(this, LoxTopics.UpdateRemainingInvites);
+    Services.obs.addObserver(this, LoxTopics.NewInvite);
 
     // Set initial _loxId value. Can close this dialog.
     this._updateLoxId();
@@ -118,6 +119,8 @@ const gLoxInvites = {
    */
   uninit() {
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.removeObserver(this, LoxTopics.UpdateRemainingInvites);
+    Services.obs.removeObserver(this, LoxTopics.NewInvite);
   },
 
   observe(subject, topic, data) {
@@ -130,6 +133,12 @@ const gLoxInvites = {
         ) {
           this._updateLoxId();
         }
+        break;
+      case LoxTopics.UpdateRemainingInvites:
+        this._updateRemainingInvites();
+        break;
+      case LoxTopics.NewInvite:
+        this._updateExistingInvites();
         break;
     }
   },
@@ -204,7 +213,7 @@ const gLoxInvites = {
    * Update the display of the remaining invites.
    */
   _updateRemainingInvites() {
-    this._remainingInvites = Lox.getRemainingInviteCount();
+    this._remainingInvites = Lox.getRemainingInviteCount(this._loxId);
 
     document.l10n.setAttributes(
       this._remainingInvitesEl,
@@ -254,7 +263,7 @@ const gLoxInvites = {
     this._connectingEl.focus();
 
     let lostFocus = false;
-    Lox.generateInvite()
+    Lox.generateInvite(this._loxId)
       .finally(() => {
         // Fetch whether the connecting label still has focus before we hide it.
         lostFocus = this._connectingEl.contains(document.activeElement);
@@ -275,15 +284,11 @@ const gLoxInvites = {
             // message.
             this._inviteListEl.focus();
           }
-
-          // TODO: When Lox sends out notifications, let the observer handle the
-          // change rather than calling _updateRemainingInvites directly.
-          this._updateRemainingInvites();
         },
         loxError => {
           console.error("Failed to generate an invite", loxError);
-          switch (loxError.type) {
-            case LoxErrors.LoxServerUnreachable:
+          switch (loxError instanceof LoxError ? loxError.code : null) {
+            case LoxError.LoxServerUnreachable:
               this._updateGenerateError("no-server");
               break;
             default:
