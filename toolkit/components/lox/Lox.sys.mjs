@@ -20,6 +20,10 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => {
 ChromeUtils.defineESModuleGetters(lazy, {
   DomainFrontRequestBuilder:
     "resource://gre/modules/DomainFrontedRequests.sys.mjs",
+  DomainFrontRequestNetworkError:
+    "resource://gre/modules/DomainFrontedRequests.sys.mjs",
+  DomainFrontRequestResponseError:
+    "resource://gre/modules/DomainFrontedRequests.sys.mjs",
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
   TorConnectState: "resource://gre/modules/TorConnect.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
@@ -68,15 +72,6 @@ export const LoxTopics = Object.freeze({
   NewInvite: "lox:new-invite",
 });
 
-export const LoxErrors = Object.freeze({
-  BadInvite: "BadInvite",
-  MissingCredential: "MissingCredential",
-  LoxServerUnreachable: "LoxServerUnreachable",
-  NoInvitations: "NoInvitations",
-  InitError: "InitializationError",
-  NotInitialized: "NotInitialized",
-});
-
 const LoxSettingsPrefs = Object.freeze({
   /* string: the lox credential */
   credentials: "lox.settings.credentials",
@@ -87,10 +82,21 @@ const LoxSettingsPrefs = Object.freeze({
   constants: "lox.settings.constants",
 });
 
-class LoxError extends Error {
-  constructor(type) {
-    super("");
-    this.type = type;
+/**
+ * Error class for Lox.
+ */
+export class LoxError extends Error {
+  static BadInvite = "BadInvite";
+  static LoxServerUnreachable = "LoxServerUnreachable";
+
+  /**
+   * @param {string} message - The error message.
+   * @param {string?} [code] - The specific error type, if any.
+   */
+  constructor(message, code = null) {
+    super(message);
+    this.name = "LoxError";
+    this.code = code;
   }
 }
 
@@ -205,7 +211,7 @@ class LoxImpl {
    */
   #assertInitialized() {
     if (!this.#initialized) {
-      throw new LoxError(LoxErrors.NotInitialized);
+      throw new LoxError("Not initialized");
     }
   }
 
@@ -262,7 +268,7 @@ class LoxImpl {
   #getCredentials(loxId) {
     const cred = loxId ? this.#credentials[loxId] : undefined;
     if (!cred) {
-      throw new LoxError(LoxErrors.MissingCredential);
+      throw new LoxError(`No credentials for ${loxId}`);
     }
     return cred;
   }
@@ -377,10 +383,10 @@ class LoxImpl {
           this.#pubKeys = JSON.stringify(pubKeys);
           this.#store();
         })
-        .catch(() => {
+        .catch(error => {
           // We always try to update, but if that doesn't work fall back to stored data
           if (!this.#pubKeys) {
-            throw new LoxError(LoxErrors.LoxServerUnreachable);
+            throw error;
           }
         });
     }
@@ -394,10 +400,10 @@ class LoxImpl {
           this.#encTable = JSON.stringify(encTable);
           this.#store();
         })
-        .catch(() => {
+        .catch(error => {
           // Try to update first, but if that doesn't work fall back to stored data
           if (!this.#encTable) {
-            throw new LoxError(LoxErrors.LoxServerUnreachable);
+            throw error;
           }
         });
     }
@@ -416,9 +422,9 @@ class LoxImpl {
             Services.obs.notifyObservers(null, LoxTopics.UpdateNextUnlock);
           }
         })
-        .catch(() => {
+        .catch(error => {
           if (!this.#constants) {
-            throw new LoxError(LoxErrors.LoxServerUnreachable);
+            throw error;
           }
         });
     }
@@ -494,7 +500,7 @@ class LoxImpl {
     await lazy.init(this.#window);
     lazy.set_panic_hook();
     if (typeof lazy.open_invite !== "function") {
-      throw new LoxError(LoxErrors.InitError);
+      throw new LoxError("Initialization failed");
     }
     this.#load();
     this.#initialized = true;
@@ -563,18 +569,16 @@ class LoxImpl {
     this.#assertInitialized();
     await this.#getPubKeys();
     let request = await lazy.open_invite(JSON.parse(invite).invite);
-    let response;
-    try {
-      response = await this.#makeRequest(
-        "openreq",
-        JSON.parse(request).request
-      );
-    } catch {
-      throw new LoxError(LoxErrors.LoxServerUnreachable);
-    }
+    let response = await this.#makeRequest(
+      "openreq",
+      JSON.parse(request).request
+    );
     lazy.logger.debug("openreq response: ", response);
     if (response.hasOwnProperty("error")) {
-      throw new LoxError(LoxErrors.BadInvite);
+      throw new LoxError(
+        `Error response to "openreq": ${response.error}`,
+        LoxError.BadInvite
+      );
     }
     let cred = lazy.handle_new_lox_credential(
       request,
@@ -620,25 +624,20 @@ class LoxImpl {
     await this.#getEncTable();
     let level = lazy.get_trust_level(this.#getCredentials(loxId));
     if (level < 1) {
-      throw new LoxError(LoxErrors.NoInvitations);
+      throw new LoxError(`Cannot generate invites at level ${level}`);
     }
     let request = lazy.issue_invite(
       JSON.stringify(this.#getCredentials(loxId)),
       this.#encTable,
       this.#pubKeys
     );
-    let response;
-    try {
-      response = await this.#makeRequest(
-        "issueinvite",
-        JSON.parse(request).request
-      );
-    } catch {
-      throw new LoxError(LoxErrors.LoxServerUnreachable);
-    }
+    let response = await this.#makeRequest(
+      "issueinvite",
+      JSON.parse(request).request
+    );
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
-      throw new LoxError(LoxErrors.NoInvitations);
+      throw new LoxError(`Error response to "issueinvite": ${response.error}`);
     } else {
       const invite = lazy.prepare_invite(response);
       this.#invites.push(invite);
@@ -679,7 +678,9 @@ class LoxImpl {
     let response = await this.#makeRequest("checkblockage", request);
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
-      throw new LoxError(LoxErrors.LoxServerUnreachable);
+      throw new LoxError(
+        `Error response to "checkblockage": ${response.error}`
+      );
     }
     const migrationCred = lazy.handle_check_blockage(
       this.#getCredentials(loxId),
@@ -693,7 +694,9 @@ class LoxImpl {
     response = await this.#makeRequest("blockagemigration", request);
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
-      throw new LoxError(LoxErrors.LoxServerUnreachable);
+      throw new LoxError(
+        `Error response to "blockagemigration": ${response.error}`
+      );
     }
     const cred = lazy.handle_blockage_migration(
       this.#getCredentials(loxId),
@@ -732,7 +735,7 @@ class LoxImpl {
       const response = await this.#makeRequest("levelup", request);
       if (response.hasOwnProperty("error")) {
         lazy.logger.error(response.error);
-        throw new LoxError(LoxErrors.LoxServerUnreachable);
+        throw new LoxError(`Error response to "levelup": ${response.error}`);
       }
       const cred = lazy.handle_level_up(
         request,
@@ -898,13 +901,29 @@ class LoxImpl {
     const url = `${serviceUrl}/${procedure}`;
 
     if (lazy.TorConnect.state === lazy.TorConnectState.Bootstrapped) {
-      const request = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/vnd.api+json",
-        },
-        body: JSON.stringify(args),
-      });
+      let request;
+      try {
+        request = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/vnd.api+json",
+          },
+          body: JSON.stringify(args),
+        });
+      } catch (error) {
+        lazy.logger.debug("fetch fail", url, args, error);
+        throw new LoxError(
+          `fetch "${procedure}" from Lox authority failed: ${error?.message}`,
+          LoxError.LoxServerUnreachable
+        );
+      }
+      if (!request.ok) {
+        lazy.logger.debug("fetch response", url, args, request);
+        // Do not treat as a LoxServerUnreachable type.
+        throw new LoxError(
+          `Lox authority responded to "${procedure}" with ${request.status}: ${request.statusText}`
+        );
+      }
       return request.json();
     }
 
@@ -925,7 +944,26 @@ class LoxImpl {
       });
     }
     const builder = await this.#domainFrontedRequests;
-    return builder.buildPostRequest(url, args);
+    try {
+      return await builder.buildPostRequest(url, args);
+    } catch (error) {
+      lazy.logger.debug("Domain front request fail", url, args, error);
+      if (error instanceof lazy.DomainFrontRequestNetworkError) {
+        throw new LoxError(
+          `Domain front fetch "${procedure}" from Lox authority failed: ${error?.message}`,
+          LoxError.LoxServerUnreachable
+        );
+      }
+      if (error instanceof lazy.DomainFrontRequestResponseError) {
+        // Do not treat as a LoxServerUnreachable type.
+        throw new LoxError(
+          `Lox authority responded to domain front "${procedure}" with ${error.status}: ${error.statusText}`
+        );
+      }
+      throw new LoxError(
+        `Domain front request for "${procedure}" from Lox authority failed: ${error?.message}`
+      );
+    }
   }
 }
 
