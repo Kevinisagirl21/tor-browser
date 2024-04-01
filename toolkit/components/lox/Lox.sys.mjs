@@ -5,6 +5,18 @@ import {
 } from "resource://gre/modules/Timer.sys.mjs";
 
 const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "logger", () => {
+  let { ConsoleAPI } = ChromeUtils.importESModule(
+    "resource://gre/modules/Console.sys.mjs"
+  );
+  return new ConsoleAPI({
+    maxLogLevel: "warn",
+    maxLogLevelPref: "lox.log_level",
+    prefix: "Lox",
+  });
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   DomainFrontRequestBuilder:
     "resource://gre/modules/DomainFrontedRequests.sys.mjs",
@@ -14,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorSettingsTopics: "resource://gre/modules/TorSettings.sys.mjs",
   TorBridgeSource: "resource://gre/modules/TorSettings.sys.mjs",
 });
+
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   init: "resource://gre/modules/lox_wasm.jsm",
   open_invite: "resource://gre/modules/lox_wasm.jsm",
@@ -318,7 +331,7 @@ class LoxImpl {
         this.#store();
       }
     } catch (err) {
-      console.log(err);
+      lazy.logger.error(err);
     }
     try {
       const leveldown = await this.#blockageMigration(loxid);
@@ -332,7 +345,7 @@ class LoxImpl {
         this.#store();
       }
     } catch (err) {
-      console.log(err);
+      lazy.logger.error(err);
     }
   }
 
@@ -404,7 +417,7 @@ class LoxImpl {
     try {
       lazy.invitation_is_trusted(invite);
     } catch (err) {
-      console.log(err);
+      lazy.logger.error(err);
       return false;
     }
     return true;
@@ -417,7 +430,7 @@ class LoxImpl {
       throw new LoxError(LoxErrors.NotInitialized);
     }
     let invite = await this.#makeRequest("invite", []);
-    console.log(invite);
+    lazy.logger.debug(invite);
     return invite;
   }
 
@@ -443,7 +456,7 @@ class LoxImpl {
     } catch {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
-    console.log("openreq response: ", response);
+    lazy.logger.debug("openreq response: ", response);
     if (response.hasOwnProperty("error")) {
       throw new LoxError(LoxErrors.BadInvite);
     }
@@ -508,7 +521,7 @@ class LoxImpl {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     if (response.hasOwnProperty("error")) {
-      console.log(response.error);
+      lazy.logger.error(response.error);
       throw new LoxError(LoxErrors.NoInvitations);
     } else {
       this.#credentials[loxid] = response;
@@ -548,12 +561,12 @@ class LoxImpl {
     try {
       request = lazy.check_blockage(this.#credentials[loxid], this.#pubKeys);
     } catch {
-      console.log("Not ready for blockage migration");
+      lazy.logger.log("Not ready for blockage migration");
       return false;
     }
     let response = await this.#makeRequest("checkblockage", request);
     if (response.hasOwnProperty("error")) {
-      console.log(response.error);
+      lazy.logger.error(response.error);
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const migrationCred = lazy.handle_check_blockage(
@@ -567,7 +580,7 @@ class LoxImpl {
     );
     response = await this.#makeRequest("blockagemigration", request);
     if (response.hasOwnProperty("error")) {
-      console.log(response.error);
+      lazy.logger.error(response.error);
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const cred = lazy.handle_blockage_migration(
@@ -599,7 +612,7 @@ class LoxImpl {
       try {
         success = await this.#trustMigration();
       } catch (err) {
-        console.log(err);
+        lazy.logger.error(err);
         return false;
       }
     } else {
@@ -610,7 +623,7 @@ class LoxImpl {
       );
       const response = await this.#makeRequest("levelup", request);
       if (response.hasOwnProperty("error")) {
-        console.log(response.error);
+        lazy.logger.error(response.error);
         throw new LoxError(LoxErrors.LoxServerUnreachable);
       }
       const cred = lazy.handle_level_up(
@@ -641,48 +654,49 @@ class LoxImpl {
       try {
         request = lazy.trust_promotion(this.#credentials[loxid], this.#pubKeys);
       } catch (err) {
-        console.log("Not ready to upgrade");
+        lazy.logger.debug("Not ready to upgrade");
         resolve(false);
       }
       this.#makeRequest("trustpromo", JSON.parse(request).request)
         .then(response => {
           if (response.hasOwnProperty("error")) {
+            lazy.logger.error("Error response from trustpromo", response.error);
             resolve(false);
           }
-          console.log("Got promotion cred");
-          console.log(response);
-          console.log(request);
+          lazy.logger.debug("Got promotion cred", response, request);
           let promoCred = lazy.handle_trust_promotion(
             request,
             JSON.stringify(response)
           );
-          console.log("Formatted promotion cred");
+          lazy.logger.debug("Formatted promotion cred");
           request = lazy.trust_migration(
             this.#credentials[loxid],
             promoCred,
             this.#pubKeys
           );
-          console.log("Formatted migration request");
+          lazy.logger.debug("Formatted migration request");
           this.#makeRequest("trustmig", JSON.parse(request).request)
             .then(response => {
               if (response.hasOwnProperty("error")) {
+                lazy.logger.error(
+                  "Error response from trustmig",
+                  response.error
+                );
                 resolve(false);
               }
-              console.log("Got new credential");
+              lazy.logger.debug("Got new credential");
               let cred = lazy.handle_trust_migration(request, response);
               this.#credentials[loxid] = cred;
               this.#store();
               resolve(true);
             })
             .catch(err => {
-              console.log(err);
-              console.log("Failed trust migration");
+              lazy.logger.error("Failed trust migration", err);
               resolve(false);
             });
         })
         .catch(err => {
-          console.log(err);
-          console.log("Failed trust promotion");
+          lazy.logger.error("Failed trust promotion", err);
           resolve(false);
         });
     });
