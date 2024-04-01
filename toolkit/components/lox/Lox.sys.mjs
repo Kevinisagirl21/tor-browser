@@ -50,6 +50,24 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   handle_blockage_migration: "resource://gre/modules/lox_wasm.jsm",
 });
 
+export const LoxTopics = Object.freeze({
+  // Whenever the bridges *might* have changed.
+  // getBridges only uses #credentials, so this will only fire when it changes.
+  UpdateBridges: "lox:update-bridges",
+  // Whenever we gain a new upgrade or blockage event, or clear events.
+  UpdateEvents: "lox:update-events",
+  // Whenever the next unlock *might* have changed.
+  // getNextUnlock uses #credentials and #constants, sow ill fire when either
+  // value changes.
+  UpdateNextUnlock: "lox:update-next-unlock",
+  // Whenever the remaining invites *might* have changed.
+  // getRemainingInviteCount only uses #credentials, so will only fire when it
+  // changes.
+  UpdateRemainingInvites: "lox:update-remaining-invites",
+  // Whenever we generate a new invite.
+  NewInvite: "lox:new-invite",
+});
+
 export const LoxErrors = Object.freeze({
   BadInvite: "BadInvite",
   MissingCredential: "MissingCredential",
@@ -92,7 +110,12 @@ class LoxImpl {
   #pubKeys = null;
   #encTable = null;
   #constants = null;
-  #credentials = null;
+  /**
+   * The latest credentials for a given lox id.
+   *
+   * @type {Object<string, string>}
+   */
+  #credentials = {};
   /**
    * The list of accumulated blockage or upgrade events.
    *
@@ -186,6 +209,56 @@ class LoxImpl {
   }
 
   /**
+   * Change some existing credentials for an ID to a new value.
+   *
+   * @param {string} loxId - The ID to change the credentials for.
+   * @param {string} newCredentials - The new credentials to set.
+   */
+  #changeCredentials(loxId, newCredentials) {
+    // FIXME: Several async methods want to update the credentials, but they
+    // might race and conflict with each. tor-browser#42492
+    if (!newCredentials) {
+      // Avoid overwriting and losing our current credentials.
+      throw new LoxError(`Empty credentials being set for ${loxId}`);
+    }
+    if (!this.#credentials[loxId]) {
+      // Unexpected, but we still want to save the value to storage.
+      lazy.logger.warn(`Lox ID ${loxId} is missing existing credentials`);
+    }
+
+    this.#credentials[loxId] = newCredentials;
+    this.#store();
+
+    // NOTE: In principle we could determine within this module whether the
+    // bridges, remaining invites, or next unlock changes in value when
+    // switching credentials.
+    // However, this logic can be done by the topic observers, as needed. In
+    // particular, TorSettings.bridges.bridge_strings has its own logic
+    // determining whether its value has changed.
+
+    // Let TorSettings know about possibly new bridges.
+    Services.obs.notifyObservers(null, LoxTopics.UpdateBridges);
+    // Let UI know about changes.
+    Services.obs.notifyObservers(null, LoxTopics.UpdateRemainingInvites);
+    Services.obs.notifyObservers(null, LoxTopics.UpdateNextUnlock);
+  }
+
+  /**
+   * Fetch the latest credentials.
+   *
+   * @param {string} loxId - The ID to get the credentials for.
+   *
+   * @returns {string} - The credentials.
+   */
+  #getCredentials(loxId) {
+    const cred = loxId ? this.#credentials[loxId] : undefined;
+    if (!cred) {
+      throw new LoxError(LoxErrors.MissingCredential);
+    }
+    return cred;
+  }
+
+  /**
    * Formats and returns bridges from the stored Lox credential.
    *
    * @param {string} loxId The id string associated with a lox credential.
@@ -197,16 +270,9 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    if (loxId === null) {
-      return [];
-    }
-    if (!this.#credentials[loxId]) {
-      // This lox id doesn't correspond to a stored credential
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
     // Note: this is messy now but can be mostly removed after we have
     // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/46
-    let bridgelines = JSON.parse(this.#credentials[loxId]).bridgelines;
+    let bridgelines = JSON.parse(this.#getCredentials(loxId)).bridgelines;
     let bridges = [];
     for (const bridge of bridgelines) {
       let addr = bridge.addr;
@@ -278,7 +344,7 @@ class LoxImpl {
 
   #load() {
     const cred = Services.prefs.getStringPref(LoxSettingsPrefs.credentials, "");
-    this.#credentials = cred !== "" ? JSON.parse(cred) : {};
+    this.#credentials = cred ? JSON.parse(cred) : {};
     const invites = Services.prefs.getStringPref(LoxSettingsPrefs.invites, "");
     this.#invites = invites ? JSON.parse(invites) : [];
     const events = Services.prefs.getStringPref(LoxSettingsPrefs.events, "");
@@ -336,8 +402,12 @@ class LoxImpl {
       // Try to update first, but if that doesn't work fall back to stored data
       this.#constantsPromise = this.#makeRequest("constants", [])
         .then(constants => {
+          const prevValue = this.#constants;
           this.#constants = JSON.stringify(constants);
           this.#store();
+          if (prevValue !== this.#constants) {
+            Services.obs.notifyObservers(null, LoxTopics.UpdateNextUnlock);
+          }
         })
         .catch(() => {
           if (!this.#constants) {
@@ -357,6 +427,7 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
+    let addedEvent = false;
     // Only run background tasks for the active lox ID.
     const loxId = this.#activeLoxId;
     if (!loxId) {
@@ -366,13 +437,14 @@ class LoxImpl {
     try {
       const levelup = await this.#attemptUpgrade(loxId);
       if (levelup) {
-        const level = lazy.get_trust_level(this.#credentials[loxId]);
+        const level = lazy.get_trust_level(this.#getCredentials(loxId));
         const newEvent = {
           type: "levelup",
           newlevel: level,
         };
         this.#events.push(newEvent);
         this.#store();
+        addedEvent = true;
       }
     } catch (err) {
       lazy.logger.error(err);
@@ -380,16 +452,20 @@ class LoxImpl {
     try {
       const leveldown = await this.#blockageMigration(loxId);
       if (leveldown) {
-        let level = lazy.get_trust_level(this.#credentials[loxId]);
+        let level = lazy.get_trust_level(this.#getCredentials(loxId));
         const newEvent = {
           type: "blockage",
           newlevel: level,
         };
         this.#events.push(newEvent);
         this.#store();
+        addedEvent = true;
       }
     } catch (err) {
       lazy.logger.error(err);
+    }
+    if (addedEvent) {
+      Services.obs.notifyObservers(null, LoxTopics.UpdateEvents);
     }
   }
 
@@ -438,7 +514,7 @@ class LoxImpl {
     this.#pubKeyPromise = null;
     this.#encTablePromise = null;
     this.#constantsPromise = null;
-    this.#credentials = null;
+    this.#credentials = {};
     this.#events = [];
     if (this.#backgroundInterval) {
       clearInterval(this.#backgroundInterval);
@@ -545,17 +621,14 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    if (!this.#credentials[loxId]) {
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
     await this.#getPubKeys();
     await this.#getEncTable();
-    let level = lazy.get_trust_level(this.#credentials[loxId]);
+    let level = lazy.get_trust_level(this.#getCredentials(loxId));
     if (level < 1) {
       throw new LoxError(LoxErrors.NoInvitations);
     }
     let request = lazy.issue_invite(
-      JSON.stringify(this.#credentials[loxId]),
+      JSON.stringify(this.#getCredentials(loxId)),
       this.#encTable,
       this.#pubKeys
     );
@@ -572,13 +645,17 @@ class LoxImpl {
       lazy.logger.error(response.error);
       throw new LoxError(LoxErrors.NoInvitations);
     } else {
-      this.#credentials[loxId] = response;
       const invite = lazy.prepare_invite(response);
       this.#invites.push(invite);
       // cap length of stored invites
       if (this.#invites.len > 50) {
         this.#invites.shift();
       }
+      this.#store();
+      this.#changeCredentials(loxId, response);
+      Services.obs.notifyObservers(null, LoxTopics.NewInvite);
+      // Return a copy.
+      // Right now invite is just a string, but that might change in the future.
       return structuredClone(invite);
     }
   }
@@ -594,20 +671,14 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    if (!this.#credentials[loxId]) {
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
-    return parseInt(lazy.get_invites_remaining(this.#credentials[loxId]));
+    return parseInt(lazy.get_invites_remaining(this.#getCredentials(loxId)));
   }
 
   async #blockageMigration(loxId) {
-    if (!loxId || !this.#credentials[loxId]) {
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
     await this.#getPubKeys();
     let request;
     try {
-      request = lazy.check_blockage(this.#credentials[loxId], this.#pubKeys);
+      request = lazy.check_blockage(this.#getCredentials(loxId), this.#pubKeys);
     } catch {
       lazy.logger.log("Not ready for blockage migration");
       return false;
@@ -618,11 +689,11 @@ class LoxImpl {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const migrationCred = lazy.handle_check_blockage(
-      this.#credentials[loxId],
+      this.#getCredentials(loxId),
       JSON.stringify(response)
     );
     request = lazy.blockage_migration(
-      this.#credentials[loxId],
+      this.#getCredentials(loxId),
       migrationCred,
       this.#pubKeys
     );
@@ -632,12 +703,11 @@ class LoxImpl {
       throw new LoxError(LoxErrors.LoxServerUnreachable);
     }
     const cred = lazy.handle_blockage_migration(
-      this.#credentials[loxId],
+      this.#getCredentials(loxId),
       JSON.stringify(response),
       this.#pubKeys
     );
-    this.#credentials[loxId] = cred;
-    this.#store();
+    this.#changeCredentials(loxId, cred);
     return true;
   }
 
@@ -647,14 +717,11 @@ class LoxImpl {
    *  @returns {boolean} whether a levelup event occured
    */
   async #attemptUpgrade(loxId) {
-    if (!loxId || !this.#credentials[loxId]) {
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
     await this.#getPubKeys();
     await this.#getEncTable();
     await this.#getConstants();
     let success = false;
-    let level = lazy.get_trust_level(this.#credentials[loxId]);
+    let level = lazy.get_trust_level(this.#getCredentials(loxId));
     if (level < 1) {
       // attempt trust promotion instead
       try {
@@ -665,7 +732,7 @@ class LoxImpl {
       }
     } else {
       let request = lazy.level_up(
-        this.#credentials[loxId],
+        this.#getCredentials(loxId),
         this.#encTable,
         this.#pubKeys
       );
@@ -679,7 +746,7 @@ class LoxImpl {
         JSON.stringify(response),
         this.#pubKeys
       );
-      this.#credentials[loxId] = cred;
+      this.#changeCredentials(loxId, cred);
       return true;
     }
     return success;
@@ -697,7 +764,10 @@ class LoxImpl {
     return new Promise((resolve, reject) => {
       let request = "";
       try {
-        request = lazy.trust_promotion(this.#credentials[loxId], this.#pubKeys);
+        request = lazy.trust_promotion(
+          this.#getCredentials(loxId),
+          this.#pubKeys
+        );
       } catch (err) {
         lazy.logger.debug("Not ready to upgrade");
         resolve(false);
@@ -715,7 +785,7 @@ class LoxImpl {
           );
           lazy.logger.debug("Formatted promotion cred");
           request = lazy.trust_migration(
-            this.#credentials[loxId],
+            this.#getCredentials(loxId),
             promoCred,
             this.#pubKeys
           );
@@ -731,8 +801,7 @@ class LoxImpl {
               }
               lazy.logger.debug("Got new credential");
               let cred = lazy.handle_trust_migration(request, response);
-              this.#credentials[loxId] = cred;
-              this.#store();
+              this.#changeCredentials(loxId, cred);
               resolve(true);
             })
             .catch(err => {
@@ -801,6 +870,7 @@ class LoxImpl {
     }
     this.#events = [];
     this.#store();
+    Services.obs.notifyObservers(null, LoxTopics.UpdateEvents);
   }
 
   /**
@@ -815,6 +885,8 @@ class LoxImpl {
   /**
    * Get details about the next feature unlock.
    *
+   * NOTE: A call to this method may trigger LoxTopics.UpdateNextUnlock.
+   *
    * @param {string} loxId - The ID to get the unlock for.
    * @returns {UnlockData} - Details about the next unlock.
    */
@@ -822,19 +894,15 @@ class LoxImpl {
     if (!this.#initialized) {
       throw new LoxError(LoxErrors.NotInitialized);
     }
-    if (!this.#credentials[loxId]) {
-      throw new LoxError(LoxErrors.MissingCredential);
-    }
     await this.#getConstants();
-    let nextUnlocks = JSON.parse(
-      lazy.get_next_unlock(this.#constants, this.#credentials[loxId])
+    let nextUnlock = JSON.parse(
+      lazy.get_next_unlock(this.#constants, this.#getCredentials(loxId))
     );
-    const level = parseInt(lazy.get_trust_level(this.#credentials[loxId]));
-    const unlocks = {
-      date: nextUnlocks.trust_level_unlock_date,
+    const level = parseInt(lazy.get_trust_level(this.#getCredentials(loxId)));
+    return {
+      date: nextUnlock.trust_level_unlock_date,
       nextLevel: level + 1,
     };
-    return unlocks;
   }
 
   async #makeRequest(procedure, args) {
