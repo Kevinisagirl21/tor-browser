@@ -83,11 +83,23 @@ class LoxImpl {
   #encTablePromise = null;
   #constantsPromise = null;
   #domainFrontedRequests = null;
-  #invites = null;
+  /**
+   * The list of invites generated.
+   *
+   * @type {string[]}
+   */
+  #invites = [];
   #pubKeys = null;
   #encTable = null;
   #constants = null;
   #credentials = null;
+  /**
+   * The list of accumulated blockage or upgrade events.
+   *
+   * This can be cleared when the user acknowledges the events.
+   *
+   * @type {EventData[]}
+   */
   #events = [];
   #backgroundInterval = null;
 
@@ -265,18 +277,12 @@ class LoxImpl {
   }
 
   #load() {
-    if (this.#credentials === null) {
-      let cred = Services.prefs.getStringPref(LoxSettingsPrefs.credentials, "");
-      this.#credentials = cred !== "" ? JSON.parse(cred) : {};
-      let invites = Services.prefs.getStringPref(LoxSettingsPrefs.invites, "");
-      if (invites !== "") {
-        this.#invites = JSON.parse(invites);
-      }
-      let events = Services.prefs.getStringPref(LoxSettingsPrefs.events, "");
-      if (events !== "") {
-        this.#events = JSON.parse(events);
-      }
-    }
+    const cred = Services.prefs.getStringPref(LoxSettingsPrefs.credentials, "");
+    this.#credentials = cred !== "" ? JSON.parse(cred) : {};
+    const invites = Services.prefs.getStringPref(LoxSettingsPrefs.invites, "");
+    this.#invites = invites ? JSON.parse(invites) : [];
+    const events = Services.prefs.getStringPref(LoxSettingsPrefs.events, "");
+    this.#events = events ? JSON.parse(events) : [];
     this.#pubKeys = Services.prefs.getStringPref(
       LoxSettingsPrefs.pubkeys,
       null
@@ -409,8 +415,6 @@ class LoxImpl {
     if (typeof lazy.open_invite !== "function") {
       throw new LoxError(LoxErrors.InitError);
     }
-    this.#invites = [];
-    this.#events = [];
     this.#load();
     this.#initialized = true;
   }
@@ -427,7 +431,7 @@ class LoxImpl {
     }
     this.#initialized = false;
     this.#window = null;
-    this.#invites = null;
+    this.#invites = [];
     this.#pubKeys = null;
     this.#encTable = null;
     this.#constants = null;
