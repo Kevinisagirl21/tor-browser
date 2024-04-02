@@ -7,7 +7,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
-  TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
 });
 
 import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
@@ -34,7 +33,6 @@ export class NetErrorChild extends RemotePageChild {
       "RPMIsSiteSpecificTRRError",
       "RPMSetTRRDisabledLoadFlags",
       "RPMGetCurrentTRRMode",
-      "RPMGetTorStrings",
     ];
     this.exportFunctions(exportableFunctions);
   }
@@ -245,9 +243,5 @@ export class NetErrorChild extends RemotePageChild {
   RPMSetTRRDisabledLoadFlags() {
     this.contentWindow.docShell.browsingContext.defaultLoadFlags |=
       Ci.nsIRequest.LOAD_TRR_DISABLED_MODE;
-  }
-
-  RPMGetTorStrings() {
-    return Cu.cloneInto(lazy.TorStrings.onionServices, this.contentWindow);
   }
 }
