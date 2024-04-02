@@ -377,6 +377,8 @@ class LoxImpl {
   }
 
   async #getPubKeys() {
+    // FIXME: We are always refetching #pubKeys, #encTable and #constants once
+    // per session, but they may change more frequently. tor-browser#42502
     if (this.#pubKeyPromise === null) {
       this.#pubKeyPromise = this.#makeRequest("pubkeys", [])
         .then(pubKeys => {
@@ -384,6 +386,9 @@ class LoxImpl {
           this.#store();
         })
         .catch(error => {
+          lazy.logger.debug("Failed to get pubkeys", error);
+          // Make the next call try again.
+          this.#pubKeyPromise = null;
           // We always try to update, but if that doesn't work fall back to stored data
           if (!this.#pubKeys) {
             throw error;
@@ -401,6 +406,9 @@ class LoxImpl {
           this.#store();
         })
         .catch(error => {
+          lazy.logger.debug("Failed to get encTable", error);
+          // Make the next call try again.
+          this.#encTablePromise = null;
           // Try to update first, but if that doesn't work fall back to stored data
           if (!this.#encTable) {
             throw error;
@@ -423,6 +431,9 @@ class LoxImpl {
           }
         })
         .catch(error => {
+          lazy.logger.debug("Failed to get constants", error);
+          // Make the next call try again.
+          this.#constantsPromise = null;
           if (!this.#constants) {
             throw error;
           }
