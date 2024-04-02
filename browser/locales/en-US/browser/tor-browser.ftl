@@ -607,3 +607,26 @@ rulesets-details-scope-input =
     .placeholder = Regular expression for the scope of the rules
 # "Regular expression" refers to the computing term for a special pattern used for matching: https://en.wikipedia.org/wiki/Regular_expression.
 rulesets-details-scope-input-invalid = The scope could not be parsed as a regular expression
+
+## Onionsite error page.
+## "Onionsite" is an abbreviation of "onion website": a website whose domain URL ends in ".onion", which is reachable through the Tor network.
+
+onion-neterror-page-title = Problem loading onionsite
+onion-neterror-authorization-title = Authentication required
+onion-neterror-not-found-header = Onionsite not found
+onion-neterror-not-found-description = The most likely cause is that the onionsite is offline. Contact the onionsite administrator.
+onion-neterror-unreachable-header = Onionsite cannot be reached
+onion-neterror-unreachable-description = The onionsite is unreachable due an internal error.
+onion-neterror-disconnected-header = Onionsite has disconnected
+onion-neterror-disconnected-description = The most likely cause is that the onionsite is offline. Contact the onionsite administrator.
+onion-neterror-connection-failed-header = Unable to connect to onionsite
+onion-neterror-connection-failed-description = The onionsite is busy or the Tor network is overloaded. Try again later.
+onion-neterror-missing-authentication-header = Onionsite requires authentication
+onion-neterror-missing-authentication-description = Access to the onionsite requires a key but none was provided.
+onion-neterror-incorrect-authentication-header = Onionsite authentication failed
+onion-neterror-incorrect-authetication-description = The provided key is incorrect or has been revoked. Contact the onionsite administrator.
+onion-neterror-invalid-address-header = Invalid onionsite address
+onion-neterror-invalid-address-description = The provided onionsite address is invalid. Please check that you entered it correctly.
+# "Circuit" refers to a Tor network circuit.
+onion-neterror-timed-out-header = Onionsite circuit creation timed out
+onion-neterror-timed-out-description = Failed to connect to the onionsite, possibly due to a poor network connection.
