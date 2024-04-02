@@ -897,7 +897,7 @@ class LoxImpl {
 
   async #makeRequest(procedure, args) {
     // TODO: Customize to for Lox
-    const serviceUrl = "https://rdsys-frontend-01.torproject.org/lox";
+    const serviceUrl = "https://lox.torproject.org";
     const url = `${serviceUrl}/${procedure}`;
 
     if (lazy.TorConnect.state === lazy.TorConnectState.Bootstrapped) {
