@@ -204,6 +204,10 @@
 #identity-box[pageproxystate="valid"].onionCertUserOverridden #identity-icon {
   list-style-image: url(chrome://browser/skin/onion-warning.svg);
   visibility: visible;
+  /* onion-warning includes another context-stroke color. Here we want it to
+   * match the context-fill color, which should be currentColor. */
+  -moz-context-properties: fill, fill-opacity, stroke;
+  stroke: currentColor;
 }
 
 #identity-box[pageproxystate="valid"].onionMixedActiveContent #identity-icon {
