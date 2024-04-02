@@ -3695,6 +3695,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   } else {
     // Errors requiring simple formatting
     bool isOnionAuthError = false;
+    bool isOnionError = false;
     switch (aError) {
       case NS_ERROR_MALFORMED_URI:
         // URI is malformed
@@ -3778,29 +3779,37 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         break;
       case NS_ERROR_TOR_ONION_SVC_NOT_FOUND:
         error = "onionServices.descNotFound";
+        isOnionError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_IS_INVALID:
         error = "onionServices.descInvalid";
+        isOnionError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_INTRO_FAILED:
         error = "onionServices.introFailed";
+        isOnionError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_REND_FAILED:
         error = "onionServices.rendezvousFailed";
+        isOnionError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH:
         error = "onionServices.clientAuthMissing";
+        isOnionError = true;
         isOnionAuthError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH:
         error = "onionServices.clientAuthIncorrect";
+        isOnionError = true;
         isOnionAuthError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS:
         error = "onionServices.badAddress";
+        isOnionError = true;
         break;
       case NS_ERROR_TOR_ONION_SVC_INTRO_TIMEDOUT:
         error = "onionServices.introTimedOut";
+        isOnionError = true;
         break;
       default:
         break;
@@ -3815,6 +3824,13 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       // Tor client auth prompt is open. Do not use about:blank directly: it
       // will mess with the failed channel information persistence!
       cssClass.AssignLiteral("onionAuthPrompt");
+    }
+    if (isOnionError) {
+      // DisplayLoadError requires a non-empty messageStr to proceed and call
+      // LoadErrorPage. We use a blank space.
+      if (messageStr.IsEmpty()) {
+        messageStr.AssignLiteral(u" ");
+      }
     }
   }
 
@@ -3902,20 +3918,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     nsAutoString str;
     rv =
         stringBundle->FormatStringFromName(errorDescriptionID, formatStrs, str);
-    if (NS_FAILED(rv)) {
-      // As a fallback, check torbutton.properties for the error string.
-      const char bundleURL[] = "chrome://torbutton/locale/torbutton.properties";
-      nsCOMPtr<nsIStringBundleService> stringBundleService =
-          components::StringBundle::Service();
-      if (stringBundleService) {
-        nsCOMPtr<nsIStringBundle> tbStringBundle;
-        if (NS_SUCCEEDED(stringBundleService->CreateBundle(
-                bundleURL, getter_AddRefs(tbStringBundle)))) {
-          rv = tbStringBundle->FormatStringFromName(errorDescriptionID,
-                                                    formatStrs, str);
-        }
-      }
-    }
     NS_ENSURE_SUCCESS(rv, rv);
     messageStr.Assign(str);
   }
