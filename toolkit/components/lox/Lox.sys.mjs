@@ -443,6 +443,31 @@ class LoxImpl {
   }
 
   /**
+   * Parse a decimal string to a non-negative integer.
+   *
+   * @param {string} str - The string to parse.
+   * @returns {integer} - The integer.
+   */
+  static #parseNonNegativeInteger(str) {
+    if (typeof str !== "string" || !/^[0-9]+$/.test(str)) {
+      throw new LoxError(`Expected a non-negative decimal integer: "${str}"`);
+    }
+    return parseInt(str, 10);
+  }
+
+  /**
+   * Get the current lox trust level.
+   *
+   * @param {string} loxId - The ID to fetch the level for.
+   * @returns {integer} - The trust level.
+   */
+  #getLevel(loxId) {
+    return LoxImpl.#parseNonNegativeInteger(
+      lazy.get_trust_level(this.#getCredentials(loxId))
+    );
+  }
+
+  /**
    * Check for blockages and attempt to perform a levelup
    *
    * If either blockages or a levelup happened, add an event to the event queue
@@ -459,7 +484,7 @@ class LoxImpl {
     try {
       const levelup = await this.#attemptUpgrade(loxId);
       if (levelup) {
-        const level = lazy.get_trust_level(this.#getCredentials(loxId));
+        const level = this.#getLevel(loxId);
         const newEvent = {
           type: "levelup",
           newlevel: level,
@@ -474,7 +499,7 @@ class LoxImpl {
     try {
       const leveldown = await this.#blockageMigration(loxId);
       if (leveldown) {
-        let level = lazy.get_trust_level(this.#getCredentials(loxId));
+        let level = this.#getLevel(loxId);
         const newEvent = {
           type: "blockage",
           newlevel: level,
@@ -633,7 +658,7 @@ class LoxImpl {
     this.#assertInitialized();
     await this.#getPubKeys();
     await this.#getEncTable();
-    let level = lazy.get_trust_level(this.#getCredentials(loxId));
+    let level = this.#getLevel(loxId);
     if (level < 1) {
       throw new LoxError(`Cannot generate invites at level ${level}`);
     }
@@ -674,7 +699,9 @@ class LoxImpl {
    */
   getRemainingInviteCount(loxId) {
     this.#assertInitialized();
-    return parseInt(lazy.get_invites_remaining(this.#getCredentials(loxId)));
+    return LoxImpl.#parseNonNegativeInteger(
+      lazy.get_invites_remaining(this.#getCredentials(loxId))
+    );
   }
 
   async #blockageMigration(loxId) {
@@ -728,7 +755,7 @@ class LoxImpl {
     await this.#getEncTable();
     await this.#getConstants();
     let success = false;
-    let level = lazy.get_trust_level(this.#getCredentials(loxId));
+    let level = this.#getLevel(loxId);
     if (level < 1) {
       // attempt trust promotion instead
       try {
@@ -899,7 +926,7 @@ class LoxImpl {
     let nextUnlock = JSON.parse(
       lazy.get_next_unlock(this.#constants, this.#getCredentials(loxId))
     );
-    const level = parseInt(lazy.get_trust_level(this.#getCredentials(loxId)));
+    const level = this.#getLevel(loxId);
     return {
       date: nextUnlock.trust_level_unlock_date,
       nextLevel: level + 1,
