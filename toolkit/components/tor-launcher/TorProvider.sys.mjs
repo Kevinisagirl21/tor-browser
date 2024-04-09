@@ -226,16 +226,18 @@ export class TorProvider {
       throw e;
     }
 
-    try {
-      await lazy.TorSettings.initializedPromise;
-      await this.writeSettings(lazy.TorSettings.getSettings());
-    } catch (e) {
-      logger.warn(
-        "Failed to initialize TorSettings or to write our settings, so uninitializing.",
-        e
-      );
-      this.uninit();
-      throw e;
+    if (this.ownsTorDaemon) {
+      try {
+        await lazy.TorSettings.initializedPromise;
+        await this.writeSettings(lazy.TorSettings.getSettings());
+      } catch (e) {
+        logger.warn(
+          "Failed to initialize TorSettings or to write our settings, so uninitializing.",
+          e
+        );
+        this.uninit();
+        throw e;
+      }
     }
 
     TorLauncherUtil.setProxyConfiguration(this.#socksSettings);
