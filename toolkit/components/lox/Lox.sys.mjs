@@ -748,50 +748,41 @@ class LoxImpl {
   /** Attempts to upgrade the currently saved Lox credential.
    *  If an upgrade is available, save an event in the event list.
    *
-   *  @returns {boolean} whether a levelup event occured
+   *  @returns {boolean} Whether a levelup event occurred.
    */
   async #attemptUpgrade(loxId) {
     await this.#getPubKeys();
     await this.#getEncTable();
     await this.#getConstants();
-    let success = false;
     let level = this.#getLevel(loxId);
     if (level < 1) {
       // attempt trust promotion instead
-      try {
-        success = await this.#trustMigration(loxId);
-      } catch (err) {
-        lazy.logger.error(err);
-        return false;
-      }
-    } else {
-      let request = lazy.level_up(
-        this.#getCredentials(loxId),
-        this.#encTable,
-        this.#pubKeys
-      );
-      const response = await this.#makeRequest("levelup", request);
-      if (response.hasOwnProperty("error")) {
-        lazy.logger.error(response.error);
-        throw new LoxError(`Error response to "levelup": ${response.error}`);
-      }
-      const cred = lazy.handle_level_up(
-        request,
-        JSON.stringify(response),
-        this.#pubKeys
-      );
-      this.#changeCredentials(loxId, cred);
-      return true;
+      return this.#trustMigration(loxId);
     }
-    return success;
+    let request = lazy.level_up(
+      this.#getCredentials(loxId),
+      this.#encTable,
+      this.#pubKeys
+    );
+    const response = await this.#makeRequest("levelup", request);
+    if (response.hasOwnProperty("error")) {
+      lazy.logger.error(response.error);
+      throw new LoxError(`Error response to "levelup": ${response.error}`);
+    }
+    const cred = lazy.handle_level_up(
+      request,
+      JSON.stringify(response),
+      this.#pubKeys
+    );
+    this.#changeCredentials(loxId, cred);
+    return true;
   }
 
   /**
    * Attempt to migrate from an untrusted to a trusted Lox credential
    *
    * @param {string} loxId - The ID to use.
-   * @returns {Promise<bool>} A bool value indicated whether the credential
-   *    was successfully migrated.
+   * @returns {boolean} Whether the credential was successfully migrated.
    */
   async #trustMigration(loxId) {
     await this.#getPubKeys();
