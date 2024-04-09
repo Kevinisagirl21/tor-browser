@@ -361,12 +361,15 @@ class AboutTorConnect {
   }
 
   getMaybeLocalizedError(state) {
+    if (!state?.ErrorCode) {
+      return "";
+    }
     switch (state.ErrorCode) {
       case "Offline":
         return TorStrings.torConnect.offline;
       case "BootstrapError": {
-        const details = state.ErrorDetails?.details;
-        if (!details || !details.phase || !details.reason) {
+        const details = state.ErrorDetails?.cause;
+        if (!details?.phase || !details?.reason) {
           return TorStrings.torConnect.torBootstrapFailed;
         }
         let status = this.getLocalizedStatus(details.phase);
@@ -632,7 +635,7 @@ class AboutTorConnect {
   showFinalError(state) {
     this.setTitle(TorStrings.torConnect.finalError, "final");
     this.setLongText(TorStrings.torConnect.finalErrorDescription);
-    this.setProgress(state ? this.getMaybeLocalizedError(state) : "", false);
+    this.setProgress(this.getMaybeLocalizedError(state), false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Default,

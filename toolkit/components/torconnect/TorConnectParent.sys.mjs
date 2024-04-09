@@ -95,9 +95,9 @@ export class TorConnectParent extends JSWindowActorParent {
             // noop
             break;
           }
-          case TorConnectTopics.BootstrapError: {
+          case TorConnectTopics.Error: {
             self.state.ErrorCode = obj.code;
-            self.state.ErrorDetails = obj.details;
+            self.state.ErrorDetails = obj;
             self.state.InternetStatus = TorConnect.internetStatus;
             self.state.DetectedLocation = TorConnect.detectedLocation;
             self.state.ShowViewLog = true;
