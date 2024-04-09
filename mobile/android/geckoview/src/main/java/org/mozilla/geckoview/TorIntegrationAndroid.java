@@ -42,10 +42,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_TOR_STOP = "GeckoView:Tor:StopTor";
     private static final String EVENT_MEEK_START = "GeckoView:Tor:StartMeek";
     private static final String EVENT_MEEK_STOP = "GeckoView:Tor:StopMeek";
-    private static final String EVENT_BOOTSTRAP_STATE_CHANGED = "GeckoView:Tor:BootstrapStateChanged";
+    private static final String EVENT_CONNECT_STATE_CHANGED = "GeckoView:Tor:ConnectStateChanged";
+    private static final String EVENT_CONNECT_ERROR = "GeckoView:Tor:ConnectError";
     private static final String EVENT_BOOTSTRAP_PROGRESS = "GeckoView:Tor:BootstrapProgress";
     private static final String EVENT_BOOTSTRAP_COMPLETE = "GeckoView:Tor:BootstrapComplete";
-    private static final String EVENT_BOOTSTRAP_ERROR = "GeckoView:Tor:BootstrapError";
     private static final String EVENT_TOR_LOGS = "GeckoView:Tor:Logs";
     private static final String EVENT_SETTINGS_READY = "GeckoView:Tor:SettingsReady";
     private static final String EVENT_SETTINGS_CHANGED = "GeckoView:Tor:SettingsChanged";
@@ -115,10 +115,10 @@ public class TorIntegrationAndroid implements BundleEventListener {
                         EVENT_MEEK_STOP,
                         EVENT_SETTINGS_READY,
                         EVENT_SETTINGS_CHANGED,
-                        EVENT_BOOTSTRAP_STATE_CHANGED,
+                        EVENT_CONNECT_STATE_CHANGED,
+                        EVENT_CONNECT_ERROR,
                         EVENT_BOOTSTRAP_PROGRESS,
                         EVENT_BOOTSTRAP_COMPLETE,
-                        EVENT_BOOTSTRAP_ERROR,
                         EVENT_TOR_LOGS,
                         EVENT_SETTINGS_OPEN);
     }
@@ -148,29 +148,28 @@ public class TorIntegrationAndroid implements BundleEventListener {
             } else {
                 Log.w(TAG, "Ignoring a settings changed event that did not have the new settings.");
             }
-        } else if (EVENT_BOOTSTRAP_STATE_CHANGED.equals(event)) {
+        } else if (EVENT_CONNECT_STATE_CHANGED.equals(event)) {
             String state = message.getString("state");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
                 listener.onBootstrapStateChange(state);
             }
-        } else if (EVENT_BOOTSTRAP_PROGRESS.equals(event)) {
-            double progress = message.getDouble("progress");
-            String status = message.getString("status");
-            boolean hasWarnings = message.getBoolean("hasWarnings");
-            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
-                listener.onBootstrapProgress(progress, status, hasWarnings);
-            }
-        } else if (EVENT_BOOTSTRAP_COMPLETE.equals(event)) {
-            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
-                listener.onBootstrapComplete();
-            }
-        } else if (EVENT_BOOTSTRAP_ERROR.equals(event)) {
+        } else if (EVENT_CONNECT_ERROR.equals(event)) {
             String code = message.getString("code");
             String msg = message.getString("message");
             String phase = message.getString("phase");
             String reason = message.getString("reason");
             for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
                 listener.onBootstrapError(code, msg, phase, reason);
+            }
+        } else if (EVENT_BOOTSTRAP_PROGRESS.equals(event)) {
+            double progress = message.getDouble("progress");
+            boolean hasWarnings = message.getBoolean("hasWarnings");
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapProgress(progress, hasWarnings);
+            }
+        } else if (EVENT_BOOTSTRAP_COMPLETE.equals(event)) {
+            for (BootstrapStateChangeListener listener: mBootstrapStateListeners) {
+                listener.onBootstrapComplete();
             }
         } else if (EVENT_TOR_LOGS.equals(event)) {
             String msg = message.getString("message");
@@ -577,7 +576,7 @@ public class TorIntegrationAndroid implements BundleEventListener {
 
     public interface BootstrapStateChangeListener {
         void onBootstrapStateChange(String state);
-        void onBootstrapProgress(double progress, String status, boolean hasWarnings);
+        void onBootstrapProgress(double progress, boolean hasWarnings);
         void onBootstrapComplete();
         void onBootstrapError(String code, String message, String phase, String reason);
         void onSettingsRequested();
