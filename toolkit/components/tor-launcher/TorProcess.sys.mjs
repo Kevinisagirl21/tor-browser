@@ -193,39 +193,32 @@ export class TorProcess {
 
   #makeArgs() {
     this.#exeFile = lazy.TorLauncherUtil.getTorFile("tor", false);
+    if (!this.#exeFile) {
+      throw new Error("Could not find the tor binary.");
+    }
     const torrcFile = lazy.TorLauncherUtil.getTorFile("torrc", true);
+    if (!torrcFile) {
+      // FIXME: Is this still a fatal error?
+      throw new Error("Could not find the torrc.");
+    }
     // Get the Tor data directory first so it is created before we try to
     // construct paths to files that will be inside it.
     this.#dataDir = lazy.TorLauncherUtil.getTorFile("tordatadir", true);
+    if (!this.#dataDir) {
+      throw new Error("Could not find the tor data directory.");
+    }
     const onionAuthDir = lazy.TorLauncherUtil.getTorFile(
       "toronionauthdir",
       true
     );
-
-    let errorCode;
-    if (!this.#exeFile) {
-      errorCode = "tor_missing";
-    } else if (!torrcFile) {
-      errorCode = "torrc_missing";
-    } else if (!this.#dataDir) {
-      errorCode = "datadir_missing";
-    } else if (!onionAuthDir) {
-      errorCode = "onionauthdir_missing";
-    }
-    if (errorCode) {
-      const error = new Error(`An essential file is missing (${errorCode})`);
-      error.code = errorCode;
-      throw error;
+    if (!onionAuthDir) {
+      throw new Error("Could not find the tor onion authentication directory.");
     }
 
-    this.#args = [
-      "-f",
-      torrcFile.path,
-      "DataDirectory",
-      this.#dataDir.path,
-      "ClientOnionAuthDir",
-      onionAuthDir.path,
-    ];
+    this.#args = [];
+    this.#args.push("-f", torrcFile.path);
+    this.#args.push("DataDirectory", this.#dataDir.path);
+    this.#args.push("ClientOnionAuthDir", onionAuthDir.path);
 
     // TODO: Create this starting from pt_config.json (tor-browser#42357).
     const torrcDefaultsFile = lazy.TorLauncherUtil.getTorFile(
@@ -235,6 +228,8 @@ export class TorProcess {
     if (torrcDefaultsFile) {
       this.#args.push("--defaults-torrc", torrcDefaultsFile.path);
       // The geoip and geoip6 files are in the same directory as torrc-defaults.
+      // TODO: Change TorFile to return the generic path to these files to make
+      // them independent from the torrc-defaults.
       const geoipFile = torrcDefaultsFile.clone();
       geoipFile.leafName = "geoip";
       this.#args.push("GeoIPFile", geoipFile.path);
@@ -243,7 +238,7 @@ export class TorProcess {
       this.#args.push("GeoIPv6File", geoip6File.path);
     } else {
       logger.warn(
-        "torrc-defaults not found, some functionalities will be disabled."
+        "torrc-defaults was not found, some functionalities will be disabled."
       );
     }
   }
