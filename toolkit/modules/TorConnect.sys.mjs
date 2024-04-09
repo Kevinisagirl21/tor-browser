@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
+  TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
@@ -21,11 +22,6 @@ ChromeUtils.defineModuleGetter(
   "BrowserWindowTracker",
   "resource:///modules/BrowserWindowTracker.jsm"
 );
-
-const TorTopics = Object.freeze({
-  LogHasWarnOrErr: "TorLogHasWarnOrErr",
-  ProcessExited: "TorProcessExited",
-});
 
 /* Relevant prefs used by tor-launcher */
 const TorLauncherPrefs = Object.freeze({
@@ -55,29 +51,21 @@ export const TorConnectState = Object.freeze({
   Disabled: "Disabled",
 });
 
-/**
- * Errors that can happen during the bootstrap.
- *
- * BootstrapError should include an exception with more details, if possible.
- * ExternalError is used to wrap errors that do not include a code from this
- * object, and should always include a cause.
- */
-export const TorConnectErrors = Object.freeze({
-  Offline: "Offline",
-  BootstrapError: "BootstrapError",
-  CannotDetermineCountry: "CannotDetermineCountry",
-  NoSettingsForCountry: "NoSettingsForCountry",
-  AllSettingsFailed: "AllSettingsFailed",
-  ExternalError: "ExternalError",
-});
+export class TorConnectError extends Error {
+  static Offline = "Offline";
+  static BootstrapError = "BootstrapError";
+  static CannotDetermineCountry = "CannotDetermineCountry";
+  static NoSettingsForCountry = "NoSettingsForCountry";
+  static AllSettingsFailed = "AllSettingsFailed";
+  static ExternalError = "ExternalError";
 
-class TorConnectError extends Error {
   constructor(code, cause) {
     super(cause?.message ?? `TorConnectError: ${code}`, cause ? { cause } : {});
     this.name = "TorConnectError";
     this.code = code;
   }
 }
+Object.freeze(TorConnectError);
 
 ChromeUtils.defineLazyGetter(
   lazy,
@@ -141,7 +129,7 @@ export const TorConnectTopics = Object.freeze({
   StateChange: "torconnect:state-change",
   BootstrapProgress: "torconnect:bootstrap-progress",
   BootstrapComplete: "torconnect:bootstrap-complete",
-  BootstrapError: "torconnect:bootstrap-error",
+  Error: "torconnect:error",
 });
 
 // The StateCallback is the base class to implement the various states.
@@ -309,7 +297,7 @@ class BootstrappingState extends StateCallback {
 
     this.#bootstrap = new lazy.TorBootstrapRequest();
     this.#bootstrap.onbootstrapstatus = (progress, status) => {
-      TorConnect._updateBootstrapStatus(progress, status);
+      TorConnect._updateBootstrapProgress(progress, status);
     };
     this.#bootstrap.onbootstrapcomplete = () => {
       this.#internetTest.cancel();
@@ -375,7 +363,7 @@ class BootstrappingState extends StateCallback {
     if (this.#internetTest.status === InternetStatus.Offline) {
       this.changeState(
         TorConnectState.Error,
-        new TorConnectError(TorConnectErrors.Offline)
+        new TorConnectError(TorConnectError.Offline)
       );
     } else {
       // Give priority to the bootstrap error, in case the Internet test fails
@@ -383,7 +371,7 @@ class BootstrappingState extends StateCallback {
       this.changeState(
         TorConnectState.Error,
         new TorConnectError(
-          TorConnectErrors.BootstrapError,
+          TorConnectError.BootstrapError,
           this.#bootstrapError
         )
       );
@@ -412,10 +400,11 @@ class BootstrappingState extends StateCallback {
         codes[Math.floor(Math.random() * codes.length)];
     }
     const err = new Error("Censorship simulation");
-    err.details = { phase: "conn", reason: "noroute" };
+    err.phase = "conn";
+    err.reason = "noroute";
     this.changeState(
       TorConnectState.Error,
-      new TorConnectError(TorConnectErrors.BootstrapError, err)
+      new TorConnectError(TorConnectError.BootstrapError, err)
     );
     return true;
   }
@@ -480,7 +469,7 @@ class AutoBootstrappingState extends StateCallback {
       if (!this.transitioning) {
         this.changeState(
           TorConnectState.Error,
-          new TorConnectError(TorConnectErrors.AllSettingsFailed)
+          new TorConnectError(TorConnectError.AllSettingsFailed)
         );
       }
       return true;
@@ -493,7 +482,7 @@ class AutoBootstrappingState extends StateCallback {
       if (!this.transitioning) {
         this.changeState(
           TorConnectState.Error,
-          new TorConnectError(TorConnectErrors.CannotDetermineCountry)
+          new TorConnectError(TorConnectError.CannotDetermineCountry)
         );
       }
       return true;
@@ -555,10 +544,10 @@ class AutoBootstrappingState extends StateCallback {
 
       if (!TorConnect._detectedLocation) {
         // unable to determine country
-        throw new TorConnectError(TorConnectErrors.CannotDetermineCountry);
+        throw new TorConnectError(TorConnectError.CannotDetermineCountry);
       } else {
         // no settings available for country
-        throw new TorConnectError(TorConnectErrors.NoSettingsForCountry);
+        throw new TorConnectError(TorConnectError.NoSettingsForCountry);
       }
     }
   }
@@ -603,7 +592,7 @@ class AutoBootstrappingState extends StateCallback {
       // Build out our bootstrap request.
       const bootstrap = new lazy.TorBootstrapRequest();
       bootstrap.onbootstrapstatus = (progress, status) => {
-        TorConnect._updateBootstrapStatus(progress, status);
+        TorConnect._updateBootstrapProgress(progress, status);
       };
       bootstrap.onbootstraperror = error => {
         lazy.logger.error("Auto-Bootstrap error", error);
@@ -649,7 +638,7 @@ class AutoBootstrappingState extends StateCallback {
     // Only explicitly change state here if something else has not transitioned
     // us.
     if (!this.transitioning) {
-      throw new TorConnectError(TorConnectErrors.AllSettingsFailed);
+      throw new TorConnectError(TorConnectError.AllSettingsFailed);
     }
   }
 
@@ -701,17 +690,14 @@ class ErrorState extends StateCallback {
   }
 
   run(error) {
-    if (!error.code || !(error.code in TorConnectErrors)) {
-      error = new TorConnectError(TorConnectErrors.ExternalError, error);
+    if (!(error instanceof TorConnectError)) {
+      error = new TorConnectError(TorConnectError.ExternalError, error);
     }
     TorConnect._errorCode = error.code;
     TorConnect._errorDetails = error;
     lazy.logger.error(`Entering error state (${error.code})`, error);
 
-    Services.obs.notifyObservers(
-      { code: error.code, message: error.message, details: error },
-      TorConnectTopics.BootstrapError
-    );
+    Services.obs.notifyObservers(error, TorConnectTopics.Error);
 
     this.changeState(TorConnectState.Configuring);
   }
@@ -838,7 +824,6 @@ class InternetTest {
 export const TorConnect = {
   _stateHandler: new InitialState(),
   _bootstrapProgress: 0,
-  _bootstrapStatus: null,
   _internetStatus: InternetStatus.Unknown,
   // list of country codes Moat has settings for
   _countryCodes: [],
@@ -928,17 +913,15 @@ export const TorConnect = {
     this._stateHandler.begin(...args);
   },
 
-  _updateBootstrapStatus(progress, status) {
+  _updateBootstrapProgress(progress, status) {
     this._bootstrapProgress = progress;
-    this._bootstrapStatus = status;
 
     lazy.logger.info(
-      `Bootstrapping ${this._bootstrapProgress}% complete (${this._bootstrapStatus})`
+      `Bootstrapping ${this._bootstrapProgress}% complete (${status})`
     );
     Services.obs.notifyObservers(
       {
         progress: TorConnect._bootstrapProgress,
-        status: TorConnect._bootstrapStatus,
         hasWarnings: TorConnect._logHasWarningOrError,
       },
       TorConnectTopics.BootstrapProgress
@@ -972,8 +955,8 @@ export const TorConnect = {
       );
 
       // register the Tor topics we always care about
-      observeTopic(TorTopics.ProcessExited);
-      observeTopic(TorTopics.LogHasWarnOrErr);
+      observeTopic(lazy.TorProviderTopics.ProcessExited);
+      observeTopic(lazy.TorProviderTopics.HasWarnOrErr);
     }
   },
 
@@ -981,11 +964,11 @@ export const TorConnect = {
     lazy.logger.debug(`Observed ${topic}`);
 
     switch (topic) {
-      case TorTopics.LogHasWarnOrErr: {
+      case lazy.TorProviderTopics.HasWarnOrErr: {
         this._logHasWarningOrError = true;
         break;
       }
-      case TorTopics.ProcessExited: {
+      case lazy.TorProviderTopics.ProcessExited: {
         // Treat a failure as a possibly broken configuration.
         // So, prevent quickstart at the next start.
         Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
@@ -1106,10 +1089,6 @@ export const TorConnect = {
 
   get bootstrapProgress() {
     return this._bootstrapProgress;
-  },
-
-  get bootstrapStatus() {
-    return this._bootstrapStatus;
   },
 
   get internetStatus() {
