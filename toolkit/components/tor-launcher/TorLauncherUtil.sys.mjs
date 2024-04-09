@@ -429,20 +429,6 @@ export const TorLauncherUtil = Object.freeze({
     return aStringName;
   },
 
-  getLocalizedStringForError(aNSResult) {
-    for (let prop in Cr) {
-      if (Cr[prop] === aNSResult) {
-        const key = "nsresult." + prop;
-        const rv = this.getLocalizedString(key);
-        if (rv !== key) {
-          return rv;
-        }
-        return prop; // As a fallback, return the NS_ERROR... name.
-      }
-    }
-    return undefined;
-  },
-
   getLocalizedBootstrapStatus(aStatusObj, aKeyword) {
     if (!aStatusObj || !aKeyword) {
       return "";
