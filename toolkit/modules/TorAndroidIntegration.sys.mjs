@@ -29,10 +29,10 @@ const logger = new ConsoleAPI({
 const EmittedEvents = Object.freeze({
   settingsReady: "GeckoView:Tor:SettingsReady",
   settingsChanged: "GeckoView:Tor:SettingsChanged",
-  bootstrapStateChanged: "GeckoView:Tor:BootstrapStateChanged",
+  connectStateChanged: "GeckoView:Tor:ConnectStateChanged",
+  connectError: "GeckoView:Tor:ConnectError",
   bootstrapProgress: "GeckoView:Tor:BootstrapProgress",
   bootstrapComplete: "GeckoView:Tor:BootstrapComplete",
-  bootstrapError: "GeckoView:Tor:BootstrapError",
   torLogs: "GeckoView:Tor:Logs",
 });
 
@@ -98,15 +98,14 @@ class TorAndroidIntegrationImpl {
         break;
       case lazy.TorConnectTopics.StateChange:
         lazy.EventDispatcher.instance.sendRequest({
-          type: EmittedEvents.bootstrapStateChanged,
+          type: EmittedEvents.connectStateChanged,
           state: subj.wrappedJSObject.state ?? "",
         });
         break;
       case lazy.TorConnectTopics.BootstrapProgress:
         lazy.EventDispatcher.instance.sendRequest({
           type: EmittedEvents.bootstrapProgress,
-          progress: subj.wrappedJSObject.progress ?? "",
-          status: subj.wrappedJSObject.status ?? 0,
+          progress: subj.wrappedJSObject.progress ?? 0,
           hasWarnings: subj.wrappedJSObject.hasWarnings ?? false,
         });
         break;
@@ -115,13 +114,13 @@ class TorAndroidIntegrationImpl {
           type: EmittedEvents.bootstrapComplete,
         });
         break;
-      case lazy.TorConnectTopics.BootstrapError:
+      case lazy.TorConnectTopics.Error:
         lazy.EventDispatcher.instance.sendRequest({
-          type: EmittedEvents.bootstrapError,
+          type: EmittedEvents.connectError,
           code: subj.wrappedJSObject.code ?? "",
           message: subj.wrappedJSObject.message ?? "",
-          phase: subj.wrappedJSObject.details?.details?.phase ?? "",
-          reason: subj.wrappedJSObject.details?.details?.reason ?? "",
+          phase: subj.wrappedJSObject.cause?.phase ?? "",
+          reason: subj.wrappedJSObject.cause?.reason ?? "",
         });
         break;
       case lazy.TorProviderTopics.TorLog:
