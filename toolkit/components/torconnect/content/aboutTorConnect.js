@@ -558,10 +558,10 @@ class AboutTorConnect {
     }
   }
 
-  showOffline(error) {
+  showOffline(state) {
     this.setTitle(TorStrings.torConnect.noInternet, "offline");
     this.setLongText(TorStrings.torConnect.noInternetDescription);
-    this.setProgress(error, false);
+    this.setProgress(this.getMaybeLocalizedError(state), false);
     this.setBreadcrumbsStatus(
       BreadcrumbStatus.Default,
       BreadcrumbStatus.Active,
