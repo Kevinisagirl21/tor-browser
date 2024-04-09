@@ -722,7 +722,7 @@ class DisabledState extends StateCallback {
   allowedTransitions = Object.freeze([]);
 
   constructor() {
-    super(TorConnectState.DisabledState);
+    super(TorConnectState.Disabled);
   }
 
   async run() {
