@@ -376,12 +376,9 @@ export const TorLauncherUtil = Object.freeze({
    * @param {boolean} initError If we could connect to the control port at
    * least once and we are showing this prompt because the tor process exited
    * suddenly, we will display a different message
-   * @param {Error?=} error The error that caused Tor not to launch. If it has a
-   * code, we will try to translate it, otherwise we will show the message
-   * (if not empty).
    * @returns {boolean} true if the user asked to restart tor
    */
-  showRestartPrompt(initError, error = null) {
+  showRestartPrompt(initError) {
     let s;
     if (initError) {
       const key = "tor_exited_during_startup";
@@ -393,15 +390,6 @@ export const TorLauncherUtil = Object.freeze({
         "\n\n" +
         this.getLocalizedString("tor_exited2");
     }
-
-    if (error) {
-      if (error.code && this.getLocalizedString(error.code) !== error.code) {
-        s += "\n\n" + this.getLocalizedString(error.code);
-      } else if (error.message) {
-        s += `\n\n${error.message}`;
-      }
-    }
-
     const defaultBtnLabel = this.getLocalizedString("restart_tor");
     let cancelBtnLabel = "OK";
     try {
@@ -425,18 +413,6 @@ export const TorLauncherUtil = Object.freeze({
     try {
       const key = kPropNamePrefix + aStringName;
       return this._stringBundle.GetStringFromName(key);
-    } catch (e) {}
-    return aStringName;
-  },
-
-  // "torlauncher." is prepended to aStringName.
-  getFormattedLocalizedString(aStringName, aArray, aLen) {
-    if (!aStringName || !aArray) {
-      return aStringName;
-    }
-    try {
-      const key = kPropNamePrefix + aStringName;
-      return this._stringBundle.formatStringFromName(key, aArray, aLen);
     } catch (e) {}
     return aStringName;
   },
