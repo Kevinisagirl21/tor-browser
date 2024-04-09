@@ -539,10 +539,6 @@ class AutoBootstrappingState extends StateCallback {
     }
 
     if (!this.#settings?.length && !this.transitioning) {
-      // Both localized and fallback have, we can just throw to transition to
-      // the error state (but only if we aren't already transitioning).
-      // TODO: Let the UI layer localize the strings.
-
       if (!TorConnect._detectedLocation) {
         // unable to determine country
         throw new TorConnectError(TorConnectError.CannotDetermineCountry);
