@@ -5,7 +5,7 @@ ARCH=$2
 
 source android-env.sh
 
-env ARCHS=$ARCH make fat-aar
+env ARCHS=$ARCH make fataar
 
 cd $DEV_ROOT
 MOZCONFIG=mozconfig-android-$ARCH ./mach build binaries
