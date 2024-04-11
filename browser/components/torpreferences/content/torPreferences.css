@@ -5,25 +5,36 @@
   list-style-image: url("chrome://global/content/torconnect/tor-connect.svg");
 }
 
-/* Status */
-
-#torPreferences-status-box {
-  display: flex;
-  align-items: center;
-  gap: 32px;
+/* Make a button appear disabled, whilst still allowing it to keep keyboard
+ * focus. */
+button.spoof-button-disabled {
+  /* Borrow the :disabled rule from common-shared.css */
+  opacity: 0.4;
+  /* Also ensure it does not get hover or active styling. */
+  pointer-events: none;
 }
 
-.torPreferences-status-grouping {
+/* Status */
+
+#network-status-internet-area {
+  margin-block: 16px;
+}
+
+#network-status-tor-area {
+  margin-block: 0 32px;
+}
+
+.network-status-area {
   display: flex;
   align-items: center;
   white-space: nowrap;
 }
 
-.torPreferences-status-grouping > * {
+.network-status-area > * {
   flex: 0 0 auto;
 }
 
-.torPreferences-status-icon {
+.network-status-icon {
   width: 18px;
   height: 18px;
   margin-inline-end: 8px;
@@ -32,40 +43,72 @@
   stroke: currentColor;
 }
 
-#torPreferences-status-internet .torPreferences-status-icon {
-  list-style-image: url("chrome://browser/content/torpreferences/network.svg");
+#network-status-internet-area .network-status-icon {
+  content: url("chrome://browser/content/torpreferences/network.svg");
 }
 
-#torPreferences-status-tor-connect .torPreferences-status-icon {
-  list-style-image: url("chrome://global/content/torconnect/tor-connect-broken.svg");
+#network-status-internet-area.status-offline .network-status-icon {
+  content: url("chrome://browser/content/torpreferences/network-broken.svg");
 }
 
-.torPreferences-status-name {
-  font-weight: bold;
-  margin-inline-end: 0.75em;
+#network-status-tor-area .network-status-icon {
+  content: url("chrome://global/content/torconnect/tor-connect.svg");
 }
 
-.torPreferences-status-result {
-  margin-inline-end: 8px;
+#network-status-tor-area:not(.status-connected) .network-status-icon {
+  content: url("chrome://global/content/torconnect/tor-connect-broken.svg");
 }
 
-#torPreferences-status-internet.offline .torPreferences-status-icon {
-  list-style-image: url("chrome://browser/content/torpreferences/network-broken.svg");
-}
-
-#torPreferences-status-tor-connect.connected .torPreferences-status-icon {
-  list-style-image: url("chrome://global/content/torconnect/tor-connect.svg");
-}
-
-#torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
+#network-status-tor-area.status-blocked .network-status-icon {
   /* Same as .tor-connect-status-potentially-blocked. */
   stroke: #c50042;
 }
 
 @media (prefers-color-scheme: dark) {
-  #torPreferences-status-tor-connect.blocked .torPreferences-status-icon {
+  #network-status-tor-area.status-blocked  .network-status-icon {
     stroke: #ff9aa2;
   }
+}
+
+.network-status-live-area {
+  display: contents;
+}
+
+.network-status-label {
+  font-weight: bold;
+  margin-inline-end: 0.75em;
+}
+
+.network-status-loading-icon {
+  margin-inline-end: 0.5em;
+  width: 16px;
+  height: 16px;
+  content: image-set(
+    url("chrome://global/skin/icons/tor-light-loading.png"),
+    url("chrome://global/skin/icons/tor-light-loading@2x.png") 2x
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  .network-status-loading-icon {
+    content: image-set(
+      url("chrome://global/skin/icons/tor-dark-loading.png"),
+      url("chrome://global/skin/icons/tor-dark-loading@2x.png") 2x
+    );
+  }
+}
+
+#network-status-internet-area:not(.status-loading) .network-status-loading-icon {
+  display: none;
+}
+
+.network-status-result:not(:empty) {
+  margin-inline-end: 0.75em;
+}
+
+#network-status-tor-area.status-connected #network-status-tor-connect-button {
+  /* Hide button when already connected. */
+  display: none;
 }
 
 /* Bridge settings */

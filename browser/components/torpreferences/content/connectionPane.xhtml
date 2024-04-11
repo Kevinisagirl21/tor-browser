@@ -5,16 +5,13 @@
   src="chrome://browser/content/torpreferences/connectionPane.js"
 />
 <html:template id="template-paneConnection">
-  <hbox
+  <vbox
     id="torPreferencesCategory"
     class="subcategory"
     data-category="paneConnection"
     hidden="true"
   >
     <html:h1 data-l10n-id="tor-connection-settings-heading"></html:h1>
-  </hbox>
-
-  <groupbox data-category="paneConnection" hidden="true">
     <description flex="1">
       <html:span
         data-l10n-id="tor-connection-overview"
@@ -28,46 +25,61 @@
         data-l10n-id="tor-connection-browser-learn-more-link"
       />
     </description>
-  </groupbox>
-
-  <groupbox
-    id="torPreferences-status-group"
-    data-category="paneConnection"
-    hidden="true"
-  >
-    <hbox id="torPreferences-status-box">
-      <hbox
-        id="torPreferences-status-internet"
-        class="torPreferences-status-grouping"
+    <!-- Keep within #torPreferencesCategory so this won't appear in search
+       - results. -->
+    <html:div
+      id="network-status-internet-area"
+      class="network-status-area"
+      role="group"
+      aria-labelledby="network-status-internet-area-label"
+    >
+      <html:img alt="" class="network-status-icon" />
+      <!-- Use an aria-live area to announce "Internet: Online" or
+         - "Internet: Offline". We only expect this to change when triggered by
+         - the user clicking the "Test" button, so shouldn't occur unexpectedly.
+         -->
+      <html:div
+        class="network-status-live-area"
+        aria-live="polite"
+        aria-atomic="true"
       >
-        <image class="torPreferences-status-icon" />
         <html:span
-          class="torPreferences-status-name"
+          id="network-status-internet-area-label"
+          class="network-status-label"
           data-l10n-id="tor-connection-internet-status-label"
         ></html:span>
-        <html:span class="torPreferences-status-result"></html:span>
-        <html:button
-          id="torPreferences-status-internet-test"
-          data-l10n-id="tor-connection-internet-status-test-button"
-        ></html:button>
-      </hbox>
-      <hbox
-        id="torPreferences-status-tor-connect"
-        class="torPreferences-status-grouping"
-      >
-        <image class="torPreferences-status-icon" />
-        <html:span
-          class="torPreferences-status-name"
-          data-l10n-id="tor-connection-network-status-label"
-        ></html:span>
-        <html:span class="torPreferences-status-result"></html:span>
-        <html:button
-          id="torPreferences-status-tor-connect-button"
-          data-l10n-id="tor-connection-network-status-connect-button"
-        ></html:button>
-      </hbox>
-    </hbox>
-  </groupbox>
+        <img alt="" class="network-status-loading-icon" />
+        <html:span class="network-status-result"></html:span>
+      </html:div>
+      <html:button
+        id="network-status-internet-test-button"
+        data-l10n-id="tor-connection-internet-status-test-button"
+      ></html:button>
+    </html:div>
+    <html:div
+      id="network-status-tor-area"
+      class="network-status-area"
+      role="group"
+      aria-labelledby="network-status-tor-area-label"
+    >
+      <html:img alt="" class="network-status-icon" />
+      <!-- NOTE: Unlike #network-status-internet-area, we do not wrap the label
+         - and status ("Tor network: Not connected", etc) in an aria-live area.
+         - This is not likely to change whilst this page has focus.
+         - Moreover, the status is already present in the torconnect status bar
+         - in the window tab bar. -->
+      <html:span
+        id="network-status-tor-area-label"
+        class="network-status-label"
+        data-l10n-id="tor-connection-network-status-label"
+      ></html:span>
+      <html:span class="network-status-result"></html:span>
+      <html:button
+        id="network-status-tor-connect-button"
+        data-l10n-id="tor-connection-network-status-connect-button"
+      ></html:button>
+    </html:div>
+  </vbox>
 
   <!-- Quickstart -->
   <groupbox data-category="paneConnection" hidden="true">

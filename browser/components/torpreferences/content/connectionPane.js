@@ -5,7 +5,8 @@
 
 "use strict";
 
-/* global Services, gSubDialog */
+/* import-globals-from /browser/components/preferences/preferences.js */
+/* import-globals-from /browser/components/preferences/search.js */
 
 const { setTimeout, clearTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
@@ -89,12 +90,6 @@ const Lox = {
   },
 };
 */
-
-const InternetStatus = Object.freeze({
-  Unknown: 0,
-  Online: 1,
-  Offline: -1,
-});
 
 /**
  * Make changes to TorSettings and save them.
@@ -2283,6 +2278,168 @@ const gBridgeSettings = {
   },
 };
 
+/**
+ * Area to show the internet and tor network connection status.
+ */
+const gNetworkStatus = {
+  /**
+   * Initialize the area.
+   */
+  init() {
+    this._internetAreaEl = document.getElementById(
+      "network-status-internet-area"
+    );
+    this._internetResultEl = this._internetAreaEl.querySelector(
+      ".network-status-result"
+    );
+    this._internetTestButton = document.getElementById(
+      "network-status-internet-test-button"
+    );
+    this._internetTestButton.addEventListener("click", () => {
+      this._startInternetTest();
+    });
+
+    this._torAreaEl = document.getElementById("network-status-tor-area");
+    this._torResultEl = this._torAreaEl.querySelector(".network-status-result");
+    this._torConnectButton = document.getElementById(
+      "network-status-tor-connect-button"
+    );
+    this._torConnectButton.addEventListener("click", () => {
+      TorConnect.openTorConnect({ beginBootstrap: true });
+    });
+
+    this._updateInternetStatus("unknown");
+    this._updateTorConnectionStatus();
+
+    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+  },
+
+  /**
+   * Un-initialize the area.
+   */
+  deinint() {
+    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+  },
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      // triggered when tor connect state changes and we may
+      // need to update the messagebox
+      case TorConnectTopics.StateChange: {
+        this._updateTorConnectionStatus();
+        break;
+      }
+    }
+  },
+
+  /**
+   * Whether the test should be disabled.
+   *
+   * @type {boolean}
+   */
+  _internetTestDisabled: false,
+  /**
+   * Start the internet test.
+   */
+  async _startInternetTest() {
+    if (this._internetTestDisabled) {
+      return;
+    }
+    this._internetTestDisabled = true;
+    // We use "aria-disabled" rather than the "disabled" attribute so that the
+    // button can remain focusable during the test.
+    this._internetTestButton.setAttribute("aria-disabled", "true");
+    this._internetTestButton.classList.add("spoof-button-disabled");
+    try {
+      this._updateInternetStatus("testing");
+      const mrpc = new MoatRPC();
+      let status = null;
+      try {
+        await mrpc.init();
+        status = await mrpc.testInternetConnection();
+      } catch (err) {
+        console.log("Error while checking the Internet connection", err);
+      } finally {
+        mrpc.uninit();
+      }
+      if (status) {
+        this._updateInternetStatus(status.successful ? "online" : "offline");
+      } else {
+        this._updateInternetStatus("unknown");
+      }
+    } finally {
+      this._internetTestButton.removeAttribute("aria-disabled");
+      this._internetTestButton.classList.remove("spoof-button-disabled");
+      this._internetTestDisabled = false;
+    }
+  },
+
+  /**
+   * Update the shown internet status.
+   *
+   * @param {string} stateName - The name of the state to show.
+   */
+  _updateInternetStatus(stateName) {
+    let l10nId;
+    switch (stateName) {
+      case "testing":
+        l10nId = "tor-connection-internet-status-testing";
+        break;
+      case "offline":
+        l10nId = "tor-connection-internet-status-offline";
+        break;
+      case "online":
+        l10nId = "tor-connection-internet-status-online";
+        break;
+    }
+    if (l10nId) {
+      this._internetResultEl.setAttribute("data-l10n-id", l10nId);
+    } else {
+      this._internetResultEl.removeAttribute("data-l10n-id");
+      this._internetResultEl.textContent = "";
+    }
+
+    this._internetAreaEl.classList.toggle(
+      "status-loading",
+      stateName === "testing"
+    );
+    this._internetAreaEl.classList.toggle(
+      "status-offline",
+      stateName === "offline"
+    );
+  },
+
+  /**
+   * Update the shown Tor connection status.
+   */
+  _updateTorConnectionStatus() {
+    const buttonHadFocus = this._torConnectButton.contains(
+      document.activeElement
+    );
+    const isBootstrapped = TorConnect.state === TorConnectState.Bootstrapped;
+    const isBlocked = !isBootstrapped && TorConnect.potentiallyBlocked;
+    let l10nId;
+    if (isBootstrapped) {
+      l10nId = "tor-connection-network-status-connected";
+    } else if (isBlocked) {
+      l10nId = "tor-connection-network-status-blocked";
+    } else {
+      l10nId = "tor-connection-network-status-not-connected";
+    }
+
+    document.l10n.setAttributes(this._torResultEl, l10nId);
+    this._torAreaEl.classList.toggle("status-connected", isBootstrapped);
+    this._torAreaEl.classList.toggle("status-blocked", isBlocked);
+    if (isBootstrapped && buttonHadFocus) {
+      // Button has become hidden and will loose focus. Most likely this has
+      // happened because the user clicked the button to open about:torconnect.
+      // Since this is near the top of the page, we move focus to the search
+      // input (for when the user returns).
+      gSearchResultsPane.searchInput.focus();
+    }
+  },
+};
+
 /*
   Connection Pane
 
@@ -2304,8 +2461,6 @@ const gConnectionPane = (function () {
     // cached frequently accessed DOM elements
     _enableQuickstartCheckbox: null,
 
-    _internetStatus: InternetStatus.Unknown,
-
     // populate xul with strings and cache the relevant elements
     _populateXUL() {
       // saves tor settings to disk when navigate away from about:preferences
@@ -2320,80 +2475,6 @@ const gConnectionPane = (function () {
           console.warn("Could not save the tor settings.", e);
         }
       });
-
-      // Internet and Tor status
-      const internetStatus = document.getElementById(
-        "torPreferences-status-internet"
-      );
-      const internetResult = internetStatus.querySelector(
-        ".torPreferences-status-result"
-      );
-      const internetTest = document.getElementById(
-        "torPreferences-status-internet-test"
-      );
-      internetTest.addEventListener("click", () => {
-        this.onInternetTest();
-      });
-
-      const torConnectStatus = document.getElementById(
-        "torPreferences-status-tor-connect"
-      );
-      const torConnectResult = torConnectStatus.querySelector(
-        ".torPreferences-status-result"
-      );
-      const torConnectButton = document.getElementById(
-        "torPreferences-status-tor-connect-button"
-      );
-      torConnectButton.addEventListener("click", () => {
-        TorConnect.openTorConnect({ beginBootstrap: true });
-      });
-
-      this._populateStatus = () => {
-        let internetId;
-        switch (this._internetStatus) {
-          case InternetStatus.Online:
-            internetStatus.classList.remove("offline");
-            internetId = "tor-connection-internet-status-online";
-            break;
-          case InternetStatus.Offline:
-            internetStatus.classList.add("offline");
-            internetId = "tor-connection-internet-status-offline";
-            break;
-          case InternetStatus.Unknown:
-          default:
-            internetStatus.classList.remove("offline");
-            break;
-        }
-        if (internetId) {
-          document.l10n.setAttributes(internetResult, internetId);
-          internetResult.hidden = false;
-        } else {
-          internetResult.hidden = true;
-        }
-
-        let connectId;
-        // FIXME: What about the TorConnectState.Disabled state?
-        if (TorConnect.state === TorConnectState.Bootstrapped) {
-          torConnectStatus.classList.add("connected");
-          torConnectStatus.classList.remove("blocked");
-          connectId = "tor-connection-network-status-connected";
-          // NOTE: If the button is focused when we hide it, the focus may be
-          // lost. But we don't have an obvious place to put the focus instead.
-          torConnectButton.hidden = true;
-        } else {
-          torConnectStatus.classList.remove("connected");
-          torConnectStatus.classList.toggle(
-            "blocked",
-            TorConnect.potentiallyBlocked
-          );
-          connectId = TorConnect.potentiallyBlocked
-            ? "tor-connection-network-status-blocked"
-            : "tor-connection-network-status-not-connected";
-          torConnectButton.hidden = false;
-        }
-        document.l10n.setAttributes(torConnectResult, connectId);
-      };
-      this._populateStatus();
 
       // Quickstart
       this._enableQuickstartCheckbox = document.getElementById(
@@ -2514,6 +2595,7 @@ const gConnectionPane = (function () {
 
     init() {
       gBridgeSettings.init();
+      gNetworkStatus.init();
 
       TorSettings.initializedPromise.then(() => this._populateXUL());
 
@@ -2526,6 +2608,7 @@ const gConnectionPane = (function () {
 
     uninit() {
       gBridgeSettings.uninit();
+      gNetworkStatus.uninit();
 
       // unregister our observer topics
       Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
@@ -2554,34 +2637,10 @@ const gConnectionPane = (function () {
         // triggered when tor connect state changes and we may
         // need to update the messagebox
         case TorConnectTopics.StateChange: {
-          this.onStateChange();
+          this._showAutoconfiguration();
           break;
         }
       }
-    },
-
-    async onInternetTest() {
-      const mrpc = new MoatRPC();
-      let status = null;
-      try {
-        await mrpc.init();
-        status = await mrpc.testInternetConnection();
-      } catch (err) {
-        console.log("Error while checking the Internet connection", err);
-      } finally {
-        mrpc.uninit();
-      }
-      if (status) {
-        this._internetStatus = status.successful
-          ? InternetStatus.Online
-          : InternetStatus.Offline;
-        this._populateStatus();
-      }
-    },
-
-    onStateChange() {
-      this._populateStatus();
-      this._showAutoconfiguration();
     },
 
     onAdvancedSettings() {
