@@ -71,6 +71,9 @@ const gRequestBridgeDialog = {
       selectors.refreshCaptchaButton
     );
     this._captchaRefreshButton.disabled = true;
+    this._captchaRefreshButton.addEventListener("command", () => {
+      this.onRefreshCaptcha();
+    });
 
     this._incorrectCaptchaHbox = this._dialog.querySelector(
       selectors.incorrectCaptchaHbox
