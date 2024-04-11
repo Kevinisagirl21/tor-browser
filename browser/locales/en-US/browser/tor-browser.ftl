@@ -65,6 +65,9 @@ tor-connection-internet-status-label = Internet:
 # Here "Test" is a verb, as in "test the internet connection".
 # Uses sentence case in English (US).
 tor-connection-internet-status-test-button = Test
+# Shown when testing the internet status.
+# Uses sentence case in English (US).
+tor-connection-internet-status-testing = Testing…
 # Shown when the user is connected to the internet.
 # Uses sentence case in English (US).
 tor-connection-internet-status-online = Online
