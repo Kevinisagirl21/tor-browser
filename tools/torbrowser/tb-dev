@@ -57,10 +57,12 @@ def get_local_root():
     global local_root
     if local_root is None:
         try:
+            # Make sure we have a matching remote in this git repository. Should raise Exception if we don't.
+            get_upstream_name()
             git_root = git_get(["rev-parse", "--show-toplevel"])[0]
-        except subprocess.CalledProcessError:
+        except Exception:
             git_root = None
-        if git_root is None or os.path.basename(git_root) != "tor-browser":
+        if git_root is None:
             local_root = ""
         else:
             local_root = git_root
