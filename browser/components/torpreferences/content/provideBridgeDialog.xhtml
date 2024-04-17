@@ -51,10 +51,14 @@
           role="alert"
           aria-live="assertive"
         ></html:span>
+        <img
+          id="user-provide-bridge-loading-icon"
+          class="tor-loading-icon"
+          alt=""
+        />
         <html:span
           id="user-provide-bridge-connecting"
           role="alert"
-          tabindex="0"
           data-l10n-id="user-provide-bridge-dialog-connecting"
         ></html:span>
       </html:div>
@@ -70,6 +74,8 @@
         id="user-provide-bridge-grid-display"
         class="tor-bridges-grid"
         role="table"
+        tabindex="0"
+        aria-labelledby="user-provide-result-description"
       ></html:div>
       <html:template id="user-provide-bridge-row-template">
         <html:div class="tor-bridges-grid-row" role="row">

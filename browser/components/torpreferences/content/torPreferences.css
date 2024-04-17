@@ -14,6 +14,24 @@ button.spoof-button-disabled {
   pointer-events: none;
 }
 
+.tor-loading-icon {
+  width: 16px;
+  height: 16px;
+  content: image-set(
+    url("chrome://global/skin/icons/tor-light-loading.png"),
+    url("chrome://global/skin/icons/tor-light-loading@2x.png") 2x
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  .tor-loading-icon {
+    content: image-set(
+      url("chrome://global/skin/icons/tor-dark-loading.png"),
+      url("chrome://global/skin/icons/tor-dark-loading@2x.png") 2x
+    );
+  }
+}
+
 /* Status */
 
 #network-status-internet-area {
@@ -81,21 +99,6 @@ button.spoof-button-disabled {
 
 .network-status-loading-icon {
   margin-inline-end: 0.5em;
-  width: 16px;
-  height: 16px;
-  content: image-set(
-    url("chrome://global/skin/icons/tor-light-loading.png"),
-    url("chrome://global/skin/icons/tor-light-loading@2x.png") 2x
-  );
-}
-
-@media (prefers-color-scheme: dark) {
-  .network-status-loading-icon {
-    content: image-set(
-      url("chrome://global/skin/icons/tor-dark-loading.png"),
-      url("chrome://global/skin/icons/tor-dark-loading@2x.png") 2x
-    );
-  }
 }
 
 #network-status-internet-area:not(.status-loading) .network-status-loading-icon {
@@ -900,6 +903,8 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 #lox-invite-dialog-message-area {
   grid-area: message;
   justify-self: end;
+  display: flex;
+  align-items: center;
 }
 
 #lox-invite-dialog-message-area::after {
@@ -911,17 +916,27 @@ dialog#torPreferences-requestBridge-dialog > hbox {
   color: var(--in-content-error-text-color);
 }
 
-#lox-invite-dialog-error-message:not(.show-error) {
+#lox-invite-dialog-generate-area:not(.show-error) #lox-invite-dialog-error-message {
   display: none;
 }
 
 #lox-invite-dialog-connecting {
   color: var(--text-color-deemphasized);
-  /* TODO: Add spinner ::before */
+  /* Gap with #user-provide-bridge-loading-icon. */
+  margin-inline-start: 0.5em;
 }
 
-#lox-invite-dialog-connecting:not(.show-connecting) {
+#lox-invite-dialog-generate-area:not(.show-connecting) #lox-invite-dialog-connecting {
   display: none;
+}
+
+#lox-invite-dialog-loading-icon {
+  flex: 0 0 auto;
+}
+
+#lox-invite-dialog-generate-area:not(.show-connecting) #lox-invite-dialog-loading-icon {
+  /* Use width:0 to effectively hide, but still occupy vertical space. */
+  width: 0;
 }
 
 #lox-invite-dialog-list-label {
@@ -1019,6 +1034,8 @@ groupbox#torPreferences-bridges-group textarea {
   flex: 0 0 auto;
   margin-block: 8px 12px;
   align-self: end;
+  display: flex;
+  align-items: center;
 }
 
 #user-provide-bridge-message-area::after {
@@ -1035,17 +1052,27 @@ groupbox#torPreferences-bridges-group textarea {
   color: var(--in-content-error-text-color);
 }
 
-#user-provide-bridge-error-message.not(.show-error) {
+#user-provide-bridge-dialog:not(.show-error) #user-provide-bridge-error-message {
   display: none;
 }
 
 #user-provide-bridge-connecting {
   color: var(--text-color-deemphasized);
-  /* TODO: Add spinner ::before */
+  /* Gap with #user-provide-bridge-loading-icon. */
+  margin-inline-start: 0.5em;
 }
 
-#user-provide-bridge-connecting:not(.show-connecting) {
+#user-provide-bridge-dialog:not(.show-connecting) #user-provide-bridge-connecting {
   display: none;
+}
+
+#user-provide-bridge-loading-icon {
+  flex: 0 0 auto;
+}
+
+#user-provide-bridge-dialog:not(.show-connecting) #user-provide-bridge-loading-icon {
+  /* Use width:0 to effectively hide, but still occupy vertical space. */
+  width: 0;
 }
 
 #user-provide-bridge-result-page {
@@ -1063,6 +1090,11 @@ groupbox#torPreferences-bridges-group textarea {
   flex: 0 1 auto;
   overflow: auto;
   margin-block: 8px;
+}
+
+#user-provide-bridge-grid-display:focus-visible {
+  outline: var(--in-content-focus-outline);
+  outline-offset: var(--in-content-focus-outline-offset);
 }
 
 /* Connection settings dialog */

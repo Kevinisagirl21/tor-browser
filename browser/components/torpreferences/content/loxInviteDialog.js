@@ -62,11 +62,11 @@ const gLoxInvites = {
     this._remainingInvitesEl = document.getElementById(
       "lox-invite-dialog-remaining"
     );
+    this._generateArea = document.getElementById(
+      "lox-invite-dialog-generate-area"
+    );
     this._generateButton = document.getElementById(
       "lox-invite-dialog-generate-button"
-    );
-    this._connectingEl = document.getElementById(
-      "lox-invite-dialog-connecting"
     );
     this._errorEl = document.getElementById("lox-invite-dialog-error-message");
     this._inviteListEl = document.getElementById("lox-invite-dialog-list");
@@ -237,20 +237,46 @@ const gLoxInvites = {
   _setGenerating(isGenerating) {
     this._generating = isGenerating;
     this._updateGenerateButtonState();
-    this._connectingEl.classList.toggle("show-connecting", isGenerating);
+    this._generateArea.classList.toggle("show-connecting", isGenerating);
   },
 
+  /**
+   * Whether the generate button is disabled.
+   *
+   * @type {boolean}
+   */
+  _generateDisabled: false,
   /**
    * Update the state of the generate button.
    */
   _updateGenerateButtonState() {
-    this._generateButton.disabled = this._generating || !this._remainingInvites;
+    const disabled = this._generating || !this._remainingInvites;
+    this._generateDisabled = disabled;
+    // When generating we use "aria-disabled" rather than the "disabled"
+    // attribute so that the button can remain focusable whilst we generate
+    // invites.
+    // NOTE: When we generate the invite the focus will move to the invite list,
+    // so it should be safe to make the button non-focusable in this case.
+    const spoofDisabled = this._generating;
+    this._generateButton.disabled = disabled && !spoofDisabled;
+    this._generateButton.classList.toggle(
+      "spoof-button-disabled",
+      spoofDisabled
+    );
+    if (spoofDisabled) {
+      this._generateButton.setAttribute("aria-disabled", "true");
+    } else {
+      this._generateButton.removeAttribute("aria-disabled");
+    }
   },
 
   /**
    * Start generating a new invite.
    */
   _generateNewInvite() {
+    if (this._generateDisabled) {
+      return;
+    }
     if (this._generating) {
       console.error("Already generating an invite");
       return;
@@ -258,15 +284,13 @@ const gLoxInvites = {
     this._setGenerating(true);
     // Clear the previous error.
     this._updateGenerateError(null);
-    // Move focus from the button to the connecting element, since button is
-    // now disabled.
-    this._connectingEl.focus();
 
-    let lostFocus = false;
+    let moveFocus = false;
     Lox.generateInvite(this._loxId)
       .finally(() => {
-        // Fetch whether the connecting label still has focus before we hide it.
-        lostFocus = this._connectingEl.contains(document.activeElement);
+        // Fetch whether the generate button has focus before we potentially
+        // disable it.
+        moveFocus = this._generateButton.contains(document.activeElement);
         this._setGenerating(false);
       })
       .then(
@@ -279,7 +303,7 @@ const gLoxInvites = {
             this._inviteListEl.selectedIndex = 0;
           }
 
-          if (lostFocus) {
+          if (moveFocus) {
             // Move focus to the new invite before we hide the "Connecting"
             // message.
             this._inviteListEl.focus();
@@ -295,12 +319,6 @@ const gLoxInvites = {
               this._updateGenerateError("generic");
               break;
           }
-
-          if (lostFocus) {
-            // Move focus back to the button before we hide the "Connecting"
-            // message.
-            this._generateButton.focus();
-          }
         }
       );
   },
@@ -315,7 +333,7 @@ const gLoxInvites = {
     // First clear the existing error.
     this._errorEl.removeAttribute("data-l10n-id");
     this._errorEl.textContent = "";
-    this._errorEl.classList.toggle("show-error", !!type);
+    this._generateArea.classList.toggle("show-error", !!type);
 
     if (!type) {
       return;
