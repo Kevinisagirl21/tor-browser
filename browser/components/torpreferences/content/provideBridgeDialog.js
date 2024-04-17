@@ -84,12 +84,18 @@ const gProvideBridgeDialog = {
 
     this._dialog = document.getElementById("user-provide-bridge-dialog");
     this._acceptButton = this._dialog.getButton("accept");
+
+    // Inject our stylesheet into the shadow root so that the accept button can
+    // take the spoof-button-disabled styling.
+    const styleLink = document.createElement("link");
+    styleLink.rel = "stylesheet";
+    styleLink.href =
+      "chrome://browser/content/torpreferences/torPreferences.css";
+    this._dialog.shadowRoot.append(styleLink);
+
     this._textarea = document.getElementById("user-provide-bridge-textarea");
     this._errorEl = document.getElementById(
       "user-provide-bridge-error-message"
-    );
-    this._connectingEl = document.getElementById(
-      "user-provide-bridge-connecting"
     );
     this._resultDescription = document.getElementById(
       "user-provide-result-description"
@@ -152,13 +158,16 @@ const gProvideBridgeDialog = {
    * Reset focus position in the dialog.
    */
   takeFocus() {
-    if (this._page === "entry") {
-      this._textarea.focus();
-    } else {
-      // Move focus to the <xul:window> element.
-      // In particular, we do not want to keep the focus on the (same) accept
-      // button (with now different text).
-      document.documentElement.focus();
+    switch (this._page) {
+      case "entry":
+        this._textarea.focus();
+        break;
+      case "result":
+        // Move focus to the table.
+        // In particular, we do not want to keep the focus on the (same) accept
+        // button (with now different text).
+        this._bridgeGrid.focus();
+        break;
     }
   },
 
@@ -194,11 +203,26 @@ const gProvideBridgeDialog = {
   },
 
   /**
+   * Whether the dialog accept button is disabled.
+   *
+   * @type {boolean}
+   */
+  _acceptDisabled: false,
+  /**
    * Callback for whenever the accept button's might need to be disabled.
    */
   updateAcceptDisabled() {
-    this._acceptButton.disabled =
+    const disabled =
       this._page === "entry" && (this.isEmpty() || this._loxLoading);
+    this._acceptDisabled = disabled;
+    // Spoof the button to look and act as if it is disabled, but still allow
+    // keyboard focus so the user can sit on this button whilst we are loading.
+    this._acceptButton.classList.toggle("spoof-button-disabled", disabled);
+    if (disabled) {
+      this._acceptButton.setAttribute("aria-disabled", "true");
+    } else {
+      this._acceptButton.removeAttribute("aria-disabled");
+    }
   },
 
   /**
@@ -217,16 +241,7 @@ const gProvideBridgeDialog = {
   setLoxLoading(isLoading) {
     this._loxLoading = isLoading;
     this._textarea.readOnly = isLoading;
-    this._connectingEl.classList.toggle("show-connecting", isLoading);
-    if (
-      isLoading &&
-      this._acceptButton.contains(
-        this._acceptButton.getRootNode().activeElement
-      )
-    ) {
-      // Move focus to the alert before we disable the button.
-      this._connectingEl.focus();
-    }
+    this._dialog.classList.toggle("show-connecting", isLoading);
     this.updateAcceptDisabled();
   },
 
@@ -236,6 +251,12 @@ const gProvideBridgeDialog = {
    * @param {Event} event - The dialogaccept event.
    */
   onDialogAccept(event) {
+    if (this._acceptDisabled) {
+      // Prevent closing.
+      event.preventDefault();
+      return;
+    }
+
     if (this._page === "result") {
       this._result.accepted = true;
       // Continue to close the dialog.
@@ -313,14 +334,11 @@ const gProvideBridgeDialog = {
     this._errorEl.textContent = "";
     if (error) {
       this._textarea.setAttribute("aria-invalid", "true");
-      // Move focus back to the text area, likely away from the Next button or
-      // the "Connecting..." alert.
-      this._textarea.focus();
     } else {
       this._textarea.removeAttribute("aria-invalid");
     }
     this._textarea.classList.toggle("invalid-input", !!error);
-    this._errorEl.classList.toggle("show-error", !!error);
+    this._dialog.classList.toggle("show-error", !!error);
 
     if (!error) {
       return;
