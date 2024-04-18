@@ -55,6 +55,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 export const LoxTopics = Object.freeze({
+  // Whenever the activeLoxId value changes.
+  UpdateActiveLoxId: "lox:update-active-lox-id",
   // Whenever the bridges *might* have changed.
   // getBridges only uses #credentials, so this will only fire when it changes.
   UpdateBridges: "lox:update-bridges",
@@ -141,6 +143,10 @@ class LoxImpl {
    */
   #activeLoxId = null;
 
+  get activeLoxId() {
+    return this.#activeLoxId;
+  }
+
   /**
    * Update the active lox id.
    */
@@ -164,6 +170,8 @@ class LoxImpl {
       this.#store();
     }
     this.#activeLoxId = loxId;
+
+    Services.obs.notifyObservers(null, LoxTopics.UpdateActiveLoxId);
   }
 
   observe(subject, topic, data) {
