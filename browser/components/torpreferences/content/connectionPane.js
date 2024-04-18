@@ -1317,6 +1317,7 @@ const gLoxStatus = {
     });
 
     Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.addObserver(this, LoxTopics.UpdateActiveLoxId);
     Services.obs.addObserver(this, LoxTopics.UpdateEvents);
     Services.obs.addObserver(this, LoxTopics.UpdateNextUnlock);
     Services.obs.addObserver(this, LoxTopics.UpdateRemainingInvites);
@@ -1333,6 +1334,7 @@ const gLoxStatus = {
    */
   uninit() {
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.removeObserver(this, LoxTopics.UpdateActiveLoxId);
     Services.obs.removeObserver(this, LoxTopics.UpdateEvents);
     Services.obs.removeObserver(this, LoxTopics.UpdateNextUnlock);
     Services.obs.removeObserver(this, LoxTopics.UpdateRemainingInvites);
@@ -1343,12 +1345,17 @@ const gLoxStatus = {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
-        if (
-          changes.includes("bridges.source") ||
-          changes.includes("bridges.lox_id")
-        ) {
+        if (changes.includes("bridges.source")) {
           this._updateLoxId();
         }
+        // NOTE: We do not call _updateLoxId when "bridges.lox_id" is in the
+        // changes. Instead we wait until LoxTopics.UpdateActiveLoxId to ensure
+        // that the Lox module has responded to the change in ID strictly
+        // *before* we do. In particular, we want to make sure the invites and
+        // event data has been cleared.
+        break;
+      case LoxTopics.UpdateActiveLoxId:
+        this._updateLoxId();
         break;
       case LoxTopics.UpdateNextUnlock:
         this._updateNextUnlock();
@@ -1378,9 +1385,7 @@ const gLoxStatus = {
    */
   async _updateLoxId() {
     let loxId =
-      TorSettings.bridges.source === TorBridgeSource.Lox
-        ? TorSettings.bridges.lox_id
-        : "";
+      TorSettings.bridges.source === TorBridgeSource.Lox ? Lox.activeLoxId : "";
     if (loxId === this._loxId) {
       return;
     }
