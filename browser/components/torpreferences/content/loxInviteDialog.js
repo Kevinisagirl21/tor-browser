@@ -104,6 +104,7 @@ const gLoxInvites = {
     // NOTE: TorSettings should already be initialized when this dialog is
     // opened.
     Services.obs.addObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.addObserver(this, LoxTopics.UpdateActiveLoxId);
     Services.obs.addObserver(this, LoxTopics.UpdateRemainingInvites);
     Services.obs.addObserver(this, LoxTopics.NewInvite);
 
@@ -119,6 +120,7 @@ const gLoxInvites = {
    */
   uninit() {
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
+    Services.obs.removeObserver(this, LoxTopics.UpdateActiveLoxId);
     Services.obs.removeObserver(this, LoxTopics.UpdateRemainingInvites);
     Services.obs.removeObserver(this, LoxTopics.NewInvite);
   },
@@ -127,12 +129,12 @@ const gLoxInvites = {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
-        if (
-          changes.includes("bridges.source") ||
-          changes.includes("bridges.lox_id")
-        ) {
+        if (changes.includes("bridges.source")) {
           this._updateLoxId();
         }
+        break;
+      case LoxTopics.UpdateActiveLoxId:
+        this._updateLoxId();
         break;
       case LoxTopics.UpdateRemainingInvites:
         this._updateRemainingInvites();
@@ -155,9 +157,7 @@ const gLoxInvites = {
    */
   _updateLoxId() {
     const loxId =
-      TorSettings.bridges.source === TorBridgeSource.Lox
-        ? TorSettings.bridges.lox_id
-        : "";
+      TorSettings.bridges.source === TorBridgeSource.Lox ? Lox.activeLoxId : "";
     if (!loxId || (this._loxId !== null && loxId !== this._loxId)) {
       // No lox id, or it changed. Close this dialog.
       this._dialog.cancelDialog();
