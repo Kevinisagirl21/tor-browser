@@ -104,7 +104,6 @@ export class LoxError extends Error {
 
 class LoxImpl {
   #initialized = false;
-  #window = null;
   #pubKeyPromise = null;
   #encTablePromise = null;
   #constantsPromise = null;
@@ -537,11 +536,9 @@ class LoxImpl {
     Services.obs.addObserver(this, lazy.TorSettingsTopics.Ready);
 
     // Hack to make the generated wasm happy
-    this.#window = {
-      crypto,
-    };
-    this.#window.window = this.#window;
-    await lazy.init(this.#window);
+    const win = { crypto };
+    win.window = win;
+    await lazy.init(win);
     lazy.set_panic_hook();
     if (typeof lazy.open_invite !== "function") {
       throw new LoxError("Initialization failed");
@@ -561,7 +558,6 @@ class LoxImpl {
       this.#domainFrontedRequests = null;
     }
     this.#initialized = false;
-    this.#window = null;
     this.#invites = [];
     this.#pubKeys = null;
     this.#encTable = null;
