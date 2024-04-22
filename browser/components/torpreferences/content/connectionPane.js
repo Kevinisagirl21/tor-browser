@@ -2331,7 +2331,7 @@ const gNetworkStatus = {
   /**
    * Un-initialize the area.
    */
-  deinint() {
+  uninit() {
     Services.obs.removeObserver(this, TorConnectTopics.StateChange);
   },
 
