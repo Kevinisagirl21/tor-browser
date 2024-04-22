@@ -51,7 +51,7 @@ body.certerror .title {
 }
 
 body.onion-error .title {
-  background-image: url("chrome://browser/skin/onion-warning.svg");
+  background-image: url("chrome://global/skin/icons/onion-warning.svg");
   -moz-context-properties: fill, stroke;
   fill: currentColor;
   stroke: var(--warning-color);
