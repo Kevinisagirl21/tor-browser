@@ -1284,6 +1284,11 @@ const gLoxStatus = {
    * Initialize the bridge pass area.
    */
   init() {
+    if (!Lox.enabled) {
+      // Area should remain inactive and hidden.
+      return;
+    }
+
     this._area = document.getElementById("tor-bridges-lox-status");
     this._detailsArea = document.getElementById("tor-bridges-lox-details");
     this._nextUnlockCounterEl = document.getElementById(
@@ -1333,6 +1338,10 @@ const gLoxStatus = {
    * Uninitialize the built-in bridges area.
    */
   uninit() {
+    if (!Lox.enabled) {
+      return;
+    }
+
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
     Services.obs.removeObserver(this, LoxTopics.UpdateActiveLoxId);
     Services.obs.removeObserver(this, LoxTopics.UpdateEvents);

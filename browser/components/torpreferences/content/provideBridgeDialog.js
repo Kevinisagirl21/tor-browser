@@ -72,8 +72,7 @@ const gProvideBridgeDialog = {
 
     document.l10n.setAttributes(document.documentElement, titleId);
 
-    // TODO: Make conditional on Lox being enabled.
-    this._allowLoxInvite = mode !== "edit"; // && Lox.enabled
+    this._allowLoxInvite = mode !== "edit" && Lox.enabled;
 
     document.l10n.setAttributes(
       document.getElementById("user-provide-bridge-textarea-label"),
@@ -403,33 +402,39 @@ const gProvideBridgeDialog = {
       return null;
     }
 
-    let loxInvite = null;
-    for (let line of this._textarea.value.split(/\r?\n/)) {
-      line = line.trim();
-      if (!line) {
-        continue;
-      }
-      // TODO: Once we have a Lox invite encoding, distinguish between a valid
-      // invite and something that looks like it should be an invite.
-      const isLoxInvite = Lox.validateInvitation(line);
-      if (isLoxInvite) {
-        if (!this._allowLoxInvite) {
-          this.updateError({ type: "not-allowed-invite" });
+    // Only check if this looks like a Lox invite when the Lox module is
+    // enabled.
+    if (Lox.enabled) {
+      let loxInvite = null;
+      for (let line of this._textarea.value.split(/\r?\n/)) {
+        line = line.trim();
+        if (!line) {
+          continue;
+        }
+        // TODO: Once we have a Lox invite encoding, distinguish between a valid
+        // invite and something that looks like it should be an invite.
+        const isLoxInvite = Lox.validateInvitation(line);
+        if (isLoxInvite) {
+          if (!this._allowLoxInvite) {
+            // Lox is enabled, but not allowed invites when editing bridge
+            // addresses.
+            this.updateError({ type: "not-allowed-invite" });
+            return null;
+          }
+          if (loxInvite) {
+            this.updateError({ type: "multiple-invites" });
+            return null;
+          }
+          loxInvite = line;
+        } else if (loxInvite) {
+          this.updateError({ type: "mixed" });
           return null;
         }
-        if (loxInvite) {
-          this.updateError({ type: "multiple-invites" });
-          return null;
-        }
-        loxInvite = line;
-      } else if (loxInvite) {
-        this.updateError({ type: "mixed" });
-        return null;
       }
-    }
 
-    if (loxInvite) {
-      return { loxInvite };
+      if (loxInvite) {
+        return { loxInvite };
+      }
     }
 
     const validation = validateBridgeLines(this._textarea.value);
