@@ -21,7 +21,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 ChromeUtils.defineLazyGetter(lazy, "CryptoStrings", function () {
-  return new Localization(["browser/tor-browser.ftl"]);
+  return new Localization(["toolkit/global/tor-browser.ftl"]);
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
