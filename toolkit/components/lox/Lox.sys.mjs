@@ -1,4 +1,5 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import {
   clearInterval,
   setInterval,
@@ -103,7 +104,24 @@ export class LoxError extends Error {
 }
 
 class LoxImpl {
+  /**
+   * Whether the Lox module has completed initialization.
+   *
+   * @type {boolean}
+   */
   #initialized = false;
+
+  /**
+   * Whether the Lox module is enabled for this Tor Browser instance.
+   *
+   * @type {boolean}
+   */
+  #enabled = AppConstants.MOZ_UPDATE_CHANNEL !== "release";
+
+  get enabled() {
+    return this.#enabled;
+  }
+
   #pubKeyPromise = null;
   #encTablePromise = null;
   #constantsPromise = null;
@@ -217,13 +235,14 @@ class LoxImpl {
    * Assert that the module is initialized.
    */
   #assertInitialized() {
-    if (!this.#initialized) {
+    if (!this.enabled || !this.#initialized) {
       throw new LoxError("Not initialized");
     }
   }
 
   get #inuse() {
     return (
+      this.enabled &&
       Boolean(this.#activeLoxId) &&
       lazy.TorSettings.bridges.enabled === true &&
       lazy.TorSettings.bridges.source === lazy.TorBridgeSource.Lox
@@ -531,6 +550,12 @@ class LoxImpl {
   }
 
   async init() {
+    if (!this.enabled) {
+      lazy.logger.info(
+        "Skipping initialization since Lox module is not enabled"
+      );
+      return;
+    }
     // If lox_id is set, load it
     Services.obs.addObserver(this, lazy.TorSettingsTopics.SettingsChanged);
     Services.obs.addObserver(this, lazy.TorSettingsTopics.Ready);
@@ -548,6 +573,9 @@ class LoxImpl {
   }
 
   async uninit() {
+    if (!this.enabled) {
+      return;
+    }
     Services.obs.removeObserver(this, lazy.TorSettingsTopics.SettingsChanged);
     Services.obs.removeObserver(this, lazy.TorSettingsTopics.Ready);
     if (this.#domainFrontedRequests !== null) {
