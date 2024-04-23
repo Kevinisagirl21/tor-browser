@@ -12,7 +12,7 @@ var OnionAuthPrompt = {
     clientAuthIncorrect: "tor-onion-services-clientauth-incorrect",
   },
 
-  show(aWarningMessage) {
+  show() {
     let mainAction = {
       label: this.TorStrings.onionServices.authPrompt.done,
       accessKey: this.TorStrings.onionServices.authPrompt.doneAccessKey,
@@ -43,7 +43,7 @@ var OnionAuthPrompt = {
       removeOnDismissal: false,
       eventCallback(aTopic) {
         if (aTopic === "showing") {
-          _this._onPromptShowing(aWarningMessage);
+          _this._onPromptShowing();
         } else if (aTopic === "shown") {
           _this._onPromptShown();
         } else if (aTopic === "removed") {
@@ -63,7 +63,7 @@ var OnionAuthPrompt = {
     );
   },
 
-  _onPromptShowing(aWarningMessage) {
+  _onPromptShowing() {
     let xulDoc = this._browser.ownerDocument;
     let descElem = xulDoc.getElementById("tor-clientauth-notification-desc");
     if (descElem) {
@@ -99,7 +99,7 @@ var OnionAuthPrompt = {
       learnMoreElem.setAttribute("useoriginprincipal", "true");
     }
 
-    this._showWarning(aWarningMessage);
+    this._showWarning(undefined);
     let checkboxElem = this._getCheckboxElement();
     if (checkboxElem) {
       checkboxElem.checked = false;
@@ -159,33 +159,26 @@ var OnionAuthPrompt = {
       return;
     }
 
-    this._prompt.remove();
-
     const controllerFailureMsg =
       this.TorStrings.onionServices.authPrompt.failedToSetKey;
+    const checkboxElem = this._getCheckboxElement();
+    const isPermanent = checkboxElem && checkboxElem.checked;
     try {
-      // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
-      const onionServiceIdRegExp =
-        /^(.*\.)*(?<onionServiceId>[a-z2-7]{56})\.onion$/i;
-      // match() will return null on bad match, causing throw
-      const onionServiceId = this._onionHostname
-        .match(onionServiceIdRegExp)
-        .groups.onionServiceId.toLowerCase();
-
-      const checkboxElem = this._getCheckboxElement();
-      const isPermanent = checkboxElem && checkboxElem.checked;
       const provider = await this._lazy.TorProviderBuilder.build();
-      await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
-      // Success! Reload the page.
-      this._browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
+      await provider.onionAuthAdd(this._onionServiceId, base64key, isPermanent);
     } catch (e) {
       if (e.torMessage) {
-        this.show(e.torMessage);
+        this._showWarning(e.torMessage);
       } else {
         console.error(controllerFailureMsg, e);
-        this.show(controllerFailureMsg);
+        this._showWarning(controllerFailureMsg);
       }
+      return;
     }
+
+    this._prompt.remove();
+    // Success! Reload the page.
+    this._browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
   },
 
   _onCancel() {
@@ -318,11 +311,21 @@ var OnionAuthPrompt = {
       return; // This window does not contain the subject browser; ignore.
     }
 
+    // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
+    const onionServiceId = aData
+      .match(/^(.*\.)?(?<onionServiceId>[a-z2-7]{56})\.onion$/i)
+      ?.groups.onionServiceId.toLowerCase();
+    if (!onionServiceId) {
+      console.error(`Malformed onion address: ${aData}`);
+      return;
+    }
+
     let failedURI = browser.currentURI;
     this._browser = browser;
     this._failedURI = failedURI;
     this._reasonForPrompt = aTopic;
     this._onionHostname = aData;
+    this._onionServiceId = onionServiceId;
     this.show(undefined);
   },
 };
