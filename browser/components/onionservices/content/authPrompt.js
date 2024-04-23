@@ -12,7 +12,30 @@ var OnionAuthPrompt = {
     clientAuthIncorrect: "tor-onion-services-clientauth-incorrect",
   },
 
-  show() {
+  /**
+   * @typedef {object} PromptDetails
+   *
+   * @property {Browser} browser - The browser this prompt is for.
+   * @property {string} cause - The notification that cause this prompt.
+   * @property {string} onionHost - The onion host name.
+   * @property {nsIURI} uri - The browser URI when the notification was
+   *   triggered.
+   * @property {string} onionServiceId - The onion service ID for this host.
+   * @property {Notification} [notification] - The notification instance for
+   *   this prompt.
+   */
+
+  /**
+   * The currently shown details in the prompt.
+   */
+  _shownDetails: null,
+
+  /**
+   * Show a new prompt, using the given details.
+   *
+   * @param {PromptDetails} details - The details to show.
+   */
+  show(details) {
     let mainAction = {
       label: this.TorStrings.onionServices.authPrompt.done,
       accessKey: this.TorStrings.onionServices.authPrompt.doneAccessKey,
@@ -35,25 +58,24 @@ var OnionAuthPrompt = {
       callback: this._onCancel.bind(this),
     };
 
-    let _this = this;
     let options = {
       autofocus: true,
       hideClose: true,
       persistent: true,
       removeOnDismissal: false,
-      eventCallback(aTopic) {
-        if (aTopic === "showing") {
-          _this._onPromptShowing();
-        } else if (aTopic === "shown") {
-          _this._onPromptShown();
-        } else if (aTopic === "removed") {
-          _this._onPromptRemoved();
+      eventCallback: topic => {
+        if (topic === "showing") {
+          this._onPromptShowing(details);
+        } else if (topic === "shown") {
+          this._onPromptShown();
+        } else if (topic === "removed") {
+          this._onPromptRemoved(details);
         }
       },
     };
 
-    this._prompt = PopupNotifications.show(
-      this._browser,
+    details.notification = PopupNotifications.show(
+      details.browser,
       "tor-clientauth",
       "",
       "tor-clientauth-notification-icon",
@@ -63,82 +85,63 @@ var OnionAuthPrompt = {
     );
   },
 
-  _onPromptShowing() {
-    let xulDoc = this._browser.ownerDocument;
-    let descElem = xulDoc.getElementById("tor-clientauth-notification-desc");
-    if (descElem) {
-      // Handle replacement of the onion name within the localized
-      // string ourselves so we can show the onion name as bold text.
-      // We do this by splitting the localized string and creating
-      // several HTML <span> elements.
-      const fmtString = this.TorStrings.onionServices.authPrompt.description;
-      const [prefix, suffix] = fmtString.split("%S");
-
-      const domainEl = xulDoc.createElement("span");
-      domainEl.id = "tor-clientauth-notification-onionname";
-      domainEl.textContent = TorUIUtils.shortenOnionAddress(
-        this._onionHostname
-      );
-
-      descElem.replaceChildren(prefix, domainEl, suffix);
+  _onPromptShowing(details) {
+    if (details === this._shownDetails) {
+      // The last shown details match this one exactly.
+      // This happens when we switch tabs to a page that has no prompt and then
+      // switch back.
+      // We don't want to reset the current state in this case.
+      // In particular, we keep the current _keyInput value and _persistCheckbox
+      // the same.
+      return;
     }
 
-    // Set "Learn More" label and href.
-    let learnMoreElem = xulDoc.getElementById(
-      "tor-clientauth-notification-learnmore"
+    this._shownDetails = details;
+
+    // Clear the key input.
+    // In particular, clear the input when switching tabs.
+    this._keyInput.value = "";
+    this._persistCheckbox.checked = false;
+
+    // Handle replacement of the onion name within the localized
+    // string ourselves so we can show the onion name as bold text.
+    // We do this by splitting the localized string and creating
+    // several HTML <span> elements.
+    const fmtString = this.TorStrings.onionServices.authPrompt.description;
+    const [prefix, suffix] = fmtString.split("%S");
+
+    const domainEl = document.createElement("span");
+    domainEl.id = "tor-clientauth-notification-onionname";
+    domainEl.textContent = TorUIUtils.shortenOnionAddress(
+      this._shownDetails?.onionHost ?? ""
     );
-    if (learnMoreElem) {
-      learnMoreElem.setAttribute(
-        "value",
-        this.TorStrings.onionServices.learnMore
-      );
-      learnMoreElem.setAttribute(
-        "href",
-        "about:manual#onion-services_onion-service-authentication"
-      );
-      learnMoreElem.setAttribute("useoriginprincipal", "true");
-    }
+
+    this._descriptionEl.replaceChildren(prefix, domainEl, suffix);
 
     this._showWarning(undefined);
-    let checkboxElem = this._getCheckboxElement();
-    if (checkboxElem) {
-      checkboxElem.checked = false;
-    }
   },
 
   _onPromptShown() {
-    let keyElem = this._getKeyElement();
-    if (keyElem) {
-      keyElem.setAttribute(
-        "placeholder",
-        this.TorStrings.onionServices.authPrompt.keyPlaceholder
-      );
-      this._boundOnKeyFieldKeyPress = this._onKeyFieldKeyPress.bind(this);
-      this._boundOnKeyFieldInput = this._onKeyFieldInput.bind(this);
-      keyElem.addEventListener("keypress", this._boundOnKeyFieldKeyPress);
-      keyElem.addEventListener("input", this._boundOnKeyFieldInput);
-      keyElem.focus();
-    }
+    this._keyInput.focus();
   },
 
-  _onPromptRemoved() {
-    if (this._boundOnKeyFieldKeyPress) {
-      let keyElem = this._getKeyElement();
-      if (keyElem) {
-        keyElem.value = "";
-        keyElem.removeEventListener("keypress", this._boundOnKeyFieldKeyPress);
-        this._boundOnKeyFieldKeyPress = undefined;
-        keyElem.removeEventListener("input", this._boundOnKeyFieldInput);
-        this._boundOnKeyFieldInput = undefined;
-      }
+  _onPromptRemoved(details) {
+    if (details !== this._shownDetails) {
+      // Removing the notification for some other page.
+      // For example, closing another tab that also requires authentication.
+      return;
     }
+    // Reset the prompt as a precaution.
+    // In particular, we want to clear the input so that the entered key does
+    // not persist.
+    this._onPromptShowing(null);
   },
 
   _onKeyFieldKeyPress(aEvent) {
     if (aEvent.keyCode == aEvent.DOM_VK_RETURN) {
       this._onDone();
     } else if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
-      this._prompt.remove();
+      this._shownDetails.notification.remove();
       this._onCancel();
     }
   },
@@ -148,12 +151,11 @@ var OnionAuthPrompt = {
   },
 
   async _onDone() {
-    const keyElem = this._getKeyElement();
-    if (!keyElem) {
-      return;
-    }
+    // Grab the details before they might change as we await.
+    const { browser, onionServiceId, notification } = this._shownDetails;
+    const isPermanent = this._persistCheckbox.checked;
 
-    const base64key = this._keyToBase64(keyElem.value);
+    const base64key = this._keyToBase64(this._keyInput.value);
     if (!base64key) {
       this._showWarning(this.TorStrings.onionServices.authPrompt.invalidKey);
       return;
@@ -161,11 +163,9 @@ var OnionAuthPrompt = {
 
     const controllerFailureMsg =
       this.TorStrings.onionServices.authPrompt.failedToSetKey;
-    const checkboxElem = this._getCheckboxElement();
-    const isPermanent = checkboxElem && checkboxElem.checked;
     try {
       const provider = await this._lazy.TorProviderBuilder.build();
-      await provider.onionAuthAdd(this._onionServiceId, base64key, isPermanent);
+      await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
     } catch (e) {
       if (e.torMessage) {
         this._showWarning(e.torMessage);
@@ -176,9 +176,9 @@ var OnionAuthPrompt = {
       return;
     }
 
-    this._prompt.remove();
+    notification.remove();
     // Success! Reload the page.
-    this._browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
+    browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
   },
 
   _onCancel() {
@@ -187,51 +187,33 @@ var OnionAuthPrompt = {
     // and we pass it as a data: URI to loadFrameScript(),
     // which runs it in the content frame which triggered
     // this authentication prompt.
-    const failedURI = this._failedURI.spec;
+
+    const { browser, cause, uri } = this._shownDetails;
     const errorCode =
-      this._reasonForPrompt === this._topics.clientAuthMissing
+      cause === this._topics.clientAuthMissing
         ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
         : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
     const io =
       'ChromeUtils.import("resource://gre/modules/Services.jsm").Services.io';
 
-    this._browser.messageManager.loadFrameScript(
+    browser.messageManager.loadFrameScript(
       `data:application/javascript,${encodeURIComponent(
         `docShell.displayLoadError(${errorCode}, ${io}.newURI(${JSON.stringify(
-          failedURI
+          uri.spec
         )}), undefined, undefined);`
       )}`,
       false
     );
   },
 
-  _getKeyElement() {
-    let xulDoc = this._browser.ownerDocument;
-    return xulDoc.getElementById("tor-clientauth-notification-key");
-  },
-
-  _getCheckboxElement() {
-    let xulDoc = this._browser.ownerDocument;
-    return xulDoc.getElementById("tor-clientauth-persistkey-checkbox");
-  },
-
   _showWarning(aWarningMessage) {
-    let xulDoc = this._browser.ownerDocument;
-    let warningElem = xulDoc.getElementById("tor-clientauth-warning");
-    let keyElem = this._getKeyElement();
-    if (warningElem) {
-      if (aWarningMessage) {
-        warningElem.textContent = aWarningMessage;
-        warningElem.removeAttribute("hidden");
-        if (keyElem) {
-          keyElem.className = "invalid";
-        }
-      } else {
-        warningElem.setAttribute("hidden", "true");
-        if (keyElem) {
-          keyElem.className = "";
-        }
-      }
+    if (aWarningMessage) {
+      this._warningEl.textContent = aWarningMessage;
+      this._warningEl.removeAttribute("hidden");
+      this._keyInput.classList.add("invalid");
+    } else {
+      this._warningEl.setAttribute("hidden", "true");
+      this._keyInput.classList.remove("invalid");
     }
   },
 
@@ -280,6 +262,35 @@ var OnionAuthPrompt = {
       CommonUtils: "resource://services-common/utils.sys.mjs",
     });
 
+    this._keyInput = document.getElementById("tor-clientauth-notification-key");
+    this._persistCheckbox = document.getElementById(
+      "tor-clientauth-persistkey-checkbox"
+    );
+    this._warningEl = document.getElementById("tor-clientauth-warning");
+    this._descriptionEl = document.getElementById(
+      "tor-clientauth-notification-desc"
+    );
+
+    // Set "Learn More" label and href.
+    const learnMoreElem = document.getElementById(
+      "tor-clientauth-notification-learnmore"
+    );
+    learnMoreElem.setAttribute(
+      "value",
+      this.TorStrings.onionServices.learnMore
+    );
+
+    this._keyInput.setAttribute(
+      "placeholder",
+      this.TorStrings.onionServices.authPrompt.keyPlaceholder
+    );
+    this._keyInput.addEventListener("keypress", event => {
+      this._onKeyFieldKeyPress(event);
+    });
+    this._keyInput.addEventListener("input", event => {
+      this._onKeyFieldInput(event);
+    });
+
     Services.obs.addObserver(this, this._topics.clientAuthMissing);
     Services.obs.addObserver(this, this._topics.clientAuthIncorrect);
   },
@@ -320,12 +331,13 @@ var OnionAuthPrompt = {
       return;
     }
 
-    let failedURI = browser.currentURI;
-    this._browser = browser;
-    this._failedURI = failedURI;
-    this._reasonForPrompt = aTopic;
-    this._onionHostname = aData;
-    this._onionServiceId = onionServiceId;
-    this.show(undefined);
+    const details = {
+      browser,
+      cause: aTopic,
+      onionHost: aData,
+      uri: browser.currentURI,
+      onionServiceId,
+    };
+    this.show(details);
   },
 };
