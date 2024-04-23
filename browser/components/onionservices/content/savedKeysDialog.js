@@ -3,23 +3,10 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
 var gOnionServicesSavedKeysDialog = {
-  selector: {
-    dialog: "#onionservices-savedkeys-dialog",
-    intro: "#onionservices-savedkeys-intro",
-    tree: "#onionservices-savedkeys-tree",
-    onionSiteCol: "#onionservices-savedkeys-siteCol",
-    onionKeyCol: "#onionservices-savedkeys-keyCol",
-    errorIcon: "#onionservices-savedkeys-errorIcon",
-    errorMessage: "#onionservices-savedkeys-errorMessage",
-    removeButton: "#onionservices-savedkeys-remove",
-    removeAllButton: "#onionservices-savedkeys-removeall",
-  },
-
   _tree: undefined,
   _busyCount: 0,
   get _isBusy() {
@@ -27,8 +14,8 @@ var gOnionServicesSavedKeysDialog = {
     return this._busyCount > 0;
   },
 
-  // Public functions (called from outside this file).
-  async deleteSelectedKeys() {
+  async _deleteSelectedKeys() {
+    this._showError(null);
     this._withBusy(async () => {
       const indexesToDelete = [];
       const count = this._tree.view.selection.getRangeCount();
@@ -42,8 +29,6 @@ var gOnionServicesSavedKeysDialog = {
       }
 
       if (indexesToDelete.length) {
-        const controllerFailureMsg =
-          TorStrings.onionServices.authPreferences.failedToRemoveKey;
         const provider = await TorProviderBuilder.build();
         try {
           // Remove in reverse index order to avoid issues caused by index
@@ -53,28 +38,23 @@ var gOnionServicesSavedKeysDialog = {
           }
         } catch (e) {
           console.error("Removing a saved key failed", e);
-          if (e.torMessage) {
-            this._showError(e.torMessage);
-          } else {
-            this._showError(controllerFailureMsg);
-          }
+          this._showError(
+            "onion-site-saved-keys-dialog-remove-keys-error-message"
+          );
         }
       }
     });
   },
 
-  async deleteAllKeys() {
+  async _deleteAllKeys() {
     this._tree.view.selection.selectAll();
-    await this.deleteSelectedKeys();
+    await this._deleteSelectedKeys();
   },
 
-  updateButtonsState() {
+  _updateButtonsState() {
     const haveSelection = this._tree.view.selection.getRangeCount() > 0;
-    const dialog = document.querySelector(this.selector.dialog);
-    const removeSelectedBtn = dialog.querySelector(this.selector.removeButton);
-    removeSelectedBtn.disabled = this._isBusy || !haveSelection;
-    const removeAllBtn = dialog.querySelector(this.selector.removeAllButton);
-    removeAllBtn.disabled = this._isBusy || this.rowCount === 0;
+    this._removeButton.disabled = this._isBusy || !haveSelection;
+    this._removeAllButton.disabled = this._isBusy || this.rowCount === 0;
   },
 
   // Private functions.
@@ -82,38 +62,40 @@ var gOnionServicesSavedKeysDialog = {
     document.mozSubdialogReady = this._init();
   },
 
-  async _init() {
+  _init() {
     this._populateXUL();
     window.addEventListener("keypress", this._onWindowKeyPress.bind(this));
     this._loadSavedKeys();
   },
 
   _populateXUL() {
-    const dialog = document.querySelector(this.selector.dialog);
-    const authPrefStrings = TorStrings.onionServices.authPreferences;
-    dialog.setAttribute("title", authPrefStrings.dialogTitle);
+    this._errorMessageContainer = document.getElementById(
+      "onionservices-savedkeys-errorContainer"
+    );
+    this._errorMessageEl = document.getElementById(
+      "onionservices-savedkeys-errorMessage"
+    );
+    this._removeButton = document.getElementById(
+      "onionservices-savedkeys-remove"
+    );
+    this._removeButton.addEventListener("click", () => {
+      this._deleteSelectedKeys();
+    });
+    this._removeAllButton = document.getElementById(
+      "onionservices-savedkeys-removeall"
+    );
+    this._removeButton.addEventListener("click", () => {
+      this._deleteAllKeys();
+    });
 
-    let elem = dialog.querySelector(this.selector.intro);
-    elem.textContent = authPrefStrings.dialogIntro;
-
-    elem = dialog.querySelector(this.selector.onionSiteCol);
-    elem.setAttribute("label", authPrefStrings.onionSite);
-
-    elem = dialog.querySelector(this.selector.onionKeyCol);
-    elem.setAttribute("label", authPrefStrings.onionKey);
-
-    elem = dialog.querySelector(this.selector.removeButton);
-    elem.setAttribute("label", authPrefStrings.remove);
-
-    elem = dialog.querySelector(this.selector.removeAllButton);
-    elem.setAttribute("label", authPrefStrings.removeAll);
-
-    this._tree = dialog.querySelector(this.selector.tree);
+    this._tree = document.getElementById("onionservices-savedkeys-tree");
+    this._tree.addEventListener("select", () => {
+      this._updateButtonsState();
+    });
   },
 
   async _loadSavedKeys() {
-    const controllerFailureMsg =
-      TorStrings.onionServices.authPreferences.failedToGetKeys;
+    this._showError(null);
     this._withBusy(async () => {
       try {
         this._tree.view = this;
@@ -139,11 +121,10 @@ var gOnionServicesSavedKeysDialog = {
         // Render the tree content.
         this._tree.rowCountChanged(0, this.rowCount);
       } catch (e) {
-        if (e.torMessage) {
-          this._showError(e.torMessage);
-        } else {
-          this._showError(controllerFailureMsg);
-        }
+        console.error("Failed to load keys", e);
+        this._showError(
+          "onion-site-saved-keys-dialog-fetch-keys-error-message"
+        );
       }
     });
   },
@@ -160,14 +141,14 @@ var gOnionServicesSavedKeysDialog = {
   async _withBusy(func) {
     this._busyCount++;
     if (this._busyCount === 1) {
-      this.updateButtonsState();
+      this._updateButtonsState();
     }
     try {
       await func();
     } finally {
       this._busyCount--;
       if (this._busyCount === 0) {
-        this.updateButtonsState();
+        this._updateButtonsState();
       }
     }
   },
@@ -179,16 +160,25 @@ var gOnionServicesSavedKeysDialog = {
     if (event.keyCode === KeyEvent.DOM_VK_ESCAPE) {
       window.close();
     } else if (event.keyCode === KeyEvent.DOM_VK_DELETE) {
-      this.deleteSelectedKeys();
+      this._deleteSelectedKeys();
     }
   },
 
-  _showError(aMessage) {
-    document
-      .getElementById("onionservices-savedkeys-errorContainer")
-      .classList.toggle("show-error", !!aMessage);
-    const errorDesc = document.querySelector(this.selector.errorMessage);
-    errorDesc.textContent = aMessage ? aMessage : "";
+  /**
+   * Show an error, or clear it.
+   *
+   * @param {?string} messageId - The l10n ID of the message to show, or null to
+   *   clear it.
+   */
+  _showError(messageId) {
+    this._errorMessageContainer.classList.toggle("show-error", !!messageId);
+    if (messageId) {
+      document.l10n.setAttributes(this._errorMessageEl, messageId);
+    } else {
+      // Clean up.
+      this._errorMessageEl.removeAttribute("data-l10n-id");
+      this._errorMessageEl.textContent = "";
+    }
   },
 
   // XUL tree widget view implementation.

@@ -56,28 +56,47 @@ var OnionAuthPrompt = {
   show(details) {
     this._logger.debug(`New Notification: ${this._detailsRepr(details)}`);
 
-    let mainAction = {
-      label: this.TorStrings.onionServices.authPrompt.done,
-      accessKey: this.TorStrings.onionServices.authPrompt.doneAccessKey,
-      leaveOpen: true, // Callback is responsible for closing the notification.
-      callback: this._onDone.bind(this),
-    };
-
-    let dialogBundle = Services.strings.createBundle(
-      "chrome://global/locale/dialog.properties"
+    // NOTE: PopupNotifications currently requires the accesskey and label to be
+    // set for all actions, and does not accept fluent IDs in their place.
+    // Moreover, there doesn't appear to be a simple way to work around this, so
+    // we have to fetch the strings here before calling the show() method.
+    // NOTE: We avoid using the async formatMessages because we don't want to
+    // race against the browser's location changing.
+    // In principle, we could check that the details.browser.currentURI still
+    // matches details.uri or use a LocationChange listener. However, we expect
+    // that PopupNotifications will eventually change to accept fluent IDs, so
+    // we won't have to use formatMessages here at all.
+    // Moreover, we do not expect this notification to be common, so this
+    // shouldn't be too expensive.
+    // NOTE: Once we call PopupNotifications.show, PopupNotifications should
+    // take care of listening for changes in locations for us and remove the
+    // notification.
+    let [okButtonMsg, cancelButtonMsg] = this._lazy.SyncL10n.formatMessagesSync(
+      [
+        "onion-site-authentication-prompt-ok-button",
+        "onion-site-authentication-prompt-cancel-button",
+      ]
     );
 
-    let cancelAccessKey = dialogBundle.GetStringFromName("accesskey-cancel");
-    if (!cancelAccessKey) {
-      cancelAccessKey = "c";
-    } // required by PopupNotifications.show()
+    // Get an attribute string from a L10nMessage.
+    // We wrap the return value as a String to prevent the notification from
+    // throwing (and not showing) if a locale is unexpectedly missing a value.
+    const msgAttribute = (msg, name) =>
+      String((msg.attributes ?? []).find(attr => attr.name === name)?.value);
+
+    let mainAction = {
+      label: msgAttribute(okButtonMsg, "label"),
+      accessKey: msgAttribute(okButtonMsg, "accesskey"),
+      leaveOpen: true, // Callback is responsible for closing the notification.
+      callback: () => this._onDone(),
+    };
 
     // The first secondarybuttoncommand (cancelAction) should be triggered when
     // the user presses "Escape".
     let cancelAction = {
-      label: dialogBundle.GetStringFromName("button-cancel"),
-      accessKey: cancelAccessKey,
-      callback: this._onCancel.bind(this),
+      label: msgAttribute(cancelButtonMsg, "label"),
+      accessKey: msgAttribute(cancelButtonMsg, "accesskey"),
+      callback: () => this._onCancel(),
     };
 
     let options = {
@@ -134,22 +153,17 @@ var OnionAuthPrompt = {
     this._keyInput.value = "";
     this._persistCheckbox.checked = false;
 
-    // Handle replacement of the onion name within the localized
-    // string ourselves so we can show the onion name as bold text.
-    // We do this by splitting the localized string and creating
-    // several HTML <span> elements.
-    const fmtString = this.TorStrings.onionServices.authPrompt.description;
-    const [prefix, suffix] = fmtString.split("%S");
-
-    const domainEl = document.createElement("span");
-    domainEl.id = "tor-clientauth-notification-onionname";
-    domainEl.textContent = TorUIUtils.shortenOnionAddress(
-      this._shownDetails?.onionHost ?? ""
+    document.l10n.setAttributes(
+      this._descriptionEl,
+      "onion-site-authentication-prompt-description",
+      {
+        onionsite: TorUIUtils.shortenOnionAddress(
+          this._shownDetails?.onionHost ?? ""
+        ),
+      }
     );
 
-    this._descriptionEl.replaceChildren(prefix, domainEl, suffix);
-
-    this._showWarning(undefined);
+    this._showWarning(null);
   },
 
   /**
@@ -187,12 +201,13 @@ var OnionAuthPrompt = {
     );
 
     // Grab the details before they might change as we await.
-    const { browser, onionServiceId, notification } = this._shownDetails;
+    const details = this._shownDetails;
+    const { browser, onionServiceId, notification } = details;
     const isPermanent = this._persistCheckbox.checked;
 
     const base64key = this._keyToBase64(this._keyInput.value);
     if (!base64key) {
-      this._showWarning(this.TorStrings.onionServices.authPrompt.invalidKey);
+      this._showWarning("onion-site-authentication-prompt-invalid-key");
       return;
     }
 
@@ -200,12 +215,11 @@ var OnionAuthPrompt = {
       const provider = await this._lazy.TorProviderBuilder.build();
       await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
     } catch (e) {
-      if (e.torMessage) {
-        this._showWarning(e.torMessage);
-      } else {
-        this._logger.error(`Failed to set key for ${onionServiceId}`, e);
+      this._logger.error(`Failed to set key for ${onionServiceId}`, e);
+      if (details === this._shownDetails) {
+        // Notification has not been replaced.
         this._showWarning(
-          this.TorStrings.onionServices.authPrompt.failedToSetKey
+          "onion-site-authentication-prompt-setting-key-failed"
         );
       }
       return;
@@ -245,16 +259,19 @@ var OnionAuthPrompt = {
   /**
    * Show a warning message to the user or clear the warning.
    *
-   * @param {string?} warningMessage - The message to show, or undefined to
-   *   clear the current message.
+   * @param {?string} warningMessageId - The l10n ID for the message to show, or
+   *   null to clear the current message.
    */
-  _showWarning(warningMessage) {
-    this._logger.debug(`Showing warning: ${warningMessage}`);
-    if (warningMessage) {
-      this._warningEl.textContent = warningMessage;
+  _showWarning(warningMessageId) {
+    this._logger.debug(`Showing warning: ${warningMessageId}`);
+    if (warningMessageId) {
+      document.l10n.setAttributes(this._warningEl, warningMessageId);
       this._warningEl.removeAttribute("hidden");
       this._keyInput.classList.add("invalid");
     } else {
+      // Clean up.
+      this._warningEl.removeAttribute("data-l10n-id");
+      this._warningEl.textContent = "";
       this._warningEl.setAttribute("hidden", "true");
       this._keyInput.classList.remove("invalid");
     }
@@ -264,7 +281,7 @@ var OnionAuthPrompt = {
    * Convert the user-entered key into base64.
    *
    * @param {string} keyString - The key to convert.
-   * @returns {string?} - The base64 representation, or undefined if the given
+   * @returns {?string} - The base64 representation, or undefined if the given
    *   key was not the correct format.
    */
   _keyToBase64(keyString) {
@@ -310,13 +327,16 @@ var OnionAuthPrompt = {
       maxLogLevelPref: "browser.onionAuthPrompt.loglevel",
     });
 
-    const { TorStrings } = ChromeUtils.importESModule(
-      "resource://gre/modules/TorStrings.sys.mjs"
-    );
-    this.TorStrings = TorStrings;
     ChromeUtils.defineESModuleGetters(this._lazy, {
       TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
       CommonUtils: "resource://services-common/utils.sys.mjs",
+    });
+    // Allow synchornous access to the localized strings. Used only for the
+    // button actions, which is currently a hard requirement for
+    // PopupNotifications.show. Hopefully, PopupNotifications will accept fluent
+    // ids in their place, or get replaced with something else that does.
+    ChromeUtils.defineLazyGetter(this._lazy, "SyncL10n", () => {
+      return new Localization(["toolkit/global/tor-browser.ftl"], true);
     });
 
     this._keyInput = document.getElementById("tor-clientauth-notification-key");
@@ -328,19 +348,6 @@ var OnionAuthPrompt = {
       "tor-clientauth-notification-desc"
     );
 
-    // Set "Learn More" label and href.
-    const learnMoreElem = document.getElementById(
-      "tor-clientauth-notification-learnmore"
-    );
-    learnMoreElem.setAttribute(
-      "value",
-      this.TorStrings.onionServices.learnMore
-    );
-
-    this._keyInput.setAttribute(
-      "placeholder",
-      this.TorStrings.onionServices.authPrompt.keyPlaceholder
-    );
     this._keyInput.addEventListener("keydown", event => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -349,7 +356,7 @@ var OnionAuthPrompt = {
     });
     this._keyInput.addEventListener("input", () => {
       // Remove the warning.
-      this._showWarning(undefined);
+      this._showWarning(null);
     });
 
     // Force back focus on click: tor-browser#41856
