@@ -9,29 +9,37 @@
   id="onionservices-savedkeys-dialog"
   windowtype="OnionServices:SavedKeys"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xmlns:html="http://www.w3.org/1999/xhtml"
+  data-l10n-id="onion-site-saved-keys-dialog-title"
 >
+  <linkset>
+    <html:link rel="localization" href="toolkit/global/tor-browser.ftl" />
+  </linkset>
+
   <script src="chrome://browser/content/onionservices/savedKeysDialog.js" />
 
   <vbox id="onionservices-savedkeys" class="contentPane" flex="1">
     <label
       id="onionservices-savedkeys-intro"
       control="onionservices-savedkeys-tree"
+      data-l10n-id="onion-site-saved-keys-dialog-intro"
     />
     <separator class="thin" />
-    <tree
-      id="onionservices-savedkeys-tree"
-      flex="1"
-      hidecolumnpicker="true"
-      onselect="gOnionServicesSavedKeysDialog.updateButtonsState();"
-    >
+    <tree id="onionservices-savedkeys-tree" flex="1" hidecolumnpicker="true">
       <treecols>
         <treecol
           id="onionservices-savedkeys-siteCol"
           flex="1"
           persist="width"
+          data-l10n-id="onion-site-saved-keys-dialog-table-header-site"
         />
         <splitter class="tree-splitter" />
-        <treecol id="onionservices-savedkeys-keyCol" flex="1" persist="width" />
+        <treecol
+          id="onionservices-savedkeys-keyCol"
+          flex="1"
+          persist="width"
+          data-l10n-id="onion-site-saved-keys-dialog-table-header-key"
+        />
       </treecols>
       <treechildren />
     </tree>
@@ -41,15 +49,15 @@
     </hbox>
     <separator class="thin" />
     <hbox id="onionservices-savedkeys-buttons">
-      <button
+      <html:button
         id="onionservices-savedkeys-remove"
         disabled="true"
-        oncommand="gOnionServicesSavedKeysDialog.deleteSelectedKeys();"
-      />
-      <button
+        data-l10n-id="onion-site-saved-keys-dialog-remove-button"
+      ></html:button>
+      <html:button
         id="onionservices-savedkeys-removeall"
-        oncommand="gOnionServicesSavedKeysDialog.deleteAllKeys();"
-      />
+        data-l10n-id="onion-site-saved-keys-dialog-remove-all-button"
+      ></html:button>
     </hbox>
   </vbox>
 </window>

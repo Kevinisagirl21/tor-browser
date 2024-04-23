@@ -1,12 +1,10 @@
 /* Copyright (c) 2020, The Tor Project, Inc. */
 
-@namespace html url("http://www.w3.org/1999/xhtml");
-
-html|*#tor-clientauth-notification-onionname {
+#tor-clientauth-notification-desc {
   font-weight: bold;
 }
 
-html|*#tor-clientauth-notification-key {
+#tor-clientauth-notification-key {
   box-sizing: border-box;
   width: 100%;
   margin-top: 15px;
@@ -17,12 +15,12 @@ html|*#tor-clientauth-notification-key {
  * browser/components/newtab/css/activity-stream-mac.css (linux and windows
  * use the same rules).
  */
-html|*#tor-clientauth-notification-key.invalid {
+#tor-clientauth-notification-key.invalid {
   border: 1px solid #D70022;
   box-shadow: 0 0 0 1px #D70022, 0 0 0 4px rgba(215, 0, 34, 0.3);
 }
 
-html|*#tor-clientauth-warning {
+#tor-clientauth-warning {
   display: inline-block;
   animation: fade-up-tt 450ms;
   background: #D70022;
@@ -35,11 +33,11 @@ html|*#tor-clientauth-warning {
   z-index: 1;
 }
 
-html|*#tor-clientauth-warning[hidden] {
+#tor-clientauth-warning[hidden] {
   display: none;
 }
 
-html|*#tor-clientauth-warning::before {
+#tor-clientauth-warning::before {
   background: #D70022;
   bottom: -8px;
   content: '.';
