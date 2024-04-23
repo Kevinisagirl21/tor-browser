@@ -795,7 +795,64 @@ export class TorController {
    * @returns {Bridge[]} The configured bridges
    */
   async getBridges() {
-    return (await this.#getConf("BRIDGE")).map(TorParsers.parseBridgeLine);
+    let missingId = false;
+    const bridges = (await this.#getConf("BRIDGE")).map(line => {
+      const info = TorParsers.parseBridgeLine(line);
+      if (!info.id) {
+        missingId = true;
+      }
+      return info;
+    });
+
+    // tor-browser#42541: bridge lines are allowed not to have a fingerprint.
+    // If such a bridge is in use, we will fail to associate it to the circuits,
+    // and the circuit display will not be shown.
+    // Tor provides a couple of GETINFO commands we can try to use to get more
+    // data about bridges, in particular GETINFO ns/purpose/bridge.
+    // While it tells us the bridge's IP (as configured by the user, which might
+    // be different from the real one with some PTs such as Snowflake), it does
+    // not tell the pluggable transport.
+    // Therefore, we need to start from the configured bridge lines, and if we
+    // detect that a bridge does not have a fingerprint, we try to associate one
+    // through its IP address and port.
+    // However, users can set them directly, therefore we might end up setting
+    // a fingerprint to the wrong line (e.g., if the IP address is reused).
+    // Also, we are not sure about when the data of ns/purpose/bridge is
+    // populated.
+    // Usually, we are interested only in the data of currently active bridges
+    // for the circuit display. So, as a matter of fact, we expect to have
+    // entries and to expose only the correct and working data in the frontend.
+    if (missingId) {
+      // See https://spec.torproject.org/dir-spec/consensus-formats.html.
+      // r <name> <identity> <digest> <date> <time> <address> <orport> <dirport>
+      const info = (await this.#getInfo("ns/purpose/bridge")).matchAll(
+        /^r\s+\S+\s+(?<identity>\S+)\s+\S+\s+\S+\s+\S+\s+(?<address>\S+)\s+(?<orport>\d+)/gm
+      );
+      const b64ToHex = b64 => {
+        let hex = "";
+        const raw = atob(b64);
+        for (let i = 0; i < raw.length; i++) {
+          hex += raw.charCodeAt(i).toString(16).toUpperCase().padStart(2, "0");
+        }
+        return hex;
+      };
+      const knownBridges = new Map(
+        Array.from(info, m => [
+          `${m.groups.address}:${m.groups.orport}`,
+          b64ToHex(m.groups.identity),
+        ])
+      );
+      for (const b of bridges) {
+        if (!b.id) {
+          // We expect the addresses of these lines to be only IPv4, therefore
+          // we do not check for brackets, even though they might be matched by
+          // our regex.
+          b.id = knownBridges.get(b.addr) ?? "";
+        }
+      }
+    }
+
+    return bridges;
   }
 
   /**
