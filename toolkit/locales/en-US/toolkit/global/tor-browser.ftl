@@ -637,3 +637,62 @@ onion-neterror-invalid-address-description = The provided onion site address is 
 # "Circuit" refers to a Tor network circuit.
 onion-neterror-timed-out-header = Onion site circuit creation timed out
 onion-neterror-timed-out-description = Failed to connect to the onion site, possibly due to a poor network connection.
+
+## Onion site authentication prompt.
+## "Onion site" is an abbreviation of "onion website": a website whose domain URL ends in ".onion", which is reachable through the Tor network.
+
+# Here "open" is a verb.
+onion-site-authentication-urlbar-button =
+    .tooltiptext = Open the onion site authentication panel
+
+# $onionsite (String) - The shortened onion address for the current web site, for example "a3jx8k…pbsh7y.onion".
+onion-site-authentication-prompt-description = The onion site { $onionsite } is requesting that you authenticate.
+onion-site-authentication-prompt-learn-more = Learn more
+onion-site-authentication-prompt-key-input =
+    .placeholder = Enter your private key for this onion site
+onion-site-authentication-prompt-remember-checkbox =
+    .label = Remember this key
+onion-site-authentication-prompt-ok-button =
+    .label = OK
+    .accesskey = O
+onion-site-authentication-prompt-cancel-button =
+    .label = Cancel
+    .accesskey = C
+# Error message shown when the entered key is the wrong length or the wrong format.
+# "base32" and "base64" are technical names for binary-to-text encodings: https://en.wikipedia.org/wiki/Base64
+onion-site-authentication-prompt-invalid-key = Please enter a valid key (52 base32 characters or 44 base64 characters)
+onion-site-authentication-prompt-setting-key-failed = Unable to configure Tor with your key
+
+## Page Info window for onion sites.
+## "Onion site" is an abbreviation of "onion website": a website whose domain URL ends in ".onion", which is reachable through the Tor network.
+
+# $encryption-type (String) - The name of the encryption algorithm used for the page, for example "TLS_AES_128_GCM_SHA256".
+# $encryption-stength (Number) - The number of bits for the encryption key, for example "128" or "256". The "NUMBER" function will format this number to the same locale, and the "useGrouping" option will remove grouping symbols, like thousand separators. Note that the "bit" in "bit keys" refers to a computer "binary digit".
+# $encryption-version (String) - The name and version of the encryption, for example "TLS 1.3".
+page-info-onion-site-encryption-with-bits = Connection encrypted (Onion site, { $encryption-type }, { NUMBER($encryption-strength, useGrouping: "false") } bit keys, { $encryption-version })
+page-info-onion-site-encryption-plain = Connection encrypted (Onion site)
+
+## Onion site authentication preferences.
+## "Onion site" is an abbreviation of "onion website": a website whose domain URL ends in ".onion", which is reachable through the Tor network.
+
+onion-site-authentication-preferences-heading = Onion site authentication
+onion-site-authentication-preferences-overview = Some onion sites require that you identify yourself with a key (a kind of password) before you can access them.
+onion-site-authentication-preferences-learn-more = Learn more
+onion-site-authentication-preferences-saved-keys-button = Saved keys…
+
+## Onion site saved keys dialog.
+## "Onion site" is an abbreviation of "onion website": a website whose domain URL ends in ".onion", which is reachable through the Tor network.
+
+onion-site-saved-keys-dialog-title =
+    .title = Onion site keys
+
+onion-site-saved-keys-dialog-intro = The following onion site keys are stored on your computer.
+onion-site-saved-keys-dialog-table-header-site =
+    .label = Onion site
+# "Key" is a noun, for an access key.
+onion-site-saved-keys-dialog-table-header-key =
+    .label = Key
+onion-site-saved-keys-dialog-remove-button = Remove
+onion-site-saved-keys-dialog-remove-all-button = Remove all
+onion-site-saved-keys-dialog-fetch-keys-error-message = Unable to retrieve keys from Tor
+onion-site-saved-keys-dialog-remove-keys-error-message = Unable to remove key
