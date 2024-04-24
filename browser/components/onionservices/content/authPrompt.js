@@ -52,6 +52,8 @@ var OnionAuthPrompt = {
       cancelAccessKey = "c";
     } // required by PopupNotifications.show()
 
+    // The first secondarybuttoncommand (cancelAction) should be triggered when
+    // the user presses "Escape".
     let cancelAction = {
       label: dialogBundle.GetStringFromName("button-cancel"),
       accessKey: cancelAccessKey,
@@ -135,19 +137,6 @@ var OnionAuthPrompt = {
     // In particular, we want to clear the input so that the entered key does
     // not persist.
     this._onPromptShowing(null);
-  },
-
-  _onKeyFieldKeyPress(event) {
-    if (event.keyCode === event.DOM_VK_RETURN) {
-      this._onDone();
-    } else if (event.keyCode === event.DOM_VK_ESCAPE) {
-      this._shownDetails.notification.remove();
-      this._onCancel();
-    }
-  },
-
-  _onKeyFieldInput() {
-    this._showWarning(undefined); // Remove the warning.
   },
 
   async _onDone() {
@@ -284,11 +273,15 @@ var OnionAuthPrompt = {
       "placeholder",
       this.TorStrings.onionServices.authPrompt.keyPlaceholder
     );
-    this._keyInput.addEventListener("keypress", event => {
-      this._onKeyFieldKeyPress(event);
+    this._keyInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        this._onDone();
+      }
     });
     this._keyInput.addEventListener("input", event => {
-      this._onKeyFieldInput(event);
+      // Remove the warning.
+      this._showWarning(undefined);
     });
 
     Services.obs.addObserver(this, this._topics.clientAuthMissing);
