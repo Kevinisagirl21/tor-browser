@@ -7,6 +7,11 @@ var OnionAuthPrompt = {
   // browser.xhtml.
   _lazy: {},
 
+  /**
+   * The topics to listen to.
+   *
+   * @type {Object<string, string>}
+   */
   _topics: {
     clientAuthMissing: "tor-onion-services-clientauth-missing",
     clientAuthIncorrect: "tor-onion-services-clientauth-incorrect",
@@ -87,6 +92,12 @@ var OnionAuthPrompt = {
     );
   },
 
+  /**
+   * Callback when the prompt is about to be shown.
+   *
+   * @param {PromptDetails?} details - The details to show, or null to shown
+   *   none.
+   */
   _onPromptShowing(details) {
     if (details === this._shownDetails) {
       // The last shown details match this one exactly.
@@ -123,10 +134,18 @@ var OnionAuthPrompt = {
     this._showWarning(undefined);
   },
 
+  /**
+   * Callback after the prompt is shown.
+   */
   _onPromptShown() {
     this._keyInput.focus();
   },
 
+  /**
+   * Callback when a Notification is removed.
+   *
+   * @param {PromptDetails} details - The details for the removed notification.
+   */
   _onPromptRemoved(details) {
     if (details !== this._shownDetails) {
       // Removing the notification for some other page.
@@ -139,6 +158,9 @@ var OnionAuthPrompt = {
     this._onPromptShowing(null);
   },
 
+  /**
+   * Callback when the user submits the key.
+   */
   async _onDone() {
     // Grab the details before they might change as we await.
     const { browser, onionServiceId, notification } = this._shownDetails;
@@ -170,6 +192,9 @@ var OnionAuthPrompt = {
     browser.sendMessageToActor("Browser:Reload", {}, "BrowserTab");
   },
 
+  /**
+   * Callback when the user dismisses the prompt.
+   */
   _onCancel() {
     // Arrange for an error page to be displayed:
     // we build a short script calling docShell.displayError()
@@ -195,6 +220,12 @@ var OnionAuthPrompt = {
     );
   },
 
+  /**
+   * Show a warning message to the user or clear the warning.
+   *
+   * @param {string?} warningMessage - The message to show, or undefined to
+   *   clear the current message.
+   */
   _showWarning(warningMessage) {
     if (warningMessage) {
       this._warningEl.textContent = warningMessage;
@@ -206,7 +237,13 @@ var OnionAuthPrompt = {
     }
   },
 
-  // Returns undefined if the key is the wrong length or format.
+  /**
+   * Convert the user-entered key into base64.
+   *
+   * @param {string} keyString - The key to convert.
+   * @returns {string?} - The base64 representation, or undefined if the given
+   *   key was not the correct format.
+   */
   _keyToBase64(keyString) {
     if (!keyString) {
       return undefined;
@@ -241,6 +278,9 @@ var OnionAuthPrompt = {
     return base64key;
   },
 
+  /**
+   * Initialize the authentication prompt.
+   */
   init() {
     const { TorStrings } = ChromeUtils.importESModule(
       "resource://gre/modules/TorStrings.sys.mjs"
@@ -288,13 +328,14 @@ var OnionAuthPrompt = {
     Services.obs.addObserver(this, this._topics.clientAuthIncorrect);
   },
 
+  /**
+   * Un-initialize the authentication prompt.
+   */
   uninit() {
     Services.obs.removeObserver(this, this._topics.clientAuthMissing);
     Services.obs.removeObserver(this, this._topics.clientAuthIncorrect);
   },
 
-  // aSubject is the DOM Window or browser where the prompt should be shown.
-  // aData contains the .onion name.
   observe(subject, topic, data) {
     if (
       topic !== this._topics.clientAuthMissing &&
@@ -303,6 +344,7 @@ var OnionAuthPrompt = {
       return;
     }
 
+    // "subject" is the DOM window or browser where the prompt should be shown.
     let browser;
     if (subject instanceof Ci.nsIDOMWindow) {
       let contentWindow = subject.QueryInterface(Ci.nsIDOMWindow);
