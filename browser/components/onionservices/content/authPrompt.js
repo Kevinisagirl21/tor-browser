@@ -137,16 +137,16 @@ var OnionAuthPrompt = {
     this._onPromptShowing(null);
   },
 
-  _onKeyFieldKeyPress(aEvent) {
-    if (aEvent.keyCode == aEvent.DOM_VK_RETURN) {
+  _onKeyFieldKeyPress(event) {
+    if (event.keyCode === event.DOM_VK_RETURN) {
       this._onDone();
-    } else if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
+    } else if (event.keyCode === event.DOM_VK_ESCAPE) {
       this._shownDetails.notification.remove();
       this._onCancel();
     }
   },
 
-  _onKeyFieldInput(aEvent) {
+  _onKeyFieldInput() {
     this._showWarning(undefined); // Remove the warning.
   },
 
@@ -206,9 +206,9 @@ var OnionAuthPrompt = {
     );
   },
 
-  _showWarning(aWarningMessage) {
-    if (aWarningMessage) {
-      this._warningEl.textContent = aWarningMessage;
+  _showWarning(warningMessage) {
+    if (warningMessage) {
+      this._warningEl.textContent = warningMessage;
       this._warningEl.removeAttribute("hidden");
       this._keyInput.classList.add("invalid");
     } else {
@@ -218,20 +218,20 @@ var OnionAuthPrompt = {
   },
 
   // Returns undefined if the key is the wrong length or format.
-  _keyToBase64(aKeyString) {
-    if (!aKeyString) {
+  _keyToBase64(keyString) {
+    if (!keyString) {
       return undefined;
     }
 
     let base64key;
-    if (aKeyString.length == 52) {
+    if (keyString.length === 52) {
       // The key is probably base32-encoded. Attempt to decode.
       // Although base32 specifies uppercase letters, we accept lowercase
       // as well because users may type in lowercase or copy a key out of
       // a tor onion-auth file (which uses lowercase).
       let rawKey;
       try {
-        rawKey = this._lazy.CommonUtils.decodeBase32(aKeyString.toUpperCase());
+        rawKey = this._lazy.CommonUtils.decodeBase32(keyString.toUpperCase());
       } catch (e) {}
 
       if (rawKey) {
@@ -240,13 +240,13 @@ var OnionAuthPrompt = {
         } catch (e) {}
       }
     } else if (
-      aKeyString.length == 44 &&
-      /^[a-zA-Z0-9+/]*=*$/.test(aKeyString)
+      keyString.length === 44 &&
+      /^[a-zA-Z0-9+/]*=*$/.test(keyString)
     ) {
       // The key appears to be a correctly formatted base64 value. If not,
       // tor will return an error when we try to add the key via the
       // control port.
-      base64key = aKeyString;
+      base64key = keyString;
     }
 
     return base64key;
@@ -302,39 +302,40 @@ var OnionAuthPrompt = {
 
   // aSubject is the DOM Window or browser where the prompt should be shown.
   // aData contains the .onion name.
-  observe(aSubject, aTopic, aData) {
+  observe(subject, topic, data) {
     if (
-      aTopic != this._topics.clientAuthMissing &&
-      aTopic != this._topics.clientAuthIncorrect
+      topic !== this._topics.clientAuthMissing &&
+      topic !== this._topics.clientAuthIncorrect
     ) {
       return;
     }
 
     let browser;
-    if (aSubject instanceof Ci.nsIDOMWindow) {
-      let contentWindow = aSubject.QueryInterface(Ci.nsIDOMWindow);
+    if (subject instanceof Ci.nsIDOMWindow) {
+      let contentWindow = subject.QueryInterface(Ci.nsIDOMWindow);
       browser = contentWindow.docShell.chromeEventHandler;
     } else {
-      browser = aSubject.QueryInterface(Ci.nsIBrowser);
+      browser = subject.QueryInterface(Ci.nsIBrowser);
     }
 
-    if (!gBrowser.browsers.some(aBrowser => aBrowser == browser)) {
+    if (!gBrowser.browsers.includes(browser)) {
       return; // This window does not contain the subject browser; ignore.
     }
 
+    const onionHost = data;
     // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
-    const onionServiceId = aData
+    const onionServiceId = onionHost
       .match(/^(.*\.)?(?<onionServiceId>[a-z2-7]{56})\.onion$/i)
       ?.groups.onionServiceId.toLowerCase();
     if (!onionServiceId) {
-      console.error(`Malformed onion address: ${aData}`);
+      console.error(`Malformed onion address: ${onionHost}`);
       return;
     }
 
     const details = {
       browser,
-      cause: aTopic,
-      onionHost: aData,
+      cause: topic,
+      onionHost,
       uri: browser.currentURI,
       onionServiceId,
     };
