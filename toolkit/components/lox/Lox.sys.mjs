@@ -612,7 +612,7 @@ class LoxImpl {
     try {
       lazy.invitation_is_trusted(invite);
     } catch (err) {
-      lazy.logger.error(err);
+      lazy.logger.info(`Does not parse as an invite: "${invite}".`, err);
       return false;
     }
     return true;
