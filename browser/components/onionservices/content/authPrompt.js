@@ -36,11 +36,26 @@ var OnionAuthPrompt = {
   _shownDetails: null,
 
   /**
+   * Used for logging to represent PromptDetails.
+   *
+   * @param {PromptDetails} details - The details to represent.
+   * @returns {string} - The representation of these details.
+   */
+  _detailsRepr(details) {
+    if (!details) {
+      return "none";
+    }
+    return `${details.browser.browserId}:${details.onionHost}`;
+  },
+
+  /**
    * Show a new prompt, using the given details.
    *
    * @param {PromptDetails} details - The details to show.
    */
   show(details) {
+    this._logger.debug(`New Notification: ${this._detailsRepr(details)}`);
+
     let mainAction = {
       label: this.TorStrings.onionServices.authPrompt.done,
       accessKey: this.TorStrings.onionServices.authPrompt.doneAccessKey,
@@ -106,8 +121,11 @@ var OnionAuthPrompt = {
       // We don't want to reset the current state in this case.
       // In particular, we keep the current _keyInput value and _persistCheckbox
       // the same.
+      this._logger.debug(`Already showing: ${this._detailsRepr(details)}`);
       return;
     }
+
+    this._logger.debug(`Now showing: ${this._detailsRepr(details)}`);
 
     this._shownDetails = details;
 
@@ -150,8 +168,10 @@ var OnionAuthPrompt = {
     if (details !== this._shownDetails) {
       // Removing the notification for some other page.
       // For example, closing another tab that also requires authentication.
+      this._logger.debug(`Removed not shown: ${this._detailsRepr(details)}`);
       return;
     }
+    this._logger.debug(`Removed shown: ${this._detailsRepr(details)}`);
     // Reset the prompt as a precaution.
     // In particular, we want to clear the input so that the entered key does
     // not persist.
@@ -162,6 +182,10 @@ var OnionAuthPrompt = {
    * Callback when the user submits the key.
    */
   async _onDone() {
+    this._logger.debug(
+      `Sumbitting key: ${this._detailsRepr(this._shownDetails)}`
+    );
+
     // Grab the details before they might change as we await.
     const { browser, onionServiceId, notification } = this._shownDetails;
     const isPermanent = this._persistCheckbox.checked;
@@ -172,8 +196,6 @@ var OnionAuthPrompt = {
       return;
     }
 
-    const controllerFailureMsg =
-      this.TorStrings.onionServices.authPrompt.failedToSetKey;
     try {
       const provider = await this._lazy.TorProviderBuilder.build();
       await provider.onionAuthAdd(onionServiceId, base64key, isPermanent);
@@ -181,8 +203,10 @@ var OnionAuthPrompt = {
       if (e.torMessage) {
         this._showWarning(e.torMessage);
       } else {
-        console.error(controllerFailureMsg, e);
-        this._showWarning(controllerFailureMsg);
+        this._logger.error(`Failed to set key for ${onionServiceId}`, e);
+        this._showWarning(
+          this.TorStrings.onionServices.authPrompt.failedToSetKey
+        );
       }
       return;
     }
@@ -201,6 +225,7 @@ var OnionAuthPrompt = {
     // and we pass it as a data: URI to loadFrameScript(),
     // which runs it in the content frame which triggered
     // this authentication prompt.
+    this._logger.debug(`Cancelling: ${this._detailsRepr(this._shownDetails)}`);
 
     const { browser, cause, uri } = this._shownDetails;
     const errorCode =
@@ -227,6 +252,7 @@ var OnionAuthPrompt = {
    *   clear the current message.
    */
   _showWarning(warningMessage) {
+    this._logger.debug(`Showing warning: ${warningMessage}`);
     if (warningMessage) {
       this._warningEl.textContent = warningMessage;
       this._warningEl.removeAttribute("hidden");
@@ -282,6 +308,12 @@ var OnionAuthPrompt = {
    * Initialize the authentication prompt.
    */
   init() {
+    this._logger = console.createInstance({
+      prefix: "OnionAuthPrompt",
+      maxLogLevel: "Warn",
+      maxLogLevelPref: "browser.onionAuthPrompt.loglevel",
+    });
+
     const { TorStrings } = ChromeUtils.importESModule(
       "resource://gre/modules/TorStrings.sys.mjs"
     );
@@ -354,8 +386,15 @@ var OnionAuthPrompt = {
     }
 
     if (!gBrowser.browsers.includes(browser)) {
-      return; // This window does not contain the subject browser; ignore.
+      // This window does not contain the subject browser.
+      this._logger.debug(
+        `Window ${window.docShell.outerWindowID}: Ignoring ${topic}`
+      );
+      return;
     }
+    this._logger.debug(
+      `Window ${window.docShell.outerWindowID}: Handling ${topic}`
+    );
 
     const onionHost = data;
     // ^(subdomain.)*onionserviceid.onion$ (case-insensitive)
@@ -363,7 +402,7 @@ var OnionAuthPrompt = {
       .match(/^(.*\.)?(?<onionServiceId>[a-z2-7]{56})\.onion$/i)
       ?.groups.onionServiceId.toLowerCase();
     if (!onionServiceId) {
-      console.error(`Malformed onion address: ${onionHost}`);
+      this._logger.error(`Malformed onion address: ${onionHost}`);
       return;
     }
 
