@@ -15,11 +15,6 @@ const { DownloadUtils } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
-ChromeUtils.defineLazyGetter(this, "gTorButtonBundle", function () {
-  return Services.strings.createBundle(
-    "chrome://torbutton/locale/torbutton.properties"
-  );
-});
 
 var security = {
   async init(uri, windowInfo) {
@@ -364,9 +359,13 @@ async function securityOnLoad(uri, windowInfo) {
       );
     } else {
       try {
-        hdr = gTorButtonBundle.formatStringFromName(
-          "pageInfo_OnionEncryptionWithBitsAndProtocol",
-          [info.encryptionAlgorithm, info.encryptionStrength + "", info.version]
+        hdr = await document.l10n.formatValue(
+          "page-info-onion-site-encryption-with-bits",
+          {
+            "encryption-type": info.encryptionAlgorithm,
+            "encryption-strength": info.encryptionStrength,
+            "encryption-version": info.version,
+          }
         );
       } catch (err) {
         hdr =
@@ -392,11 +391,9 @@ async function securityOnLoad(uri, windowInfo) {
     }
     msg2 = pkiBundle.getString("pageInfo_Privacy_None2");
   } else {
-    try {
-      hdr = gTorButtonBundle.GetStringFromName("pageInfo_OnionEncryption");
-    } catch (err) {
-      hdr = "Connection Encrypted (Onion Service)";
-    }
+    hdr = await document.l10n.formatValue(
+      "page-info-onion-site-encryption-plain"
+    );
 
     msg1 = pkiBundle.getString("pageInfo_Privacy_Encrypted1");
     msg2 = pkiBundle.getString("pageInfo_Privacy_Encrypted2");
