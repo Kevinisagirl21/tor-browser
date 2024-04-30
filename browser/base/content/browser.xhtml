@@ -41,7 +41,8 @@
 <?xml-stylesheet href="chrome://global/content/torconnect/torConnectTitlebarStatus.css" type="text/css"?>
 
 <!DOCTYPE window [
-#include browser-doctype.inc
+  <!ENTITY % torbuttonDTD SYSTEM "chrome://torbutton/locale/torbutton.dtd">
+%torbuttonDTD;
 ]>
 
 <html id="main-window"
