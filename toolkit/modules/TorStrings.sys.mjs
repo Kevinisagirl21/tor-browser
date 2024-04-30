@@ -222,71 +222,6 @@ const Loader = {
   },
 
   /*
-    Tor Onion Services Strings, e.g., for the authentication prompt.
-  */
-  onionServices() {
-    const tsb = new TorPropertyStringBundle(
-      "chrome://torbutton/locale/torbutton.properties",
-      "onionServices."
-    );
-    const getString = tsb.getString.bind(tsb);
-
-    const retval = {
-      learnMore: getString("learnMore", "Learn more"),
-      authPrompt: {
-        description: getString(
-          "authPrompt.description2",
-          "%S is requesting that you authenticate."
-        ),
-        keyPlaceholder: getString(
-          "authPrompt.keyPlaceholder",
-          "Enter your key"
-        ),
-        done: getString("authPrompt.done", "Done"),
-        doneAccessKey: getString("authPrompt.doneAccessKey", "d"),
-        invalidKey: getString("authPrompt.invalidKey", "Invalid key"),
-        failedToSetKey: getString(
-          "authPrompt.failedToSetKey",
-          "Failed to set key"
-        ),
-      },
-      authPreferences: {
-        header: getString(
-          "authPreferences.header",
-          "Onion Services Authentication"
-        ),
-        overview: getString(
-          "authPreferences.overview",
-          "Some onion services require that you identify yourself with a key"
-        ),
-        savedKeys: getString("authPreferences.savedKeys", "Saved Keys"),
-        dialogTitle: getString(
-          "authPreferences.dialogTitle",
-          "Onion Services Keys"
-        ),
-        dialogIntro: getString(
-          "authPreferences.dialogIntro",
-          "Keys for the following onionsites are stored on your computer"
-        ),
-        onionSite: getString("authPreferences.onionSite", "Onionsite"),
-        onionKey: getString("authPreferences.onionKey", "Key"),
-        remove: getString("authPreferences.remove", "Remove"),
-        removeAll: getString("authPreferences.removeAll", "Remove All"),
-        failedToGetKeys: getString(
-          "authPreferences.failedToGetKeys",
-          "Failed to get keys"
-        ),
-        failedToRemoveKey: getString(
-          "authPreferences.failedToRemoveKey",
-          "Failed to remove key"
-        ),
-      },
-    };
-
-    return retval;
-  } /* Tor Onion Services Strings */,
-
-  /*
     OnionLocation
   */
   onionLocation() {
@@ -328,13 +263,6 @@ export const TorStrings = {
       this._torConnect = Loader.torConnect();
     }
     return this._torConnect;
-  },
-
-  get onionServices() {
-    if (!this._onionServices) {
-      this._onionServices = Loader.onionServices();
-    }
-    return this._onionServices;
   },
 
   get onionLocation() {
