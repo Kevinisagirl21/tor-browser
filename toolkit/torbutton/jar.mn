@@ -5,7 +5,6 @@ torbutton.jar:
 % category l10n-registry torbutton resource://torbutton/locale/{locale}/
 
 # browser branding
-% override chrome://branding/locale/brand.dtd chrome://torbutton/locale/brand.dtd
 % override chrome://branding/locale/brand.properties chrome://torbutton/locale/brand.properties
 
 # Strings for the about:tbupdate page
