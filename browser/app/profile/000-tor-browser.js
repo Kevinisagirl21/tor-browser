@@ -21,8 +21,6 @@ pref("network.proxy.socks_remote_dns", true);
 pref("network.proxy.no_proxies_on", ""); // For fingerprinting and local service vulns (#10419)
 pref("network.proxy.allow_hijacking_localhost", true); // Allow proxies for localhost (#31065)
 pref("network.proxy.type", 1);
-// Bug 40548: Disable proxy-bypass
-pref("network.proxy.failover_direct", false);
 // localhost is already blocked by setting `network.proxy.allow_hijacking_localhost` to
 // true, allowing users to explicitly block ports makes them fingerprintable; for details, see
 // Bug 41317: Tor Browser leaks banned ports in network.security.ports.banned
