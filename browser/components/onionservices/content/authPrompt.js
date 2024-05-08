@@ -356,6 +356,13 @@ var OnionAuthPrompt = {
       this._showWarning(undefined);
     });
 
+    // Force back focus on click: tor-browser#41856
+    document
+      .getElementById("tor-clientauth-notification")
+      .addEventListener("click", () => {
+        window.focus();
+      });
+
     Services.obs.addObserver(this, this._topics.clientAuthMissing);
     Services.obs.addObserver(this, this._topics.clientAuthIncorrect);
   },
