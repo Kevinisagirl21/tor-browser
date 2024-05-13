@@ -6,18 +6,24 @@
       http-equiv="Content-Security-Policy"
       content="default-src chrome:; object-src 'none'"
     />
-    <meta name="viewport" content="width=device-width">
+    <meta name="viewport" content="width=device-width" />
     <link
       rel="stylesheet"
       href="chrome://global/content/torconnect/aboutTorConnect.css"
       type="text/css"
       media="all"
     />
+
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-toggle.mjs"
+    ></script>
   </head>
-  <body>
-    <div id="progressBar">
-      <div id="progressBackground"></div>
+  <body class="aboutTorConnect">
+    <div id="progressBar" hidden="hidden">
       <div id="progressSolid"></div>
+      <div id="progressBackground"></div>
+      <div id="progressBarBackground"></div>
     </div>
     <div id="connectPageContainer" class="container">
       <div id="breadcrumbs" class="hidden">
@@ -56,8 +62,7 @@
         <button id="viewLogButton"></button>
 
         <div id="quickstartContainer">
-          <input id="quickstartCheckbox" type="checkbox" />
-          <label id="quickstartCheckboxLabel" for="quickstartCheckbox"></label>
+          <moz-toggle id="quickstartToggle" label-align-after=""></moz-toggle>
         </div>
 
         <div class="button-container">
@@ -75,9 +80,6 @@
           </span>
         </div>
       </div>
-    </div>
-    <div class="onion-pattern-container">
-      <div class="onion-pattern-crop"></div>
     </div>
     <script src="chrome://global/content/torconnect/aboutTorConnect.js"></script>
   </body>
