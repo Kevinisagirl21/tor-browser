@@ -60,8 +60,7 @@ class AboutTorConnect {
     },
     quickstart: {
       container: "div#quickstartContainer",
-      checkbox: "input#quickstartCheckbox",
-      label: "label#quickstartCheckboxLabel",
+      toggle: "#quickstartToggle",
     },
     buttons: {
       restart: "button#restartButton",
@@ -116,10 +115,7 @@ class AboutTorConnect {
     quickstartContainer: document.querySelector(
       this.selectors.quickstart.container
     ),
-    quickstartCheckbox: document.querySelector(
-      this.selectors.quickstart.checkbox
-    ),
-    quickstartLabel: document.querySelector(this.selectors.quickstart.label),
+    quickstartToggle: document.querySelector(this.selectors.quickstart.toggle),
     restartButton: document.querySelector(this.selectors.buttons.restart),
     configureButton: document.querySelector(this.selectors.buttons.configure),
     cancelButton: document.querySelector(this.selectors.buttons.cancel),
@@ -310,7 +306,10 @@ class AboutTorConnect {
     this.elements.progressDescription.textContent = description;
     if (visible) {
       this.show(this.elements.progressMeter);
-      this.elements.progressMeter.style.width = `${percent}%`;
+      this.elements.progressMeter.style.setProperty(
+        "--progress-percent",
+        `${percent}%`
+      );
     } else {
       this.hide(this.elements.progressMeter);
     }
@@ -407,7 +406,7 @@ class AboutTorConnect {
   updateUI(state) {
     // calls update_$state()
     this[`update_${state.State}`](state);
-    this.elements.quickstartCheckbox.checked = state.QuickStartEnabled;
+    this.elements.quickstartToggle.pressed = state.QuickStartEnabled;
   }
 
   /* Per-state updates */
@@ -759,12 +758,14 @@ class AboutTorConnect {
       RPMSendAsyncMessage("torconnect:view-tor-logs");
     });
 
-    this.elements.quickstartCheckbox.addEventListener("change", () => {
-      const quickstart = this.elements.quickstartCheckbox.checked;
+    this.elements.quickstartToggle.addEventListener("toggle", () => {
+      const quickstart = this.elements.quickstartToggle.pressed;
       RPMSendAsyncMessage("torconnect:set-quickstart", quickstart);
     });
-    this.elements.quickstartLabel.textContent =
-      TorStrings.settings.quickstartCheckbox;
+    this.elements.quickstartToggle.setAttribute(
+      "label",
+      TorStrings.settings.quickstartCheckbox
+    );
 
     this.elements.restartButton.textContent =
       TorStrings.torConnect.restartTorBrowser;
