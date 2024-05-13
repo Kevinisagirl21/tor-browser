@@ -12,11 +12,17 @@
       type="text/css"
       media="all"
     />
+
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-toggle.mjs"
+    ></script>
   </head>
-  <body>
-    <div id="progressBar">
-      <div id="progressBackground"></div>
+  <body class="aboutTorConnect">
+    <div id="progressBar" hidden="hidden">
       <div id="progressSolid"></div>
+      <div id="progressBackground"></div>
+      <div id="progressBarBackground"></div>
     </div>
     <div id="connectPageContainer" class="container">
       <div id="breadcrumbs" class="hidden">
@@ -55,8 +61,7 @@
         <button id="viewLogButton"></button>
 
         <div id="quickstartContainer">
-          <input id="quickstartCheckbox" type="checkbox" />
-          <label id="quickstartCheckboxLabel" for="quickstartCheckbox"></label>
+          <moz-toggle id="quickstartToggle" label-align-after=""></moz-toggle>
         </div>
 
         <div id="connectButtonContainer" class="button-container">
@@ -71,9 +76,6 @@
           <button id="tryBridgeButton" class="primary" hidden="true"></button>
         </div>
       </div>
-    </div>
-    <div class="onion-pattern-container">
-      <div class="onion-pattern-crop"></div>
     </div>
     <script src="chrome://global/content/torconnect/aboutTorConnect.js"></script>
   </body>
