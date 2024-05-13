@@ -449,6 +449,11 @@ body.android {
   flex: 1;
 }
 
+body:not(.android) #connectButtonContainer {
+  /* Use the .button-container context */
+  display: contents;
+}
+
 .android #connectButtonContainer {
   width: 100%;
   padding-bottom: 18px;
