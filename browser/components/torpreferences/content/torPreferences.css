@@ -1,4 +1,4 @@
-@import url("chrome://global/skin/browser-colors.css");
+@import url("chrome://global/skin/tor-colors.css");
 
 
 #category-connection > .category-icon {
@@ -137,13 +137,7 @@ button.spoof-button-disabled {
 }
 
 .bridge-status-badge.bridge-status-connected {
-  color: var(--purple-60);
-}
-
-@media (prefers-color-scheme: dark) {
-  .bridge-status-badge.bridge-status-connected {
-    color: var(--purple-30);
-  }
+  color: var(--tor-accent-color);
 }
 
 .bridge-status-badge.bridge-status-current-built-in {
@@ -990,7 +984,7 @@ hbox#torPreferences-requestBridge-incorrectCaptchaHbox {
 image#torPreferences-requestBridge-errorIcon {
   list-style-image: url("chrome://global/skin/icons/warning.svg");
   -moz-context-properties: fill;
-  fill: var(--warning-color);
+  fill: var(--in-content-warning-icon-color);
 }
 
 groupbox#torPreferences-bridges-group textarea {
