@@ -44,13 +44,7 @@
 }
 
 #tor-connect-titlebar-status.tor-connect-status-connected {
-  color: var(--purple-60);
-}
-
-@media (prefers-color-scheme: dark) {
-  #tor-connect-titlebar-status.tor-connect-status-connected {
-    color: var(--purple-30);
-  }
+  color: var(--tor-accent-color);
 }
 
 @keyframes onion-not-connected-to-connected {

@@ -1,9 +1,4 @@
 .tor-urlbar-button:not([hidden]) {
-  --tor-urlbar-button-background-color: var(--purple-60);
-  background-color: var(--tor-urlbar-button-background-color);
-  /* FIXME: Use different colors for light and dark theme, rather than "white".
-   * See tor-browser#41787 */
-  color: white;
   display: flex;
   align-items: center;
   gap: 0.5em;
@@ -31,8 +26,7 @@
    * urlbar background, but we keep the rounded corners. */
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
-  /* Use the background color for the outline, same as in-content buttons. */
-  outline-color: var(--tor-urlbar-button-background-color);
+  outline-color: var(--tor-focus-outline-color);
   /* Calculate the difference between the button's border area and the outline
    * area. */
   --tor-urlbar-focus-outline-difference: calc(
@@ -64,31 +58,9 @@
   display: none;
 }
 
-.tor-urlbar-button:hover {
-  --tor-urlbar-button-background-color: var(--purple-70);
-}
-
-.tor-urlbar-button:hover:active {
-  --tor-urlbar-button-background-color: var(--purple-80);
-}
-
-@media (prefers-color-scheme: dark) {
-  .tor-urlbar-button {
-    --tor-urlbar-button-background-color: var(--purple-50);
-  }
-
-  .tor-urlbar-button:hover {
-    --tor-urlbar-button-background-color: var(--purple-60);
-  }
-
-  .tor-urlbar-button:hover:active {
-    --tor-urlbar-button-background-color: var(--purple-70);
-  }
-}
-
 /* Make the button look plain like the identity #urlbar-label-box. */
 .tor-urlbar-button.tor-urlbar-button-plain {
-  --tor-urlbar-button-background-color: var(--urlbar-box-bgcolor);
+  background-color: var(--urlbar-box-bgcolor);
   color: var(--urlbar-box-text-color);
 }
 
@@ -97,11 +69,11 @@
 }
 
 .tor-urlbar-button.tor-urlbar-button-plain:hover {
-  --tor-urlbar-button-background-color: var(--urlbar-box-hover-bgcolor);
+  background-color: var(--urlbar-box-hover-bgcolor);
   color: var(--urlbar-box-hover-text-color);
 }
 
 .tor-urlbar-button.tor-urlbar-button-plain:hover:active {
-  --tor-urlbar-button-background-color: var(--urlbar-box-active-bgcolor);
+  background-color: var(--urlbar-box-active-bgcolor);
   color: var(--urlbar-box-hover-text-color);
 }
