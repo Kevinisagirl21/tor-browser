@@ -1,4 +1,4 @@
-@import url("chrome://global/skin/browser-colors.css");
+@import url("chrome://global/skin/tor-colors.css");
 
 body {
   margin: 0;
@@ -179,7 +179,7 @@ body:not(.show-tor-check) #tor-check {
   /* On dark background */
   :root {
     background-color: #2C0449;
-    --focus-outline-color: var(--purple-30);
+    --focus-outline-color: var(--tor-focus-outline-color-dark);
     --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
     --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
@@ -194,14 +194,9 @@ body:not(.show-tor-check) #tor-check {
     --in-content-page-color: #fbfbfe;
     --in-content-text-color: #fbfbfe;
     color: var(--in-content-text-color);
-    --link-color: var(--purple-30);
-    /* FIXME: Since we have a dark background, the color should get lighter on
-     * hover, but --purple-40 and --pruple-50 are darker than --purple-30.
-     * However, we do not have a standard lighter purple in our current set of
-     * Photon colors.
-     * See tor-browser#42025 */
-    --link-color-hover: var(--purple-40);
-    --link-color-active: var(--purple-50);
+    --link-color: var(--tor-link-color-dark);
+    --link-color-hover: var(--tor-link-color-hover-dark);
+    --link-color-active: var(--tor-link-color-active-dark);
   }
 
   #search-form {
@@ -209,7 +204,9 @@ body:not(.show-tor-check) #tor-check {
   }
 
   #search-form.search-input-focus-visible {
-    border-color: var(--purple-60);
+    /* Use a light-themed inner-border to contrast with the dark-themed
+     * focus outline. */
+    border-color: var(--tor-focus-outline-color-light);
   }
 
   #search-form.onionized-search:not(.search-input-focus-visible) {
@@ -218,17 +215,17 @@ body:not(.show-tor-check) #tor-check {
 
   /* Light background. */
   #search-form > * {
-    --focus-outline-color: var(--purple-60);
+    --focus-outline-color: var(--tor-focus-outline-color-light);
     --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
     --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
     /* Variables used for --toggle- variables. */
-    --color-accent-primary: var(--purple-60);
-    --color-accent-primary-hover: var(--purple-70);
-    --color-accent-primary-active: var(--purple-80);
+    --color-accent-primary: var(--tor-button-background-color-light);
+    --color-accent-primary-hover: var(--tor-button-background-color-hover-light);
+    --color-accent-primary-active: var(--tor-button-background-color-active-light);
   }
 
   #search-form.onionized-search #onionize-toggle {
-    color: var(--purple-60);
+    color: var(--tor-link-color-light);
   }
 }
