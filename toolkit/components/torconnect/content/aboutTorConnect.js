@@ -188,8 +188,9 @@ class AboutTorConnect {
   Element helper methods
   */
 
-  show(element, primary) {
-    element.classList.toggle("primary", primary !== undefined && primary);
+  show(element, primary = false) {
+    element.classList.toggle("primary", primary);
+    element.classList.toggle("tor-button", primary);
     element.removeAttribute("hidden");
   }
 
@@ -554,7 +555,7 @@ class AboutTorConnect {
     } else {
       this.hide(this.elements.viewLogButton);
     }
-    this.show(this.elements.cancelButton, true);
+    this.show(this.elements.cancelButton);
     if (state.StateChanged) {
       this.elements.cancelButton.focus();
     }
@@ -687,7 +688,6 @@ class AboutTorConnect {
     this.show(this.elements.locationDropdown);
     this.elements.locationDropdownLabel.classList.toggle("error", isError);
     this.show(this.elements.tryBridgeButton, true);
-    this.elements.tryBridgeButton.classList.toggle("danger-button", isError);
     if (buttonLabel !== undefined) {
       this.elements.tryBridgeButton.textContent = buttonLabel;
     }
