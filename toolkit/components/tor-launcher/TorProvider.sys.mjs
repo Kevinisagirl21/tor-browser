@@ -1035,6 +1035,7 @@ export class TorProvider {
    */
   async onCircuitBuilt(id, nodes) {
     this.#circuits.set(id, nodes);
+    logger.debug(`Built tor circuit ${id}`, nodes);
     // Ignore circuits of length 1, that are used, for example, to probe
     // bridges. So, only store them, since we might see streams that use them,
     // but then early-return.
