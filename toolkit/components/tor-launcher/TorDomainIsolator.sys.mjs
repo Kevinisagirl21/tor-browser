@@ -588,6 +588,7 @@ class TorDomainIsolatorImpl {
     data = await Promise.all(
       circuit.map(fingerprint => provider.getNodeInfo(fingerprint))
     );
+    logger.debug(`Updating circuit ${id}`, data);
     this.#knownCircuits.set(id, data);
     // We know that something changed, but we cannot know if anyone is
     // interested in this change. So, we have to notify all the possible
