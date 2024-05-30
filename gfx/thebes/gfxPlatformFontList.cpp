@@ -38,7 +38,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessMessageManager.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ResultExtensions.h"
@@ -1965,27 +1964,20 @@ void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap) {
   }
 }
 
-static void GetSystemUIFontFamilies(const nsPresContext* aPresContext,
-                                    [[maybe_unused]] nsAtom* aLangGroup,
+static void GetSystemUIFontFamilies([[maybe_unused]] nsAtom* aLangGroup,
                                     nsTArray<nsCString>& aFamilies) {
   // TODO: On macOS, use CTCreateUIFontForLanguage or such thing (though the
   // code below ends up using [NSFont systemFontOfSize: 0.0].
   nsFont systemFont;
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (aPresContext && aPresContext->Document()
-                 ? aPresContext->Document()->ShouldResistFingerprinting(
-                       RFPTarget::Unknown)
-                 : nsContentUtils::ShouldResistFingerprinting(
-                       "aPresContext not available", RFPTarget::Unknown)) {
+  if (nsContentUtils::ShouldResistFingerprinting()) {
 #ifdef XP_MACOSX
     *aFamilies.AppendElement() = "-apple-system"_ns;
-    return;
-#elif !defined(MOZ_WIDGET_ANDROID)
+#else
     *aFamilies.AppendElement() = "sans-serif"_ns;
-    return;
 #endif
-    // Android uses already fixed fonts.
+    return;
   }
   if (!LookAndFeel::GetFont(StyleSystemFont::Menu, systemFontName, fontStyle)) {
     return;
@@ -2022,7 +2014,7 @@ void gfxPlatformFontList::ResolveGenericFontNames(
   MOZ_ASSERT(langGroup, "null lang group for pref lang");
 
   if (aGenericType == StyleGenericFontFamily::SystemUi) {
-    GetSystemUIFontFamilies(aPresContext, langGroup, genericFamilies);
+    GetSystemUIFontFamilies(langGroup, genericFamilies);
   }
 
   GetFontFamiliesFromGenericFamilies(
