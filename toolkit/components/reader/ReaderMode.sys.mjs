@@ -231,12 +231,11 @@ export var ReaderMode = {
    * Downloads and parses a document from a URL.
    *
    * @param url URL to download and parse.
-   * @param attrs OriginAttributes to use for the request.
    * @return {Promise}
    * @resolves JS object representing the article, or null if no article is found.
    */
-  async downloadAndParseDocument(url, attrs = {}, docContentType = "document") {
-    let result = await this._downloadDocument(url, attrs, docContentType);
+  async downloadAndParseDocument(url, docContentType = "document") {
+    let result = await this._downloadDocument(url, docContentType);
     if (!result?.doc) {
       return null;
     }
@@ -259,11 +258,9 @@ export var ReaderMode = {
     return article;
   },
 
-  _downloadDocument(url, attrs = {}, docContentType = "document") {
-    let uri;
+  _downloadDocument(url, docContentType = "document") {
     try {
-      uri = Services.io.newURI(url);
-      if (!lazy.Readerable.shouldCheckUri(uri)) {
+      if (!lazy.Readerable.shouldCheckUri(Services.io.newURI(url))) {
         return null;
       }
     } catch (ex) {
@@ -275,15 +272,9 @@ export var ReaderMode = {
     let histogram = Services.telemetry.getHistogramById(
       "READER_MODE_DOWNLOAD_RESULT"
     );
-    try {
-      attrs.firstPartyDomain = Services.eTLD.getSchemelessSite(uri);
-    } catch (e) {
-      console.error("Failed to get first party domain for about:reader", e);
-    }
     return new Promise((resolve, reject) => {
       let xhr = new XMLHttpRequest();
       xhr.open("GET", url, true);
-      xhr.setOriginAttributes(attrs);
       xhr.onerror = evt => reject(evt.error);
       xhr.responseType = docContentType === "text/plain" ? "text" : "document";
       xhr.onload = evt => {
