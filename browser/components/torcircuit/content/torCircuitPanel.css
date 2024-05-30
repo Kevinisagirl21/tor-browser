@@ -165,9 +165,14 @@
 }
 
 .tor-circuit-addresses {
-  font-size: smaller;
+  font-size: 0.9em;
   font-family: monospace;
   margin-inline-start: 0.75em;
+}
+
+.tor-circuit-ip-address {
+  /* Override the rule for <code>, which is -moz-fixed. */
+  font-family: inherit;
 }
 
 /* Footer buttons */
