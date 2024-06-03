@@ -227,7 +227,7 @@ void nsRFPService::UpdateRFPPref() {
   }
 
   if (resistFingerprinting) {
-    PR_SetEnv("TZ=Atlantic/Reykjavik");
+    PR_SetEnv("TZ=UTC");
   } else if (sInitialized) {
     // We will not touch the TZ value if 'privacy.resistFingerprinting' is false
     // during the time of initialization.
