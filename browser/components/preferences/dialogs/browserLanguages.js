@@ -349,7 +349,7 @@ async function getLocaleDisplayInfo(localeCodes) {
       id: "locale-" + code,
       label: localeNames[i],
       value: code,
-      canRemove: code !== Services.locale.defaultLocale,
+      canRemove: !packagedLocales.has(code),
       installed: availableLocales.has(code),
     };
   });
