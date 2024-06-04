@@ -708,6 +708,613 @@ class DisabledState extends StateCallback {
   }
 }
 
+/**
+ * @callback ProgressCallback
+ *
+ * @param {integer} progress - The progress percent.
+ */
+/**
+ * @typedef {object} BootstrapOptions
+ *
+ * Options for a bootstrap attempt.
+ *
+ * @property {boolean} [options.simulateCensorship] - Whether to simulate a
+ *   failing bootstrap.
+ * @property {integer} [options.simulateDelay] - The delay in microseconds to
+ *   apply to simulated bootstraps.
+ * @property {object} [options.simulateMoatResponse] - Simulate a Moat response
+ *   for circumvention settings. Should include a "settings" property, and
+ *   optionally a "country" property. You may add a "simulateCensorship"
+ *   property to some of the settings to make only their bootstrap attempts
+ *   fail.
+ * @property {boolean} [options.testInternet] - Whether to also test the
+ *   internet connection.
+ * @property {boolean} [options.simulateOffline] - Whether to simulate an
+ *   offline test result. This will not cause the bootstrap to fail.
+ * @property {string} [options.regionCode] - The region code to use to fetch
+ *   auto-bootstrap settings, or "automatic" to automatically choose the region.
+ */
+/**
+ * @typedef {object} BootstrapResult
+ *
+ * The result of a bootstrap attempt.
+ *
+ * @property {string} [result] - The bootstrap result.
+ * @property {Error} [error] - An error from the attempt.
+ */
+/**
+ * @callback ResolveBootstrap
+ *
+ * Resolve a bootstrap attempt.
+ *
+ * @param {BootstrapResult} - The result, or error.
+ */
+
+/**
+ * Each instance can be used to attempt one bootstrapping.
+ */
+class BootstrapAttempt {
+  /**
+   * The ongoing bootstrap request.
+   *
+   * @type {?TorBootstrapRequest}
+   */
+  #bootstrap = null;
+  /**
+   * The error returned by the bootstrap request, if any.
+   *
+   * @type {?Error}
+   */
+  #bootstrapError = null;
+  /**
+   * The ongoing internet test, if any.
+   *
+   * @type {?InternetTest}
+   */
+  #internetTest = null;
+  /**
+   * The method to call to complete the `run` promise.
+   *
+   * @type {?ResolveBootstrap}
+   */
+  #resolveRun = null;
+  /**
+   * Whether the `run` promise has been, or is about to be, resolved.
+   *
+   * @type {boolean}
+   */
+  #resolved = false;
+  /**
+   * Whether a cancel request has been started.
+   *
+   * @type {boolean}
+   */
+  #cancelled = false;
+
+  /**
+   * Run a bootstrap attempt.
+   *
+   * @param {ProgressCallback} progressCallback - The callback to invoke with
+   *   the bootstrap progress.
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   *
+   * @return {Promise<string, Error>} - The result of the bootstrap.
+   */
+  run(progressCallback, options) {
+    const { promise, resolve, reject } = Promise.withResolvers();
+    this.#resolveRun = arg => {
+      if (this.#resolved) {
+        // Already been called once.
+        if (arg.error) {
+          lazy.logger.error("Delayed bootstrap error", arg.error);
+        }
+        return;
+      }
+      this.#resolved = true;
+      try {
+        // Should be ok to call this twice in the case where we "cancel" the
+        // bootstrap.
+        this.#internetTest?.cancel();
+      } catch (error) {
+        lazy.logger.error("Unexpected error in bootstrap cleanup", error);
+      }
+      if (arg.error) {
+        reject(arg.error);
+      } else {
+        resolve(arg.result);
+      }
+    };
+    try {
+      this.#runInternal(progressCallback, options);
+    } catch (error) {
+      this.#resolveRun({ error });
+    }
+
+    return promise;
+  }
+
+  /**
+   * Run the attempt.
+   *
+   * @param {ProgressCallback} progressCallback - The callback to invoke with
+   *   the bootstrap progress.
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   */
+  #runInternal(progressCallback, options) {
+    if (options.simulateCensorship) {
+      // Create a fake request.
+      this.#bootstrap = {
+        _timeout: 0,
+        bootstrap() {
+          this._timeout = setTimeout(() => {
+            const err = new Error("Censorship simulation");
+            err.phase = "conn";
+            err.reason = "noroute";
+            this.onbootstraperror(err);
+          }, options.simulateDelay || 0);
+        },
+        cancel() {
+          clearTimeout(this._timeout);
+        },
+      };
+    } else {
+      this.#bootstrap = new lazy.TorBootstrapRequest();
+    }
+
+    this.#bootstrap.onbootstrapstatus = (progress, _status) => {
+      if (!this.#resolved) {
+        progressCallback(progress);
+      }
+    };
+    this.#bootstrap.onbootstrapcomplete = () => {
+      this.#resolveRun({ result: "complete" });
+    };
+    this.#bootstrap.onbootstraperror = error => {
+      if (this.#bootstrapError) {
+        lazy.logger.warn("Another bootstrap error", error);
+        return;
+      }
+      // We have to wait for the Internet test to finish before sending the
+      // bootstrap error
+      this.#bootstrapError = error;
+      this.#maybeTransitionToError();
+    };
+    if (options.testInternet) {
+      this.#internetTest = new InternetTest(options.simulateOffline);
+      this.#internetTest.onResult = () => {
+        this.#maybeTransitionToError();
+      };
+      this.#internetTest.onError = () => {
+        this.#maybeTransitionToError();
+      };
+    }
+
+    this.#bootstrap.bootstrap();
+  }
+
+  /**
+   * Callback for when we get a new bootstrap error or a change in the internet
+   * status.
+   */
+  #maybeTransitionToError() {
+    if (this.#resolved || this.#cancelled) {
+      if (this.#bootstrapError) {
+        // We ignore this error since it occurred after cancelling (by the
+        // user), or we have already resolved. We assume the error is just a
+        // side effect of the cancelling.
+        // E.g. If the cancelling is triggered late in the process, we get
+        // "Building circuits: Establishing a Tor circuit failed".
+        // TODO: Maybe move this logic deeper in the process to know when to
+        // filter out such errors triggered by cancelling.
+        lazy.logger.warn("Post-complete error.", this.#bootstrapError);
+      }
+      return;
+    }
+
+    if (
+      this.#internetTest &&
+      this.#internetTest.status === InternetStatus.Unknown &&
+      this.#internetTest.error === null &&
+      this.#internetTest.enabled
+    ) {
+      // We have been called by a failed bootstrap, but the internet test has
+      // not run yet - force it to run immediately!
+      this.#internetTest.test();
+      // Return from this call, because the Internet test's callback will call
+      // us again.
+      return;
+    }
+    // Do not transition to "offline" until we are sure that also the bootstrap
+    // failed, in case Moat is down but the bootstrap can proceed anyway.
+    if (!this.#bootstrapError) {
+      return;
+    }
+    if (this.#internetTest?.status === InternetStatus.Offline) {
+      if (this.#bootstrapError) {
+        lazy.logger.info(
+          "Ignoring bootstrap error since offline.",
+          this.#bootstrapError
+        );
+      }
+      this.#resolveRun({ result: "offline" });
+      return;
+    }
+    this.#resolveRun({
+      error: new TorConnectError(
+        TorConnectError.BootstrapError,
+        this.#bootstrapError
+      ),
+    });
+  }
+
+  /**
+   * Cancel the bootstrap attempt.
+   */
+  async cancel() {
+    if (this.#cancelled) {
+      lazy.logger.warn(
+        "Cancelled bootstrap after it has already been cancelled"
+      );
+      return;
+    }
+    this.#cancelled = true;
+    if (this.#resolved) {
+      lazy.logger.warn("Cancelled bootstrap after it has already resolved");
+      return;
+    }
+    // Wait until after bootstrap.cancel returns before we resolve with
+    // cancelled. In particular, there is a small chance that the bootstrap
+    // completes, in which case we want to be able to resolve with a success
+    // instead.
+    this.#internetTest?.cancel();
+    await this.#bootstrap?.cancel();
+    this.#resolveRun({ result: "cancelled" });
+  }
+}
+
+/**
+ * Each instance can be used to attempt one auto-bootstrapping sequence.
+ */
+class AutoBootstrapAttempt {
+  /**
+   * The current bootstrap attempt, if any.
+   *
+   * @type {?BootstrapAttempt}
+   */
+  #bootstrapAttempt = null;
+  /**
+   * The method to call to complete the `run` promise.
+   *
+   * @type {?ResolveBootstrap}
+   */
+  #resolveRun = null;
+  /**
+   * Whether the `run` promise has been, or is about to be, resolved.
+   *
+   * @type {boolean}
+   */
+  #resolved = false;
+  /**
+   * Whether a cancel request has been started.
+   *
+   * @type {boolean}
+   */
+  #cancelled = false;
+  /**
+   * The method to call when the cancelled value is set to true.
+   *
+   * @type {?Function}
+   */
+  #resolveCancelled = null;
+  /**
+   * A promise that resolves when the cancelled value is set to true. We can use
+   * this with Promise.race to end early when the user cancels.
+   *
+   * @type {?Promise}
+   */
+  #cancelledPromise = null;
+  /**
+   * The found settings from Moat.
+   *
+   * @type {?object[]}
+   */
+  #settings = null;
+  /**
+   * The last settings that have been applied to the TorProvider, if any.
+   *
+   * @type {?object}
+   */
+  #changedSetting = null;
+  /**
+   * The detected region code returned by Moat, if any.
+   *
+   * @type {?string}
+   */
+  detectedRegion = null;
+
+  /**
+   * Run an auto-bootstrap attempt.
+   *
+   * @param {ProgressCallback} progressCallback - The callback to invoke with
+   *   the bootstrap progress.
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   *
+   * @return {Promise<string, Error>} - The result of the bootstrap.
+   */
+  run(progressCallback, options) {
+    const { promise, resolve, reject } = Promise.withResolvers();
+
+    this.#resolveRun = async arg => {
+      if (this.#resolved) {
+        // Already been called once.
+        if (arg.error) {
+          lazy.logger.error("Delayed auto-bootstrap error", arg.error);
+        }
+        return;
+      }
+      this.#resolved = true;
+      try {
+        // Run cleanup before we resolve the promise to ensure two instances
+        // of AutoBootstrapAttempt are not trying to change the settings at
+        // the same time.
+        if (this.#changedSetting) {
+          if (arg.result === "complete") {
+            // Persist the current settings to preferences.
+            lazy.TorSettings.setSettings(this.#changedSetting);
+            lazy.TorSettings.saveToPrefs();
+          } // else, applySettings will restore the current settings.
+          await lazy.TorSettings.applySettings();
+        }
+      } catch (error) {
+        lazy.logger.error("Unexpected error in auto-bootstrap cleanup", error);
+      }
+      if (arg.error) {
+        reject(arg.error);
+      } else {
+        resolve(arg.result);
+      }
+    };
+
+    ({ promise: this.#cancelledPromise, resolve: this.#resolveCancelled } =
+      Promise.withResolvers());
+
+    this.#runInternal(progressCallback, options).catch(error => {
+      this.#resolveRun({ error });
+    });
+
+    return promise;
+  }
+
+  /**
+   * Run the attempt.
+   *
+   * Note, this is an async method, but should *not* be awaited by the `run`
+   * method.
+   *
+   * @param {ProgressCallback} progressCallback - The callback to invoke with
+   *   the bootstrap progress.
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   */
+  async #runInternal(progressCallback, options) {
+    await this.#fetchSettings(options);
+    if (this.#cancelled || this.#resolved) {
+      return;
+    }
+
+    if (!this.#settings?.length) {
+      this.#resolveRun({
+        error: new TorConnectError(
+          options.regionCode === "automatic" && !this.detectedRegion
+            ? TorConnectError.CannotDetermineCountry
+            : TorConnectError.NoSettingsForCountry
+        ),
+      });
+    }
+
+    // Apply each of our settings and try to bootstrap with each.
+    for (const [index, currentSetting] of this.#settings.entries()) {
+      lazy.logger.info(
+        `Attempting Bootstrap with configuration ${index + 1}/${
+          this.#settings.length
+        }`
+      );
+
+      await this.#trySetting(currentSetting, progressCallback, options);
+
+      if (this.#cancelled || this.#resolved) {
+        return;
+      }
+    }
+
+    this.#resolveRun({
+      error: new TorConnectError(TorConnectError.AllSettingsFailed),
+    });
+  }
+
+  /**
+   * Lookup user's potential censorship circumvention settings from Moat
+   * service.
+   *
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   */
+  async #fetchSettings(options) {
+    if (options.simulateMoatResponse) {
+      await Promise.race([
+        new Promise(res => setTimeout(res, options.simulateDelay || 0)),
+        this.#cancelledPromise,
+      ]);
+
+      if (this.#cancelled || this.#resolved) {
+        return;
+      }
+
+      this.detectedRegion = options.simulateMoatResponse.country || null;
+      this.#settings = options.simulateMoatResponse.settings ?? null;
+
+      return;
+    }
+
+    const moat = new lazy.MoatRPC();
+    try {
+      // We need to wait Moat's initialization even when we are requested to
+      // transition to another state to be sure its uninit will have its
+      // intended effect. So, do not use Promise.race here.
+      await moat.init();
+
+      if (this.#cancelled || this.#resolved) {
+        return;
+      }
+
+      // For now, throw any errors we receive from the backend, except when it
+      // was unable to detect user's country/region.
+      // If we use specialized error objects, we could pass the original errors
+      // to them.
+      const maybeSettings = await Promise.race([
+        moat.circumvention_settings(
+          [...lazy.TorSettings.builtinBridgeTypes, "vanilla"],
+          options.regionCode === "automatic" ? null : options.regionCode
+        ),
+        // This might set maybeSettings to undefined.
+        this.#cancelledPromise,
+      ]);
+      if (this.#cancelled || this.#resolved) {
+        return;
+      }
+
+      this.detectedRegion = maybeSettings?.country || null;
+
+      if (maybeSettings?.settings?.length) {
+        this.#settings = maybeSettings.settings;
+      } else {
+        // Keep consistency with the other call.
+        this.#settings = await Promise.race([
+          moat.circumvention_defaults([
+            ...lazy.TorSettings.builtinBridgeTypes,
+            "vanilla",
+          ]),
+          // This might set this.#settings to undefined.
+          this.#cancelledPromise,
+        ]);
+      }
+    } finally {
+      // Do not await the uninit.
+      moat.uninit();
+    }
+  }
+
+  /**
+   * Try to apply the settings we fetched.
+   *
+   * @param {object} setting - The setting to try.
+   * @param {ProgressCallback} progressCallback - The callback to invoke with
+   *   the bootstrap progress.
+   * @param {BootstrapOptions} options - Options to apply to the bootstrap.
+   */
+  async #trySetting(setting, progressCallback, options) {
+    if (this.#cancelled || this.#resolved) {
+      return;
+    }
+
+    if (options.simulateMoatResponse && setting.simulateCensorship) {
+      // Move the simulateCensorship option to the options for the next
+      // BootstrapAttempt.
+      setting = structuredClone(setting);
+      delete setting.simulateCensorship;
+      options = { ...options, simulateCensorship: true };
+    }
+
+    // Send the new settings directly to the provider. We will save them only
+    // if the bootstrap succeeds.
+    // FIXME: We should somehow signal TorSettings users that we have set
+    // custom settings, and they should not apply theirs until we are done
+    // with trying ours.
+    // Otherwise, the new settings provided by the user while we were
+    // bootstrapping could be the ones that cause the bootstrap to succeed,
+    // but we overwrite them (unless we backup the original settings, and then
+    // save our new settings only if they have not changed).
+    // Another idea (maybe easier to implement) is to disable the settings
+    // UI while *any* bootstrap is going on.
+    // This is also documented in tor-browser#41921.
+    const provider = await lazy.TorProviderBuilder.build();
+    this.#changedSetting = setting;
+    // We need to merge with old settings, in case the user is using a proxy
+    // or is behind a firewall.
+    await provider.writeSettings({
+      ...lazy.TorSettings.getSettings(),
+      ...setting,
+    });
+
+    if (this.#cancelled || this.#resolved) {
+      return;
+    }
+
+    let result;
+    try {
+      this.#bootstrapAttempt = new BootstrapAttempt();
+      // At this stage, cancelling AutoBootstrap will also cancel this
+      // bootstrapAttempt.
+      result = await this.#bootstrapAttempt.run(progressCallback, options);
+    } catch (error) {
+      // Only re-try with the next settings *if* we have a BootstrapError.
+      // Other errors will end this auto-bootstrap attempt entirely.
+      if (
+        error instanceof TorConnectError &&
+        error.code === TorConnectError.BootstrapError
+      ) {
+        lazy.logger.info("TorConnect setting failed", setting, error);
+        // Try with the next settings.
+        // NOTE: We do not restore the user settings in between these runs.
+        // Instead we wait for #resolveRun callback to do so.
+        // This means there is a window of time where the setting is applied, but
+        // no bootstrap is running.
+        return;
+      }
+      // Pass error up.
+      throw error;
+    } finally {
+      this.#bootstrapAttempt = null;
+    }
+
+    if (this.#cancelled || this.#resolved) {
+      return;
+    }
+
+    // Pass the BootstrapAttempt result up.
+    this.#resolveRun({ result });
+  }
+
+  /**
+   * Cancel the bootstrap attempt.
+   */
+  async cancel() {
+    if (this.#cancelled) {
+      lazy.logger.warn(
+        "Cancelled auto-bootstrap after it has already been cancelled"
+      );
+      return;
+    }
+    this.#cancelled = true;
+    this.#resolveCancelled();
+    if (this.#resolved) {
+      lazy.logger.warn(
+        "Cancelled auto-bootstrap after it has already resolved"
+      );
+      return;
+    }
+
+    // Wait until after bootstrap.cancel returns before we resolve with
+    // cancelled. In particular, there is a small chance that the bootstrap
+    // completes, in which case we want to be able to resolve with a success
+    // instead.
+    if (this.#bootstrapAttempt) {
+      this.#bootstrapAttempt.cancel();
+      await this.#bootstrapAttempt;
+    }
+    // In case no bootstrap is running, we resolve with "cancelled".
+    this.#resolveRun({ result: "cancelled" });
+  }
+}
+
 export const InternetStatus = Object.freeze({
   Unknown: -1,
   Offline: 0,
@@ -721,8 +1328,11 @@ class InternetTest {
   #pending = false;
   #canceled = false;
   #timeout = 0;
+  #simulateOffline = false;
 
-  constructor() {
+  constructor(simulateOffline) {
+    this.#simulateOffline = simulateOffline;
+
     this.#enabled = Services.prefs.getBoolPref(
       TorConnectPrefs.allow_internet_test,
       true
@@ -752,6 +1362,19 @@ class InternetTest {
     this.#canceled = false;
 
     lazy.logger.info("Starting the Internet test");
+
+    if (this.#simulateOffline) {
+      await new Promise(res => setTimeout(res, 500));
+
+      this.#status = InternetStatus.Offline;
+
+      if (this.#canceled) {
+        return;
+      }
+      this.onResult(this.#status);
+      return;
+    }
+
     const mrpc = new lazy.MoatRPC();
     try {
       await mrpc.init();
