@@ -20,7 +20,7 @@ fi
 if [ "$(uname)" = "Darwin" ]; then
 
     # copy binaries
-    cp -r "$BUILD_OUTPUT/dist/firefox/Tor Browser.app/Contents/"* "$BINARIES/Tor Browser.app/Contents/"
+    cp -r "$BUILD_OUTPUT/dist/firefox/"*.app/Contents/* "$BINARIES/Tor Browser.app/Contents/"
     rm -rf "$BINARIES/TorBrowser-Data/Browser/Caches/*.default/startupCache"
 
     # Self sign the Binaries
