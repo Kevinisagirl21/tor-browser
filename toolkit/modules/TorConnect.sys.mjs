@@ -685,16 +685,7 @@ class ErrorState extends StateCallback {
     ErrorState.#hasEverHappened = true;
   }
 
-  run(error) {
-    if (!(error instanceof TorConnectError)) {
-      error = new TorConnectError(TorConnectError.ExternalError, error);
-    }
-    TorConnect._errorCode = error.code;
-    TorConnect._errorDetails = error;
-    lazy.logger.error(`Entering error state (${error.code})`, error);
-
-    Services.obs.notifyObservers(error, TorConnectTopics.Error);
-
+  run(_error) {
     this.changeState(TorConnectState.Configuring);
   }
 
@@ -902,6 +893,23 @@ export const TorConnect = {
     // Set our new state first so that state transitions can themselves
     // trigger a state transition.
     this._stateHandler = this._makeState(newState);
+
+    // Error signal needs to be sent out before we enter the Error state.
+    // Expected on android `onBootstrapError` to set lastKnownError.
+    // Expected in about:torconnect to set the error codes and internet status
+    // *before* the StateChange signal.
+    if (newState === TorConnectState.Error) {
+      let error = args[0];
+      if (!(error instanceof TorConnectError)) {
+        error = new TorConnectError(TorConnectError.ExternalError, error);
+      }
+      TorConnect._errorCode = error.code;
+      TorConnect._errorDetails = error;
+      lazy.logger.error(`Entering error state (${error.code})`, error);
+
+      Services.obs.notifyObservers(error, TorConnectTopics.Error);
+    }
+
     Services.obs.notifyObservers(
       { state: newState },
       TorConnectTopics.StateChange
