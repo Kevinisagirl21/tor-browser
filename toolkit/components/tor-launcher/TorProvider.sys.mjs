@@ -232,11 +232,9 @@ export class TorProvider {
         await this.writeSettings(lazy.TorSettings.getSettings());
       } catch (e) {
         logger.warn(
-          "Failed to initialize TorSettings or to write our settings, so uninitializing.",
+          "Failed to initialize TorSettings or to write our initial settings. Continuing the initialization anyway.",
           e
         );
-        this.uninit();
-        throw e;
       }
     }
 
