@@ -78,57 +78,14 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   })
 );
 
-/*
-                             TorConnect State Transitions
-
-    ┌─────────┐                                                       ┌────────┐
-    │         ▼                                                       ▼        │
-    │       ┌──────────────────────────────────────────────────────────┐       │
-  ┌─┼────── │                           Error                          │ ◀───┐ │
-  │ │       └──────────────────────────────────────────────────────────┘     │ │
-  │ │         ▲                                                              │ │
-  │ │         │                                                              │ │
-  │ │         │                                                              │ │
-  │ │       ┌───────────────────────┐                       ┌──────────┐     │ │
-  │ │ ┌──── │        Initial        │ ────────────────────▶ │ Disabled │     │ │
-  │ │ │     └───────────────────────┘                       └──────────┘     │ │
-  │ │ │       │                                                              │ │
-  │ │ │       │ beginBootstrap()                                             │ │
-  │ │ │       ▼                                                              │ │
-  │ │ │     ┌──────────────────────────────────────────────────────────┐     │ │
-  │ │ │     │                      Bootstrapping                       │ ────┘ │
-  │ │ │     └──────────────────────────────────────────────────────────┘       │
-  │ │ │       │                        ▲                             │         │
-  │ │ │       │ cancelBootstrap()      │ beginBootstrap()            └────┐    │
-  │ │ │       ▼                        │                                  │    │
-  │ │ │     ┌──────────────────────────────────────────────────────────┐  │    │
-  │ │ └───▶ │                                                          │ ─┼────┘
-  │ │       │                                                          │  │
-  │ │       │                                                          │  │
-  │ │       │                       Configuring                        │  │
-  │ │       │                                                          │  │
-  │ │       │                                                          │  │
-  └─┼─────▶ │                                                          │  │
-    │       └──────────────────────────────────────────────────────────┘  │
-    │         │                        ▲                       ▲          │
-    │         │ beginAutoBootstrap()   │ cancelBootstrap()     │          │
-    │         ▼                        │                       │          │
-    │       ┌───────────────────────┐  │                       │          │
-    └────── │   AutoBootstrapping   │ ─┘                       │          │
-            └───────────────────────┘                          │          │
-              │                                                │          │
-              │               ┌────────────────────────────────┘          │
-              ▼               │                                           │
-            ┌───────────────────────┐                                     │
-            │     Bootstrapped      │ ◀───────────────────────────────────┘
-            └───────────────────────┘
-*/
-
 /* Topics Notified by the TorConnect module */
 export const TorConnectTopics = Object.freeze({
+  StageChange: "torconnect:stage-change",
+  // TODO: Remove torconnect:state-change when pages have switched to stage.
   StateChange: "torconnect:state-change",
   BootstrapProgress: "torconnect:bootstrap-progress",
   BootstrapComplete: "torconnect:bootstrap-complete",
+  // TODO: Remove torconnect:error when pages have switched to stage.
   Error: "torconnect:error",
 });
 
@@ -856,8 +813,156 @@ class InternetTest {
   }
 }
 
+export const TorConnectStage = Object.freeze({
+  Disabled: "Disabled",
+  Loading: "Loading",
+  Start: "Start",
+  Bootstrapping: "Bootstrapping",
+  Offline: "Offline",
+  ChooseRegion: "ChooseRegion",
+  RegionNotFound: "RegionNotFound",
+  ConfirmRegion: "ConfirmRegion",
+  FinalError: "FinalError",
+  Bootstrapped: "Bootstrapped",
+});
+
+/**
+ * @typedef {object} ConnectStage
+ *
+ * A summary of the user stage.
+ *
+ * @property {string} name - The name of the stage.
+ * @property {string} defaultRegion - The default region to show in the UI.
+ * @property {?string} bootstrapTrigger - The TorConnectStage prior to this
+ *   bootstrap attempt. Only set during the "Bootstrapping" stage.
+ * @property {?BootstrapError} error - The last bootstrapping error.
+ * @property {boolean} tryAgain - Whether a bootstrap attempt has failed, so
+ *   that a normal bootstrap should be shown as "Try Again" instead of
+ *   "Connect". NOTE: to be removed when about:torconnect no longer uses
+ *   breadcrumbs.
+ * @property {boolean} potentiallyBlocked - Whether bootstrapping has ever
+ *   failed, not including being cancelled or being offline. I.e. whether we
+ *   have reached an error stage at some point before being bootstrapped.
+ * @property {BootstrappingStatus} bootstrappingStatus - The current
+ *   bootstrapping status.
+ */
+
+/**
+ * @typedef {object} BootstrappingStatus
+ *
+ * The status of a bootstrap.
+ *
+ * @property {number} progress - The percent progress.
+ * @property {boolean} hasWarning - Whether this bootstrap has a warning in the
+ *   Tor log.
+ */
+
+/**
+ * @typedef {object} BootstrapError
+ *
+ * Details about the error that caused bootstrapping to fail.
+ *
+ * @property {string} code - The error code type.
+ * @property {string} message - The error message.
+ * @property {?string} phase - The bootstrapping phase that failed.
+ * @property {?string} reason - The bootstrapping failure reason.
+ */
+
 export const TorConnect = {
-  _bootstrapProgress: 0,
+  /**
+   * Default bootstrap options for simulation.
+   *
+   * @type {BootstrapOptions}
+   */
+  simulateBootstrapOptions: {},
+
+  /**
+   * The name of the current stage the user is in.
+   *
+   * @type {string}
+   */
+  _stageName: TorConnectStage.Loading,
+
+  get stageName() {
+    return this._stageName;
+  },
+
+  /**
+   * The stage that triggered bootstrapping.
+   *
+   * @type {?string}
+   */
+  _bootstrapTrigger: null,
+
+  /**
+   * The alternative stage that we should move to after bootstrapping completes.
+   *
+   * @type {?string}
+   */
+  _requestedStage: null,
+
+  /**
+   * The default region to show in the UI for auto-bootstrapping.
+   *
+   * @type {string}
+   */
+  _defaultRegion: "automatic",
+
+  /**
+   * The current bootstrap attempt, if any.
+   *
+   * @type {?(BootstrapAttempt|AutoBootstrapAttempt)}
+   */
+  _bootstrapAttempt: null,
+
+  /**
+   * The bootstrap error that was last generated.
+   *
+   * @type {?TorConnectError}
+   */
+  _errorDetails: null,
+
+  /**
+   * Whether a bootstrap attempt has failed, so that a normal bootstrap should
+   * be shown as "Try Again" instead of "Connect".
+   *
+   * @type {boolean}
+   */
+  // TODO: Drop tryAgain when we remove breadcrumbs and use "Start again"
+  // instead.
+  _tryAgain: false,
+
+  /**
+   * Whether bootstrapping has ever returned an error.
+   *
+   * @type {boolean}
+   */
+  _potentiallyBlocked: false,
+
+  /**
+   * Get a summary of the current user stage.
+   *
+   * @type {ConnectStage}
+   */
+  get stage() {
+    return {
+      name: this._stageName,
+      defaultRegion: this._defaultRegion,
+      bootstrapTrigger: this._bootstrapTrigger,
+      error: this._errorDetails
+        ? {
+            code: this._errorDetails.code,
+            message: String(this._errorDetails.message ?? ""),
+            phase: this._errorDetails.cause?.phase ?? null,
+            reason: this._errorDetails.cause?.reason ?? null,
+          }
+        : null,
+      tryAgain: this._tryAgain,
+      potentiallyBlocked: this._potentiallyBlocked,
+      bootstrappingStatus: structuredClone(this._bootstrappingStatus),
+    };
+  },
+
   _internetStatus: InternetStatus.Unknown,
   // list of country codes Moat has settings for
   _countryCodes: [],
@@ -874,29 +979,28 @@ export const TorConnect = {
   ),
   _detectedLocation: "",
   _errorCode: null,
-  _errorDetails: null,
-  _logHasWarningOrError: false,
-  _hasBootstrapEverFailed: false,
 
   // This is used as a helper to make the state of about:torconnect persistent
   // during a session, but TorConnect does not use this data at all.
   _uiState: {},
 
-  async _changeState(newState, ...args) {
-    // TODO: Remove.
+  /**
+   * The status of the most recent bootstrap attempt.
+   *
+   * @type {BootstrappingStatus}
+   */
+  _bootstrappingStatus: {
+    progress: 0,
+    hasWarning: false,
   },
 
-  _updateBootstrapProgress(progress, status) {
-    this._bootstrapProgress = progress;
-
-    lazy.logger.info(
-      `Bootstrapping ${this._bootstrapProgress}% complete (${status})`
-    );
+  /**
+   * Notify the bootstrap progress.
+   */
+  _notifyBootstrapProgress() {
+    lazy.logger.debug("BootstrappingStatus", this._bootstrappingStatus);
     Services.obs.notifyObservers(
-      {
-        progress: TorConnect._bootstrapProgress,
-        hasWarnings: TorConnect._logHasWarningOrError,
-      },
+      this._bootstrappingStatus,
       TorConnectTopics.BootstrapProgress
     );
   },
@@ -907,7 +1011,7 @@ export const TorConnect = {
 
     if (!this.enabled) {
       // Disabled
-      this._changeState(TorConnectState.Disabled);
+      this._setStage(TorConnectStage.Disabled);
       return;
     }
 
@@ -935,29 +1039,23 @@ export const TorConnect = {
     lazy.logger.debug(`Observed ${topic}`);
 
     switch (topic) {
-      case lazy.TorProviderTopics.HasWarnOrErr: {
-        this._logHasWarningOrError = true;
+      case lazy.TorProviderTopics.HasWarnOrErr:
+        if (this._bootstrappingStatus.hasWarning) {
+          // No change.
+          return;
+        }
+        if (this._stageName === "Bootstrapping") {
+          this._bootstrappingStatus.hasWarning = true;
+          this._notifyBootstrapProgress();
+        }
         break;
-      }
-      case lazy.TorProviderTopics.ProcessExited: {
+      case lazy.TorProviderTopics.ProcessExited:
+        lazy.logger.info("Starting again since the tor process exited");
         // Treat a failure as a possibly broken configuration.
         // So, prevent quickstart at the next start.
         Services.prefs.setBoolPref(TorLauncherPrefs.prompt_at_startup, true);
-        switch (this.state) {
-          case TorConnectState.Bootstrapping:
-          case TorConnectState.AutoBootstrapping:
-          case TorConnectState.Bootstrapped:
-            // If we are in the bootstrap or auto bootstrap, we could go
-            // through the error phase (and eventually we might do it, if some
-            // transition calls fail). However, this would start the
-            // connection assist, so we go directly to configuring.
-            // FIXME: Find a better way to handle this.
-            this._changeState(TorConnectState.Configuring);
-            break;
-          // Other states naturally resolve in configuration.
-        }
+        this._makeStageRequest(TorConnectStage.Start, true);
         break;
-      }
       default:
         // ignore
         break;
@@ -969,29 +1067,47 @@ export const TorConnect = {
     // daemon when it exits (tor-browser#21053, tor-browser#41921).
     await lazy.TorProviderBuilder.build();
 
-    // tor-browser#41907: This is only a workaround to avoid users being
-    // bounced back to the initial panel without any explanation.
-    // Longer term we should disable the clickable elements, or find a UX
-    // to prevent this from happening (e.g., allow buttons to be clicked,
-    // but show an intermediate starting state, or a message that tor is
-    // starting while the butons are disabled, etc...).
-    // Notice that currently the initial state does not do anything.
-    // Instead of just waiting, we could move this code in its callback.
-    // See also tor-browser#41921.
-    if (this.state !== TorConnectState.Initial) {
-      lazy.logger.warn(
-        "The TorProvider was built after the state had already changed."
-      );
-      return;
-    }
     lazy.logger.debug("The TorProvider is ready, changing state.");
+    // NOTE: If the tor process exits before this point, then
+    // shouldQuickStart would be `false`.
+    // NOTE: At this point, _requestedStage should still be `null`.
+    this._setStage(TorConnectStage.Start);
     if (this.shouldQuickStart) {
       // Quickstart
-      this._changeState(TorConnectState.Bootstrapping);
-    } else {
-      // Configuring
-      this._changeState(TorConnectState.Configuring);
+      this.beginBootstrapping();
     }
+  },
+
+  /**
+   * Set the user stage.
+   *
+   * @param {string} name - The name of the stage to move to.
+   */
+  _setStage(name) {
+    if (this._bootstrapAttempt) {
+      throw new Error(`Trying to set the stage to ${name} during a bootstrap`);
+    }
+
+    lazy.logger.info(`Entering stage ${name}`);
+    const prevState = this.state;
+    this._stageName = name;
+    this._bootstrappingStatus.hasWarning = false;
+    this._bootstrappingStatus.progress =
+      name === TorConnectStage.Bootstrapped ? 100 : 0;
+
+    Services.obs.notifyObservers(this.stage, TorConnectTopics.StageChange);
+
+    // TODO: Remove when all pages have switched to stage.
+    const newState = this.state;
+    if (prevState !== newState) {
+      Services.obs.notifyObservers(
+        { state: newState },
+        TorConnectTopics.StateChange
+      );
+    }
+
+    // Update the progress after the stage has changed.
+    this._notifyBootstrapProgress();
   },
 
   /*
@@ -1015,33 +1131,41 @@ export const TorConnect = {
     return (
       this.enabled &&
       // if we have succesfully bootstraped, then no need to show TorConnect
-      this.state !== TorConnectState.Bootstrapped
+      this._stageName !== TorConnectStage.Bootstrapped
     );
   },
 
   /**
-   * Whether bootstrapping can currently begin.
+   * Whether we are in a stage that can lead into the Bootstrapping stage. I.e.
+   * whether we can make a "normal" or "auto" bootstrapping request.
    *
-   * The value may change with TorConnectTopics.StateChanged.
+   * The value may change with TorConnectTopics.StageChanged.
    *
    * @param {boolean}
    */
   get canBeginBootstrap() {
-    return this._stateHandler.allowedTransitions.includes(
-      TorConnectState.Bootstrapping
+    return (
+      this._stageName === TorConnectStage.Start ||
+      this._stageName === TorConnectStage.Offline ||
+      this._stageName === TorConnectStage.ChooseRegion ||
+      this._stageName === TorConnectStage.RegionNotFound ||
+      this._stageName === TorConnectStage.ConfirmRegion
     );
   },
 
   /**
-   * Whether auto-bootstrapping can currently begin.
+   * Whether we are in an error stage that can lead into the Bootstrapping
+   * stage. I.e. whether we can make an "auto" bootstrapping request.
    *
-   * The value may change with TorConnectTopics.StateChanged.
+   * The value may change with TorConnectTopics.StageChanged.
    *
    * @param {boolean}
    */
   get canBeginAutoBootstrap() {
-    return this._stateHandler.allowedTransitions.includes(
-      TorConnectState.AutoBootstrapping
+    return (
+      this._stageName === TorConnectStage.ChooseRegion ||
+      this._stageName === TorConnectStage.RegionNotFound ||
+      this._stageName === TorConnectStage.ConfirmRegion
     );
   },
 
@@ -1054,14 +1178,47 @@ export const TorConnect = {
     );
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get state() {
-    return this._stateHandler.state;
+    // There is no "Error" stage, but about:torconnect relies on receiving the
+    // Error state to update its display. So we temporarily set the stage for a
+    // StateChange signal.
+    if (this._isErrorState) {
+      return TorConnectState.Error;
+    }
+    switch (this._stageName) {
+      case TorConnectStage.Disabled:
+        return TorConnectState.Disabled;
+      case TorConnectStage.Loading:
+        return TorConnectState.Initial;
+      case TorConnectStage.Start:
+      case TorConnectStage.Offline:
+      case TorConnectStage.ChooseRegion:
+      case TorConnectStage.RegionNotFound:
+      case TorConnectStage.ConfirmRegion:
+      case TorConnectStage.FinalError:
+        return TorConnectState.Configuring;
+      case TorConnectStage.Bootstrapping:
+        if (
+          this._bootstrapTrigger === TorConnectStage.Start ||
+          this._bootstrapTrigger === TorConnectStage.Offline
+        ) {
+          return TorConnectState.Bootstrapping;
+        }
+        return TorConnectState.AutoBootstrapping;
+      case TorConnectStage.Bootstrapped:
+        return TorConnectState.Bootstrapped;
+    }
+    lazy.logger.error(`Unknown state at stage ${this._stageName}`);
+    return null;
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get bootstrapProgress() {
-    return this._bootstrapProgress;
+    return this._bootstrappingStatus.progress;
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get internetStatus() {
     return this._internetStatus;
   },
@@ -1074,20 +1231,24 @@ export const TorConnect = {
     return this._countryNames;
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get detectedLocation() {
     return this._detectedLocation;
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get errorCode() {
     return this._errorCode;
   },
 
+  // TODO: Remove when all pages have switched to "stage".
   get errorDetails() {
     return this._errorDetails;
   },
 
+  // TODO: Remove public method when all pages have switched to "stage".
   get logHasWarningOrError() {
-    return this._logHasWarningOrError;
+    return this._bootstrappingStatus.hasWarning;
   },
 
   /**
@@ -1095,60 +1256,470 @@ export const TorConnect = {
    *
    * @type {boolean}
    */
+  // TODO: Remove public method when all pages have switched to "stage".
   get hasEverFailed() {
-    return ErrorState.hasEverHappened;
+    return this._potentiallyBlocked;
   },
 
   /**
-   * Whether the Bootstrapping process has ever failed, not including when it
-   * failed due to not being connected to the internet.
+   * Whether the Bootstrapping process has ever failed, not including being
+   * cancelled or being offline.
    *
-   * This does not include a failure in AutoBootstrapping.
+   * The value may change with TorConnectTopics.StageChanged.
    *
    * @type {boolean}
    */
   get potentiallyBlocked() {
-    return this._hasBootstrapEverFailed;
+    return this._potentiallyBlocked;
   },
 
+  // TODO: Remove when all pages have switched to stage.
   get uiState() {
     return this._uiState;
   },
   set uiState(newState) {
     this._uiState = newState;
+    if (
+      newState.currentState === "ConnectToTor" &&
+      this._stageName !== TorConnectStage.Start
+    ) {
+      // User pressed first breadcrumb.
+      this.startAgain();
+    } else if (
+      newState.currentState === "ConnectionAssist" &&
+      this._stageName !== TorConnectStage.ChooseRegion
+    ) {
+      // User pressed second breadcrumb.
+      this.chooseRegion();
+    }
   },
 
   /*
     These functions allow external consumers to tell TorConnect to transition states
    */
 
+  // TODO: Remove when all pages switch to `beginBootstrapping`.
   beginBootstrap() {
-    lazy.logger.debug("TorConnect.beginBootstrap()");
-    this._changeState(TorConnectState.Bootstrapping);
+    this.beginBootstrapping();
   },
 
+  // TODO: Remove when all pages switch to `cancelBootstrapping`.
   cancelBootstrap() {
-    lazy.logger.debug("TorConnect.cancelBootstrap()");
-    if (
-      this.state !== TorConnectState.AutoBootstrapping &&
-      this.state !== TorConnectState.Bootstrapping
-    ) {
+    this.cancelBootstrapping();
+  },
+
+  // TODO: Remove when all pages switch to `beginBootstrapping`.
+  beginAutoBootstrap(countryCode) {
+    this.beginBootstrapping(countryCode || "automatic");
+  },
+
+  /**
+   * Ensure that we are not disabled.
+   */
+  _ensureEnabled() {
+    if (!this.enabled || this._stageName === TorConnectStage.Disabled) {
+      throw new Error("Unexpected Disabled stage for user method");
+    }
+  },
+
+  /**
+   * Signal an error to listeners.
+   *
+   * @param {Error} error - The error.
+   */
+  _signalError(error) {
+    // TODO: Replace this method with _setError without any signalling when
+    // pages have switched to stage.
+    // Currently it simulates the old behaviour for about:torconnect.
+    lazy.logger.debug("Signalling error", error);
+
+    if (!(error instanceof TorConnectError)) {
+      error = new TorConnectError(TorConnectError.ExternalError, error);
+    }
+    this._errorCode = error.code;
+    this._errorDetails = error;
+
+    // Temporarily set an error state for listeners.
+    // We send the Error signal before the "StateChange" signal.
+    // Expected on android `onBootstrapError` to set lastKnownError.
+    // Expected in about:torconnect to set the error codes and internet status
+    // *before* the StateChange signal.
+    this._isErrorState = true;
+    Services.obs.notifyObservers(error, TorConnectTopics.Error);
+    Services.obs.notifyObservers(
+      { state: this.state },
+      TorConnectTopics.StateChange
+    );
+    this._isErrorState = false;
+  },
+
+  /**
+   * Add simulation options to the bootstrap request.
+   *
+   * @param {BootstrapOptions} bootstrapOptions - The options to add to.
+   * @param {string} [regionCode] - The region code being used.
+   */
+  _addSimulateOptions(bootstrapOptions, regionCode) {
+    if (this.simulateBootstrapOptions.simulateCensorship) {
+      bootstrapOptions.simulateCensorship = true;
+    }
+    if (this.simulateBootstrapOptions.simulateDelay) {
+      bootstrapOptions.simulateDelay =
+        this.simulateBootstrapOptions.simulateDelay;
+    }
+    if (this.simulateBootstrapOptions.simulateOffline) {
+      bootstrapOptions.simulateOffline = true;
+    }
+    if (this.simulateBootstrapOptions.simulateMoatResponse) {
+      bootstrapOptions.simulateMoatResponse =
+        this.simulateBootstrapOptions.simulateMoatResponse;
+    }
+
+    const censorshipLevel = Services.prefs.getIntPref(
+      TorConnectPrefs.censorship_level,
+      0
+    );
+    if (censorshipLevel > 0 && !bootstrapOptions.simulateDelay) {
+      bootstrapOptions.simulateDelay = 1500;
+    }
+    if (censorshipLevel === 1) {
+      // Bootstrap fails, but auto-bootstrap does not.
+      if (!regionCode) {
+        bootstrapOptions.simulateCensorship = true;
+      }
+    } else if (censorshipLevel === 2) {
+      // Bootstrap fails. Auto-bootstrap fails with ConfirmRegion when using
+      // auto-detect region, but succeeds otherwise.
+      if (!regionCode) {
+        bootstrapOptions.simulateCensorship = true;
+      }
+      if (regionCode === "automatic") {
+        bootstrapOptions.simulateCensorship = true;
+        bootstrapOptions.simulateMoatResponse = {
+          country: "fi",
+          settings: [{}, {}],
+        };
+      }
+    } else if (censorshipLevel === 3) {
+      // Bootstrap and auto-bootstrap fail.
+      bootstrapOptions.simulateCensorship = true;
+      bootstrapOptions.simulateMoatResponse = {
+        country: null,
+        settings: [],
+      };
+    }
+  },
+
+  /**
+   * Confirm that a bootstrapping can take place, and whether the given values
+   * are valid.
+   *
+   * @param {string} [regionCode] - The region code passed in.
+   *
+   * @return {boolean} whether bootstrapping can proceed.
+   */
+  _confirmBootstrapping(regionCode) {
+    this._ensureEnabled();
+
+    if (this._bootstrapAttempt) {
       lazy.logger.warn(
-        `Cannot cancel bootstrapping in the ${this.state} state`
+        "Already have an ongoing bootstrap attempt." +
+          ` Ignoring request with ${regionCode}.`
       );
+      return false;
+    }
+
+    const currentStage = this._stageName;
+
+    if (regionCode) {
+      if (!this.canBeginAutoBootstrap) {
+        lazy.logger.warn(
+          `Cannot begin auto bootstrap in stage ${currentStage}`
+        );
+        return false;
+      }
+      if (
+        regionCode === "automatic" &&
+        currentStage !== TorConnectStage.ChooseRegion
+      ) {
+        lazy.logger.warn("Auto bootstrap is missing an explicit regionCode");
+        return false;
+      }
+      return true;
+    }
+
+    if (!this.canBeginBootstrap) {
+      lazy.logger.warn(`Cannot begin bootstrap in stage ${currentStage}`);
+      return false;
+    }
+    if (this.canBeginAutoBootstrap) {
+      // Only expect "auto" bootstraps to be triggered when in an error stage.
+      lazy.logger.warn(
+        `Expected a regionCode to bootstrap in stage ${currentStage}`
+      );
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Begin a bootstrap attempt.
+   *
+   * @param {string} [regionCode] - An optional region code string to use, or
+   *   "automatic" to automatically determine the region. If given, will start
+   *   an auto-bootstrap attempt.
+   */
+  async beginBootstrapping(regionCode) {
+    lazy.logger.debug("TorConnect.beginBootstrapping()");
+
+    if (!this._confirmBootstrapping(regionCode)) {
       return;
     }
-    this._changeState(TorConnectState.Configuring);
+
+    const beginStage = this._stageName;
+    const bootstrapOptions = { regionCode };
+    const bootstrapAttempt = regionCode
+      ? new AutoBootstrapAttempt()
+      : new BootstrapAttempt();
+
+    if (!regionCode) {
+      // Only test internet for the first bootstrap attempt.
+      // TODO: Remove this since we do not have user consent. tor-browser#42605.
+      bootstrapOptions.testInternet = true;
+    }
+
+    this._addSimulateOptions(bootstrapOptions, regionCode);
+
+    // NOTE: The only `await` in this method is for `bootstrapAttempt.run`.
+    // Moreover, we returned early if `_bootstrapAttempt` was non-`null`.
+    // Therefore, the method is effectively "locked" by `_bootstrapAttempt`, so
+    // there should only ever be one caller at a time.
+
+    // TODO: Remove when all pages have switched to stage.
+    // Reset the internet status before the bootstrap attempt.
+    // Currently this is only read for about:torconnect at the initial page or
+    // when getting an error. So we can just reset it just before each
+    // bootstrap attempt.
+    this._internetStatus = InternetStatus.Unknown;
+    if (regionCode) {
+      // Set the default to what the user chose.
+      this._defaultRegion = regionCode;
+    } else {
+      // Reset the default region to show in the UI.
+      this._defaultRegion = "automatic";
+    }
+    this._requestedStage = null;
+    this._bootstrapTrigger = beginStage;
+    this._setStage(TorConnectStage.Bootstrapping);
+    this._bootstrapAttempt = bootstrapAttempt;
+
+    let error = null;
+    let result = null;
+    try {
+      result = await bootstrapAttempt.run(progress => {
+        this._bootstrappingStatus.progress = progress;
+        lazy.logger.info(`Bootstrapping ${progress}% complete`);
+        this._notifyBootstrapProgress();
+      }, bootstrapOptions);
+    } catch (err) {
+      error = err;
+    }
+
+    const requestedStage = this._requestedStage;
+    this._requestedStage = null;
+    this._bootstrapTrigger = null;
+    this._bootstrapAttempt = null;
+
+    if (bootstrapAttempt.detectedRegion) {
+      this._defaultRegion = bootstrapAttempt.detectedRegion;
+      this._detectedLocation = bootstrapAttempt.detectedRegion;
+    }
+
+    if (result === "complete") {
+      // Reset tryAgain, potentiallyBlocked and errorDetails in case the tor
+      // process exists later on.
+      this._tryAgain = false;
+      this._potentiallyBlocked = false;
+      this._errorDetails = null;
+      this._errorCode = null;
+
+      if (requestedStage) {
+        lazy.logger.warn(
+          `Ignoring ${requestedStage} request since we are bootstrapped`
+        );
+      }
+      this._setStage(TorConnectStage.Bootstrapped);
+      Services.obs.notifyObservers(null, TorConnectTopics.BootstrapComplete);
+      return;
+    }
+
+    if (requestedStage) {
+      lazy.logger.debug("Ignoring bootstrap result", result, error);
+      this._setStage(requestedStage);
+      return;
+    }
+
+    if (
+      result === "offline" &&
+      (beginStage === TorConnectStage.Start ||
+        beginStage === TorConnectStage.Offline)
+    ) {
+      this._tryAgain = true;
+      this._internetStatus = InternetStatus.Offline;
+      this._signalError(new TorConnectError(TorConnectError.Offline));
+
+      this._setStage(TorConnectStage.Offline);
+      return;
+    }
+
+    if (error) {
+      lazy.logger.info("Bootstrap attempt error", error);
+
+      this._tryAgain = true;
+      this._potentiallyBlocked = true;
+
+      this._signalError(error);
+
+      switch (beginStage) {
+        case TorConnectStage.Start:
+        case TorConnectStage.Offline:
+          this._setStage(TorConnectStage.ChooseRegion);
+          return;
+        case TorConnectStage.ChooseRegion:
+          // TODO: Uncomment for behaviour in tor-browser#42550.
+          /*
+          if (regionCode !== "automatic") {
+            // Not automatic. Go straight to the final error.
+            this._setStage(TorConnectStage.FinalError);
+            return;
+          }
+          */
+          if (regionCode !== "automatic" || bootstrapAttempt.detectedRegion) {
+            this._setStage(TorConnectStage.ConfirmRegion);
+            return;
+          }
+          this._setStage(TorConnectStage.RegionNotFound);
+          return;
+      }
+      this._setStage(TorConnectStage.FinalError);
+      return;
+    }
+
+    // Bootstrap was cancelled.
+    if (result !== "cancelled") {
+      lazy.logger.error(`Unexpected bootstrap result`, result);
+    }
+
+    // TODO: Remove this Offline hack when pages use "stage".
+    if (beginStage === TorConnectStage.Offline) {
+      // Re-send the "Offline" error to push the pages back to "Offline".
+      this._internetStatus = InternetStatus.Offline;
+      this._signalError(new TorConnectError(TorConnectError.Offline));
+    }
+
+    // Return to the previous stage.
+    this._setStage(beginStage);
   },
 
-  beginAutoBootstrap(countryCode) {
-    lazy.logger.debug("TorConnect.beginAutoBootstrap()");
-    this._changeState(TorConnectState.AutoBootstrapping, countryCode);
+  /**
+   * Cancel an ongoing bootstrap attempt.
+   */
+  cancelBootstrapping() {
+    lazy.logger.debug("TorConnect.cancelBootstrapping()");
+
+    this._ensureEnabled();
+
+    if (!this._bootstrapAttempt) {
+      lazy.logger.warn("No bootstrap attempt to cancel");
+      return;
+    }
+
+    this._bootstrapAttempt.cancel();
+  },
+
+  /**
+   * Request the transition to the given stage.
+   *
+   * If we are bootstrapping, it will be cancelled and the stage will be
+   * transitioned to when it resolves. Otherwise, we will switch to the stage
+   * immediately.
+   *
+   * @param {string} stage - The stage to request.
+   * @param {boolean} [overideBootstrapped=false] - Whether the request can
+   *   override the "Bootstrapped" stage.
+   */
+  _makeStageRequest(stage, overrideBootstrapped = false) {
+    lazy.logger.debug(`Request for stage ${stage}`);
+
+    this._ensureEnabled();
+
+    if (stage === this._stageName) {
+      lazy.logger.info(`Ignoring request for current stage ${stage}`);
+      return;
+    }
+    if (
+      !overrideBootstrapped &&
+      this._stageName === TorConnectStage.Bootstrapped
+    ) {
+      lazy.logger.warn(`Cannot move to ${stage} when bootstrapped`);
+      return;
+    }
+    if (this._stageName === TorConnectStage.Loading) {
+      if (stage === TorConnectStage.Start) {
+        // Will transition to "Start" stage when loading completes.
+        lazy.logger.info("Still in the Loading stage");
+      } else {
+        lazy.logger.warn(`Cannot move to ${stage} when Loading`);
+      }
+      return;
+    }
+
+    if (!this._bootstrapAttempt) {
+      // Transition immediately.
+      this._setStage(stage);
+      return;
+    }
+
+    if (this._requestedStage === stage) {
+      lazy.logger.info(`Already requesting stage ${stage}`);
+      return;
+    }
+    if (this._requestedStage) {
+      lazy.logger.warn(
+        `Overriding request for ${this._requestedStage} with ${stage}`
+      );
+    }
+    // Move to stage *after* bootstrap completes.
+    this._requestedStage = stage;
+    this._bootstrapAttempt?.cancel();
+  },
+
+  /**
+   * Restart the TorConnect stage to the start.
+   */
+  startAgain() {
+    this._makeStageRequest(TorConnectStage.Start);
+  },
+
+  /**
+   * Set the stage to be "ChooseRegion".
+   */
+  chooseRegion() {
+    if (!this._potentiallyBlocked) {
+      lazy.logger.error("chooseRegion request before getting an error");
+      return;
+    }
+    // NOTE: The ChooseRegion stage needs _errorDetails to be displayed in
+    // about:torconnect. The _potentiallyBlocked condition should be
+    // sufficient to ensure this.
+    this._makeStageRequest(TorConnectStage.ChooseRegion);
   },
 
   /*
     Further external commands and helper methods
    */
+  // TODO: Move to TorConnectParent.
   openTorPreferences() {
     const win = lazy.BrowserWindowTracker.getTopWindow();
     win.switchToTabHavingURI("about:preferences#connection", true);
@@ -1191,6 +1762,7 @@ export const TorConnect = {
     }
   },
 
+  // TODO: Move to TorConnectParent.
   viewTorLogs() {
     const win = lazy.BrowserWindowTracker.getTopWindow();
     win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
