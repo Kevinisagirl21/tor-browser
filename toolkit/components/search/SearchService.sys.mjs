@@ -81,6 +81,7 @@ export const NON_SPLIT_ENGINE_IDS = [
   "engine-purpose",
   "engine-fr",
   "fixup_search",
+  "ddg-onion",
 ];
 
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
@@ -2596,15 +2597,36 @@ export class SearchService {
   // called in test_remove_engine_notification_box.js
   async _fetchEngineSelectorEngines() {
     const engines = [
-      { webExtension: { id: "ddg@search.mozilla.org" }, orderHint: 100 },
-      { webExtension: { id: "youtube@search.mozilla.org" }, orderHint: 90 },
-      { webExtension: { id: "google@search.mozilla.org" }, orderHint: 80 },
-      { webExtension: { id: "ddg-onion@search.mozilla.org" }, orderHint: 70 },
-      { webExtension: { id: "startpage@search.mozilla.org" }, orderHint: 60 },
-      { webExtension: { id: "startpage-onion@search.mozilla.org" }, orderHint: 50 },
-      { webExtension: { id: "twitter@search.mozilla.org" }, orderHint: 40 },
-      { webExtension: { id: "wikipedia@search.mozilla.org" }, orderHint: 30 },
-      { webExtension: { id: "yahoo@search.mozilla.org" }, orderHint: 20 },
+      {
+        aliases: ["duckduckgo", "ddg"],
+        name: "DuckDuckGo",
+        urls: {
+          search: {
+            base: "https://duckduckgo.com/",
+            params: [],
+            searchTermParamName: "q",
+          },
+        },
+        id: "04e99a38-13ee-47d8-8aa4-64482b3dea99",
+        identifier: "ddg",
+        recordType: "engine",
+        variants: [],
+      },
+      {
+        aliases: ["ddgonion"],
+        name: "DuckDuckGo (.onion)",
+        urls: {
+          search: {
+            base: "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/",
+            params: [],
+            searchTermParamName: "q",
+          },
+        },
+        id: "1e431da4-a60c-4411-9251-a95a841d451f",
+        identifier: "ddg-onion",
+        recordType: "engine",
+        variants: [],
+      },
     ];
 
     for (let e of engines) {
