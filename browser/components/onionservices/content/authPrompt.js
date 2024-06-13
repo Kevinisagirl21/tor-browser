@@ -310,7 +310,6 @@ var OnionAuthPrompt = {
   init() {
     this._logger = console.createInstance({
       prefix: "OnionAuthPrompt",
-      maxLogLevel: "Warn",
       maxLogLevelPref: "browser.onionAuthPrompt.loglevel",
     });
 
