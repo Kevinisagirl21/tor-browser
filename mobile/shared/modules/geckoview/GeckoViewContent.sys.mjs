@@ -8,11 +8,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   isProductURL: "chrome://global/content/shopping/ShoppingProduct.mjs",
   ShoppingProduct: "chrome://global/content/shopping/ShoppingProduct.mjs",
-});
-
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
 });
 
