@@ -1,0 +1,5 @@
+stages:
+  - update-translations
+
+include:
+  - local: '.gitlab/ci/update-translations.yml'
