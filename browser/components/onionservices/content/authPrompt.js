@@ -232,12 +232,9 @@ var OnionAuthPrompt = {
       cause === this._topics.clientAuthMissing
         ? Cr.NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH
         : Cr.NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH;
-    const io =
-      'ChromeUtils.import("resource://gre/modules/Services.jsm").Services.io';
-
     browser.messageManager.loadFrameScript(
       `data:application/javascript,${encodeURIComponent(
-        `docShell.displayLoadError(${errorCode}, ${io}.newURI(${JSON.stringify(
+        `docShell.displayLoadError(${errorCode}, Services.io.newURI(${JSON.stringify(
           uri.spec
         )}), undefined, undefined);`
       )}`,
