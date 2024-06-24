@@ -222,10 +222,9 @@ static nsAutoCString GetManualChromeURI() {
 
   nsAutoCString reqLocale;
   intl::LocaleService::GetInstance()->GetAppLocaleAsBCP47(reqLocale);
-  // Check every time the URL is needed in case the lang has been changed.
-  // We do not provide multi-language builds at the moment, so this should not
-  // happen, at least in Tor Browser desktop, but we prepared the patch to be
-  // ready also in such a case.
+  // Check every time the URL is needed in case the locale has changed.
+  // It might help also if we start allowing to change language, e.g., with a
+  // get parameter (see tor-browser#42675).
   if (!locales.Contains(reqLocale) && reqLocale.Length() > 2 &&
       reqLocale[2] == '-') {
     // At the moment, codes in our manual output are either 2 letters (en) or
