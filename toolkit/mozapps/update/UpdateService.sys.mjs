@@ -345,7 +345,7 @@ ChromeUtils.defineLazyGetter(
   }
 );
 
-async function _shouldRegisterBootstrapObserver(errorCode) {
+async function _shouldRegisterBootstrapObserver() {
   try {
     const provider = await lazy.TorProviderBuilder.build();
     return !provider.isBootstrapDone && provider.ownsTorDaemon;
@@ -3293,8 +3293,8 @@ export class UpdateService {
     }
 
     LOG(
-      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap to " +
-        "be complete, then forcing another check"
+      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap " +
+        "to be complete, then forcing another check"
     );
 
     Services.obs.addObserver(this, "torconnect:bootstrap-complete");
