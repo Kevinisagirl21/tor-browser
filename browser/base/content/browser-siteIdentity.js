@@ -807,7 +807,11 @@ var gIdentityHandler = {
    * built-in (returns false) or imported (returns true).
    */
   _hasCustomRoot() {
-    return !this._secInfo.isBuiltCertChainRootBuiltInRoot;
+    // HTTP Onion Sites are considered secure, but will not not have _secInfo.
+    // FIXME: Self-signed HTTPS Onion Sites are also deemed secure, but this
+    // function will return true for them, creating a warning about an exception
+    // that cannot be actually removed.
+    return !!this._secInfo && !this._secInfo.isBuiltCertChainRootBuiltInRoot;
   },
 
   /**
