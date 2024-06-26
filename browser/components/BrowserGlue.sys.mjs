@@ -1045,10 +1045,10 @@ let JSWINDOWACTORS = {
 if (AppConstants.BASE_BROWSER_UPDATE) {
   JSWINDOWACTORS.AboutTBUpdate = {
     parent: {
-      moduleURI: "resource:///actors/AboutTBUpdateParent.jsm",
+      esModuleURI: "resource:///actors/AboutTBUpdateParent.sys.mjs",
     },
     child: {
-      moduleURI: "resource:///actors/AboutTBUpdateChild.jsm",
+      esModuleURI: "resource:///actors/AboutTBUpdateChild.sys.mjs",
       events: {
         DOMWindowCreated: { capture: true },
       },

@@ -93,6 +93,6 @@ BROWSER_CHROME_MANIFESTS += [
 
 if CONFIG["BASE_BROWSER_UPDATE"]:
     FINAL_TARGET_FILES.actors += [
-        "AboutTBUpdateChild.jsm",
-        "AboutTBUpdateParent.jsm",
+        "AboutTBUpdateChild.sys.mjs",
+        "AboutTBUpdateParent.sys.mjs",
     ]

@@ -3,14 +3,7 @@
 //
 // vim: set sw=2 sts=2 ts=8 et syntax=javascript:
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutTBUpdateParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const kRequestUpdateMessageName = "FetchUpdateData";
 
@@ -20,7 +13,7 @@ const kRequestUpdateMessageName = "FetchUpdateData";
  * message that's handled here. It is modeled after Mozilla's about:home
  * implementation.
  */
-class AboutTBUpdateParent extends JSWindowActorParent {
+export class AboutTBUpdateParent extends JSWindowActorParent {
   async receiveMessage(aMessage) {
     if (aMessage.name == kRequestUpdateMessageName) {
       return this.getReleaseNoteInfo();
