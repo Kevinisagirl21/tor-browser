@@ -83,10 +83,11 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private final HashMap<Integer, MeekTransport> mMeeks = new HashMap<>();
     private int mMeekCounter;
 
-    // mSettings is a java side copy of the authoritative settings in the JS code.
-    // it's useful to maintain as the ui may be fetching these options often and
-    // we don't watch each fetch to be a passthrough to JS with JSON serialization and
-    // deserialization each time
+    /**
+     * mSettings is a Java-side copy of the authoritative settings in the JS code.
+     * It's useful to maintain as the UI may be fetching these options often and we don't watch each
+     * fetch to be a passthrough to JS with marshalling/unmarshalling each time.
+     */
     private TorSettings mSettings = null;
 
     /* package */ TorIntegrationAndroid(Context context) {
@@ -342,11 +343,13 @@ public class TorIntegrationAndroid implements BundleEventListener {
                     return;
                 }
                 try {
+                    // First remove the permissions for everybody...
                     directory.setReadable(false, false);
-                    directory.setReadable(true, true);
                     directory.setWritable(false, false);
-                    directory.setWritable(true, true);
                     directory.setExecutable(false, false);
+                    // ... then add them back, but only for the owner.
+                    directory.setReadable(true, true);
+                    directory.setWritable(true, true);
                     directory.setExecutable(true, true);
                 } catch (SecurityException e) {
                     Log.e(TAG, "Could not set the permissions to the IPC directory.", e);
