@@ -426,7 +426,9 @@ class ResponseListener {
   }
 }
 
-// constructs the json objects and sends the request over moat
+/**
+ * Factory to create HTTP(S) requests over a domain fronted transport.
+ */
 export class DomainFrontRequestBuilder {
   #inited = false;
   #meekTransport = null;
@@ -516,7 +518,7 @@ export class DomainFrontRequestBuilder {
   }
 
   /**
-   * Make a POST request with a JSON body.
+   * Make a POST request with a JSON body and a JSON response.
    *
    * @param {string} url The URL to load
    * @param {object} args The arguments to send to the procedure. It will be

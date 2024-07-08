@@ -7,6 +7,7 @@ import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
@@ -15,13 +16,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorLauncherUtil: "resource://gre/modules/TorLauncherUtil.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
-
-// TODO: Should we move this to the about:torconnect actor?
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "BrowserWindowTracker",
-  "resource:///modules/BrowserWindowTracker.jsm"
-);
 
 /* Relevant prefs used by tor-launcher */
 const TorLauncherPrefs = Object.freeze({
@@ -236,7 +230,7 @@ class StateCallback {
 
 // async method to sleep for a given amount of time
 const debugSleep = async ms => {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     setTimeout(resolve, ms);
   });
 };
@@ -1195,6 +1189,7 @@ export const TorConnect = {
    *   begin AutoBootstrapping, if possible.
    */
   openTorConnect(options) {
+    // FIXME: Should we move this to the about:torconnect actor?
     const win = lazy.BrowserWindowTracker.getTopWindow();
     win.switchToTabHavingURI("about:torconnect", true, {
       ignoreQueryString: true,

@@ -202,8 +202,7 @@ export class MoatRPC {
     return { bridges, qrcode: qrcodeImg };
   }
 
-  // Convert received settings object to format used by TorSettings module
-  // In the event of error, just return null
+  // Convert received settings object to format used by TorSettings module.
   #fixupSettings(settings) {
     if (!("bridges" in settings)) {
       throw new Error("Expected to find `bridges` in the settings object.");
@@ -220,7 +219,7 @@ export class MoatRPC {
         // TorSettings will ignore strings for built-in bridges, and use the
         // ones it already knows, instead. However, when we try these settings
         // in the connect assist, we skip TorSettings. Therefore, we set the
-        // lines also here (the ones we already known, not the ones we receive
+        // lines also here (the ones we already know, not the ones we receive
         // from Moat). This needs TorSettings to be initialized, which by now
         // should have already happened (this method is used only by TorConnect,
         // that needs TorSettings to be initialized).
@@ -248,9 +247,9 @@ export class MoatRPC {
     return retval;
   }
 
-  // Converts a list of settings objects received from BridgeDB to a list of settings objects
-  // understood by the TorSettings module
-  // In the event of error, returns and empty list
+  // Converts a list of settings objects received from BridgeDB to a list of
+  // settings objects understood by the TorSettings module.
+  // In the event of error, returns an empty list.
   #fixupSettingsList(settingsList) {
     const retval = [];
     for (const settings of settingsList) {
@@ -263,18 +262,19 @@ export class MoatRPC {
     return retval;
   }
 
-  // Request tor settings for the user optionally based on their location (derived
-  // from their IP), takes the following parameters:
-  // - transports: optional, an array of transports available to the client; if empty (or not
-  //   given) returns settings using all working transports known to the server
-  // - country: optional, an ISO 3166-1 alpha-2 country code to request settings for;
-  //   if not provided the country is determined by the user's IP address
+  // Request tor settings for the user optionally based on their location
+  // (derived from their IP). Takes the following parameters:
+  // - transports: optional, an array of transports available to the client; if
+  //   empty (or not given) returns settings using all working transports known
+  //   to the server
+  // - country: optional, an ISO 3166-1 alpha-2 country code to request settings
+  //   for; if not provided the country is determined by the user's IP address
   //
-  // returns an array of settings objects in roughly the same format as the _settings
-  // object on the TorSettings module.
-  // - If the server cannot determine the user's country (and no country code is provided),
-  //   then null is returned
-  // - If the country has no associated settings, an empty array is returned
+  // Returns an object with the detected country code and an array of settings
+  // in a format that can be passed to the TorSettings module. This array might
+  // be empty if the country has no associated settings.
+  // If the server cannot determine the user's country (and no country code is
+  // provided), then null is returned instead of the object.
   async circumvention_settings(transports, country) {
     const args = {
       transports: transports ? transports : [],
@@ -303,21 +303,22 @@ export class MoatRPC {
     return settings;
   }
 
-  // Request a list of country codes with available censorship circumvention settings
+  // Request a list of country codes with available censorship circumvention
+  // settings.
   //
-  // returns an array of ISO 3166-1 alpha-2 country codes which we can query settings
-  // for
+  // returns an array of ISO 3166-1 alpha-2 country codes which we can query
+  // settings for.
   async circumvention_countries() {
     const args = {};
     return this.#makeRequest("circumvention/countries", args);
   }
 
   // Request a copy of the builtin bridges, takes the following parameters:
-  // - transports: optional, an array of transports we would like the latest bridge strings
-  //   for; if empty (or not given) returns all of them
+  // - transports: optional, an array of transports we would like the latest
+  //   bridge strings for; if empty (or not given) returns all of them
   //
-  // returns a map whose keys are pluggable transport types and whose values are arrays of
-  // bridge strings for that type
+  // returns a map whose keys are pluggable transport types and whose values are
+  // arrays of bridge strings for that type
   async circumvention_builtin(transports) {
     const args = {
       transports: transports ? transports : [],
@@ -337,12 +338,14 @@ export class MoatRPC {
     return map;
   }
 
-  // Request a copy of the defaul/fallback bridge settings, takes the following parameters:
-  // - transports: optional, an array of transports available to the client; if empty (or not
-  //   given) returns settings using all working transports known to the server
+  // Request a copy of the defaul/fallback bridge settings, takes the following
+  // parameters:
+  // - transports: optional, an array of transports available to the client; if
+  //   empty (or not given) returns settings using all working transports known
+  //   to the server
   //
-  // returns an array of settings objects in roughly the same format as the _settings
-  // object on the TorSettings module
+  // returns an array of settings objects in roughly the same format as the
+  // _settings object on the TorSettings module
   async circumvention_defaults(transports) {
     const args = {
       transports: transports ? transports : [],
