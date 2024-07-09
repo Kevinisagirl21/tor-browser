@@ -32,6 +32,3 @@ pref("media.hls.enabled", false);
 // Disable WebAuthn. It requires Google Play Services, so it isn't
 // available, but avoid any potential problems.
 pref("security.webauth.webauthn_enable_android_fido2", false);
-
-// Disable the External App Blocker on Android
-pref("extensions.torbutton.launch_warning", false);
