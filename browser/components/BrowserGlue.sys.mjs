@@ -658,11 +658,11 @@ let JSWINDOWACTORS = {
 
   CryptoSafety: {
     parent: {
-      moduleURI: "resource:///actors/CryptoSafetyParent.jsm",
+      esModuleURI: "resource:///actors/CryptoSafetyParent.sys.mjs",
     },
 
     child: {
-      moduleURI: "resource:///actors/CryptoSafetyChild.jsm",
+      esModuleURI: "resource:///actors/CryptoSafetyChild.sys.mjs",
       group: "browsers",
       events: {
         copy: { mozSystemGroup: true },

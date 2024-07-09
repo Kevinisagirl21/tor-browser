@@ -21,14 +21,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-"use strict";
-
 /**
  * JS module implementation of Bech32 decoding adapted from the reference
  * implementation https://github.com/sipa/bech32.
  */
-
-var EXPORTED_SYMBOLS = ["Bech32Decode"];
 
 var CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 var GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
@@ -64,7 +60,7 @@ function verifyChecksum(hrp, data) {
   return polymod(hrpExpand(hrp).concat(data)) === 1;
 }
 
-function Bech32Decode(bechString) {
+export function Bech32Decode(bechString) {
   var p;
   var has_lower = false;
   var has_upper = false;

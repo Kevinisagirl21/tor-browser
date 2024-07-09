@@ -5,20 +5,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = ["CryptoSafetyParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "TorDomainIsolator",
-  "resource://gre/modules/TorDomainIsolator.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
+});
 
 ChromeUtils.defineLazyGetter(lazy, "CryptoStrings", function () {
   return new Localization(["toolkit/global/tor-browser.ftl"]);
@@ -31,7 +24,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true // Defaults to true.
 );
 
-class CryptoSafetyParent extends JSWindowActorParent {
+export class CryptoSafetyParent extends JSWindowActorParent {
   async receiveMessage(aMessage) {
     if (
       !lazy.isCryptoSafetyEnabled ||

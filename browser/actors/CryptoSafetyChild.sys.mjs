@@ -5,15 +5,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var EXPORTED_SYMBOLS = ["CryptoSafetyChild"];
+import { Bech32Decode } from "resource://gre/modules/Bech32Decode.sys.mjs";
 
-const { Bech32Decode } = ChromeUtils.import(
-  "resource://gre/modules/Bech32Decode.jsm"
-);
-
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -61,7 +55,7 @@ function looksLikeCryptoAddress(s) {
   return false;
 }
 
-class CryptoSafetyChild extends JSWindowActorChild {
+export class CryptoSafetyChild extends JSWindowActorChild {
   handleEvent(event) {
     if (
       !lazy.isCryptoSafetyEnabled ||
