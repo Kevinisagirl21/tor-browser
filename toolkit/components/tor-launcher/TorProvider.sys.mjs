@@ -57,14 +57,14 @@ const logger = new ConsoleAPI({
  * Stores the data associated with a circuit node.
  *
  * @typedef NodeData
- * @property {NodeFingerprint} fingerprint The node fingerprint.
- * @property {string[]} ipAddrs - The ip addresses associated with this node.
- * @property {string?} bridgeType - The bridge type for this node, or "" if the
+ * @property {NodeFingerprint} fingerprint The node fingerprint
+ * @property {string[]} ipAddrs The ip addresses associated with this node
+ * @property {string?} bridgeType The bridge type for this node, or "" if the
  *   node is a bridge but the type is unknown, or null if this is not a bridge
- *   node.
- * @property {string?} regionCode - An upper case 2-letter ISO3166-1 code for
- *   the first ip address, or null if there is no region. This should also be a
- *   valid BCP47 Region subtag.
+ *   node
+ * @property {string?} regionCode An upper case 2-letter ISO3166-1 code for the
+ *   first ip address, or null if there is no region. This should also be a
+ *   valid BCP47 Region subtag
  */
 
 const Preferences = Object.freeze({
@@ -475,7 +475,8 @@ export class TorProvider {
   /**
    * Retrieve the list of private keys.
    *
-   * @returns {OnionAuthKeyInfo[]}
+   * @returns {OnionAuthKeyInfo[]} The onion authentication keys known by the
+   * tor daemon
    */
   async onionAuthViewKeys() {
     return this.#controller.onionAuthViewKeys();
@@ -483,6 +484,8 @@ export class TorProvider {
 
   /**
    * Returns captured log message as a text string (one message per line).
+   *
+   * @returns {string} The logs we collected from the tor daemon so far
    */
   getLog() {
     return this.#logs
