@@ -109,14 +109,15 @@ class AsyncSocket {
    * Otherwise, the previous item of the queue will run it after it finishes.
    *
    * @param {string} str The string to write to the socket. The underlying
-   * implementation shoulw convert JS strings (UTF-16) into UTF-8 strings.
+   * implementation should convert JS strings (UTF-16) into UTF-8 strings.
    * See also write nsIOutputStream (the first argument is a string, not a
    * wstring).
    * @returns {Promise<number>} The number of written bytes
    */
   async write(str) {
     return new Promise((resolve, reject) => {
-      // asyncWait next write request
+      // Asynchronously wait for the stream to be writable (or closed) if we
+      // have any pending requests.
       const tryAsyncWait = () => {
         if (this.#outputQueue.length) {
           this.#outputStream.asyncWait(
@@ -135,16 +136,16 @@ class AsyncSocket {
           try {
             const bytesWritten = this.#outputStream.write(str, str.length);
 
-            // remove this callback object from queue as it is now completed
+            // Remove this callback object from queue, as it is now completed.
             this.#outputQueue.shift();
 
-            // request next wait if there is one
+            // Queue the next request if there is one.
             tryAsyncWait();
 
-            // finally resolve promise
+            // Finally, resolve the promise.
             resolve(bytesWritten);
           } catch (err) {
-            // reject promise on error
+            // Reject the promise on error.
             reject(err);
           }
         },
@@ -280,7 +281,7 @@ class AsyncSocket {
 /**
  * @typedef {object} Bridge
  * @property {string} transport The transport of the bridge, or vanilla if not
- * specified.
+ * specified
  * @property {string} addr The IP address and port of the bridge
  * @property {NodeFingerprint} id The fingerprint of the bridge
  * @property {string} args Optional arguments passed to the bridge
@@ -288,7 +289,7 @@ class AsyncSocket {
 /**
  * @typedef {object} PTInfo The information about a pluggable transport
  * @property {string[]} transports An array with all the transports supported by
- * this configuration.
+ * this configuration
  * @property {string} type Either socks4, socks5 or exec
  * @property {string} [ip] The IP address of the proxy (only for socks4 and
  * socks5)
@@ -441,8 +442,8 @@ export class TorController {
    * @returns {Promise<string>} The read message (without the final CRLF)
    */
   async #readMessage() {
-    // whether we are searching for the end of a multi-line values
-    // See control-spec section 3.9
+    // Whether we are searching for the end of a multi-line values.
+    // See control-spec section 3.9.
     let handlingMultlineValue = false;
     let endOfMessageFound = false;
     const message = [];
@@ -466,8 +467,8 @@ export class TorController {
         if (message.length === 1 && line.match(/^\d\d\d\+.+?=$/)) {
           handlingMultlineValue = true;
         }
-        // look for end of message (notice the space character at end of the
-        // regex!)
+        // Look for end of message (notice the space character at end of the
+        // regex!).
         else if (line.match(/^\d\d\d /)) {
           if (message.length === 1) {
             endOfMessageFound = true;
@@ -662,7 +663,7 @@ export class TorController {
    *
    * @param {string} key The key to get value for
    * @returns {Promise<string>} The string we received (only the value, without
-   * the key). We do not do any additional parsing on it.
+   * the key). We do not do any additional parsing on it
    */
   async #getInfo(key) {
     this.#expectString(key);
@@ -755,7 +756,7 @@ export class TorController {
    * @returns {Promise<string[]>} The values obtained from the control port.
    * The key is removed, and the values unescaped, but they are not parsed.
    * The array might contain an empty string, which means that the default value
-   * is used.
+   * is used
    */
   async #getConf(key) {
     this.#expectString(key, "key");
