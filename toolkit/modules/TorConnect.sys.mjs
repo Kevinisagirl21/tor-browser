@@ -46,12 +46,24 @@ export const TorConnectState = Object.freeze({
 });
 
 export class TorConnectError extends Error {
-  static Offline = "Offline";
-  static BootstrapError = "BootstrapError";
-  static CannotDetermineCountry = "CannotDetermineCountry";
-  static NoSettingsForCountry = "NoSettingsForCountry";
-  static AllSettingsFailed = "AllSettingsFailed";
-  static ExternalError = "ExternalError";
+  static get Offline() {
+    return "Offline";
+  }
+  static get BootstrapError() {
+    return "BootstrapError";
+  }
+  static get CannotDetermineCountry() {
+    return "CannotDetermineCountry";
+  }
+  static get NoSettingsForCountry() {
+    return "NoSettingsForCountry";
+  }
+  static get AllSettingsFailed() {
+    return "AllSettingsFailed";
+  }
+  static get ExternalError() {
+    return "ExternalError";
+  }
 
   constructor(code, cause) {
     super(cause?.message ?? `TorConnectError: ${code}`, cause ? { cause } : {});
@@ -59,7 +71,6 @@ export class TorConnectError extends Error {
     this.code = code;
   }
 }
-Object.freeze(TorConnectError);
 
 ChromeUtils.defineLazyGetter(
   lazy,
