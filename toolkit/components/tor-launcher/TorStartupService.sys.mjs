@@ -28,7 +28,7 @@ export class TorStartupService {
     }
   }
 
-  async #init() {
+  #init() {
     Services.obs.addObserver(this, BrowserTopics.QuitApplicationGranted);
 
     // Theoretically, build() is expected to await the initialization of the
