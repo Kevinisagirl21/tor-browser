@@ -913,7 +913,7 @@ dialog#torPreferences-requestBridge-dialog > hbox {
 }
 
 #lox-invite-dialog-error-message {
-  color: var(--in-content-error-text-color);
+  color: var(--text-color-error);
 }
 
 #lox-invite-dialog-generate-area:not(.show-error) #lox-invite-dialog-error-message {
@@ -1049,7 +1049,7 @@ groupbox#torPreferences-bridges-group textarea {
 }
 
 #user-provide-bridge-error-message {
-  color: var(--in-content-error-text-color);
+  color: var(--text-color-error);
 }
 
 #user-provide-bridge-dialog:not(.show-error) #user-provide-bridge-error-message {
