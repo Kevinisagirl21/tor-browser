@@ -617,19 +617,10 @@ var gTorCircuitPanel = {
       } else {
         addressesEl.append(", ");
       }
+      // Use semantic <code> block for the ip addresses, so the content
+      // (especially punctuation) can be better interpreted by screen readers,
+      // if they support this.
       const ipEl = document.createElement("code");
-      // TODO: Current HTML-aam 1.0 specs map the <code> element to the "code"
-      // role.
-      // However, mozilla-central commented out this mapping in
-      // accessible/base/HTMLMarkupMap.h because the HTML-aam specs at the
-      // time did not do this.
-      // See hg.mozilla.org/mozilla-central/rev/51eebe7d6199#l2.12
-      //
-      // This was updated in mozilla bug 1834931, for ESR 128
-      //
-      // For now we explicitly add the role="code", but once this is fixed
-      // from mozilla-central we should remove this.
-      ipEl.setAttribute("role", "code");
       ipEl.classList.add("tor-circuit-ip-address");
       ipEl.textContent = ip;
       addressesEl.append(ipEl);
