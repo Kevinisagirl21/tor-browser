@@ -194,14 +194,14 @@ body:not(.show-tor-check) #tor-check {
     --in-content-page-color: #fbfbfe;
     --in-content-text-color: #fbfbfe;
     color: var(--in-content-text-color);
-    --in-content-link-color: var(--purple-30);
+    --link-color: var(--purple-30);
     /* FIXME: Since we have a dark background, the color should get lighter on
      * hover, but --purple-40 and --pruple-50 are darker than --purple-30.
      * However, we do not have a standard lighter purple in our current set of
      * Photon colors.
      * See tor-browser#42025 */
-    --in-content-link-color-hover: var(--purple-40);
-    --in-content-link-color-active: var(--purple-50);
+    --link-color-hover: var(--purple-40);
+    --link-color-active: var(--purple-50);
   }
 
   #search-form {
