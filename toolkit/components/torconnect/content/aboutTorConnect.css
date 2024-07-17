@@ -149,7 +149,7 @@ button {
 }
 
 #locationDropdownLabel.error {
-  color: var(--in-content-error-text-color)
+  color: var(--text-color-error)
 }
 
 #tryBridgeButton.danger-button {
