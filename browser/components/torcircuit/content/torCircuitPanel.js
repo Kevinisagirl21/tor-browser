@@ -54,12 +54,9 @@ var gTorCircuitPanel = {
   init() {
     this._isActive = true;
 
-    const { ConsoleAPI } = ChromeUtils.import(
-      "resource://gre/modules/Console.jsm"
-    );
-    this._log = new ConsoleAPI({
+    this._log = console.createInstance({
       prefix: "TorCircuitPanel",
-      maxLogLevel: "log",
+      maxLogLevel: "Log",
       maxLogLevelPref: "browser.torcircuitpanel.loglevel",
     });
 
@@ -209,8 +206,11 @@ var gTorCircuitPanel = {
 
   /**
    * Observe circuit changes.
+   *
+   * @param {nsISupports} subject Notification-specific data
+   * @param {string} topic The notification topic
    */
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case this.TOR_CIRCUIT_TOPIC:
         // TODO: Maybe check if we actually need to do something earlier.
@@ -244,6 +244,8 @@ var gTorCircuitPanel = {
    * Note that this element instance may change whenever its parent element
    * (#tor-circuit-alias-label) is re-translated. Attributes should be copied to
    * the new instance.
+   *
+   * @returns {Element?}
    */
   get _aliasLink() {
     return this._panelElements.aliasLabel.querySelector(
@@ -378,6 +380,7 @@ var gTorCircuitPanel = {
   /**
    * Get the tor onion address alias for the given domain.
    *
+   * @param {string} domain An .onion domain to query an alias for.
    * @returns {string} The alias domain, or null if it has no alias.
    */
   _getOnionAlias(domain) {
