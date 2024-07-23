@@ -17,6 +17,12 @@ const kIPCDirPrefName = "extensions.torlauncher.tmp_ipc_dir";
 
 let gStringBundle = null;
 
+/**
+ * This class allows to lookup for the paths of the various files that are
+ * needed or can be used with the tor daemon, such as its configuration, the
+ * GeoIP databases, and the Unix sockets that can be optionally used for the
+ * control and the SOCKS ports.
+ */
 class TorFile {
   // The nsIFile to be returned
   file = null;
@@ -458,6 +464,8 @@ export const TorLauncherUtil = Object.freeze({
    * moment, because with network disabled tor will disable also the SOCKS
    * listeners, so it means that we will have to check it every time we change
    * the network status).
+   *
+   * @returns {SocksSettings}
    */
   getPreferredSocksConfiguration() {
     if (Services.env.exists("TOR_TRANSPROXY")) {

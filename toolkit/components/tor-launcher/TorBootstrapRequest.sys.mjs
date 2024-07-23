@@ -7,25 +7,32 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorProviderTopics: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
-// modeled after XMLHttpRequest
-// nicely encapsulates the observer register/unregister logic
-// TODO: Remove this class, and move its logic inside the TorProvider.
+const log = console.createInstance({
+  maxLogLevel: "Info",
+  prefix: "TorBootstrapRequest",
+});
+
+/**
+ * This class encapsulates the observer register/unregister logic to provide an
+ * XMLHttpRequest-like API to bootstrap tor.
+ * TODO: Remove this class, and move its logic inside the TorProvider.
+ */
 export class TorBootstrapRequest {
   // number of ms to wait before we abandon the bootstrap attempt
   // a value of 0 implies we never wait
   timeout = 0;
 
   // callbacks for bootstrap process status updates
-  onbootstrapstatus = (progress, status) => {};
+  onbootstrapstatus = (_progress, _status) => {};
   onbootstrapcomplete = () => {};
-  onbootstraperror = error => {};
+  onbootstraperror = _error => {};
 
   // internal resolve() method for bootstrap
   #bootstrapPromiseResolve = null;
   #bootstrapPromise = null;
   #timeoutID = null;
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     const obj = subject?.wrappedJSObject;
     switch (topic) {
       case lazy.TorProviderTopics.BootstrapStatus: {
@@ -46,7 +53,7 @@ export class TorBootstrapRequest {
         break;
       }
       case lazy.TorProviderTopics.BootstrapError: {
-        console.info("TorBootstrapRequest: observerd TorBootstrapError", obj);
+        log.info("TorBootstrapRequest: observerd TorBootstrapError", obj);
         const error = new Error(obj.summary);
         Object.assign(error, obj);
         this.#stop(error);
@@ -61,7 +68,7 @@ export class TorBootstrapRequest {
       return this.#bootstrapPromise;
     }
 
-    this.#bootstrapPromise = new Promise((resolve, reject) => {
+    this.#bootstrapPromise = new Promise(resolve => {
       this.#bootstrapPromiseResolve = resolve;
 
       // register ourselves to listen for bootstrap events

@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 import { TorLauncherUtil } from "resource://gre/modules/TorLauncherUtil.sys.mjs";
 import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
@@ -19,8 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
-const logger = new ConsoleAPI({
-  maxLogLevel: "warn",
+const logger = console.createInstance({
+  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tor_provider.log_level",
   prefix: "TorProvider",
 });

@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 import { Subprocess } from "resource://gre/modules/Subprocess.sys.mjs";
 
 const lazy = {};
@@ -20,11 +19,20 @@ const TorProcessStatus = Object.freeze({
   Exited: 3,
 });
 
-const logger = new ConsoleAPI({
-  maxLogLevel: "info",
+const logger = console.createInstance({
+  maxLogLevel: "Info",
   prefix: "TorProcess",
 });
 
+/**
+ * This class can be used to start a tor daemon instance and receive
+ * notifications when it exits.
+ * It will automatically convert the settings objects into the appropriate
+ * command line arguments.
+ *
+ * It does not offer a way to stop a process because it is supposed to exit
+ * automatically when the owning control port connection is closed.
+ */
 export class TorProcess {
   #controlSettings;
   #socksSettings;
@@ -34,7 +42,7 @@ export class TorProcess {
   #subprocess = null;
   #status = TorProcessStatus.Unknown;
 
-  onExit = exitCode => {};
+  onExit = _exitCode => {};
 
   constructor(controlSettings, socksSettings) {
     if (
@@ -310,6 +318,7 @@ export class TorProcess {
    * Based on Vidalia's TorSettings::hashPassword().
    *
    * @param {Uint8Array} password The password, as an array of bytes
+   * @returns {string} The hashed password
    */
   #hashPassword(password) {
     // The password has already been checked by the caller.
