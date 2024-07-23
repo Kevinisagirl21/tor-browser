@@ -4,6 +4,11 @@
 
 const lazy = {};
 
+const log = console.createInstance({
+  maxLogLevel: "Warn",
+  prefix: "Moat",
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   DomainFrontRequestBuilder:
     "resource://gre/modules/DomainFrontedRequests.sys.mjs",
@@ -36,7 +41,7 @@ class InternetTestResponseListener {
     return this.#promise;
   }
 
-  onStartRequest(request) {}
+  onStartRequest() {}
 
   // resolve or reject our Promise
   onStopRequest(request, status) {
@@ -62,7 +67,7 @@ class InternetTestResponseListener {
     }
   }
 
-  onDataAvailable(request, stream, offset, length) {
+  onDataAvailable() {
     // We do not care of the actual data, as long as we have a successful
     // connection
   }
@@ -256,7 +261,7 @@ export class MoatRPC {
       try {
         retval.push(this.#fixupSettings(settings));
       } catch (ex) {
-        console.log(ex);
+        log.error(ex);
       }
     }
     return retval;
@@ -286,7 +291,7 @@ export class MoatRPC {
       const code = response.errors[0].code;
       const detail = response.errors[0].detail;
       if (code == 406) {
-        console.log(
+        log.error(
           "MoatRPC::circumvention_settings(): Cannot automatically determine user's country-code"
         );
         // cannot determine user's country
