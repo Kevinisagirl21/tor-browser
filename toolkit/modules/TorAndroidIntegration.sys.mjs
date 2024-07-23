@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
@@ -20,8 +18,8 @@ const Prefs = Object.freeze({
   logLevel: "browser.tor_android.log_level",
 });
 
-const logger = new ConsoleAPI({
-  maxLogLevel: "info",
+const logger = console.createInstance({
+  maxLogLevel: "Info",
   maxLogLevelPref: Prefs.logLevel,
   prefix: "TorAndroidIntegration",
 });
