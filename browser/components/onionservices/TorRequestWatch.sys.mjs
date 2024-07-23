@@ -2,19 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * This module implements Tor-specific Web Request policies, such as
- * preventing observable cross-site requests to .tor.onion and .bit.onion sites.
- */
-
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
-
-const log = new ConsoleAPI({
-  maxLogLevel: "warn",
+const log = console.createInstance({
+  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.torRequestWatch.log_level",
   prefix: "TorRequestWatch",
 });
 
+/**
+ * This request observer blocks all the cross-site requests to *.tor.onion
+ * domains to prevent fingerprinting Onion alias mechanisms (or their lack).
+ */
 class RequestObserver {
   static #topics = [
     "http-on-modify-request",
@@ -39,7 +36,7 @@ class RequestObserver {
   }
 
   // nsIObserver implementation
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     try {
       let channel = ChannelWrapper.get(
         subject.QueryInterface(Ci.nsIHttpChannel)

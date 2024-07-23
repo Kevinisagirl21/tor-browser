@@ -7,15 +7,17 @@ import {
 
 const kShowWarningPref = "torbrowser.rulesets.show_warning";
 
-// This class allows about:rulesets to load/save the preference for skipping the
-// warning
+/**
+ * This class relays the changes the user's changes from about:rulesets to the
+ * rulesets database.
+ */
 export class RulesetsParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
 
     const self = this;
     this.observer = {
-      observe(aSubject, aTopic, aData) {
+      observe(aSubject, aTopic) {
         const obj = aSubject?.wrappedJSObject;
         if (aTopic === OnionAliasStoreTopics.ChannelsChanged && obj) {
           self.sendAsyncMessage("rulesets:channels-change", obj);

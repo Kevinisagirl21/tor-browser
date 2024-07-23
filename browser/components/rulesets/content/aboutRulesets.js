@@ -1,6 +1,6 @@
 "use strict";
 
-/* globals RPMAddMessageListener, RPMSendQuery, RPMSendAsyncMessage */
+/* eslint-env mozilla/remote-page */
 
 const Orders = Object.freeze({
   Name: "name",
@@ -30,6 +30,11 @@ function setUpdateDate(ruleset, element) {
   });
 }
 
+// UI states
+
+/**
+ * This is the initial warning shown when the user opens about:rulesets.
+ */
 class WarningState {
   elements = {
     enableCheckbox: document.getElementById("warning-enable-checkbox"),
@@ -66,6 +71,9 @@ class WarningState {
   }
 }
 
+/**
+ * State shown when the user clicks on a channel to see its details.
+ */
 class DetailsState {
   elements = {
     title: document.getElementById("ruleset-title"),
@@ -134,6 +142,9 @@ class DetailsState {
   }
 }
 
+/**
+ * State to edit a channel.
+ */
 class EditState {
   elements = {
     form: document.getElementById("edit-ruleset-form"),
@@ -257,11 +268,19 @@ class EditState {
   }
 }
 
+/**
+ * State shown when no rulesets are available.
+ * Currently, the only way to reach it is to delete all the channels manually.
+ */
 class NoRulesetsState {
   show() {}
   hide() {}
 }
 
+/**
+ * Manages the sidebar with the list of the various channels, and keeps it in
+ * sync with the data we receive from the backend.
+ */
 class RulesetList {
   elements = {
     list: document.getElementById("ruleset-list"),
@@ -368,6 +387,10 @@ class RulesetList {
   }
 }
 
+/**
+ * The entry point of about:rulesets.
+ * It initializes the various states and allows to switch between them.
+ */
 class AboutRulesets {
   _state = null;
 

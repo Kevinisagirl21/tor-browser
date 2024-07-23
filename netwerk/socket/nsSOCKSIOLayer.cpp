@@ -851,14 +851,14 @@ PRStatus nsSOCKSSocketInfo::WriteV5ConnectRequest() {
         return PR_FAILURE;
       }
       buf2 = buf.WriteUint8(0x03)
-                .WriteUint8(realHost.Length())
-                .WriteString<MAX_HOSTNAME_LEN>(realHost);
+                 .WriteUint8(realHost.Length())
+                 .WriteString<MAX_HOSTNAME_LEN>(realHost);
     } else {
       // Add the host name. Only a single byte is used to store the length,
       // so we must prevent long names from being used.
       buf2 = buf.WriteUint8(0x03)  // addr type -- domainname
-                .WriteUint8(mDestinationHost.Length())             // name length
-                .WriteString<MAX_HOSTNAME_LEN>(mDestinationHost);  // Hostname
+                 .WriteUint8(mDestinationHost.Length())  // name length
+                 .WriteString<MAX_HOSTNAME_LEN>(mDestinationHost);  // Hostname
     }
     if (!buf2) {
       LOGERROR(("socks5: destination host name is too long!"));
