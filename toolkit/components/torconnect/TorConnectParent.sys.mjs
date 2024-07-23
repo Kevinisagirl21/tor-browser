@@ -1,7 +1,5 @@
 // Copyright (c) 2021, The Tor Project, Inc.
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 import {
   InternetStatus,
@@ -18,8 +16,13 @@ const BroadcastTopic = "about-torconnect:broadcast";
 
 const lazy = {};
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  HomePage: "resource:///modules/HomePage.jsm",
+ChromeUtils.defineESModuleGetters(lazy, {
+  HomePage: "resource:///modules/HomePage.sys.jsm",
+});
+
+const log = console.createInstance({
+  maxLogLevel: "Warn",
+  prefix: "TorConnectParent",
 });
 
 /*
@@ -27,6 +30,10 @@ This object is basically a marshalling interface between the TorConnect module
 and a particular about:torconnect page
 */
 
+/**
+ * Actor parent class for the about:torconnect page.
+ * It adapts and relays the messages from and to the TorConnect module.
+ */
 export class TorConnectParent extends JSWindowActorParent {
   constructor(...args) {
     super(...args);
@@ -65,7 +72,7 @@ export class TorConnectParent extends JSWindowActorParent {
     // module, and maintains a state object which we pass down to our
     // about:torconnect page, which uses the state object to update its UI.
     this.torConnectObserver = {
-      observe(aSubject, aTopic, aData) {
+      observe(aSubject, aTopic) {
         let obj = aSubject?.wrappedJSObject;
 
         // Update our state struct based on received torconnect topics and
@@ -125,7 +132,7 @@ export class TorConnectParent extends JSWindowActorParent {
             break;
           }
           default: {
-            console.log(`TorConnect: unhandled observe topic '${aTopic}'`);
+            log.warn(`TorConnect: unhandled observe topic '${aTopic}'`);
           }
         }
 
@@ -145,7 +152,7 @@ export class TorConnectParent extends JSWindowActorParent {
     );
 
     this.userActionObserver = {
-      observe(aSubject, aTopic, aData) {
+      observe(aSubject) {
         let obj = aSubject?.wrappedJSObject;
         if (obj) {
           obj.connState = self.state;

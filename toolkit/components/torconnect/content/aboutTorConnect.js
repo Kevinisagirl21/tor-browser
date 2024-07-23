@@ -27,6 +27,9 @@ const BreadcrumbStatus = Object.freeze({
   Error: "error",
 });
 
+/**
+ * The controller for the about:torconnect page.
+ */
 class AboutTorConnect {
   selectors = Object.freeze({
     textContainer: {
@@ -466,7 +469,7 @@ class AboutTorConnect {
     }
   }
 
-  update_Bootstrapped(state) {
+  update_Bootstrapped(_state) {
     const showProgressbar = true;
 
     this.setTitle(TorStrings.torConnect.torConnected, "");
@@ -475,7 +478,7 @@ class AboutTorConnect {
     this.hideButtons();
   }
 
-  update_Disabled(state) {
+  update_Disabled(_state) {
     // TODO: we should probably have some UX here if a user goes to about:torconnect when
     // it isn't in use (eg using tor-launcher or system tor)
   }
@@ -720,7 +723,7 @@ class AboutTorConnect {
   initElements(direction) {
     document.documentElement.setAttribute("dir", direction);
 
-    this.elements.connectToTorLink.addEventListener("click", event => {
+    this.elements.connectToTorLink.addEventListener("click", () => {
       if (this.uiState.currentState === UIStates.ConnectToTor) {
         return;
       }
@@ -731,7 +734,7 @@ class AboutTorConnect {
     });
     this.elements.connectToTorLabel.textContent =
       TorStrings.torConnect.torConnect;
-    this.elements.connectionAssistLink.addEventListener("click", event => {
+    this.elements.connectionAssistLink.addEventListener("click", () => {
       if (
         this.elements.connectionAssistLink.classList.contains(
           BreadcrumbStatus.Active
@@ -754,7 +757,7 @@ class AboutTorConnect {
 
     this.hide(this.elements.viewLogButton);
     this.elements.viewLogButton.textContent = TorStrings.torConnect.viewLog;
-    this.elements.viewLogButton.addEventListener("click", event => {
+    this.elements.viewLogButton.addEventListener("click", () => {
       RPMSendAsyncMessage("torconnect:view-tor-logs");
     });
 

@@ -2,6 +2,11 @@
 
 import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
 
+/**
+ * Actor child class for the about:torconnect page.
+ * Most of the communication happens through RPM* calls, which do not go through
+ * this class.
+ */
 export class TorConnectChild extends RemotePageChild {
   /**
    * Whether we have redirected the page (after bootstrapping) or not.
