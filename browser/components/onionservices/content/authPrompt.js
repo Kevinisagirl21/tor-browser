@@ -347,7 +347,7 @@ var OnionAuthPrompt = {
         this._onDone();
       }
     });
-    this._keyInput.addEventListener("input", event => {
+    this._keyInput.addEventListener("input", () => {
       // Remove the warning.
       this._showWarning(undefined);
     });

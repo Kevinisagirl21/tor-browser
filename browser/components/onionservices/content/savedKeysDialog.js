@@ -4,9 +4,6 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   TorStrings: "resource://gre/modules/TorStrings.sys.mjs",
-});
-
-ChromeUtils.defineESModuleGetters(this, {
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
 });
 
@@ -212,7 +209,7 @@ var gOnionServicesSavedKeysDialog = {
     return "";
   },
 
-  isSeparator(index) {
+  isSeparator(_index) {
     return false;
   },
 
@@ -220,27 +217,27 @@ var gOnionServicesSavedKeysDialog = {
     return false;
   },
 
-  isContainer(index) {
+  isContainer(_index) {
     return false;
   },
 
-  setTree(tree) {},
+  setTree(_tree) {},
 
-  getImageSrc(row, column) {},
+  getImageSrc(_row, _column) {},
 
-  getCellValue(row, column) {},
+  getCellValue(_row, _column) {},
 
-  cycleHeader(column) {},
+  cycleHeader(_column) {},
 
-  getRowProperties(row) {
+  getRowProperties(_row) {
     return "";
   },
 
-  getColumnProperties(column) {
+  getColumnProperties(_column) {
     return "";
   },
 
-  getCellProperties(row, column) {
+  getCellProperties(_row, _column) {
     return "";
   },
 };
