@@ -5,22 +5,17 @@
  * access to URLs (a potential proxy bypass vector).
  *************************************************************************/
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 const lazy = {};
 
-XPCOMUtils.defineLazyGetter(lazy, "logger", () => {
+ChromeUtils.defineLazyGetter(lazy, "logger", () => {
   // Keep the logger lazy, because it is used only in the parent process.
   // For some reason, Mozilla considers reading the preference linked to the
   // level in the children illegal (and triggers a crash when
   // fission.enforceBlocklistedPrefsInSubprocesses is true).
   // (Or maybe this crash used to happen when the logger was not lazy, and maybe
   // the preferences were not ready, yet?)
-  const { ConsoleAPI } = ChromeUtils.importESModule(
-    "resource://gre/modules/Console.sys.mjs"
-  );
-  return new ConsoleAPI({
-    maxLogLevel: "warn",
+  return new console.createInstance({
+    maxLogLevel: "Warn",
     maxLogLevelPref: "browser.dragdropfilter.log_level",
     prefix: "DragDropFilter",
   });
@@ -85,7 +80,7 @@ export const DragDropFilter = {
     }
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     if (topic === "on-datatransfer-available") {
       lazy.logger.debug("The DataTransfer is available");
       this.filterDataTransferURLs(subject);
