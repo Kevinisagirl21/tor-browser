@@ -4,9 +4,8 @@ import re
 import subprocess
 import sys
 
-
 dev_root = sys.argv[1]
-archs_in = re.split("\s+|,", sys.argv[2]) if len(sys.argv) >= 3 else []
+archs_in = re.split("\\s+|,", sys.argv[2]) if len(sys.argv) >= 3 else []
 archs_out = []
 env = dict(os.environ)
 
