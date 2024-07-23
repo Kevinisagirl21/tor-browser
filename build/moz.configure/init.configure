@@ -1238,6 +1238,7 @@ def tor_browser_nightly_build(channel):
     if channel and channel[0] in ["default", "nightly"]:
         return True
 
+
 set_define("TOR_BROWSER_NIGHTLY_BUILD", tor_browser_nightly_build)
 
 
