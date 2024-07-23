@@ -4,7 +4,6 @@
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 import {
   clearInterval,
   setInterval,
@@ -24,9 +23,9 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   ],
 });
 
-const logger = new ConsoleAPI({
+const logger = console.createInstance({
   prefix: "TorDomainIsolator",
-  maxLogLevel: "warn",
+  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tordomainisolator.loglevel",
 });
 
@@ -75,6 +74,15 @@ const CLEAR_TIMEOUT = 600_000;
  * know it, we should move this id into current.
  */
 
+/**
+ * This class implements circuit-isolation based on first-party domains and user
+ * context IDs.
+ * It takes for granted the tor daemon is configured with IsolateSOCKSAuth (or
+ * an equivalent option for other backends), so that it can hijack the proxy
+ * configuration to update its username and password.
+ *
+ * This class also collects the data that will be used by the circuit display.
+ */
 class TorDomainIsolatorImpl {
   /**
    * A mutable map that records what nonce we are using for each domain.
@@ -396,6 +404,7 @@ class TorDomainIsolatorImpl {
    *
    * @param {string} domain The first-party domain associated to the request
    * @param {integer} userContextId The userContextId associated to the request
+   * @returns {string} The username to be passed to the SOCKS proxy
    */
   #makeUsername(domain, userContextId) {
     if (!domain) {
@@ -459,6 +468,7 @@ class TorDomainIsolatorImpl {
    *
    * @param {integer} userContextId The userContextId to re-create the nonce for
    */
+  // eslint-disable-next-line no-unused-private-class-members
   #newCircuitForUserContextId(userContextId) {
     this.#noncesForUserContextId.set(userContextId, this.#nonce());
     logger.info(
@@ -658,6 +668,8 @@ class TorDomainIsolatorImpl {
  * In this case, we rely on currentURI, which for gBrowser is an alias of
  * gBrowser.selectedBrowser.currentURI.
  * See browser/base/content/tabbrowser.js and tor-browser#31562.
+ *
+ * @returns {string} The FPD associated to the principal of the passed browser.
  */
 function getDomainForBrowser(browser) {
   let fpd = browser.contentPrincipal.originAttributes.firstPartyDomain;
