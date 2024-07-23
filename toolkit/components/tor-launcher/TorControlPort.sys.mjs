@@ -2,12 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
-
 import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
 
-const logger = new ConsoleAPI({
-  maxLogLevel: "warn",
+const logger = console.createInstance({
+  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tor_provider.cp_log_level",
   prefix: "TorControlPort",
 });
@@ -58,6 +56,7 @@ class AsyncSocket {
    * Connect to a Unix socket. Not available on Windows.
    *
    * @param {nsIFile} ipcFile The path to the Unix socket to connect to.
+   * @returns {AsyncSocket}
    */
   static fromIpcFile(ipcFile) {
     const sts = Cc[
@@ -74,6 +73,7 @@ class AsyncSocket {
    *
    * @param {string} host The hostname to connect the TCP socket to.
    * @param {number} port The port to connect the TCP socket to.
+   * @returns {AsyncSocket}
    */
   static fromSocketAddress(host, port) {
     const sts = Cc[
@@ -186,7 +186,7 @@ class AsyncSocket {
       };
 
       this.#inputQueue.push({
-        onInputStreamReady: stream => {
+        onInputStreamReady: () => {
           try {
             if (!this.#scriptableInputStream.available()) {
               // This means EOF, but not closed yet. However, arriving at EOF
@@ -275,8 +275,8 @@ class AsyncSocket {
  */
 /**
  * @typedef {object} CircuitInfo
- * @property {CircuitID} id
- * @property {NodeFingerprint[]} nodes
+ * @property {CircuitID} id The ID of a circuit
+ * @property {NodeFingerprint[]} nodes List of node fingerprints
  */
 /**
  * @typedef {object} Bridge
@@ -312,6 +312,13 @@ class AsyncSocket {
  * @param {string} message The message to handle
  */
 
+/**
+ * This is a custom error thrown when we receive an error response over the
+ * control port.
+ *
+ * It includes the command that caused it, the error code and the raw message
+ * sent by the tor daemon.
+ */
 class TorProtocolError extends Error {
   constructor(command, reply) {
     super(`${command} -> ${reply}`);
@@ -324,6 +331,10 @@ class TorProtocolError extends Error {
   }
 }
 
+/**
+ * This class implements a JavaScript API around some of the commands and
+ * notifications that can be sent and received with tor's control port protocol.
+ */
 export class TorController {
   /**
    * The socket to write to the control port.
@@ -366,6 +377,7 @@ export class TorController {
    * @param {nsIFile} ipcFile The path to the Unix socket to connect to
    * @param {TorEventHandler} eventHandler The event handler to use for
    * asynchronous notifications
+   * @returns {TorController}
    */
   static fromIpcFile(ipcFile, eventHandler) {
     return new TorController(AsyncSocket.fromIpcFile(ipcFile), eventHandler);
@@ -378,6 +390,7 @@ export class TorController {
    * @param {number} port The port to connect the to
    * @param {TorEventHandler} eventHandler The event handler to use for
    * asynchronous notifications
+   * @returns {TorController}
    */
   static fromSocketAddress(host, port, eventHandler) {
     return new TorController(
@@ -557,7 +570,7 @@ export class TorController {
    * control port. This class does some rudimentary parsing to check wheter it
    * needs to handle multi-line messages.
    *
-   * @param {string} commandString
+   * @param {string} commandString The command to send
    * @returns {Promise<string>} The message sent by the control port. The return
    * value should never be an empty string (even though it will not include the
    * final CRLF).
@@ -630,6 +643,8 @@ export class TorController {
 
   /**
    * Tells whether the underlying socket is still open.
+   *
+   * @returns {boolean}
    */
   get isOpen() {
     return !!this.#socket;
@@ -1053,6 +1068,7 @@ export class TorController {
    *
    * @param {string[]} types The events to enable. If empty, no events will be
    * watched.
+   * @returns {Promise<void>}
    */
   setEvents(types) {
     if (!types.every(t => typeof t === "string" || t instanceof String)) {

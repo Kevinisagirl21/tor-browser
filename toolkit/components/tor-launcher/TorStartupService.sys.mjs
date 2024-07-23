@@ -15,12 +15,14 @@ const BrowserTopics = Object.freeze({
 
 let gInited = false;
 
-// This class is registered as an observer, and will be instanced automatically
-// by Firefox.
-// When it observes profile-after-change, it initializes whatever is needed to
-// launch Tor.
+/**
+ * This class is registered as an observer, and will be instanced automatically
+ * by Firefox.
+ * When it observes profile-after-change, it initializes whatever is needed to
+ * launch Tor.
+ */
 export class TorStartupService {
-  observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic) {
     if (aTopic === BrowserTopics.ProfileAfterChange && !gInited) {
       this.#init();
     } else if (aTopic === BrowserTopics.QuitApplicationGranted) {

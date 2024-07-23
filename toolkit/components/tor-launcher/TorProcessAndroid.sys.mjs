@@ -2,16 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
 });
 
-const logger = new ConsoleAPI({
-  maxLogLevel: "info",
+const logger = console.createInstance({
+  maxLogLevel: "Info",
   prefix: "TorProcessAndroid",
 });
 
@@ -27,6 +25,13 @@ const TorIncomingEvents = Object.freeze({
   exited: "GeckoView:Tor:TorExited",
 });
 
+/**
+ * This class allows to start a tor process on Android devices.
+ *
+ * GeckoView does not include the facilities to start processes from JavaScript,
+ * therefore the actual implementation is written in Java, and this is just
+ * plumbing code over the global EventDispatcher.
+ */
 export class TorProcessAndroid {
   /**
    * The handle the Java counterpart uses to refer to the process we started.
@@ -97,7 +102,7 @@ export class TorProcessAndroid {
     );
   }
 
-  onEvent(event, data, callback) {
+  onEvent(event, data, _callback) {
     if (data?.handle !== this.#processHandle) {
       logger.debug(`Ignoring event ${event} with another handle`, data);
       return;
