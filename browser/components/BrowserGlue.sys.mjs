@@ -3162,7 +3162,7 @@ BrowserGlue.prototype = {
             // after we are bootstrapped and connected to tor
             const topic = lazy.TorConnectTopics.BootstrapComplete;
             let bootstrapObserver = {
-              observe(aSubject, aTopic, aData) {
+              observe(aSubject, aTopic) {
                 if (aTopic === topic) {
                   lazy.OnionAliasStore.init();
                   // we only need to init once, so remove ourselves as an obvserver

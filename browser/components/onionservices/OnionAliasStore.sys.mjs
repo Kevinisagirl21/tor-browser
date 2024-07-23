@@ -1,7 +1,6 @@
 // Copyright (c) 2022, The Tor Project, Inc.
 
 import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
-import { ConsoleAPI } from "resource://gre/modules/Console.sys.mjs";
 
 const lazy = {};
 
@@ -32,15 +31,15 @@ const SECURE_DROP = {
 const kPrefOnionAliasEnabled = "browser.urlbar.onionRewrites.enabled";
 const kPrefOnionAliasLogLevel = "browser.onionalias.log_level";
 
-const log = new ConsoleAPI({
-  maxLogLevel: "warn",
+const log = console.createInstance({
+  maxLogLevel: "Warn",
   maxLogLevelPref: kPrefOnionAliasLogLevel,
   prefix: "OnionAlias",
 });
 
 // Inspired by aboutMemory.js and PingCentre.jsm
 function gunzip(buffer) {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const listener = Cc["@mozilla.org/network/stream-loader;1"].createInstance(
       Ci.nsIStreamLoader
     );
@@ -68,6 +67,16 @@ function gunzip(buffer) {
   });
 }
 
+/**
+ * A channel that distributes Onion aliases.
+ *
+ * Each channel needs:
+ *  - a name
+ *  - a key used to sign the rules
+ *  - a path prefix that will be used to build the URLs used to fetch updates
+ *  - a scope (the apex domain for all aliases, and it must be a subdomain of
+ *    .tor.onion).
+ */
 class Channel {
   static get SIGN_ALGORITHM() {
     return {
@@ -260,6 +269,13 @@ class Channel {
   }
 }
 
+/**
+ * The manager of onion aliases.
+ * It allows creating, reading, updating and deleting channels and it keeps them
+ * updated.
+ *
+ * This class is a singleton which should be accessed with OnionAliasStore.
+ */
 class _OnionAliasStore {
   static get RULESET_CHECK_INTERVAL() {
     return 86400 * 1000; // 1 day, like HTTPS-Everywhere
@@ -522,7 +538,7 @@ class _OnionAliasStore {
     return Services.prefs.getBoolPref(kPrefOnionAliasEnabled, true);
   }
 
-  observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic) {
     if (aTopic === "nsPref:changed") {
       if (this.enabled) {
         this._startUpdates();
