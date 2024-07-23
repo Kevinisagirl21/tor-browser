@@ -40,7 +40,7 @@ var gTorConnectTitlebarStatus = {
 
     this._observeTopic = TorConnectTopics.StateChange;
     this._stateListener = {
-      observe: (subject, topic, data) => {
+      observe: (subject, topic) => {
         if (topic !== this._observeTopic) {
           return;
         }

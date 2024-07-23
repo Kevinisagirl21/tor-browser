@@ -61,36 +61,6 @@ const SEARCH_BUTTON_CLASS = "urlbar-search-button";
 // The scalar category of TopSites click for Contextual Services
 const SCALAR_CATEGORY_TOPSITES = "contextual.services.topsites.click";
 
-// in certain scenarios we want user input uris to open in a new tab if they do so from the
-// about:torconnect tab
-function maybeUpdateOpenLocationForTorConnect(
-  openUILinkWhere,
-  currentURI,
-  destinationURI
-) {
-  try {
-    // only open in new tab if:
-    if (
-      // user is navigating away from about:torconnect
-      currentURI === "about:torconnect" &&
-      // we are trying to open in same tab
-      openUILinkWhere === "current" &&
-      // only if user still has not bootstrapped
-      lazy.TorConnect.shouldShowTorConnect &&
-      // and user is not just navigating to about:torconnect
-      destinationURI !== "about:torconnect"
-    ) {
-      return "tab";
-    }
-  } catch (e) {
-    // swallow exception and fall through returning original so we don't accidentally break
-    // anything if an exception is thrown
-    console.log(e?.message ? e.message : e);
-  }
-
-  return openUILinkWhere;
-}
-
 let getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
 let px = number => number.toFixed(2) + "px";
@@ -304,6 +274,36 @@ export class UrlbarInput {
     ChromeUtils.defineLazyGetter(this, "logger", () =>
       lazy.UrlbarUtils.getLogger({ prefix: "Input" })
     );
+  }
+
+  // in certain scenarios we want user input uris to open in a new tab if they do so from the
+  // about:torconnect tab
+  #maybeUpdateOpenLocationForTorConnect(
+    openUILinkWhere,
+    currentURI,
+    destinationURI
+  ) {
+    try {
+      // only open in new tab if:
+      if (
+        // user is navigating away from about:torconnect
+        currentURI === "about:torconnect" &&
+        // we are trying to open in same tab
+        openUILinkWhere === "current" &&
+        // only if user still has not bootstrapped
+        lazy.TorConnect.shouldShowTorConnect &&
+        // and user is not just navigating to about:torconnect
+        destinationURI !== "about:torconnect"
+      ) {
+        return "tab";
+      }
+    } catch (e) {
+      // swallow exception and fall through returning original so we don't accidentally break
+      // anything if an exception is thrown
+      this.logger.error(e?.message ? e.message : e);
+    }
+
+    return openUILinkWhere;
   }
 
   /**
@@ -3017,7 +3017,7 @@ export class UrlbarInput {
       this.inputField.setSelectionRange(0, 0);
     }
 
-    openUILinkWhere = maybeUpdateOpenLocationForTorConnect(
+    openUILinkWhere = this.#maybeUpdateOpenLocationForTorConnect(
       openUILinkWhere,
       this.window.gBrowser.currentURI.asciiSpec,
       url
