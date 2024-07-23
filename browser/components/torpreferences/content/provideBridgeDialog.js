@@ -511,7 +511,7 @@ const gProvideBridgeDialog = {
     }
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorConnectTopics.StateChange:
         this.onAcceptStateChange();

@@ -6,7 +6,7 @@
    */
   class BridgeEmoji extends HTMLElement {
     static #activeInstances = new Set();
-    static #observer(subject, topic, data) {
+    static #observer(subject, topic) {
       if (topic === "intl:app-locales-changed") {
         BridgeEmoji.#updateEmojiLangCode();
       }

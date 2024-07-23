@@ -8,6 +8,11 @@ const { TorConnect, TorConnectTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/TorConnect.sys.mjs"
 );
 
+const log = console.createInstance({
+  maxLogLevel: "Warn",
+  prefix: "requestBridgeDialog",
+});
+
 const gRequestBridgeDialog = {
   selectors: {
     dialogHeader: "h3#torPreferences-requestBridge-header",
@@ -98,7 +103,7 @@ const gRequestBridgeDialog = {
     );
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorConnectTopics.StateChange:
         this.onAcceptStateChange();
@@ -161,7 +166,7 @@ const gRequestBridgeDialog = {
         // TODO: handle other errors properly here when we do the bridge settings re-design
         this._setUIDisabled(false);
         this._incorrectCaptchaHbox.style.visibility = "visible";
-        console.log(aError);
+        log.error(aError);
       });
   },
 
