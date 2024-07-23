@@ -1760,6 +1760,7 @@ var gMainPane = {
       let isInFlatpak = gGIOService?.isRunningUnderFlatpak;
       // Flatpak does not support setting nor detection of default browser
       // tor-browser#41822 disable making Tor Browser the default browser
+      // eslint-disable-next-line no-constant-condition
       if (shellSvc || isInFlatpak || true) {
         defaultBrowserBox.hidden = true;
         return;
