@@ -8,8 +8,8 @@
 /* import-globals-from /browser/components/preferences/preferences.js */
 /* import-globals-from /browser/components/preferences/search.js */
 
-const { setTimeout, clearTimeout } = ChromeUtils.import(
-  "resource://gre/modules/Timer.jsm"
+const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
 );
 
 const { TorSettings, TorSettingsTopics, TorBridgeSource } =
@@ -40,6 +40,11 @@ const { TorStrings } = ChromeUtils.importESModule(
 const { Lox, LoxTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/Lox.sys.mjs"
 );
+
+const log = console.createInstance({
+  maxLogLevel: "Warn",
+  prefix: "connectionPane",
+});
 
 /*
  * Fake Lox module:
@@ -100,7 +105,7 @@ const Lox = {
  */
 async function setTorSettings(changes) {
   if (!TorSettings.initialized) {
-    console.warning("Ignoring changes to uninitialized TorSettings");
+    log.warning("Ignoring changes to uninitialized TorSettings");
     return;
   }
   TorSettings.freezeNotifications();
@@ -363,7 +368,7 @@ const gBridgeGrid = {
     Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
@@ -1038,7 +1043,7 @@ const gBuiltinBridgesArea = {
     Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
@@ -1350,7 +1355,7 @@ const gLoxStatus = {
     Services.obs.removeObserver(this, LoxTopics.NewInvite);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
@@ -1815,7 +1820,7 @@ const gBridgeSettings = {
     Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
@@ -2335,7 +2340,7 @@ const gNetworkStatus = {
     Services.obs.removeObserver(this, TorConnectTopics.StateChange);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       // triggered when tor connect state changes and we may
       // need to update the messagebox
@@ -2372,7 +2377,7 @@ const gNetworkStatus = {
         await mrpc.init();
         status = await mrpc.testInternetConnection();
       } catch (err) {
-        console.log("Error while checking the Internet connection", err);
+        log.error("Error while checking the Internet connection", err);
       } finally {
         mrpc.uninit();
       }
@@ -2494,7 +2499,7 @@ const gConnectionPane = (function () {
       this._enableQuickstartCheckbox = document.getElementById(
         "torPreferences-quickstart-toggle"
       );
-      this._enableQuickstartCheckbox.addEventListener("command", e => {
+      this._enableQuickstartCheckbox.addEventListener("command", () => {
         const checked = this._enableQuickstartCheckbox.checked;
         TorSettings.quickstart.enabled = checked;
         TorSettings.saveToPrefs().applySettings();
@@ -2522,7 +2527,7 @@ const gConnectionPane = (function () {
           "label",
           TorStrings.settings.bridgeChooseForMe
         );
-        chooseForMe.addEventListener("command", e => {
+        chooseForMe.addEventListener("command", () => {
           TorConnect.openTorConnect({
             beginAutoBootstrap: location.value,
           });
@@ -2638,7 +2643,7 @@ const gConnectionPane = (function () {
     // Callbacks
     //
 
-    observe(subject, topic, data) {
+    observe(subject, topic) {
       switch (topic) {
         // triggered when a TorSettings param has changed
         case TorSettingsTopics.SettingsChanged: {

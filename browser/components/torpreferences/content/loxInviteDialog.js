@@ -125,7 +125,7 @@ const gLoxInvites = {
     Services.obs.removeObserver(this, LoxTopics.NewInvite);
   },
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;

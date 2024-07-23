@@ -50,7 +50,7 @@ const gConnectionSettingsDialog = {
 
     // Local Proxy
     this._useProxyCheckbox = document.querySelector(selectors.useProxyCheckbox);
-    this._useProxyCheckbox.addEventListener("command", e => {
+    this._useProxyCheckbox.addEventListener("command", () => {
       const checked = this._useProxyCheckbox.checked;
       this.onToggleProxy(checked);
     });
@@ -71,7 +71,7 @@ const gConnectionSettingsDialog = {
       },
     ];
     this._proxyTypeMenulist = document.querySelector(selectors.proxyTypeList);
-    this._proxyTypeMenulist.addEventListener("command", e => {
+    this._proxyTypeMenulist.addEventListener("command", () => {
       const value = this._proxyTypeMenulist.value;
       this.onSelectProxyType(value);
     });
@@ -88,7 +88,7 @@ const gConnectionSettingsDialog = {
     this._proxyAddressTextbox = document.querySelector(
       selectors.proxyAddressTextbox
     );
-    this._proxyAddressTextbox.addEventListener("blur", e => {
+    this._proxyAddressTextbox.addEventListener("blur", () => {
       let value = this._proxyAddressTextbox.value.trim();
       let colon = value.lastIndexOf(":");
       if (colon != -1) {
@@ -128,7 +128,7 @@ const gConnectionSettingsDialog = {
     this._useFirewallCheckbox = document.querySelector(
       selectors.useFirewallCheckbox
     );
-    this._useFirewallCheckbox.addEventListener("command", e => {
+    this._useFirewallCheckbox.addEventListener("command", () => {
       const checked = this._useFirewallCheckbox.checked;
       this.onToggleFirewall(checked);
     });
@@ -147,7 +147,7 @@ const gConnectionSettingsDialog = {
     }
 
     const dialog = document.getElementById("torPreferences-connection-dialog");
-    dialog.addEventListener("dialogaccept", e => {
+    dialog.addEventListener("dialogaccept", () => {
       this._applySettings();
     });
   },
