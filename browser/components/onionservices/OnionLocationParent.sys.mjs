@@ -27,6 +27,9 @@ const NOTIFICATION_DESCRIPTION = TorStrings.onionLocation.description;
 const NOTIFICATION_LEARN_MORE_URL =
   TorStrings.onionLocation.learnMoreURLNotification;
 
+/**
+ * This class contains the parent part of Onion Location.
+ */
 export class OnionLocationParent extends JSWindowActorParent {
   // Listeners are added in BrowserGlue.jsm
   receiveMessage(aMsg) {

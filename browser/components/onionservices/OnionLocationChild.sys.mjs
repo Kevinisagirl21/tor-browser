@@ -1,5 +1,8 @@
 // Copyright (c) 2020, The Tor Project, Inc.
 
+/**
+ * This class contains the child part of Onion Location.
+ */
 export class OnionLocationChild extends JSWindowActorChild {
   handleEvent(event) {
     this.onPageShow(event);
