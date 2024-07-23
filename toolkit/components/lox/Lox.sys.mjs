@@ -8,11 +8,8 @@ import {
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
-  let { ConsoleAPI } = ChromeUtils.importESModule(
-    "resource://gre/modules/Console.sys.mjs"
-  );
-  return new ConsoleAPI({
-    maxLogLevel: "warn",
+  return console.createInstance({
+    maxLogLevel: "Warn",
     maxLogLevelPref: "lox.log_level",
     prefix: "Lox",
   });
@@ -32,6 +29,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorBridgeSource: "resource://gre/modules/TorSettings.sys.mjs",
 });
 
+// eslint-disable-next-line mozilla/reject-chromeutils-import
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   init: "resource://gre/modules/lox_wasm.jsm",
   open_invite: "resource://gre/modules/lox_wasm.jsm",
@@ -103,6 +101,10 @@ export class LoxError extends Error {
   }
 }
 
+/**
+ * This class contains the implementation of the Lox client.
+ * It provides data for the frontend and it runs background operations.
+ */
 class LoxImpl {
   /**
    * Whether the Lox module has completed initialization.
@@ -191,7 +193,7 @@ class LoxImpl {
     Services.obs.notifyObservers(null, LoxTopics.UpdateActiveLoxId);
   }
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case lazy.TorSettingsTopics.SettingsChanged:
         const { changes } = subject.wrappedJSObject;
@@ -544,6 +546,8 @@ class LoxImpl {
 
   /**
    * Generates a new random lox id to be associated with an invitation/credential
+   *
+   * @returns {string}
    */
   #genLoxId() {
     return crypto.randomUUID();
@@ -780,7 +784,8 @@ class LoxImpl {
   /** Attempts to upgrade the currently saved Lox credential.
    *  If an upgrade is available, save an event in the event list.
    *
-   *  @returns {boolean} Whether a levelup event occurred.
+   * @param {string} loxId Lox ID
+   * @returns {boolean} Whether a levelup event occurred.
    */
   async #attemptUpgrade(loxId) {
     await this.#getPubKeys();
@@ -818,7 +823,7 @@ class LoxImpl {
    */
   async #trustMigration(loxId) {
     await this.#getPubKeys();
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       let request = "";
       try {
         request = lazy.trust_promotion(
