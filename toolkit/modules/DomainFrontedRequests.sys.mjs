@@ -4,6 +4,11 @@
 
 const lazy = {};
 
+const log = console.createInstance({
+  maxLogLevel: "Warn",
+  prefix: "DomainFrontendRequests",
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
@@ -145,7 +150,7 @@ class MeekTransport {
         while (this.#meekClientProcess) {
           const errString = await this.#meekClientProcess.stderr.readString();
           if (errString) {
-            console.log(`MeekTransport: stderr => ${errString}`);
+            log.error(`MeekTransport: stderr => ${errString}`);
           }
         }
       };
@@ -254,7 +259,7 @@ class MeekTransport {
       }
 
       // register callback to cleanup on process exit
-      this.#meekClientProcess.wait().then(exitObj => {
+      this.#meekClientProcess.wait().then(() => {
         this.#meekClientProcess = null;
         this.uninit();
       });
@@ -398,7 +403,7 @@ class ResponseListener {
   }
 
   // noop
-  onStartRequest(request) {}
+  onStartRequest() {}
 
   // resolve or reject our Promise
   onStopRequest(request, status) {
@@ -506,7 +511,7 @@ export class DomainFrontRequestBuilder {
     // remove all headers except for 'Host"
     const headers = [];
     ch.visitRequestHeaders({
-      visitHeader: (key, val) => {
+      visitHeader: key => {
         if (key !== "Host") {
           headers.push(key);
         }

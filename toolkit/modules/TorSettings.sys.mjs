@@ -13,11 +13,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
-  let { ConsoleAPI } = ChromeUtils.importESModule(
-    "resource://gre/modules/Console.sys.mjs"
-  );
-  return new ConsoleAPI({
-    maxLogLevel: "warn",
+  return console.createInstance({
+    maxLogLevel: "Warn",
     maxLogLevelPref: "browser.torsettings.log_level",
     prefix: "TorSettings",
   });
@@ -735,7 +732,7 @@ class TorSettingsImpl {
     await lazy.Lox.uninit();
   }
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     switch (topic) {
       case lazy.LoxTopics.UpdateBridges:
         if (this.bridges.lox_id) {

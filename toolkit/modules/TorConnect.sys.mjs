@@ -8,7 +8,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  ConsoleAPI: "resource://gre/modules/Console.sys.mjs",
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
@@ -72,15 +71,12 @@ export class TorConnectError extends Error {
   }
 }
 
-ChromeUtils.defineLazyGetter(
-  lazy,
-  "logger",
-  () =>
-    new lazy.ConsoleAPI({
-      maxLogLevel: "info",
-      maxLogLevelPref: TorConnectPrefs.log_level,
-      prefix: "TorConnect",
-    })
+ChromeUtils.defineLazyGetter(lazy, "logger", () =>
+  console.createInstance({
+    maxLogLevel: "Info",
+    maxLogLevelPref: TorConnectPrefs.log_level,
+    prefix: "TorConnect",
+  })
 );
 
 /*
@@ -746,8 +742,8 @@ class InternetTest {
         this.test();
       }, this.#timeoutRand());
     }
-    this.onResult = online => {};
-    this.onError = err => {};
+    this.onResult = _online => {};
+    this.onError = _error => {};
   }
 
   /**
@@ -961,7 +957,7 @@ export const TorConnect = {
     }
   },
 
-  async observe(subject, topic, data) {
+  async observe(subject, topic) {
     lazy.logger.debug(`Observed ${topic}`);
 
     switch (topic) {
