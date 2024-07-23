@@ -278,7 +278,7 @@ function DownloadsPlacesView(
 
   torWarningMessageBar
     .querySelector(".downloads-tor-warning-dismiss-button")
-    .addEventListener("click", event => {
+    .addEventListener("click", () => {
       Services.prefs.setBoolPref(PREF_SHOW_DOWNLOAD_WARNING, false);
     });
 
