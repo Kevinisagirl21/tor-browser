@@ -15,7 +15,7 @@ const { DownloadUtils } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
-XPCOMUtils.defineLazyGetter(this, "gTorButtonBundle", function () {
+ChromeUtils.defineLazyGetter(this, "gTorButtonBundle", function () {
   return Services.strings.createBundle(
     "chrome://torbutton/locale/torbutton.properties"
   );
