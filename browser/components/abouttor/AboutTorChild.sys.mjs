@@ -1,3 +1,6 @@
+/**
+ * Actor child class for the about:tor page.
+ */
 export class AboutTorChild extends JSWindowActorChild {
   actorCreated() {
     if (this.contentWindow.matchMedia("not (prefers-contrast)").matches) {

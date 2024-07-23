@@ -7,6 +7,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
 });
 
+/**
+ * Actor parent class for the about:tor page.
+ */
 export class AboutTorParent extends JSWindowActorParent {
   receiveMessage(message) {
     const onionizePref = "torbrowser.homepage.search.onionize";
