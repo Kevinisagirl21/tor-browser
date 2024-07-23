@@ -276,5 +276,6 @@
   "BrowserSearch",
   "SecurityLevelButton",
   "NewIdentityButton",
-  "TorDomainIsolator"
+  "TorDomainIsolator",
+  "gTorCircuitPanel"
 ]

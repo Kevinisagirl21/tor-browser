@@ -3,12 +3,12 @@
 pull locale emoji descriptions form Unicode CLDR.
 """
 
-import re
-import json
+import argparse
 import datetime
+import json
+import re
 from pathlib import Path
 from shutil import copyfile
-import argparse
 from xml.dom.minidom import parse
 
 # Currently the script is in tools/torbrowser/
