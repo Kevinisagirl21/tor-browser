@@ -6100,8 +6100,7 @@ void UnloadPrefsModule() { Preferences::Shutdown(); }
 
 // Preference Sanitization Related Code ---------------------------------------
 
-#define PREF_LIST_ENTRY(s) \
-  { s, (sizeof(s) / sizeof(char)) - 1 }
+#define PREF_LIST_ENTRY(s) {s, (sizeof(s) / sizeof(char)) - 1}
 struct PrefListEntry {
   const char* mPrefBranch;
   size_t mLen;
