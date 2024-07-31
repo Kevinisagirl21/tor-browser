@@ -309,35 +309,10 @@ def lint_changed_files(args):
         for f in get_changed_files(get_upstream_basis_commit("HEAD"))
         if os.path.isfile(f)  # Not deleted
     ]
-    command_base = ["./mach", "lint"]
-    lint_process = subprocess.run(
-        [*command_base, "--list"], text=True, stdout=subprocess.PIPE, check=True
-    )
-
-    linters = []
-    for line in lint_process.stdout.split("\n"):
-        if not line:
-            continue
-        if line.startswith("Note that clang-tidy"):
-            # Note at end
-            continue
-        if line == "license":
-            # don't lint the license
-            continue
-        if line.startswith("android-"):
-            continue
-        # lint everything else
-        linters.append("-l")
-        linters.append(line)
-
-    if not linters:
-        raise Exception("No linters found")
-
-    if args.fix:
-        command_base.append("--fix")
     # We add --warnings since clang only reports whitespace issues as warnings.
-    lint_process = subprocess.run(
-        [*command_base, "--warnings", *linters, *file_list], check=False
+    subprocess.run(
+        ["./mach", "lint", "--warnings", "soft", *args.lintargs, *file_list],
+        check=False,
     )
 
 
@@ -663,9 +638,10 @@ for name, details in {
     "lint-changed-files": {
         "func": lint_changed_files,
         "args": {
-            "--fix": {
-                "help": "whether to fix the files",
-                "action": "store_true",
+            "lintargs": {
+                "help": "argument to pass to ./mach lint",
+                "metavar": "-- lint-arg",
+                "nargs": "*",
             },
         },
     },
