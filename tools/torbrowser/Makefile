@@ -21,9 +21,9 @@ endif
 
 # Define the run command based on the platform.
 ifeq ("$(shell uname)", "Darwin")
-  RUN_CMD := cd "$(BINARIES)/Tor Browser.app/Contents/MacOS/" && ./firefox
+  RUN_CMD := cd "$(BINARIES)/Tor Browser.app/Contents/MacOS/" && ./firefox --purgecaches
 else
-  RUN_CMD := "$(BINARIES)/dev/Browser/start-tor-browser" -v $(ARGS)
+  RUN_CMD := "$(BINARIES)/dev/Browser/start-tor-browser" -v --purgecaches $(ARGS)
 endif
 
 config:
