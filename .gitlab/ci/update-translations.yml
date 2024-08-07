@@ -18,22 +18,14 @@ combine-en-US-translations:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
     TRANSLATION_FILES: '
       tor-browser:tor-browser.ftl
-      tor-browser:aboutDialog.dtd
       tor-browser:aboutTBUpdate.dtd
-      tor-browser:aboutTor.dtd
       tor-browser:torbutton.dtd
-      tor-browser:browserOnboarding.properties
-      tor-browser:cryptoSafetyPrompt.properties
-      tor-browser:onboarding.properties
       tor-browser:onionLocation.properties
-      tor-browser:rulesets.properties
       tor-browser:settings.properties
       tor-browser:torbutton.properties
       tor-browser:torConnect.properties
       tor-browser:torlauncher.properties
       base-browser:base-browser.ftl
-      base-browser:newIdentity.properties
-      base-browser:securityLevel.properties
     '
   cache:
     paths:
