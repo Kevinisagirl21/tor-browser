@@ -317,12 +317,11 @@ var gTorCircuitPanel = {
       this._currentBrowserData.domain === domain &&
       this._currentBrowserData.scheme === scheme &&
       this._currentBrowserData.nodes.length === nodes.length &&
-      // If non-null, the fingerprints of the nodes match.
-      (!nodes ||
-        nodes.every(
-          (n, index) =>
-            n.fingerprint === this._currentBrowserData.nodes[index].fingerprint
-        ))
+      // The fingerprints of the nodes match.
+      nodes.every(
+        (n, index) =>
+          n.fingerprint === this._currentBrowserData.nodes[index].fingerprint
+      )
     ) {
       // No change.
       this._log.debug(
