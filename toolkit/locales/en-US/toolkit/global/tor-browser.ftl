@@ -49,6 +49,10 @@ home-mode-choice-tor =
 
 # "Connection" refers to the Tor Browser's connection to the Tor network.
 tor-connection-settings-heading = Connection
+# The tooltip text for the "Connection" settings, shown in the preferences side bar.
+# Likely should just be "{ tor-connection-settings-heading }", which will match the displayed text exactly.
+tor-connection-settings-category =
+    .tooltiptext = { tor-connection-settings-heading }
 # -brand-short-name refers to 'Tor Browser', localized.
 tor-connection-overview = { -brand-short-name } routes your traffic over the Tor Network, run by thousands of volunteers around the world.
 tor-connection-browser-learn-more-link = Learn more
