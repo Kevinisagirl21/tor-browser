@@ -9,6 +9,7 @@ const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
   return console.createInstance({
+    maxLogLevel: "Warn",
     maxLogLevelPref: "lox.log_level",
     prefix: "Lox",
   });
@@ -50,6 +51,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   handle_check_blockage: "resource://gre/modules/lox_wasm.jsm",
   blockage_migration: "resource://gre/modules/lox_wasm.jsm",
   handle_blockage_migration: "resource://gre/modules/lox_wasm.jsm",
+  check_lox_pubkeys_update: "resource://gre/modules/lox_wasm.jsm",
+  handle_update_cred: "resource://gre/modules/lox_wasm.jsm",
 });
 
 export const LoxTopics = Object.freeze({
@@ -61,7 +64,7 @@ export const LoxTopics = Object.freeze({
   // Whenever we gain a new upgrade or blockage event, or clear events.
   UpdateEvents: "lox:update-events",
   // Whenever the next unlock *might* have changed.
-  // getNextUnlock uses #credentials and #constants, sow ill fire when either
+  // getNextUnlock uses #credentials and #constants, so will fire when either
   // value changes.
   UpdateNextUnlock: "lox:update-next-unlock",
   // Whenever the remaining invites *might* have changed.
@@ -194,7 +197,7 @@ class LoxImpl {
 
   observe(subject, topic) {
     switch (topic) {
-      case lazy.TorSettingsTopics.SettingsChanged:
+      case lazy.TorSettingsTopics.SettingsChanged: {
         const { changes } = subject.wrappedJSObject;
         if (
           changes.includes("bridges.enabled") ||
@@ -218,6 +221,7 @@ class LoxImpl {
           }
         }
         break;
+      }
       case lazy.TorSettingsTopics.Ready:
         // Set the initial #activeLoxId.
         this.#updateActiveLoxId();
@@ -403,24 +407,98 @@ class LoxImpl {
     );
   }
 
+  /**
+   * Update Lox credential after Lox key rotation
+   * Do not call directly, use #getPubKeys() instead to start the update only
+   * once
+   *
+   * @param {string} prevkeys The public keys we are replacing
+   */
+  async #updatePubkeys(prevkeys) {
+    let pubKeys;
+    try {
+      pubKeys = await this.#makeRequest("pubkeys", []);
+    } catch (error) {
+      lazy.logger.debug("Failed to get pubkeys", error);
+      // Make the next call try again.
+      this.#pubKeyPromise = null;
+      if (!this.#pubKeys) {
+        throw error;
+      }
+      return;
+    }
+    const prevKeys = this.#pubKeys;
+    if (prevKeys !== null) {
+      // check if the lox pubkeys have changed and update the lox
+      // credentials if so
+      let lox_cred_req;
+      try {
+        lox_cred_req = JSON.parse(
+          lazy.check_lox_pubkeys_update(
+            JSON.stringify(pubKeys),
+            prevkeys,
+            this.#getCredentials(this.#activeLoxId)
+          )
+        );
+      } catch (error) {
+        lazy.logger.debug("Check lox pubkey update failed", error);
+        // Make the next call try again.
+        this.#pubKeyPromise = null;
+        return;
+      }
+      if (lox_cred_req.updated) {
+        lazy.logger.debug(
+          `Lox pubkey updated, update Lox credential "${this.#activeLoxId}"`
+        );
+        let response;
+        try {
+          // TODO: If this call doesn't succeed due to a networking error, the Lox
+          // credential may be in an unusable state (spent but not updated)
+          // until this request can be completed successfully (and until Lox
+          // is refactored to send repeat responses:
+          // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/74)
+          response = await this.#makeRequest("updatecred", lox_cred_req.req);
+        } catch (error) {
+          lazy.logger.debug("Lox cred update failed.", error);
+          // Make the next call try again.
+          this.#pubKeyPromise = null;
+          return;
+        }
+        if (response.hasOwnProperty("error")) {
+          lazy.logger.error(response.error);
+          this.#pubKeyPromise = null;
+          lazy.logger.debug(
+            `Error response to Lox pubkey update request: "${response.error}", reverting to old pubkeys`
+          );
+          return;
+        }
+        let cred;
+        try {
+          cred = lazy.handle_update_cred(
+            lox_cred_req.req,
+            JSON.stringify(response),
+            pubKeys
+          );
+        } catch (error) {
+          lazy.logger.debug("Unable to handle updated Lox cred", error);
+          // Make the next call try again.
+          this.#pubKeyPromise = null;
+          return;
+        }
+        this.#changeCredentials(this.#activeLoxId, cred);
+      }
+    }
+    // If we arrive here we haven't had other errors before, we can actually
+    // store the new public key.
+    this.#pubKeys = JSON.stringify(pubKeys);
+    this.#store();
+  }
+
   async #getPubKeys() {
     // FIXME: We are always refetching #pubKeys, #encTable and #constants once
     // per session, but they may change more frequently. tor-browser#42502
     if (this.#pubKeyPromise === null) {
-      this.#pubKeyPromise = this.#makeRequest("pubkeys", [])
-        .then(pubKeys => {
-          this.#pubKeys = JSON.stringify(pubKeys);
-          this.#store();
-        })
-        .catch(error => {
-          lazy.logger.debug("Failed to get pubkeys", error);
-          // Make the next call try again.
-          this.#pubKeyPromise = null;
-          // We always try to update, but if that doesn't work fall back to stored data
-          if (!this.#pubKeys) {
-            throw error;
-          }
-        });
+      this.#pubKeyPromise = this.#updatePubkeys();
     }
     await this.#pubKeyPromise;
   }
@@ -508,6 +586,11 @@ class LoxImpl {
       lazy.logger.warn("No loxId for the background task");
       return;
     }
+
+    // Attempt to update pubkeys each time background tasks are run
+    // this should catch key rotations (ideally some days) prior to the next
+    // credential update
+    await this.#getPubKeys();
     try {
       const levelup = await this.#attemptUpgrade(loxId);
       if (levelup) {
@@ -631,13 +714,16 @@ class LoxImpl {
   }
 
   /**
-   * Redeems a Lox invitation to obtain a credential and bridges.
+   * Redeems a Lox open invitation to obtain an untrusted Lox credential
+   * and 1 bridge.
    *
-   * @param {string} invite A Lox invitation.
+   * @param {string} invite A Lox open invitation.
    * @returns {string} The loxId of the associated credential on success.
    */
   async redeemInvite(invite) {
     this.#assertInitialized();
+    // It's fine to get pubkey here without a delay since the user will not have a Lox
+    // credential yet
     await this.#getPubKeys();
     let request = await lazy.open_invite(JSON.parse(invite).invite);
     let response = await this.#makeRequest(
@@ -691,7 +777,18 @@ class LoxImpl {
    */
   async generateInvite(loxId) {
     this.#assertInitialized();
-    await this.#getPubKeys();
+    // Check for pubkey update prior to invitation generation
+    // to avoid invite being generated with outdated keys
+    // TODO: it's still possible the keys could be rotated before the invitation is redeemed
+    // so updating the invite after issuing should also be possible somehow
+    if (this.#pubKeys == null) {
+      // TODO: Set pref to call this function after some time #43086
+      // See also: https://gitlab.torproject.org/tpo/applications/tor-browser/-/merge_requests/1090#note_3066911
+      await this.#getPubKeys();
+      throw new LoxError(
+        `Pubkeys just updated, retry later to avoid deanonymization`
+      );
+    }
     await this.#getEncTable();
     let level = this.#getLevel(loxId);
     if (level < 1) {
@@ -740,7 +837,6 @@ class LoxImpl {
   }
 
   async #blockageMigration(loxId) {
-    await this.#getPubKeys();
     let request;
     try {
       request = lazy.check_blockage(this.#getCredentials(loxId), this.#pubKeys);
@@ -783,11 +879,10 @@ class LoxImpl {
   /** Attempts to upgrade the currently saved Lox credential.
    *  If an upgrade is available, save an event in the event list.
    *
-   * @param {string} loxId Lox ID
-   * @returns {boolean} Whether a levelup event occurred.
+   *  @param {string} loxId Lox ID
+   *  @returns {boolean} Whether a levelup event occurred.
    */
   async #attemptUpgrade(loxId) {
-    await this.#getPubKeys();
     await this.#getEncTable();
     await this.#getConstants();
     let level = this.#getLevel(loxId);
@@ -821,60 +916,84 @@ class LoxImpl {
    * @returns {boolean} Whether the credential was successfully migrated.
    */
   async #trustMigration(loxId) {
-    await this.#getPubKeys();
-    return new Promise(resolve => {
-      let request = "";
-      try {
-        request = lazy.trust_promotion(
-          this.#getCredentials(loxId),
-          this.#pubKeys
-        );
-      } catch (err) {
-        lazy.logger.debug("Not ready to upgrade");
-        resolve(false);
-      }
-      this.#makeRequest("trustpromo", JSON.parse(request).request)
-        .then(response => {
-          if (response.hasOwnProperty("error")) {
-            lazy.logger.error("Error response from trustpromo", response.error);
-            resolve(false);
-          }
-          lazy.logger.debug("Got promotion cred", response, request);
-          let promoCred = lazy.handle_trust_promotion(
-            request,
-            JSON.stringify(response)
-          );
-          lazy.logger.debug("Formatted promotion cred");
-          request = lazy.trust_migration(
-            this.#getCredentials(loxId),
-            promoCred,
-            this.#pubKeys
-          );
-          lazy.logger.debug("Formatted migration request");
-          this.#makeRequest("trustmig", JSON.parse(request).request)
-            .then(response => {
-              if (response.hasOwnProperty("error")) {
-                lazy.logger.error(
-                  "Error response from trustmig",
-                  response.error
-                );
-                resolve(false);
-              }
-              lazy.logger.debug("Got new credential");
-              let cred = lazy.handle_trust_migration(request, response);
-              this.#changeCredentials(loxId, cred);
-              resolve(true);
-            })
-            .catch(err => {
-              lazy.logger.error("Failed trust migration", err);
-              resolve(false);
-            });
-        })
-        .catch(err => {
-          lazy.logger.error("Failed trust promotion", err);
-          resolve(false);
-        });
-    });
+    if (this.#pubKeys == null) {
+      // TODO: Set pref to call this function after some time #43086
+      // See also: https://gitlab.torproject.org/tpo/applications/tor-browser/-/merge_requests/1090#note_3066911
+      this.#getPubKeys();
+      return false;
+    }
+    let request, response;
+    try {
+      request = lazy.trust_promotion(
+        this.#getCredentials(loxId),
+        this.#pubKeys
+      );
+    } catch (err) {
+      lazy.logger.debug("Not ready to upgrade", err);
+      return false;
+    }
+    try {
+      response = await this.#makeRequest(
+        "trustpromo",
+        JSON.parse(request).request
+      );
+    } catch (err) {
+      lazy.logger.error("Failed trust promotion", err);
+      return false;
+    }
+    if (response.hasOwnProperty("error")) {
+      lazy.logger.error("Error response from trustpromo", response.error);
+      return false;
+    }
+    lazy.logger.debug("Got promotion cred", response, request);
+    let promoCred;
+    try {
+      promoCred = lazy.handle_trust_promotion(
+        request,
+        JSON.stringify(response)
+      );
+      lazy.logger.debug("Formatted promotion cred");
+    } catch (err) {
+      lazy.logger.error(
+        "Unable to handle trustpromo response properly",
+        response.error
+      );
+      return false;
+    }
+    try {
+      request = lazy.trust_migration(
+        this.#getCredentials(loxId),
+        promoCred,
+        this.#pubKeys
+      );
+      lazy.logger.debug("Formatted migration request");
+    } catch (err) {
+      lazy.logger.error("Failed to generate trust migration request", err);
+      return false;
+    }
+    try {
+      response = await this.#makeRequest(
+        "trustmig",
+        JSON.parse(request).request
+      );
+    } catch (err) {
+      lazy.logger.error("Failed trust migration", err);
+      return false;
+    }
+    if (response.hasOwnProperty("error")) {
+      lazy.logger.error("Error response from trustmig", response.error);
+      return false;
+    }
+    lazy.logger.debug("Got new credential");
+    let cred;
+    try {
+      cred = lazy.handle_trust_migration(request, response);
+    } catch (err) {
+      lazy.logger.error("Failed to handle response from trustmig", err);
+      return false;
+    }
+    this.#changeCredentials(loxId, cred);
+    return true;
   }
 
   /**
