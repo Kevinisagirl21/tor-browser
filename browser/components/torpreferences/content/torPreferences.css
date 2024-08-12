@@ -724,6 +724,7 @@ button.spoof-button-disabled {
   /* 16px gap between items. */
   gap: 16px 12px;
   margin-block: 16px;
+  padding: 0;
 }
 
 .tor-bridges-provider-item {
