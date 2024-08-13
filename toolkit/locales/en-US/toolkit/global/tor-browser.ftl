@@ -559,9 +559,13 @@ crypto-safety-prompt-dismiss-button = Dismiss Warning
 ## Downloads warning.
 ## Shown in downloads panel, about:downloads and Library window.
 
-downloads-tor-warning-title = Be careful opening downloads
-# "Tails" is the brand name for the Tails operating system and should be localized appropriately, and will be a link to its website. The name should be wrapped in '<a data-l10n-name="tails-link">' and '</a>'.
-downloads-tor-warning-description = Some files may connect to the internet when opened without using Tor. To be safe, open the files while offline or use a portable operating system like <a data-l10n-name="tails-link">Tails</a>.
+# "Tails" is the brand name for the Tails operating system and should be localized appropriately.
+downloads-tor-warning-message-bar =
+    .heading = Be careful opening downloads
+    .message = Some files may connect to the internet when opened without using Tor. To be safe, open the files while offline or use a portable operating system like Tails.
+# This will be a link to the Tails operating system website.
+# "Tails" is the brand name for the Tails operating system and should be localized appropriately.
+downloads-tor-warning-tails-link= Learn more about Tails
 # Button to dismiss the warning forever.
 downloads-tor-warning-dismiss-button = Got it
 
