@@ -8,12 +8,30 @@ const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
 );
 
+const { DownloadsTorWarning } = ChromeUtils.importESModule(
+  "resource:///modules/DownloadsTorWarning.sys.mjs"
+);
+
 var ContentAreaDownloadsView = {
   init() {
-    const torWarningMessage = document.getElementById(
-      "aboutDownloadsTorWarning"
-    );
     let box = document.getElementById("downloadsListBox");
+
+    const torWarning = new DownloadsTorWarning(
+      document.getElementById("aboutDownloadsTorWarning"),
+      false,
+      () => {
+        // Try and focus the downloads list.
+        // NOTE: If #downloadsListBox is still hidden, this will do nothing.
+        // But in this case there are no other focusable targets within the
+        // view, so we just leave it up to the focus handler.
+        box.focus({ preventFocusRing: true });
+      }
+    );
+    torWarning.activate();
+    window.addEventListener("unload", () => {
+      torWarning.deactivate();
+    });
+
     let suppressionFlag = DownloadsCommon.SUPPRESS_CONTENT_AREA_DOWNLOADS_OPEN;
     box.addEventListener(
       "InitialDownloadsLoaded",
@@ -30,7 +48,7 @@ var ContentAreaDownloadsView = {
         // experience was bad.
         // Without auto-focusing the downloads list, a screen reader should not
         // skip beyond the alert's content.
-        if (torWarningMessage.hidden) {
+        if (torWarning.hidden) {
           document
             .getElementById("downloadsListBox")
             .focus({ focusVisible: false });
@@ -44,12 +62,7 @@ var ContentAreaDownloadsView = {
       },
       { once: true }
     );
-    let view = new DownloadsPlacesView(
-      box,
-      torWarningMessage,
-      true,
-      suppressionFlag
-    );
+    let view = new DownloadsPlacesView(box, true, suppressionFlag);
     document.addEventListener("visibilitychange", () => {
       let indicator = DownloadsCommon.getIndicatorData(window);
       if (document.visibilityState === "visible") {
