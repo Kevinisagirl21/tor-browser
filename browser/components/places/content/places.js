@@ -6,7 +6,6 @@
 /* import-globals-from editBookmark.js */
 /* import-globals-from /toolkit/content/contentAreaUtils.js */
 /* import-globals-from /browser/components/downloads/content/allDownloadsView.js */
-/* import-globals-from /browser/base/content/utilityOverlay.js */
 
 /* Shared Places Import - change other consumers if you change this: */
 var { XPCOMUtils } = ChromeUtils.importESModule(
@@ -18,6 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesBackups: "resource://gre/modules/PlacesBackups.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
+  DownloadsTorWarning: "resource:///modules/DownloadsTorWarning.sys.mjs",
 });
 XPCOMUtils.defineLazyScriptGetter(
   this,
@@ -158,15 +158,25 @@ var PlacesOrganizer = {
       "&sort=" +
       Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING;
 
-    const torWarningMessage = document.getElementById(
-      "placesDownloadsTorWarning"
+    const torWarning = new DownloadsTorWarning(
+      document.getElementById("placesDownloadsTorWarning"),
+      true,
+      () => {
+        document
+          .getElementById("downloadsListBox")
+          .focus({ preventFocusRing: true });
+      }
     );
+    torWarning.activate();
+    window.addEventListener("unload", () => {
+      torWarning.deactivate();
+    });
+
     ContentArea.setContentViewForQueryString(
       DOWNLOADS_QUERY,
       () =>
         new DownloadsPlacesView(
           document.getElementById("downloadsListBox"),
-          torWarningMessage,
           false
         ),
       {
@@ -175,23 +185,6 @@ var PlacesOrganizer = {
           "back-button, forward-button, organizeButton, clearDownloadsButton, libraryToolbarSpacer, searchFilter",
       }
     );
-
-    // Intercept clicks on the tor warning tails link.
-    // NOTE: We listen for clicks on the parent instead of the
-    // <a data-l10n-name="tails-link"> element because the latter may be
-    // swapped for a new instance by Fluent when refreshing the parent.
-    document
-      .querySelector(".downloads-tor-warning-description")
-      .addEventListener("click", event => {
-        const tailsLink = event.target.closest(
-          ".downloads-tor-warning-tails-link"
-        );
-        if (!tailsLink) {
-          return;
-        }
-        event.preventDefault();
-        openWebLinkIn(tailsLink.href, "tab");
-      });
 
     ContentArea.init();
 
@@ -1432,6 +1425,7 @@ var ContentArea = {
       oldView.associatedElement.hidden = true;
       aNewView.associatedElement.hidden = false;
 
+      // Hide the Tor warning when not in the downloads view.
       const isDownloads = aNewView.associatedElement.id === "downloadsListBox";
       const torWarningMessage = document.getElementById(
         "placesDownloadsTorWarning"
