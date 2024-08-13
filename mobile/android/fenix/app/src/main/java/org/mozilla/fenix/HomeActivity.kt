@@ -205,7 +205,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
 
     private var inflater: LayoutInflater? = null
 
-    val navHost by lazy {
+    private val navHost by lazy {
         supportFragmentManager.findFragmentById(R.id.container) as NavHostFragment
     }
 
