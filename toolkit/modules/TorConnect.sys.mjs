@@ -74,7 +74,6 @@ export class TorConnectError extends Error {
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   console.createInstance({
-    maxLogLevel: "Info",
     maxLogLevelPref: TorConnectPrefs.log_level,
     prefix: "TorConnect",
   })
