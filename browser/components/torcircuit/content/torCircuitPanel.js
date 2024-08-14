@@ -56,7 +56,6 @@ var gTorCircuitPanel = {
 
     this._log = console.createInstance({
       prefix: "TorCircuitPanel",
-      maxLogLevel: "Log",
       maxLogLevelPref: "browser.torcircuitpanel.loglevel",
     });
 
