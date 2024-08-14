@@ -19,6 +19,7 @@ browser.jar:
     content/browser/torpreferences/connectionSettingsDialog.js       (content/connectionSettingsDialog.js)
     content/browser/torpreferences/network.svg                       (content/network.svg)
     content/browser/torpreferences/network-broken.svg                (content/network-broken.svg)
+    content/browser/torpreferences/mail.svg                          (content/mail.svg)
     content/browser/torpreferences/provideBridgeDialog.xhtml         (content/provideBridgeDialog.xhtml)
     content/browser/torpreferences/provideBridgeDialog.js            (content/provideBridgeDialog.js)
     content/browser/torpreferences/requestBridgeDialog.xhtml         (content/requestBridgeDialog.xhtml)
