@@ -14,7 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
   return console.createInstance({
-    maxLogLevel: "Warn",
     maxLogLevelPref: "browser.torsettings.log_level",
     prefix: "TorSettings",
   });
