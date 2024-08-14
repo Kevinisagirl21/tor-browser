@@ -2126,12 +2126,10 @@ const gBridgeSettings = {
       });
 
     this._bridgesMenu.addEventListener("showing", () => {
-      const canCopy = this._bridgeSource !== TorBridgeSource.BuiltIn;
       const canShare =
         this._bridgeSource === TorBridgeSource.UserProvided ||
         this._bridgeSource === TorBridgeSource.BridgeDB;
       qrItem.hidden = !canShare || !this._canQRBridges;
-      copyItem.hidden = !canCopy;
       editItem.hidden = this._bridgeSource !== TorBridgeSource.UserProvided;
     });
 
