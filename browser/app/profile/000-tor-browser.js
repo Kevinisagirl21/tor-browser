@@ -108,3 +108,5 @@ pref("extensions.torlauncher.tordatadir_path", "");
 pref("extensions.torlauncher.bridgedb_front", "www.phpmyadmin.net");
 pref("extensions.torlauncher.bridgedb_reflector", "https://1723079976.rsc.cdn77.org");
 pref("extensions.torlauncher.moat_service", "https://bridges.torproject.org/moat");
+
+// Log levels
