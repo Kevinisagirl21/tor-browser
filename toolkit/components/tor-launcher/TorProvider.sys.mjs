@@ -19,7 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const logger = console.createInstance({
-  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tor_provider.log_level",
   prefix: "TorProvider",
 });

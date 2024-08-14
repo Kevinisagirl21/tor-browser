@@ -5,7 +5,6 @@
 import { TorParsers } from "resource://gre/modules/TorParsers.sys.mjs";
 
 const logger = console.createInstance({
-  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tor_provider.cp_log_level",
   prefix: "TorControlPort",
 });
