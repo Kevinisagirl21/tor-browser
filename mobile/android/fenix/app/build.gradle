@@ -773,11 +773,6 @@ dependencies {
     lintPublish project(":mozilla-lint-rules")
     lintChecks project(':tooling-lint')
 
-    // Tor Android Services Dependencies
-    implementation 'net.freehaven.tor.control:jtorctl:0.2'
-    implementation 'org.slf4j:slf4j-api:1.7.25'
-    implementation 'org.slf4j:slf4j-android:1.7.25'
-
     // Tor Expert Bundle
     implementation files('tor-expert-bundle.aar')
 }
