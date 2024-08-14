@@ -230,7 +230,6 @@ button.spoof-button-disabled {
 #tor-bridges-current {
   margin-inline: 0;
   margin-block: 32px;
-  line-height: 1.8;
 }
 
 #tor-bridges-none {
@@ -328,7 +327,7 @@ button.spoof-button-disabled {
     "type status" min-content
     "description description" auto
     / max-content 1fr;
-  gap: 4px 1.5em;
+  gap: 12px 1.5em;
   margin-block-end: 16px;
 }
 
@@ -504,6 +503,7 @@ button.spoof-button-disabled {
   grid-area: heading;
   font-size: inherit;
   margin: 0;
+  margin-block-end: 4px;
   font-weight: 700;
 }
 
@@ -714,15 +714,14 @@ button.spoof-button-disabled {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: start;
-  line-height: 1.8;
   margin-block-start: 24px;
 }
 
 #tor-bridges-provider-list {
   display: grid;
   grid-template-columns: max-content max-content;
-  /* 16px gap between items. */
-  gap: 16px 12px;
+  /* 24px gap between items. */
+  gap: 24px 12px;
   margin-block: 16px;
   padding: 0;
 }
@@ -733,8 +732,8 @@ button.spoof-button-disabled {
   grid-template-columns: subgrid;
   align-items: center;
   justify-items: start;
-  /* No gap between the name and instruction. */
-  gap: 0 12px;
+  /* 8px gap between the name and instruction. */
+  gap: 8px 12px;
 }
 
 .tor-bridges-provider-icon {
@@ -772,6 +771,7 @@ button.spoof-button-disabled {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  justify-content: center;
   padding: 16px;
   background: var(--in-content-box-info-background);
   border-radius: 4px;
