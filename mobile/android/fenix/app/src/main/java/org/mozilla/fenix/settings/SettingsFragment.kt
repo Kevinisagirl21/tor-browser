@@ -202,6 +202,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         requireView().findViewById<RecyclerView>(R.id.recycler_view)
             .also {
                 it?.hideInitialScrollBar(viewLifecycleOwner.lifecycleScope)
+                // Prevent disabled settings from having a collapsing animation on open
                 it?.disableHidingAnimation()
             }
 
