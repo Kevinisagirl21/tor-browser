@@ -14,8 +14,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => {
   // fission.enforceBlocklistedPrefsInSubprocesses is true).
   // (Or maybe this crash used to happen when the logger was not lazy, and maybe
   // the preferences were not ready, yet?)
-  return new console.createInstance({
-    maxLogLevel: "Warn",
+  return console.createInstance({
     maxLogLevelPref: "browser.dragdropfilter.log_level",
     prefix: "DragDropFilter",
   });
