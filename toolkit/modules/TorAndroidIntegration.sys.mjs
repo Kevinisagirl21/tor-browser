@@ -19,7 +19,6 @@ const Prefs = Object.freeze({
 });
 
 const logger = console.createInstance({
-  maxLogLevel: "Info",
   maxLogLevelPref: Prefs.logLevel,
   prefix: "TorAndroidIntegration",
 });
