@@ -29,11 +29,9 @@ const SECURE_DROP = {
 };
 
 const kPrefOnionAliasEnabled = "browser.urlbar.onionRewrites.enabled";
-const kPrefOnionAliasLogLevel = "browser.onionalias.log_level";
 
 const log = console.createInstance({
-  maxLogLevel: "Warn",
-  maxLogLevelPref: kPrefOnionAliasLogLevel,
+  maxLogLevelPref: "browser.onionalias.log_level",
   prefix: "OnionAlias",
 });
 

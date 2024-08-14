@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const log = console.createInstance({
-  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.torRequestWatch.log_level",
   prefix: "TorRequestWatch",
 });
