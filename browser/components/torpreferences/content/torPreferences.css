@@ -752,7 +752,7 @@ button.spoof-button-disabled {
 }
 
 #tor-bridges-provider-icon-email {
-  content: url("chrome://browser/skin/mail.svg");
+  content: url("chrome://browser/content/torpreferences/mail.svg");
 }
 
 .tor-bridges-provider-name {
