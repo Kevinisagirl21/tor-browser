@@ -25,7 +25,6 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
 
 const logger = console.createInstance({
   prefix: "TorDomainIsolator",
-  maxLogLevel: "Warn",
   maxLogLevelPref: "browser.tordomainisolator.loglevel",
 });
 
