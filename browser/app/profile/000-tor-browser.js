@@ -101,6 +101,7 @@ pref("extensions.torlauncher.tor_path", "");
 // which is TorBrowser-Data/ if it exists as a sibling of the application
 // directory. If TorBrowser-Data/ does not exist, these paths are relative
 // to the TorBrowser/ directory within the application directory.
+pref
 pref("extensions.torlauncher.torrc_path", "");
 pref("extensions.torlauncher.tordatadir_path", "");
 
@@ -117,3 +118,4 @@ pref("torbrowser.bootstrap.log_level", "Info");
 pref("browser.torsettings.log_level", "Warn");
 pref("browser.tordomainisolator.loglevel", "Warn");
 pref("browser.torcircuitpanel.loglevel", "Log");
+pref("browser.tor_android.log_level", "Info");
