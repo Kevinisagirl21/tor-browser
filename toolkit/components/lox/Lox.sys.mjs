@@ -9,7 +9,6 @@ const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => {
   return console.createInstance({
-    maxLogLevel: "Warn",
     maxLogLevelPref: "lox.log_level",
     prefix: "Lox",
   });
