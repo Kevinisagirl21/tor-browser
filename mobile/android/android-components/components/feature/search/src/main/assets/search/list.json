@@ -1,13 +1,21 @@
 {
   "default": {
     "searchDefault": "DuckDuckGo",
-    "searchOrder": ["DuckDuckGo", "DuckDuckGo (.onion)", "Startpage", "Startpage (.onion)","Wikipedia"],
+    "searchOrder": [
+      "DuckDuckGo",
+      "DuckDuckGo (.onion)",
+      "Startpage",
+      "Startpage (.onion)",
+      "Wikipedia"
+    ],
     "visibleDefaultEngines": [
-      "ddg", "ddg-onion", "startpage", "startpage-onion", "wikipedia"
+      "ddg",
+      "ddg-onion",
+      "startpage",
+      "startpage-onion",
+      "wikipedia"
     ]
   },
-  "regionOverrides": {
-  },
-  "locales": {
-  }
+  "regionOverrides": {},
+  "locales": {}
 }
