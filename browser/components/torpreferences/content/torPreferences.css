@@ -558,7 +558,7 @@ button.spoof-button-disabled {
     ". invites button" min-content
     / min-content 1fr max-content;
   align-items: start;
-  gap: 0 8px;
+  gap: 8px;
 }
 
 .tor-bridges-lox-image-outer {
@@ -620,6 +620,7 @@ button.spoof-button-disabled {
   /* Align the icons, as if list markers. */
   grid-template-columns: max-content 1fr;
   align-items: start;
+  gap: 8px 0;
 }
 
 .tor-bridges-lox-list-item {
@@ -628,16 +629,15 @@ button.spoof-button-disabled {
 
 .tor-bridges-lox-list-item::before {
   /* We use ::before rather than list-style-image to have more control. */
-  display: block;
   box-sizing: content-box;
   width: 18px;
   height: 18px;
   margin-inline: 4px 6px;
   /* We want the icons to be center-aligned relative to the *first* line. */
-  /* TODO: After firefox 120, can use line-height unit "lh" to do proper
-   * center-alignment: calc((1lh - 18px) / 2)
-   * For now, we use 3.4ex as an approximation for 1lh */
-  margin-block-start: calc((3.4ex - 18px) / 2);
+  margin-block-start: calc((1lh - 18px) / 2);
+  /* We use display: grid rather than display: block. Otherwise the content will
+   * be offset vertically by the line-height. */
+  display: grid;
   /* fill is the icon color, stroke is the border color. */
   -moz-context-properties: fill, stroke;
   fill: var(--in-content-icon-color);
