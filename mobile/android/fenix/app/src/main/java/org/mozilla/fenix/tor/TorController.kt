@@ -63,6 +63,3 @@ interface TorController: TorEvents {
     fun setTorStopped()
     fun restartTor()
 }
-
-
-
