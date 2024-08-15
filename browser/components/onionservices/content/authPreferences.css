@@ -2,10 +2,6 @@
 
 @import url("chrome://global/skin/browser-colors.css");
 
-#torOnionServiceKeys-overview-container {
-  margin-inline-end: 30px;
-}
-
 #onionservices-savedkeys-dialog {
   min-width: 45em;
 }
