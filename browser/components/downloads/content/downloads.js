@@ -128,11 +128,12 @@ var DownloadsPanel = {
         if (Services.prefs.getBoolPref(PREF_SHOW_DOWNLOAD_WARNING)) {
           torWarningMessage.hidden = false;
         } else {
-          // Re-assign focus if it is about to be lost.
-          if (torWarningMessage.contains(document.activeElement)) {
+          const hadFocus = torWarningMessage.contains(document.activeElement);
+          torWarningMessage.hidden = true;
+          // Re-assign focus that was lost.
+          if (hadFocus) {
             this._focusPanel(true);
           }
-          torWarningMessage.hidden = true;
         }
       };
       Services.prefs.addObserver(
@@ -597,6 +598,20 @@ var DownloadsPanel = {
     if (this._preventFocusRing) {
       focusOptions.focusVisible = false;
     }
+
+    // Focus the "Got it" button if it is visible.
+    // This should ensure that the alert is read aloud by Orca when the
+    // downloads panel is opened. See tor-browser#42642.
+    const torWarningMessage = document.getElementById(
+      "downloadsPanelTorWarning"
+    );
+    if (!torWarningMessage.hidden) {
+      torWarningMessage
+        .querySelector(".downloads-tor-warning-dismiss-button")
+        .focus(focusOptions);
+      return;
+    }
+
     if (DownloadsView.richListBox.itemCount > 0) {
       if (DownloadsView.canChangeSelectedItem) {
         DownloadsView.richListBox.selectedIndex = 0;
