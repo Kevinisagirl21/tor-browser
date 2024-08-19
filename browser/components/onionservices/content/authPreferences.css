@@ -1,7 +1,5 @@
 /* Copyright (c) 2020, The Tor Project, Inc. */
 
-@import url("chrome://global/skin/browser-colors.css");
-
 #onionservices-savedkeys-dialog {
   min-width: 45em;
 }
@@ -23,5 +21,5 @@
   margin-inline-end: 4px;
   list-style-image: url("chrome://global/skin/icons/warning.svg");
   -moz-context-properties: fill;
-  fill: var(--warning-color);
+  fill: var(--in-content-warning-icon-color);
 }
