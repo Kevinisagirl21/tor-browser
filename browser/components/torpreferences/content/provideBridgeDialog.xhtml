@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css"?>
-<?xml-stylesheet href="chrome://browser/content/torpreferences/torPreferences.css"?>
 
 <window
   type="child"
@@ -14,6 +11,16 @@
     class="show-entry-page"
   >
     <linkset>
+      <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
+      <html:link
+        rel="stylesheet"
+        href="chrome://browser/skin/preferences/preferences.css"
+      />
+      <html:link
+        rel="stylesheet"
+        href="chrome://browser/content/torpreferences/torPreferences.css"
+      />
+
       <html:link rel="localization" href="toolkit/global/tor-browser.ftl" />
     </linkset>
 
