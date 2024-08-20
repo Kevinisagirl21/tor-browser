@@ -342,15 +342,15 @@ body.aboutTorConnect .title {
   padding-block-start: 0;
 }
 
-.title.offline {
+body.aboutTorConnect .title.offline {
   background-image: url("chrome://global/content/torconnect/connection-failure.svg");
 }
 
-.title.assist, .title.final {
+body.aboutTorConnect .title:is(.assist, .final) {
   background-image: url("chrome://global/content/torconnect/tor-connect-broken.svg");
 }
 
-.title.location {
+body.aboutTorConnect .title.location {
   background-image: url("chrome://global/content/torconnect/connection-location.svg");
   stroke: var(--warning-color);
 }
