@@ -1,10 +1,6 @@
 <?xml version="1.0"?>
 <!-- Copyright (c) 2020, The Tor Project, Inc. -->
 
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-<?xml-stylesheet href="chrome://browser/skin/preferences/preferences.css" type="text/css"?>
-<?xml-stylesheet href="chrome://browser/content/onionservices/authPreferences.css" type="text/css"?>
-
 <window
   id="onionservices-savedkeys-dialog"
   windowtype="OnionServices:SavedKeys"
@@ -13,6 +9,16 @@
   data-l10n-id="onion-site-saved-keys-dialog-title"
 >
   <linkset>
+    <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
+    <html:link
+      rel="stylesheet"
+      href="chrome://browser/skin/preferences/preferences.css"
+    />
+    <html:link
+      rel="stylesheet"
+      href="chrome://browser/content/onionservices/authPreferences.css"
+    />
+
     <html:link rel="localization" href="toolkit/global/tor-browser.ftl" />
   </linkset>
 
