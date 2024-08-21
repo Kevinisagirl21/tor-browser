@@ -101,19 +101,43 @@
   );
 }
 
-button.tor-button,
+@media ((prefers-contrast) or (forced-colors)) {
+  :root {
+    /* Use Firefox design system accent colors. */
+    --tor-accent-color: var(--color-accent-primary);
+    --tor-accent-color-hover: var(--color-accent-primary-hover);
+    --tor-accent-color-active: var(--color-accent-primary-active);
+
+    /* Use Firefox design system primary button colors. */
+    --tor-button-text-color: var(--button-text-color-primary);
+    --tor-button-text-color-hover: var(--button-text-color-primary-hover);
+    --tor-button-text-color-active: var(--button-text-color-primary-active);
+    --tor-button-background-color: var(--button-background-color-primary);
+    --tor-button-background-color-hover: var(--button-background-color-primary-hover);
+    --tor-button-background-color-active: var(--button-background-color-primary-active);
+
+    /* Use Firefox design system default colors. */
+    --tor-focus-outline-color: var(--focus-outline-color);
+    --tor-link-color: var(--link-color);
+    --tor-link-color-hover: var(--link-color-hover);
+    --tor-link-color-active: var(--link-color-active);
+  }
+}
+
+/* Has a higher specificity than `button` and `button.primary`. */
+button.tor-button:is(*, .primary),
 .tor-button {
   color: var(--tor-button-text-color);
   background-color: var(--tor-button-background-color);
 }
 
-button.tor-button:hover,
+button.tor-button:is(*, .primary):hover,
 .tor-button:hover {
   color: var(--tor-button-text-color-hover);
   background-color: var(--tor-button-background-color-hover);
 }
 
-button.tor-button:hover:active,
+button.tor-button:is(*, .primary):hover:active,
 .tor-button:hover:active {
   color: var(--tor-button-text-color-active);
   background-color: var(--tor-button-background-color-active);
