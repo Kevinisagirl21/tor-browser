@@ -26,6 +26,7 @@ combine-en-US-translations:
       tor-browser:torConnect.properties
       tor-browser:torlauncher.properties
       base-browser:base-browser.ftl
+      fenix-torbrowserstringsxml:torbrowser_strings.xml
     '
   cache:
     paths:
