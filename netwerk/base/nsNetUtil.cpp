@@ -3054,7 +3054,8 @@ nsresult NS_ShouldSecureUpgrade(
   }
   // If it is a mixed content trustworthy loopback, then we shouldn't upgrade
   // it.
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI) ||
+      nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(aURI)) {
     aShouldUpgrade = false;
     return NS_OK;
   }
