@@ -40,6 +40,7 @@ export class GeckoViewContent extends GeckoViewModule {
       "GeckoView:ZoomToInput",
       "GeckoView:IsPdfJs",
       "GeckoView:GetTorCircuit",
+      "GeckoView:NewTorCircuit",
     ]);
   }
 
@@ -313,6 +314,9 @@ export class GeckoViewContent extends GeckoViewModule {
       case "GeckoView:GetTorCircuit":
         this._getTorCircuit(aCallback);
         break;
+      case "GeckoView:NewTorCircuit":
+        this._newTorCircuit(aCallback);
+        break;
     }
   }
 
@@ -435,6 +439,11 @@ export class GeckoViewContent extends GeckoViewModule {
     } else {
       aCallback?.onSuccess(null);
     }
+  }
+
+  _newTorCircuit(aCallback) {
+    lazy.TorDomainIsolator.newCircuitForBrowser(this.browser);
+    aCallback?.onSuccess();
   }
 
   async _containsFormData(aCallback) {

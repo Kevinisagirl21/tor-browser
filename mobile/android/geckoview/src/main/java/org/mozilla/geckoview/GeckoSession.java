@@ -2611,6 +2611,14 @@ public class GeckoSession {
   }
 
   /**
+   * Change the circuit for this session.
+   */
+  @UiThread
+  public void newTorCircuit() {
+    mEventDispatcher.dispatch("GeckoView:NewTorCircuit");
+  }
+
+  /**
    * Set this GeckoSession as active or inactive, which represents if the session is currently
    * visible or not. Setting a GeckoSession to inactive will significantly reduce its memory
    * footprint, but should only be done if the GeckoSession is not currently visible. Note that a
