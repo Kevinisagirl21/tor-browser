@@ -1453,7 +1453,8 @@ class HomeFragment : Fragment() {
             else -> ColorStateList.valueOf(color)
         }
 
-        binding.wordmarkText.imageTintList = tintColor
+//      tor-browser#42590
+//      binding.wordmarkText.imageTintList = tintColor
         binding.privateBrowsingButton.imageTintList = tintColor
     }
 
