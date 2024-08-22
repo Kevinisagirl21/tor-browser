@@ -225,11 +225,9 @@ class TorDomainIsolatorImpl {
    * Create a new nonce for the FP domain of the selected browser and reload the
    * tab with a new circuit.
    *
-   * @param {object} globalBrowser Should be the gBrowser from the context of
-   * the caller
+   * @param {object} browser The browser we want to change the circuit for.
    */
-  newCircuitForBrowser(globalBrowser) {
-    const browser = globalBrowser.selectedBrowser;
+  newCircuitForBrowser(browser) {
     const firstPartyDomain = getDomainForBrowser(browser);
     this.newCircuitForDomain(firstPartyDomain);
     const { username, password } = this.#getSocksProxyCredentials(
