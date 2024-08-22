@@ -67,7 +67,7 @@ export class CryptoSafetyParent extends JSWindowActorParent {
       const browser = browsingContext.embedderElement;
       if (browser) {
         lazy.TorDomainIsolator.newCircuitForBrowser(
-          browser.ownerGlobal.gBrowser
+          browser.ownerGlobal.gBrowser.selectedBrowser
         );
       }
     }
