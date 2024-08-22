@@ -127,7 +127,7 @@ var gTorCircuitPanel = {
     document
       .getElementById("tor-circuit-new-circuit")
       .addEventListener("command", () => {
-        TorDomainIsolator.newCircuitForBrowser(gBrowser);
+        TorDomainIsolator.newCircuitForBrowser(gBrowser.selectedBrowser);
       });
 
     // Update the display just before opening.
