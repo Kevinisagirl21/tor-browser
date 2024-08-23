@@ -2615,7 +2615,7 @@ public class GeckoSession {
    */
   @UiThread
   public void newTorCircuit() {
-    mEventDispatcher.dispatch("GeckoView:NewTorCircuit");
+    mEventDispatcher.dispatch("GeckoView:NewTorCircuit", null);
   }
 
   /**
