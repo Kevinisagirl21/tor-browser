@@ -95,7 +95,6 @@
 }
 
 #tor-circuit-node-list {
-  line-height: 2;
   list-style: none;
   padding-inline-start: var(--arrowpanel-menuitem-margin-inline);
   /* Do not allow an item to wrap since this would break the circuit diagram. */
@@ -104,11 +103,12 @@
 
 .tor-circuit-node-item {
   /* We want the "bullets" of the list to act as the circuit diagram, and we
-   * also want them to be vertically aligned and scaled to the line-height of
-   * the list so that the different parts visually connect.
+   * also want them to be vertically aligned and scaled to the height of the
+   * list item so that the different parts visually connect.
    * Using list-style-image does not give us enough control over sizing the
    * image. So instead we use a background-image. */
   padding-inline-start: 1.5em;
+  padding-block: 6px;
   background-image: url("chrome://browser/content/tor-circuit-node-middle.svg");
   -moz-context-properties: fill;
   /* Light Gray 50 */
