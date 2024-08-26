@@ -52,7 +52,6 @@ dd {
   padding: 0;
   max-width: 600px;
   box-sizing: border-box;
-  line-height: 1.4;
 }
 
 hr {
@@ -140,10 +139,10 @@ section {
   padding-inline-start: 35px;
   font-size: 20px;
   font-weight: 700;
-  line-height: 30px;
   background-image: url("chrome://browser/content/rulesets/securedrop.svg");
-  background-position: 0 4px;
+  background-position: 0 center;
   background-size: 22px;
+  min-height: 22px;
   background-repeat: no-repeat;
 }
 
@@ -256,6 +255,8 @@ aside {
   background-color: var(--in-content-box-background);
   font-size: 85%;
   line-break: anywhere;
+  /* ASCII-only text, so can set line-height. */
+  line-height: 1.4;
 }
 
 #ruleset-edit {
