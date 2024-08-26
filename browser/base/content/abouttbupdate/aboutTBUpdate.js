@@ -77,6 +77,7 @@ function setContent(containerId, content, fillContent) {
   // Release notes are only in English.
   contentEl.setAttribute("lang", "en-US");
   contentEl.setAttribute("dir", "ltr");
+  contentEl.classList.add("en-US-content");
   if (fillContent) {
     fillContent(contentEl, content);
   } else {

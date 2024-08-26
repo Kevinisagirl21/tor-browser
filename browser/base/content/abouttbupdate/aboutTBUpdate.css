@@ -32,6 +32,9 @@ body > *:not([hidden]) {
 
 .content {
   grid-column: 2;
+}
+
+.content.en-US-content {
   font-family: monospace;
   line-height: 1.4;
 }
