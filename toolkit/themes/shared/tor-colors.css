@@ -1,3 +1,5 @@
+@namespace xul "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 :root {
   /* Photon colors not available in Firefox. */
   --purple-30: #c069ff;
@@ -126,19 +128,34 @@
 
 /* Has a higher specificity than `button` and `button.primary`. */
 button.tor-button:is(*, .primary),
+xul|button.tor-button:is(*, [default]),
 .tor-button {
   color: var(--tor-button-text-color);
   background-color: var(--tor-button-background-color);
 }
 
-button.tor-button:is(*, .primary):hover,
-.tor-button:hover {
+:is(
+  button.tor-button:is(*, .primary),
+  xul|button.tor-button:is(*, [default]),
+  .tor-button
+):not([disabled]):hover {
   color: var(--tor-button-text-color-hover);
   background-color: var(--tor-button-background-color-hover);
 }
 
-button.tor-button:is(*, .primary):hover:active,
-.tor-button:hover:active {
+:is(
+  button.tor-button:is(*, .primary),
+  xul|button.tor-button:is(*, [default]),
+  .tor-button
+):not([disabled]):hover:active {
   color: var(--tor-button-text-color-active);
   background-color: var(--tor-button-background-color-active);
+}
+
+:is(
+  button.tor-button:is(*, .primary),
+  xul|button.tor-button:is(*, [default]),
+  .tor-button
+):focus-visible {
+  outline-color: var(--tor-focus-outline-color);
 }
