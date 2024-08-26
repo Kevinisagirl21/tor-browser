@@ -70,6 +70,13 @@ const gBuiltinBridgeDialog = {
       this._result.accepted = true;
     });
 
+    // Add styling for tor-button to the dialog shadow root.
+    const styleLink = document.createElement("link");
+    styleLink.rel = "stylesheet";
+    styleLink.href =
+      "chrome://browser/content/torpreferences/torPreferences.css";
+    dialog.shadowRoot.append(styleLink);
+
     this._acceptButton = dialog.getButton("accept");
 
     Services.obs.addObserver(this, TorConnectTopics.StateChange);
@@ -95,6 +102,7 @@ const gBuiltinBridgeDialog = {
       "data-l10n-id",
       connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-accept"
     );
+    this._acceptButton.classList.toggle("tor-button", connect);
   },
 
   observe(subject, topic) {

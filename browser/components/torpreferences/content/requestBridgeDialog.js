@@ -33,6 +33,13 @@ const gRequestBridgeDialog = {
       "torPreferences-requestBridge-dialog"
     );
 
+    // Add styling for tor-button to the dialog shadow root.
+    const styleLink = document.createElement("link");
+    styleLink.rel = "stylesheet";
+    styleLink.href =
+      "chrome://browser/content/torpreferences/torPreferences.css";
+    this._dialog.shadowRoot.append(styleLink);
+
     // user may have opened a Request Bridge dialog in another tab, so update the
     // CAPTCHA image or close out the dialog if we have a bridge list
     this._dialog.addEventListener("focusin", () => {
@@ -101,6 +108,7 @@ const gRequestBridgeDialog = {
       "data-l10n-id",
       connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-submit"
     );
+    this._submitButton.classList.toggle("tor-button", connect);
   },
 
   observe(subject, topic) {

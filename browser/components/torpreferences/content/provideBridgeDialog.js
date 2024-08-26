@@ -85,7 +85,7 @@ const gProvideBridgeDialog = {
     this._acceptButton = this._dialog.getButton("accept");
 
     // Inject our stylesheet into the shadow root so that the accept button can
-    // take the spoof-button-disabled styling.
+    // take the spoof-button-disabled styling and tor-button styling.
     const styleLink = document.createElement("link");
     styleLink.rel = "stylesheet";
     styleLink.href =
@@ -183,22 +183,21 @@ const gProvideBridgeDialog = {
    * Callback for whenever the accept button may need to change.
    */
   onAcceptStateChange() {
+    let connect = false;
     if (this._page === "entry") {
-      document.l10n.setAttributes(
-        this._acceptButton,
+      this._acceptButton.setAttribute(
+        "data-l10n-id",
         "user-provide-bridge-dialog-next-button"
       );
-      this._result.connect = false;
     } else {
-      this._acceptButton.removeAttribute("data-l10n-id");
-      const connect = TorConnect.canBeginBootstrap;
-      this._result.connect = connect;
-
+      connect = TorConnect.canBeginBootstrap;
       this._acceptButton.setAttribute(
         "data-l10n-id",
         connect ? "bridge-dialog-button-connect" : "bridge-dialog-button-accept"
       );
     }
+    this._result.connect = connect;
+    this._acceptButton.classList.toggle("tor-button", connect);
   },
 
   /**
