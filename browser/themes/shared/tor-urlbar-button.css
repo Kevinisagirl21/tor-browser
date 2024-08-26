@@ -26,7 +26,6 @@
    * urlbar background, but we keep the rounded corners. */
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
-  outline-color: var(--tor-focus-outline-color);
   /* Calculate the difference between the button's border area and the outline
    * area. */
   --tor-urlbar-focus-outline-difference: calc(

@@ -190,7 +190,6 @@ class AboutTorConnect {
 
   show(element, primary = false) {
     element.classList.toggle("primary", primary);
-    element.classList.toggle("tor-button", primary);
     element.removeAttribute("hidden");
   }
 
