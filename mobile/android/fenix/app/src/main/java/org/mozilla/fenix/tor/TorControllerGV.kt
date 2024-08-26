@@ -153,7 +153,7 @@ class TorControllerGV(
         }
         set(value) {
             getTorSettings()?.let {
-                Log.i(TAG, "setUserProvidedBridges: '$value'");
+                Log.i(TAG, "setUserProvidedBridges: '$value'")
                 // Hack: we don't have validation so lets do something quick and dirty (each line has a length)
                 val  userProvidedLines: Array<String> = value?.split("\n")?.filter { it.length > 4 }?.toTypedArray() ?: arrayOf<String>()
                 it.bridgesSource = BridgeSource.UserProvided
@@ -315,7 +315,6 @@ class TorControllerGV(
     // TorEventsBootstrapStateChangeListener
     override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) {
         lastKnownError = TorError(code ?: "", message ?: "", phase ?: "", reason ?: "")
-        onBootstrapStateChange(TorConnectState.Error.state)
     }
 
     // TorEventsBootstrapStateChangeListener
