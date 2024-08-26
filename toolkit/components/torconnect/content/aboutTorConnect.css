@@ -116,10 +116,6 @@ html {
   list-style-image: url("chrome://global/content/torconnect/bridge.svg");
 }
 
-button, select {
-  --in-content-focus-outline-color: var(--tor-focus-outline-color);
-}
-
 #locationDropdownLabel {
   margin-block: auto;
   margin-inline: 4px;
