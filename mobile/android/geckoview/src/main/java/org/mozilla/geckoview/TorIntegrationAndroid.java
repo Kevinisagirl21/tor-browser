@@ -283,13 +283,16 @@ public class TorIntegrationAndroid implements BundleEventListener {
                 Log.w(TAG, "torrc-default cannot be created, pluggable transports will not be available", e);
                 copied = false;
             }
-            try {
+            // tor-browser#42607: For now we do not ship geoip databases, as we
+            // do not have the circuit display functionality and they allow us
+            // to save some space in the final APK.
+            /*try {
                 copyAndUseConfigFile("GeoIPFile", "geoip", args);
                 copyAndUseConfigFile("GeoIPv6File", "geoip6", args);
             } catch (IOException e) {
                 Log.w(TAG, "GeoIP files cannot be created, this feature will not be available.", e);
                 copied = false;
-            }
+            }*/
             mCopiedConfigFiles = copied;
 
             Log.d(TAG, "Starting tor with the follwing args: " + args.toString());
