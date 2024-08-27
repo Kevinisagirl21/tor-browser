@@ -2127,8 +2127,6 @@ function UpdatePatch(patch) {
         }
         break;
       case "finalURL":
-      case "hashFunction":
-      case "hashValue":
       case "state":
       case "type":
       case "URL":
@@ -2148,8 +2146,6 @@ UpdatePatch.prototype = {
   // over writing nsIUpdatePatch attributes.
   _attrNames: [
     "errorCode",
-    "hashFunction",
-    "hashValue",
     "finalURL",
     "selected",
     "size",
@@ -2163,8 +2159,6 @@ UpdatePatch.prototype = {
    */
   serialize: function UpdatePatch_serialize(updates) {
     var patch = updates.createElementNS(URI_UPDATE_NS, "patch");
-    patch.setAttribute("hashFunction", this.hashFunction);
-    patch.setAttribute("hashValue", this.hashValue);
     patch.setAttribute("size", this.size);
     patch.setAttribute("type", this.type);
     patch.setAttribute("URL", this.URL);
@@ -5794,56 +5788,7 @@ Downloader.prototype = {
     }
 
     LOG("Downloader:_verifyDownload downloaded size == expected size.");
-    let fileStream = Cc[
-      "@mozilla.org/network/file-input-stream;1"
-    ].createInstance(Ci.nsIFileInputStream);
-    fileStream.init(
-      destination,
-      FileUtils.MODE_RDONLY,
-      FileUtils.PERMS_FILE,
-      0
-    );
-
-    let digest;
-    try {
-      let hash = Cc["@mozilla.org/security/hash;1"].createInstance(
-        Ci.nsICryptoHash
-      );
-      var hashFunction =
-        Ci.nsICryptoHash[this._patch.hashFunction.toUpperCase()];
-      if (hashFunction == undefined) {
-        throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-      }
-      hash.init(hashFunction);
-      hash.updateFromStream(fileStream, -1);
-      // NOTE: For now, we assume that the format of _patch.hashValue is hex
-      // encoded binary (such as what is typically output by programs like
-      // sha1sum).  In the future, this may change to base64 depending on how
-      // we choose to compute these hashes.
-      hash = hash.finish(false);
-      digest = Array.from(hash, (c, i) =>
-        hash.charCodeAt(i).toString(16).padStart(2, "0")
-      ).join("");
-    } catch (e) {
-      LOG(
-        "Downloader:_verifyDownload - failed to compute hash of the downloaded update archive"
-      );
-      digest = "";
-    }
-
-    fileStream.close();
-
-    if (digest == this._patch.hashValue.toLowerCase()) {
-      LOG("Downloader:_verifyDownload hashes match.");
-      return true;
-    }
-
-    LOG("Downloader:_verifyDownload hashes do not match. ");
-    AUSTLMY.pingDownloadCode(
-      this.isCompleteUpdate,
-      AUSTLMY.DWNLD_ERR_VERIFY_NO_HASH_MATCH
-    );
-    return false;
+    return true;
   },
 
   /**
@@ -6479,9 +6424,6 @@ Downloader.prototype = {
           " is higher than patch size: " +
           this._patch.size
       );
-      // It's important that we use a different code than
-      // NS_ERROR_CORRUPTED_CONTENT so that tests can verify the difference
-      // between a hash error and a wrong download error.
       AUSTLMY.pingDownloadCode(
         this.isCompleteUpdate,
         AUSTLMY.DWNLD_ERR_PATCH_SIZE_LARGER
@@ -6500,9 +6442,6 @@ Downloader.prototype = {
           " is not equal to expected patch size: " +
           this._patch.size
       );
-      // It's important that we use a different code than
-      // NS_ERROR_CORRUPTED_CONTENT so that tests can verify the difference
-      // between a hash error and a wrong download error.
       AUSTLMY.pingDownloadCode(
         this.isCompleteUpdate,
         AUSTLMY.DWNLD_ERR_PATCH_SIZE_NOT_EQUAL
