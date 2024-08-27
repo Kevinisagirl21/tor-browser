@@ -53,16 +53,15 @@ var security = {
       (Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT |
         Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT);
     var isEV = ui.state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL;
-    var isOnion = false;
-    let hostName;
-    try {
-      hostName = Services.eTLD.getBaseDomain(this.uri);
-    } catch (e) {
-      hostName = this.windowInfo.hostName;
+    let uriInformation = new URL(gDocInfo.documentURIObject.spec);
+    // If the Onion site could not be loaded, the view-source will be also be
+    // about:neterror.
+    if (uriInformation.protocol == "view-source:") {
+      uriInformation = new URL(uriInformation.pathname);
     }
-    if (hostName && hostName.endsWith(".onion")) {
-      isOnion = true;
-    }
+    const isOnion =
+      ["http:", "https:"].includes(uriInformation.protocol) &&
+      uriInformation.hostname.endsWith(".onion");
 
     let retval = {
       cAName: "",
