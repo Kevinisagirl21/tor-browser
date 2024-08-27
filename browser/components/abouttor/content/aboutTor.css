@@ -180,15 +180,17 @@ body:not(.show-tor-check) #tor-check {
 
   body > :not(#search-form) {
     /* Same as --in-content-page-color when "prefers-color-scheme: dark" */
-    --in-content-page-color: #fbfbfe;
-    --in-content-text-color: #fbfbfe;
-    color: var(--in-content-text-color);
+    color: var(--color-gray-05);
     --link-color: var(--tor-link-color-dark);
     --link-color-hover: var(--tor-link-color-hover-dark);
     --link-color-active: var(--tor-link-color-active-dark);
   }
 
   #search-form {
+    /* Use light color for background and moz-toggle shadow root. */
+    color-scheme: light;
+    /* Same as --in-content-page-color when "prefers-color-scheme: light" */
+    color: var(--color-gray-100);
     border-color: transparent;
   }
 
