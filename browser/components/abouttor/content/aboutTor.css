@@ -89,14 +89,6 @@ body:not(.show-tor-check) #tor-check {
   margin-inline-end: 0.3em;
 }
 
-:is(
-  .home-message,
-  #tor-check,
-) a {
-  /* Increase gap between the link and the rest of the text. */
-  margin-inline: 0.4em;
-}
-
 #search-form {
   grid-area: form;
   /* Occupy the entire "form" block. */
