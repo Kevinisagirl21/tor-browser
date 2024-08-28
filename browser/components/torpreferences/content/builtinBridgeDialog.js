@@ -114,6 +114,16 @@ const gBuiltinBridgeDialog = {
   },
 };
 
+// Initial focus is not visible, even if opened with a keyboard. We avoid the
+// default handler and manage the focus ourselves, which will paint the focus
+// ring by default.
+// NOTE: A side effect is that the focus ring will show even if the user opened
+// with a mouse event.
+// TODO: Remove this once bugzilla bug 1708261 is resolved.
+document.subDialogSetDefaultFocus = () => {
+  document.getElementById("torPreferences-builtinBridge-typeSelection").focus();
+};
+
 window.addEventListener(
   "DOMContentLoaded",
   () => {
