@@ -395,7 +395,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     val shouldShowSyncedTabsSuggestions by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_search_synced_tabs),
-        default = true,
+        default = false,
     )
 
     val shouldShowClipboardSuggestions by booleanPreference(
@@ -1939,7 +1939,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var enableFxSuggest by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_fxsuggest),
-        default = { FxNimbus.features.fxSuggest.value().enabled },
+        default = { false }, // { FxNimbus.features.fxSuggest.value().enabled },
         featureFlag = FeatureFlags.fxSuggest,
     )
 
