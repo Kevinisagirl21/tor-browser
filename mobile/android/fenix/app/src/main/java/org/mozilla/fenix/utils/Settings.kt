@@ -1609,7 +1609,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var shouldAutofillCreditCardDetails by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_credit_cards_save_and_autofill_cards),
-        default = true,
+        default = BuildConfig.DATA_COLLECTION_DISABLED == false,
     )
 
     /**
