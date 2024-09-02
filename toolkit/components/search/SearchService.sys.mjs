@@ -81,7 +81,6 @@ export const NON_SPLIT_ENGINE_IDS = [
   "engine-purpose",
   "engine-fr",
   "fixup_search",
-  "ddg-onion",
 ];
 
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
@@ -2599,38 +2598,23 @@ export class SearchService {
   // This is prefixed with _ rather than # because it is
   // called in test_remove_engine_notification_box.js
   async _fetchEngineSelectorEngines() {
-    const engines = [
-      {
-        aliases: ["duckduckgo", "ddg"],
-        name: "DuckDuckGo",
-        urls: {
-          search: {
-            base: "https://duckduckgo.com/",
-            params: [],
-            searchTermParamName: "q",
-          },
-        },
-        id: "04e99a38-13ee-47d8-8aa4-64482b3dea99",
-        identifier: "ddg",
-        recordType: "engine",
-        variants: [],
-      },
-      {
-        aliases: ["ddgonion"],
-        name: "DuckDuckGo (.onion)",
-        urls: {
-          search: {
-            base: "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/",
-            params: [],
-            searchTermParamName: "q",
-          },
-        },
-        id: "1e431da4-a60c-4411-9251-a95a841d451f",
-        identifier: "ddg-onion",
-        recordType: "engine",
-        variants: [],
-      },
-    ];
+    let searchEngineSelectorProperties = {
+      locale: Services.locale.appLocaleAsBCP47,
+      region: lazy.Region.home || "unknown",
+      channel: lazy.SearchUtils.MODIFIED_APP_CHANNEL,
+      experiment:
+        lazy.NimbusFeatures.searchConfiguration.getVariable("experiment") ?? "",
+      distroID: lazy.SearchUtils.distroID ?? "",
+    };
+
+    for (let [key, value] of Object.entries(searchEngineSelectorProperties)) {
+      this._settings.setMetaDataAttribute(key, value);
+    }
+
+    let { engines, privateDefault } =
+      await this.#engineSelector.fetchEngineConfiguration(
+        searchEngineSelectorProperties
+      );
 
     for (let e of engines) {
       if (!e.webExtension) {
@@ -2663,7 +2647,7 @@ export class SearchService {
       }
     }
 
-    return { engines, privateDefault: undefined };
+    return { engines, privateDefault };
   }
 
   #setDefaultAndOrdersFromSelector(engines, privateDefault) {
