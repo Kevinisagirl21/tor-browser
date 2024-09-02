@@ -4837,7 +4837,9 @@ BrowserGlue.prototype = {
     //            torbutton preferences that are not used anymore.
     // Version 3: Tor Browser 13.0.7/13.5a3: Remove blockchair
     //            (tor-browser#42283).
-    const TBB_MIGRATION_VERSION = 3;
+    // Version 4: Tor Browser 14.0a4 (2024-09-02): Remove Twitter, Yahoo and
+    //            YouTube search engines (tor-browser#41835).
+    const TBB_MIGRATION_VERSION = 4;
     const MIGRATION_PREF = "torbrowser.migration.version";
 
     // If we decide to force updating users to pass through any version
@@ -4889,21 +4891,26 @@ BrowserGlue.prototype = {
         }
       }
     }
-    if (currentVersion < 3) {
-      (async () => {
+    const dropAddons = async list => {
+      for (const id of list) {
         try {
-          const engine = await lazy.AddonManager.getAddonByID(
-            "blockchair@search.mozilla.org"
-          );
+          const engine = await lazy.AddonManager.getAddonByID(id);
           await engine?.uninstall();
         } catch {}
-        try {
-          const engine = await lazy.AddonManager.getAddonByID(
-            "blockchair-onion@search.mozilla.org"
-          );
-          engine?.uninstall();
-        } catch {}
-      })();
+      }
+    };
+    if (currentVersion < 3) {
+      dropAddons([
+        "blockchair@search.mozilla.org",
+        "blockchair-onion@search.mozilla.org",
+      ]);
+    }
+    if (currentVersion < 4) {
+      dropAddons([
+        "twitter@search.mozilla.org",
+        "yahoo@search.mozilla.org",
+        "youtube@search.mozilla.org",
+      ]);
     }
 
     Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
