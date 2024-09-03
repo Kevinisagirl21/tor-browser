@@ -23,6 +23,8 @@
 
     <string name="tor_explore_privately">Explore. Privately.</string>
 
+    <string name="library_new_circuit">New circuit</string>
+
     <string name="preferences_tor_network_settings">Tor Network</string>
     <string name="preferences_tor_network_settings_explanation">Tor Browser routes your traffic over the Tor Network, run by thousands of volunteers around the world.</string>
     <string name="preferences_tor_network_settings_bridge_config">Config Bridge</string>

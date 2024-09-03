@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import mozilla.components.browser.menu.BrowserMenuHighlight
-import mozilla.components.browser.menu.BrowserMenuItem
 import mozilla.components.browser.menu.WebExtensionBrowserMenuBuilder
 import mozilla.components.browser.menu.item.BrowserMenuDivider
 import mozilla.components.browser.menu.item.BrowserMenuHighlightableItem
@@ -32,7 +31,6 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
@@ -210,6 +208,14 @@ open class DefaultToolbarMenu(
         primaryTextColor(),
     ) {
         onItemTapped.invoke(ToolbarMenu.Item.NewTab)
+    }
+
+    private val newCircuitItem = BrowserMenuImageText(
+        context.getString(R.string.library_new_circuit),
+        R.drawable.new_circuit,
+        primaryTextColor(),
+    ) {
+        onItemTapped.invoke(ToolbarMenu.Item.NewTorCircuit)
     }
 
     private val historyItem = BrowserMenuImageText(
@@ -409,6 +415,8 @@ open class DefaultToolbarMenu(
             listOfNotNull(
                 if (shouldUseBottomToolbar || !shouldShowMenuToolbar) null else menuToolbar,
                 newTabItem,
+                BrowserMenuDivider(),
+                newCircuitItem,
                 BrowserMenuDivider(),
                 bookmarksItem,
                 historyItem,
