@@ -17,8 +17,6 @@ import mozilla.components.lib.crash.service.MozillaSocorroService
 import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.RunWhenReadyQueue
-import mozilla.components.service.nimbus.NimbusDisabled
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.HomeActivity

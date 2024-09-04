@@ -356,7 +356,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 ?.also {
                     Events.appOpened.record(Events.AppOpenedExtra(it))
                     // This will record an event in Nimbus' internal event store. Used for behavioral targeting
-                    components.nimbus.events.recordEvent("app_opened")
+                    // components.nimbus.events.recordEvent("app_opened")
 
                     if (safeIntent.action.equals(ACTION_OPEN_PRIVATE_TAB) && it == APP_ICON) {
                         AppIcon.newPrivateTabTapped.record(NoExtras())
