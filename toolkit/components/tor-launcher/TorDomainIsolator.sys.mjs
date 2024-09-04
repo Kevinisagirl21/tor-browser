@@ -315,17 +315,23 @@ class TorDomainIsolatorImpl {
       const channel = aChannel.QueryInterface(Ci.nsIChannel);
       let firstPartyDomain = channel.loadInfo.originAttributes.firstPartyDomain;
       const userContextId = channel.loadInfo.originAttributes.userContextId;
-      const loadingPrincipalURI = channel.loadInfo.loadingPrincipal?.URI;
-      if (loadingPrincipalURI?.spec.startsWith("about:reader")) {
+      const scheme = channel.loadInfo.loadingPrincipal?.URI?.scheme;
+      const filePath = channel.loadInfo.loadingPrincipal?.URI?.filePath;
+      if (
+        (scheme === "about" && filePath === "reader") ||
+        (scheme === "moz-extension" && filePath === "/readerview.html")
+      ) {
         try {
-          const searchParams = new URLSearchParams(loadingPrincipalURI.query);
+          const searchParams = new URLSearchParams(
+            channel.loadInfo.loadingPrincipal.URI.query
+          );
           if (searchParams.has("url")) {
             firstPartyDomain = Services.eTLD.getSchemelessSite(
               Services.io.newURI(searchParams.get("url"))
             );
           }
         } catch (e) {
-          logger.error("Failed to get first party domain for about:reader", e);
+          logger.error("Failed to get first party domain for reader view", e);
         }
       }
       if (!firstPartyDomain) {
