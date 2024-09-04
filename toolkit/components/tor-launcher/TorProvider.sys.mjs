@@ -434,7 +434,9 @@ export class TorProvider {
     } else {
       node.ipAddrs = await this.#controller.getNodeAddresses(id);
     }
-    if (node.ipAddrs.length) {
+    // tor-browser#43116, tor-browser-build#41224: on Android, we do not ship
+    // the GeoIP databases to save some space. So skip it for now.
+    if (node.ipAddrs.length && !TorLauncherUtil.isAndroid) {
       // Get the country code for the node's IP address.
       try {
         // Expect a 2-letter ISO3166-1 code, which should also be a valid
