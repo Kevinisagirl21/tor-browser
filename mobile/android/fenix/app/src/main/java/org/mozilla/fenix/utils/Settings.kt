@@ -698,10 +698,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         get() = false // cookieBannersSection[CookieBannersSection.FEATURE_SETTING_GLOBAL_RULES_SUB_FRAMES] == 1
 
     val shouldEnableQueryParameterStripping: Boolean
-        get() = false // queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING] == "1"
+        get() = true // queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING] == "1"
 
     val shouldEnableQueryParameterStrippingPrivateBrowsing: Boolean
-        get() = false // queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_PMB] == "1"
+        get() = true // queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_PMB] == "1"
 
     val queryParameterStrippingAllowList: String
         get() = "" // queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_ALLOW_LIST].orEmpty()
