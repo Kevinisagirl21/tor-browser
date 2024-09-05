@@ -696,10 +696,12 @@ class TorSettingsImpl {
 
     // Initialize this before loading from prefs because we need Lox initialized
     // before any calls to Lox.getBridges().
-    try {
-      await lazy.Lox.init();
-    } catch (e) {
-      lazy.logger.error("Could not initialize Lox.", e);
+    if (!lazy.TorLauncherUtil.isAndroid) {
+      try {
+        await lazy.Lox.init();
+      } catch (e) {
+        lazy.logger.error("Could not initialize Lox.", e);
+      }
     }
 
     if (
