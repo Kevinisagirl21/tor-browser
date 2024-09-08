@@ -44,6 +44,8 @@ class InstalledAddonDetailsFragment : Fragment() {
 
     private var _binding: FragmentInstalledAddOnDetailsBinding? = null
 
+    private var isBundledAddon = false;
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -51,6 +53,7 @@ class InstalledAddonDetailsFragment : Fragment() {
     ): View {
         if (!::addon.isInitialized) {
             addon = AddonDetailsFragmentArgs.fromBundle(requireNotNull(arguments)).addon
+            isBundledAddon = installedExtensions[addon.id]?.isBundled() ?: false
         }
 
         setBindingAndBindUI(
@@ -148,6 +151,7 @@ class InstalledAddonDetailsFragment : Fragment() {
         // When the ad-on is blocklisted or not correctly signed, we do not want to enable the toggle switch
         // because users shouldn't be able to re-enable an add-on in this state.
         if (
+            isBundledAddon ||
             addon.isDisabledAsBlocklisted() ||
             addon.isDisabledAsNotCorrectlySigned() ||
             addon.isDisabledAsIncompatible()
@@ -303,6 +307,7 @@ class InstalledAddonDetailsFragment : Fragment() {
     }
 
     private fun bindReportButton() {
+        binding.reportAddOn.isVisible = !isBundledAddon
         binding.reportAddOn.setOnClickListener {
             val shouldCreatePrivateSession = (activity as HomeActivity).browsingModeManager.mode.isPrivate
 
@@ -367,8 +372,7 @@ class InstalledAddonDetailsFragment : Fragment() {
     }
 
     private fun bindRemoveButton() {
-        val isBuiltin = installedExtensions[addon.id]?.isBuiltIn() ?: false
-        binding.removeAddOn.isVisible = !isBuiltin
+        binding.removeAddOn.isVisible = !isBundledAddon
         binding.removeAddOn.setOnClickListener {
             setAllInteractiveViewsClickable(binding, false)
             requireContext().components.addonManager.uninstallAddon(
