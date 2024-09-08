@@ -6,12 +6,14 @@
 
 package org.mozilla.fenix.components
 
+import android.os.StrictMode
 import android.content.Context
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.WebExtensionRuntime
 import mozilla.components.support.webextensions.WebExtensionSupport
@@ -25,14 +27,39 @@ object TorBrowserFeatures {
     private const val NOSCRIPT_ID = "{73a6fe31-595d-460b-a920-fcc0f8843232}"
 
     private fun installNoScript(
+        context: Context,
         runtime: WebExtensionRuntime,
         onSuccess: ((WebExtension) -> Unit),
         onError: ((Throwable) -> Unit)
     ) {
+        /**
+         * Copy the xpi from assets to cacheDir, we do not care if the file is later deleted.
+         */
+        val xpiName = "$NOSCRIPT_ID.xpi"
+        val addonPath = context.cacheDir.resolve(xpiName)
+        val policy = StrictMode.getThreadPolicy()
+        try {
+            context.assets.open("extensions/$xpiName")
+                .use { inStream ->
+                    // we don't want penaltyDeath() on disk write
+                    StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
 
-        runtime.installBuiltInWebExtension(
-            id = NOSCRIPT_ID,
-            url = "resource://android/assets/extensions/" + NOSCRIPT_ID + ".xpi",
+                    addonPath.outputStream().use { outStream ->
+                        inStream.copyTo(outStream)
+                    }
+                }
+        } catch (throwable: IOException) {
+            onError(throwable)
+            return
+        } finally {
+            StrictMode.setThreadPolicy(policy)
+        }
+
+        /**
+         * Install with a file:// URI pointing to the temp location where the addon was copied to.
+         */
+        runtime.installWebExtension(
+            url = addonPath.toURI().toString(),
             onSuccess = { extension ->
                 runtime.setAllowedInPrivateBrowsing(
                     extension,
@@ -95,6 +122,7 @@ object TorBrowserFeatures {
          */
         if (!settings.noscriptInstalled) {
             installNoScript(
+                context,
                 runtime,
                 onSuccess = {
                     settings.noscriptInstalled = true
