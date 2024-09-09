@@ -14,7 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const Prefs = Object.freeze({
-  useNewBootstrap: "browser.tor_android.use_new_bootstrap",
   logLevel: "browser.tor_android.log_level",
 });
 
@@ -49,14 +48,17 @@ const ListenedEvents = Object.freeze({
 class TorAndroidIntegrationImpl {
   #initialized = false;
 
-  init() {
+  async init() {
+    if (this.#initialized) {
+      logger.warn("Something tried to initilize us again.");
+      return;
+    }
+    this.#initialized = true;
+
     lazy.EventDispatcher.instance.registerListener(
       this,
       Object.values(ListenedEvents)
     );
-
-    this.#bootstrapMethodReset();
-    Services.prefs.addObserver(Prefs.useNewBootstrap, this);
 
     Services.obs.addObserver(this, lazy.TorProviderTopics.TorLog);
 
@@ -67,13 +69,6 @@ class TorAndroidIntegrationImpl {
     for (const topic in lazy.TorSettingsTopics) {
       Services.obs.addObserver(this, lazy.TorSettingsTopics[topic]);
     }
-  }
-
-  async #initNewBootstrap() {
-    if (this.#initialized) {
-      return;
-    }
-    this.#initialized = true;
 
     lazy.TorProviderBuilder.init().finally(() => {
       lazy.TorProviderBuilder.firstWindowLoaded();
@@ -86,13 +81,8 @@ class TorAndroidIntegrationImpl {
     }
   }
 
-  observe(subj, topic, data) {
+  observe(subj, topic) {
     switch (topic) {
-      case "nsPref:changed":
-        if (data === Prefs.useNewBootstrap) {
-          this.#bootstrapMethodReset();
-        }
-        break;
       case lazy.TorConnectTopics.StateChange:
         lazy.EventDispatcher.instance.sendRequest({
           type: EmittedEvents.connectStateChanged,
@@ -185,15 +175,6 @@ class TorAndroidIntegrationImpl {
     } catch (e) {
       logger.error(`Error while handling event ${event}`, e);
       callback?.onError(e);
-    }
-  }
-
-  #bootstrapMethodReset() {
-    if (Services.prefs.getBoolPref(Prefs.useNewBootstrap, false)) {
-      this.#initNewBootstrap();
-    } else {
-      Services.prefs.clearUserPref("network.proxy.socks");
-      Services.prefs.clearUserPref("network.proxy.socks_port");
     }
   }
 }
