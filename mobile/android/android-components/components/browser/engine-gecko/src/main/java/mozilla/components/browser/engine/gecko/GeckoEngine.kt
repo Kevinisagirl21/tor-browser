@@ -1347,11 +1347,6 @@ class GeckoEngine(
                     localeUpdater.updateValue()
                 }
             }
-        override var useNewBootstrap: Boolean
-            get() = runtime.settings.useNewBootstrap
-            set(value) {
-                runtime.settings.useNewBootstrap = value
-            }
     }.apply {
         defaultSettings?.let {
             this.javascriptEnabled = it.javascriptEnabled
@@ -1380,7 +1375,6 @@ class GeckoEngine(
             this.emailTrackerBlockingPrivateBrowsing = it.emailTrackerBlockingPrivateBrowsing
             this.torSecurityLevel = it.torSecurityLevel
             this.spoofEnglish = it.spoofEnglish
-            this.useNewBootstrap = it.useNewBootstrap
         }
     }
 
