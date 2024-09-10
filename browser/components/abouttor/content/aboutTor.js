@@ -137,12 +137,7 @@ const MessageArea = {
     }
 
     // Set heading.
-    document.l10n.setAttributes(
-      document.getElementById("tor-browser-home-heading-text"),
-      this._isStable
-        ? "tor-browser-home-heading-stable"
-        : "tor-browser-home-heading-testing"
-    );
+    document.body.classList.toggle("is-testing", !this._isStable);
 
     document.body.classList.toggle("show-tor-check", !this._torConnectEnabled);
 
@@ -166,6 +161,20 @@ const MessageArea = {
       messageElements[number % messageElements.length].classList.add(
         "shown-message"
       );
+    }
+
+    // In the case where we set the update message, we are still waiting for the
+    // l10n message to complete. We wait until then before showing the content.
+    if (document.hasPendingL10nMutations) {
+      window.addEventListener(
+        "L10nMutationsFinished",
+        () => {
+          document.body.classList.add("initialized");
+        },
+        { once: true }
+      );
+    } else {
+      document.body.classList.add("initialized");
     }
   },
 };
