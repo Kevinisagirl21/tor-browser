@@ -3,6 +3,7 @@
 
 @import url("chrome://global/skin/error-pages.css");
 @import url("chrome://global/skin/tor-colors.css");
+@import url("chrome://global/skin/onion-pattern.css");
 
 :root {
   --onion-opacity: 1;
@@ -250,13 +251,8 @@ form#locationDropdown select {
 
 body.aboutTorConnect {
   justify-content: space-between;
-  background:
-    local
-    url("chrome://global/content/torconnect/onion-pattern.svg")
-    center bottom
-    repeat-x;
   /* Always reserve 150px for the background, plus 15px padding with content. */
-  padding-block-end: 175px;
+  padding-block-end: calc(var(--onion-pattern-height) + 15px);
 }
 
 body.aboutTorConnect .title {
