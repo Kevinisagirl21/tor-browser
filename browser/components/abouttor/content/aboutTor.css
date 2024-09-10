@@ -52,9 +52,11 @@ h1 {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding-inline: 24px;
-  padding-block: 12px;
+  padding-inline: 23px;
+  padding-block: 11px;
+  border: 1px solid var(--in-content-box-border-color);
   border-radius: 8px;
+  background-color: var(--in-content-box-info-background);
   margin-block-start: 0;
   margin-block-end: 30px;
 }
@@ -106,6 +108,7 @@ body:not(.show-tor-check) #tor-check {
   border-radius: calc(var(--form-radius) + var(--form-border-width));
   border-width: var(--form-border-width);
   border-style: solid;
+  border-color: var(--in-content-box-border-color);
 }
 
 #search-form.search-input-focus-visible {
@@ -154,17 +157,10 @@ body:not(.show-tor-check) #tor-check {
 
 }
 
-@media (prefers-contrast) {
-  #search-form {
-    border-color: var(--in-content-box-border-color);
-  }
+@media not ((prefers-contrast) or (forced-colors)) {
+  /* Force the page to follow the same Tor theme, regardless of
+   * prefers-color-scheme. */
 
-  #tor-check {
-    background-color: var(--in-content-box-info-background);
-  }
-}
-
-@media not (prefers-contrast) {
   /* On dark background */
   :root {
     background-color: #2C0449;
@@ -176,6 +172,7 @@ body:not(.show-tor-check) #tor-check {
 
   #tor-check {
     background-color: #1f0333;
+    border-color: transparent;
   }
 
   body > :not(#search-form) {
