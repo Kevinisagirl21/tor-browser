@@ -17,7 +17,7 @@
   background: currentColor;
 }
 
-@media not (prefers-contrast) {
+@media not ((prefers-contrast) or (forced-colors)) {
   #tor-circuit-button-icon {
     background: linear-gradient(315deg, #008799 0%, #6153C6 50%, #CA00CC 100%);
   }
