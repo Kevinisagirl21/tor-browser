@@ -143,6 +143,7 @@ body:not(.show-tor-check) #tor-check {
   flex: 1 0 auto;
   min-width: 200px;
   min-height: var(--logo-size);
+  box-sizing: content-box;
   margin: 0;
   padding-block: var(--form-outer-padding);
   padding-inline-end: var(--form-padding);
@@ -153,6 +154,8 @@ body:not(.show-tor-check) #tor-check {
   /* Make sure clickable area does not extend beyond the form's border. */
   border-start-start-radius: var(--form-radius);
   border-end-start-radius: var(--form-radius);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
   /* Focus and outline styling move to the parent. */
   background: none;
   border: none;
@@ -162,14 +165,16 @@ body:not(.show-tor-check) #tor-check {
 #onionize-toggle {
   flex: 0 0 auto;
   font-weight: 500;
+  justify-content: center;
   padding-block: var(--form-outer-padding);
   padding-inline-end: var(--form-outer-padding);
   border-start-end-radius: var(--form-radius);
   border-end-end-radius: var(--form-radius);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
   padding-inline-start: 0;
   /* Non-clickable gap between input and toggle. */
   margin-inline-start: 0.5em;
-
 }
 
 @media not ((prefers-contrast) or (forced-colors)) {
