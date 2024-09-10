@@ -1,4 +1,5 @@
 @import url("chrome://global/skin/tor-colors.css");
+@import url("chrome://global/skin/onion-pattern.css");
 
 body {
   margin: 0;
@@ -17,16 +18,11 @@ body {
      * NOTE: Since the body has "auto" height, the other "1fr" flex row will
      * not shrink to zero, but will instead shrink to a minimum size of
      * 75px = (150px * 1fr / 2fr) */
-    ". . ." minmax(150px, 2fr)
+    ". . ." minmax(var(--onion-pattern-height), 2fr)
     /* NOTE: "form" will be given a maximum width of --form-max-width. */
     / 1fr minmax(max-content, var(--form-max-width)) 1fr;
   justify-items: center;
   padding-inline: 20px;
-  background:
-    local
-    url("chrome://browser/content/abouttor/onion-pattern.svg")
-    center bottom
-    repeat-x;
 }
 
 body:not(.initialized) {
@@ -188,6 +184,8 @@ body:not(.show-tor-check) #tor-check {
     --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
     --in-content-focus-outline-color: var(--focus-outline-color);
     --in-content-focus-outline: var(--focus-outline);
+    --onion-pattern-stroke-color: #3e0663;
+    --onion-pattern-fill-color: #350556;
   }
 
   #tor-check {
