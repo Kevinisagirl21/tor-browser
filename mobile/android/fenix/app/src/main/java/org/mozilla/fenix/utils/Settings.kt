@@ -1753,7 +1753,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var shouldShowReviewQualityCheckCFR by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_should_show_review_quality_cfr),
-        default = true,
+        default = false,
     )
 
     /**
