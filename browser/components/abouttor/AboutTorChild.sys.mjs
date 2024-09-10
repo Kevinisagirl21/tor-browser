@@ -16,6 +16,12 @@ export class AboutTorChild extends JSWindowActorChild {
       case "SubmitSearchOnionize":
         this.sendAsyncMessage("AboutTor:SetSearchOnionize", !!event.detail);
         break;
+      case "L10nMutationsFinished":
+        // Pass on chrome-only event for completed localization to content.
+        this.contentWindow.dispatchEvent(
+          new this.contentWindow.CustomEvent("L10nMutationsFinished")
+        );
+        break;
     }
   }
 }

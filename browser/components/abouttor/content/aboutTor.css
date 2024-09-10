@@ -29,6 +29,13 @@ body {
     repeat-x;
 }
 
+body:not(.initialized) {
+  /* Hide the components before the page is initialized.
+   * NOTE: The layout can still be adjusted or measured in this time since we
+   * use visibility rather than `display: none`. */
+  visibility: hidden;
+}
+
 h1 {
   grid-area: heading;
   display: flex;
@@ -43,6 +50,14 @@ h1 {
 #tor-browser-logo {
   height: 80px;
   flex: 0 0 auto;
+}
+
+body.is-testing #tor-browser-home-heading-stable {
+  display: none;
+}
+
+body:not(.is-testing) #tor-browser-home-heading-testing {
+  display: none;
 }
 
 #tor-check {
