@@ -420,7 +420,8 @@ button.spoof-button-disabled {
   box-sizing: content-box;
   width: 16px;
   height: 16px;
-  background: var(--in-content-button-background);
+  /* color-light-gray-10, color-dark-gray-60 */
+  background: light-dark(#f9f9fb, #2b2a33);
   border-radius: 4px;
   padding: 8px;
 }
