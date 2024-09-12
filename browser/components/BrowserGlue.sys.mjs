@@ -4862,7 +4862,9 @@ BrowserGlue.prototype = {
     //            (tor-browser#42283).
     // Version 4: Tor Browser 14.0a4 (2024-09-02): Remove Twitter, Yahoo and
     //            YouTube search engines (tor-browser#41835).
-    const TBB_MIGRATION_VERSION = 4;
+    // Version 5: Tor Browser 14.0a5: Clear user preference for CFR settings
+    //            since we hid the UI (tor-browser#43118).
+    const TBB_MIGRATION_VERSION = 5;
     const MIGRATION_PREF = "torbrowser.migration.version";
 
     // If we decide to force updating users to pass through any version
@@ -4934,6 +4936,14 @@ BrowserGlue.prototype = {
         "yahoo@search.mozilla.org",
         "youtube@search.mozilla.org",
       ]);
+    }
+    if (currentVersion < 5) {
+      for (const pref of [
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons",
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
+      ]) {
+        Services.prefs.clearUserPref(pref);
+      }
     }
 
     Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
