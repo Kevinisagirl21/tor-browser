@@ -156,7 +156,7 @@ class Core(
             cookieBannerHandlingDetectOnlyMode = context.settings().shouldEnableCookieBannerDetectOnly,
             cookieBannerHandlingGlobalRules = context.settings().shouldEnableCookieBannerGlobalRules,
             cookieBannerHandlingGlobalRulesSubFrames = context.settings().shouldEnableCookieBannerGlobalRulesSubFrame,
-            emailTrackerBlockingPrivateBrowsing = true,
+            emailTrackerBlockingPrivateBrowsing = false,
             torSecurityLevel = context.settings().torSecurityLevel().intRepresentation,
             spoofEnglish = context.settings().spoofEnglish,
         )
