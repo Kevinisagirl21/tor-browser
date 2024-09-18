@@ -408,16 +408,15 @@ class LoxImpl {
   }
 
   /**
-   * Update Lox credential after Lox key rotation
-   * Do not call directly, use #getPubKeys() instead to start the update only
-   * once
+   * Update Lox credential after Lox key rotation.
    *
-   * @param {string} prevkeys The public keys we are replacing
+   * Do not call directly, use #getPubKeys() instead to start the update only
+   * once.
    */
-  async #updatePubkeys(prevkeys) {
+  async #updatePubkeys() {
     let pubKeys;
     try {
-      pubKeys = await this.#makeRequest("pubkeys", []);
+      pubKeys = JSON.stringify(await this.#makeRequest("pubkeys", []));
     } catch (error) {
       lazy.logger.debug("Failed to get pubkeys", error);
       // Make the next call try again.
@@ -435,8 +434,8 @@ class LoxImpl {
       try {
         lox_cred_req = JSON.parse(
           lazy.check_lox_pubkeys_update(
-            JSON.stringify(pubKeys),
-            prevkeys,
+            pubKeys,
+            prevKeys,
             this.#getCredentials(this.#activeLoxId)
           )
         );
@@ -447,6 +446,9 @@ class LoxImpl {
         return;
       }
       if (lox_cred_req.updated) {
+        // Try update credentials.
+        // NOTE: This should be re-callable if any step fails.
+        // TODO: Verify this.
         lazy.logger.debug(
           `Lox pubkey updated, update Lox credential "${this.#activeLoxId}"`
         );
@@ -457,7 +459,10 @@ class LoxImpl {
           // until this request can be completed successfully (and until Lox
           // is refactored to send repeat responses:
           // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/74)
-          response = await this.#makeRequest("updatecred", lox_cred_req.req);
+          response = await this.#makeRequest(
+            "updatecred",
+            JSON.parse(lox_cred_req.req).request
+          );
         } catch (error) {
           lazy.logger.debug("Lox cred update failed.", error);
           // Make the next call try again.
@@ -490,7 +495,7 @@ class LoxImpl {
     }
     // If we arrive here we haven't had other errors before, we can actually
     // store the new public key.
-    this.#pubKeys = JSON.stringify(pubKeys);
+    this.#pubKeys = pubKeys;
     this.#store();
   }
 
