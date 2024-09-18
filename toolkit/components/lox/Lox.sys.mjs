@@ -92,6 +92,7 @@ const LoxSettingsPrefs = Object.freeze({
 export class LoxError extends Error {
   static BadInvite = "BadInvite";
   static LoxServerUnreachable = "LoxServerUnreachable";
+  static ErrorResponse = "ErrorResponse";
 
   /**
    * @param {string} message - The error message.
@@ -417,7 +418,7 @@ class LoxImpl {
   async #updatePubkeys() {
     let pubKeys;
     try {
-      pubKeys = JSON.stringify(await this.#makeRequest("pubkeys", []));
+      pubKeys = await this.#makeRequest("pubkeys", null);
     } catch (error) {
       lazy.logger.debug("Failed to get pubkeys", error);
       // Make the next call try again.
@@ -460,31 +461,16 @@ class LoxImpl {
           // until this request can be completed successfully (and until Lox
           // is refactored to send repeat responses:
           // https://gitlab.torproject.org/tpo/anti-censorship/lox/-/issues/74)
-          response = await this.#makeRequest(
-            "updatecred",
-            JSON.parse(lox_cred_req.req).request
-          );
+          response = await this.#makeRequest("updatecred", lox_cred_req.req);
         } catch (error) {
           lazy.logger.debug("Lox cred update failed.", error);
           // Make the next call try again.
           this.#pubKeyPromise = null;
           return;
         }
-        if (response.hasOwnProperty("error")) {
-          lazy.logger.error(response.error);
-          this.#pubKeyPromise = null;
-          lazy.logger.debug(
-            `Error response to Lox pubkey update request: "${response.error}", reverting to old pubkeys`
-          );
-          return;
-        }
         let cred;
         try {
-          cred = lazy.handle_update_cred(
-            lox_cred_req.req,
-            JSON.stringify(response),
-            pubKeys
-          );
+          cred = lazy.handle_update_cred(lox_cred_req.req, response, pubKeys);
         } catch (error) {
           lazy.logger.debug("Unable to handle updated Lox cred", error);
           // Make the next call try again.
@@ -511,9 +497,9 @@ class LoxImpl {
 
   async #getEncTable() {
     if (this.#encTablePromise === null) {
-      this.#encTablePromise = this.#makeRequest("reachability", [])
+      this.#encTablePromise = this.#makeRequest("reachability", null)
         .then(encTable => {
-          this.#encTable = JSON.stringify(encTable);
+          this.#encTable = encTable;
           this.#store();
         })
         .catch(error => {
@@ -532,10 +518,10 @@ class LoxImpl {
   async #getConstants() {
     if (this.#constantsPromise === null) {
       // Try to update first, but if that doesn't work fall back to stored data
-      this.#constantsPromise = this.#makeRequest("constants", [])
+      this.#constantsPromise = this.#makeRequest("constants", null)
         .then(constants => {
           const prevValue = this.#constants;
-          this.#constants = JSON.stringify(constants);
+          this.#constants = constants;
           this.#store();
           if (prevValue !== this.#constants) {
             Services.obs.notifyObservers(null, LoxTopics.UpdateNextUnlock);
@@ -714,7 +700,7 @@ class LoxImpl {
   // to issue open invitations for Lox bridges.
   async requestOpenInvite() {
     this.#assertInitialized();
-    let invite = await this.#makeRequest("invite", []);
+    let invite = JSON.parse(await this.#makeRequest("invite", null));
     lazy.logger.debug(invite);
     return invite;
   }
@@ -732,22 +718,17 @@ class LoxImpl {
     // credential yet
     await this.#getPubKeys();
     let request = await lazy.open_invite(JSON.parse(invite).invite);
-    let response = await this.#makeRequest(
-      "openreq",
-      JSON.parse(request).request
-    );
-    lazy.logger.debug("openreq response: ", response);
-    if (response.hasOwnProperty("error")) {
-      throw new LoxError(
-        `Error response to "openreq": ${response.error}`,
-        LoxError.BadInvite
-      );
+    let response;
+    try {
+      response = await this.#makeRequest("openreq", request);
+    } catch (error) {
+      if (error instanceof LoxError && error.code === LoxError.ErrorResponse) {
+        throw new LoxError("Error response to openreq", LoxError.BadInvite);
+      } else {
+        throw error;
+      }
     }
-    let cred = lazy.handle_new_lox_credential(
-      request,
-      JSON.stringify(response),
-      this.#pubKeys
-    );
+    let cred = lazy.handle_new_lox_credential(request, response, this.#pubKeys);
     // Generate an id that is not already in the #credentials map.
     let loxId;
     do {
@@ -805,24 +786,13 @@ class LoxImpl {
       this.#encTable,
       this.#pubKeys
     );
-    let response = await this.#makeRequest(
-      "issueinvite",
-      JSON.parse(request).request
-    );
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error(response.error);
-      throw new LoxError(`Error response to "issueinvite": ${response.error}`);
-    }
+    let response = await this.#makeRequest("issueinvite", request);
     // TODO: Do we ever expect handle_issue_invite to fail (beyond
     // implementation bugs)?
     // TODO: What happens if #pubkeys for `issue_invite` differs from the value
     // when calling `handle_issue_invite`? Should we cache the value at the
     // start of this method?
-    let cred = lazy.handle_issue_invite(
-      request,
-      JSON.stringify(response),
-      this.#pubKeys
-    );
+    let cred = lazy.handle_issue_invite(request, response, this.#pubKeys);
 
     // Store the new credentials as a priority in case a later method fails.
     this.#changeCredentials(loxId, cred);
@@ -862,38 +832,20 @@ class LoxImpl {
       lazy.logger.log("Not ready for blockage migration");
       return false;
     }
-    let response = await this.#makeRequest(
-      "checkblockage",
-      JSON.parse(request).request
-    );
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error(response.error);
-      throw new LoxError(
-        `Error response to "checkblockage": ${response.error}`
-      );
-    }
+    let response = await this.#makeRequest("checkblockage", request);
     const migrationCred = lazy.handle_check_blockage(
       this.#getCredentials(loxId),
-      JSON.stringify(response)
+      response
     );
     request = lazy.blockage_migration(
       this.#getCredentials(loxId),
       migrationCred,
       this.#pubKeys
     );
-    response = await this.#makeRequest(
-      "blockagemigration",
-      JSON.parse(request).request
-    );
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error(response.error);
-      throw new LoxError(
-        `Error response to "blockagemigration": ${response.error}`
-      );
-    }
+    response = await this.#makeRequest("blockagemigration", request);
     const cred = lazy.handle_blockage_migration(
       this.#getCredentials(loxId),
-      JSON.stringify(response),
+      response,
       this.#pubKeys
     );
     this.#changeCredentials(loxId, cred);
@@ -919,19 +871,8 @@ class LoxImpl {
       this.#encTable,
       this.#pubKeys
     );
-    const response = await this.#makeRequest(
-      "levelup",
-      JSON.parse(request).request
-    );
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error(response.error);
-      throw new LoxError(`Error response to "levelup": ${response.error}`);
-    }
-    const cred = lazy.handle_level_up(
-      request,
-      JSON.stringify(response),
-      this.#pubKeys
-    );
+    const response = await this.#makeRequest("levelup", request);
+    const cred = lazy.handle_level_up(request, response, this.#pubKeys);
     this.#changeCredentials(loxId, cred);
     return true;
   }
@@ -960,31 +901,18 @@ class LoxImpl {
       return false;
     }
     try {
-      response = await this.#makeRequest(
-        "trustpromo",
-        JSON.parse(request).request
-      );
+      response = await this.#makeRequest("trustpromo", request);
     } catch (err) {
       lazy.logger.error("Failed trust promotion", err);
-      return false;
-    }
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error("Error response from trustpromo", response.error);
       return false;
     }
     lazy.logger.debug("Got promotion cred", response, request);
     let promoCred;
     try {
-      promoCred = lazy.handle_trust_promotion(
-        request,
-        JSON.stringify(response)
-      );
+      promoCred = lazy.handle_trust_promotion(request, response);
       lazy.logger.debug("Formatted promotion cred");
     } catch (err) {
-      lazy.logger.error(
-        "Unable to handle trustpromo response properly",
-        response.error
-      );
+      lazy.logger.error("Unable to handle trustpromo response properly", err);
       return false;
     }
     try {
@@ -999,16 +927,9 @@ class LoxImpl {
       return false;
     }
     try {
-      response = await this.#makeRequest(
-        "trustmig",
-        JSON.parse(request).request
-      );
+      response = await this.#makeRequest("trustmig", request);
     } catch (err) {
       lazy.logger.error("Failed trust migration", err);
-      return false;
-    }
-    if (response.hasOwnProperty("error")) {
-      lazy.logger.error("Error response from trustmig", response.error);
       return false;
     }
     lazy.logger.debug("Got new credential");
@@ -1106,38 +1027,47 @@ class LoxImpl {
     };
   }
 
-  async #makeRequest(procedure, args) {
+  /**
+   * Fetch from the Lox authority.
+   *
+   * @param {string} procedure - The request endpoint.
+   * @param {string} body - The arguments to send in the body, if any.
+   *
+   * @returns {string} - The response body.
+   */
+  async #fetch(procedure, body) {
     // TODO: Customize to for Lox
-    const serviceUrl = "https://lox.torproject.org";
-    const url = `${serviceUrl}/${procedure}`;
+    const url = `https://lox.torproject.org/${procedure}`;
+    const method = "POST";
+    const contentType = "application/vnd.api+json";
 
     if (lazy.TorConnect.state === lazy.TorConnectState.Bootstrapped) {
       let request;
       try {
         request = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/vnd.api+json",
-          },
-          body: JSON.stringify(args),
+          method,
+          headers: { "Content-Type": contentType },
+          body,
         });
       } catch (error) {
-        lazy.logger.debug("fetch fail", url, args, error);
+        lazy.logger.debug("fetch fail", url, body, error);
         throw new LoxError(
           `fetch "${procedure}" from Lox authority failed: ${error?.message}`,
           LoxError.LoxServerUnreachable
         );
       }
       if (!request.ok) {
-        lazy.logger.debug("fetch response", url, args, request);
+        lazy.logger.debug("fetch response", url, body, request);
         // Do not treat as a LoxServerUnreachable type.
         throw new LoxError(
           `Lox authority responded to "${procedure}" with ${request.status}: ${request.statusText}`
         );
       }
-      return request.json();
+      return request.text();
     }
 
+    // TODO: Only make domain fronted requests with user permission.
+    // tor-browser#42606.
     if (this.#domainFrontedRequests === null) {
       this.#domainFrontedRequests = new Promise((resolve, reject) => {
         // TODO: Customize to the values for Lox
@@ -1156,9 +1086,9 @@ class LoxImpl {
     }
     const builder = await this.#domainFrontedRequests;
     try {
-      return await builder.buildPostRequest(url, args);
+      return await builder.buildRequest(url, { method, contentType, body });
     } catch (error) {
-      lazy.logger.debug("Domain front request fail", url, args, error);
+      lazy.logger.debug("Domain front request fail", url, body, error);
       if (error instanceof lazy.DomainFrontRequestNetworkError) {
         throw new LoxError(
           `Domain front fetch "${procedure}" from Lox authority failed: ${error?.message}`,
@@ -1175,6 +1105,37 @@ class LoxImpl {
         `Domain front request for "${procedure}" from Lox authority failed: ${error?.message}`
       );
     }
+  }
+
+  /**
+   * Make a request to the lox authority, check for an error response, and
+   * convert it to a string.
+   *
+   * @param {string} procedure - The request endpoint.
+   * @param {?string} request - The request data, as a JSON string containing a
+   *   "request" field. Or `null` to send no data.
+   *
+   * @returns {string} - The stringified JSON response.
+   */
+  async #makeRequest(procedure, request) {
+    // Verify that the response is valid json, by parsing.
+    const jsonResponse = JSON.parse(
+      await this.#fetch(
+        procedure,
+        request ? JSON.stringify(JSON.parse(request).request) : ""
+      )
+    );
+    lazy.logger.debug(`${procedure} response:`, jsonResponse);
+    if (Object.hasOwn(jsonResponse, "error")) {
+      // TODO: Figure out if any of the "error" responses should be treated as
+      // an error. I.e. which of the procedures have soft failures and hard
+      // failures.
+      throw LoxError(
+        `Error response to ${procedure}: ${jsonResponse.error}`,
+        LoxError.ErrorResponse
+      );
+    }
+    return JSON.stringify(jsonResponse);
   }
 }
 
