@@ -71,8 +71,8 @@ import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
-import mozilla.components.feature.webcompat.WebCompatFeature
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
+// import mozilla.components.feature.webcompat.WebCompatFeature
+// import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.contile.ContileTopSitesProvider
@@ -165,6 +165,7 @@ class Core(
             defaultSettings,
             geckoRuntime,
         ).also {
+//          WebCompatFeature.install(it)
 
             /**
              * There are some issues around localization to be resolved, as well as questions around
@@ -172,10 +173,9 @@ class Core(
              * disabled in Fenix Release builds for now.
              * This is consistent with both Fennec and Firefox Desktop.
              */
-            if (false && (Config.channel.isNightlyOrDebug || Config.channel.isBeta)) {
-                WebCompatFeature.install(it)
-                WebCompatReporterFeature.install(it, "fenix")
-            }
+//          if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
+//              WebCompatReporterFeature.install(it, "fenix")
+//          }
         }
     }
 
