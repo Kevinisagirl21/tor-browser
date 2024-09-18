@@ -37,6 +37,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   set_panic_hook: "resource://gre/modules/lox_wasm.jsm",
   invitation_is_trusted: "resource://gre/modules/lox_wasm.jsm",
   issue_invite: "resource://gre/modules/lox_wasm.jsm",
+  handle_issue_invite: "resource://gre/modules/lox_wasm.jsm",
   prepare_invite: "resource://gre/modules/lox_wasm.jsm",
   get_invites_remaining: "resource://gre/modules/lox_wasm.jsm",
   get_trust_level: "resource://gre/modules/lox_wasm.jsm",
@@ -800,7 +801,7 @@ class LoxImpl {
       throw new LoxError(`Cannot generate invites at level ${level}`);
     }
     let request = lazy.issue_invite(
-      JSON.stringify(this.#getCredentials(loxId)),
+      this.#getCredentials(loxId),
       this.#encTable,
       this.#pubKeys
     );
@@ -811,20 +812,32 @@ class LoxImpl {
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
       throw new LoxError(`Error response to "issueinvite": ${response.error}`);
-    } else {
-      const invite = lazy.prepare_invite(response);
-      this.#invites.push(invite);
-      // cap length of stored invites
-      if (this.#invites.len > 50) {
-        this.#invites.shift();
-      }
-      this.#store();
-      this.#changeCredentials(loxId, response);
-      Services.obs.notifyObservers(null, LoxTopics.NewInvite);
-      // Return a copy.
-      // Right now invite is just a string, but that might change in the future.
-      return structuredClone(invite);
     }
+    // TODO: Do we ever expect handle_issue_invite to fail (beyond
+    // implementation bugs)?
+    // TODO: What happens if #pubkeys for `issue_invite` differs from the value
+    // when calling `handle_issue_invite`? Should we cache the value at the
+    // start of this method?
+    let cred = lazy.handle_issue_invite(
+      request,
+      JSON.stringify(response),
+      this.#pubKeys
+    );
+
+    // Store the new credentials as a priority in case a later method fails.
+    this.#changeCredentials(loxId, cred);
+
+    const invite = lazy.prepare_invite(cred);
+    this.#invites.push(invite);
+    // cap length of stored invites
+    if (this.#invites.len > 50) {
+      this.#invites.shift();
+    }
+    this.#store();
+    Services.obs.notifyObservers(null, LoxTopics.NewInvite);
+    // Return a copy.
+    // Right now invite is just a string, but that might change in the future.
+    return structuredClone(invite);
   }
 
   /**
