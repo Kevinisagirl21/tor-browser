@@ -862,7 +862,10 @@ class LoxImpl {
       lazy.logger.log("Not ready for blockage migration");
       return false;
     }
-    let response = await this.#makeRequest("checkblockage", request);
+    let response = await this.#makeRequest(
+      "checkblockage",
+      JSON.parse(request).request
+    );
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
       throw new LoxError(
@@ -878,7 +881,10 @@ class LoxImpl {
       migrationCred,
       this.#pubKeys
     );
-    response = await this.#makeRequest("blockagemigration", request);
+    response = await this.#makeRequest(
+      "blockagemigration",
+      JSON.parse(request).request
+    );
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
       throw new LoxError(
@@ -913,7 +919,10 @@ class LoxImpl {
       this.#encTable,
       this.#pubKeys
     );
-    const response = await this.#makeRequest("levelup", request);
+    const response = await this.#makeRequest(
+      "levelup",
+      JSON.parse(request).request
+    );
     if (response.hasOwnProperty("error")) {
       lazy.logger.error(response.error);
       throw new LoxError(`Error response to "levelup": ${response.error}`);
