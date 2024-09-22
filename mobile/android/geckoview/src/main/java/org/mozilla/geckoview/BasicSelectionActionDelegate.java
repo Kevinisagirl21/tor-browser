@@ -324,6 +324,8 @@ public class BasicSelectionActionDelegate
     if (resolveInfo != null) {
       intent.setComponent(
           new ComponentName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name));
+    } else {
+      intent.setPackage("com.google.android.marvin.talkback");
     }
     intent.addCategory(Intent.CATEGORY_DEFAULT);
     intent.setType("text/plain");

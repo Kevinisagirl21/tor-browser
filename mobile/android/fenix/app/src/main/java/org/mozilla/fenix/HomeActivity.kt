@@ -81,6 +81,7 @@ import mozilla.components.support.utils.ManufacturerCodes
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.TorUtils
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
+import mozilla.components.support.utils.hideExternalActions
 import mozilla.components.support.utils.toSafeIntent
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import mozilla.telemetry.glean.private.NoExtras
@@ -824,6 +825,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
 
     final override fun onActionModeStarted(mode: ActionMode?) {
         actionMode = mode
+        mode?.menu?.hideExternalActions()
         super.onActionModeStarted(mode)
     }
 
