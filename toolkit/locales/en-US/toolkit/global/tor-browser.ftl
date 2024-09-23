@@ -633,3 +633,15 @@ onion-neterror-invalid-address-description = The provided onion site address is 
 # "Circuit" refers to a Tor network circuit.
 onion-neterror-timed-out-header = Onion site circuit creation timed out
 onion-neterror-timed-out-description = Failed to connect to the onion site, possibly due to a poor network connection.
+
+## Notification for dropped operating system support.
+
+# "{ -brand-short-name }" will be replaced with the localized name of the browser, e.g. "Tor Browser".
+# "13.5" refers to the browser version number.
+# "macOS" is a brand name, and 10.15 is the macOS version number.
+dropped-support-notification-macos-version-less-than-10-15-extended-13-5 = { -brand-short-name } 13.5 will only receive security updates for a limited time. Please upgrade to macOS 10.15 or later to receive the latest version of { -brand-short-name }.
+
+# "{ -brand-short-name }" will be replaced with the localized name of the browser, e.g. "Tor Browser".
+# "13.5" refers to the browser version number.
+# "Windows" is a brand name, and "Windows 10" is the version.
+dropped-support-notification-win-os-version-less-than-10-extended-13-5 = { -brand-short-name } 13.5 will only receive security updates for a limited time. Please upgrade to Windows 10 or later to receive the latest version of { -brand-short-name }.
