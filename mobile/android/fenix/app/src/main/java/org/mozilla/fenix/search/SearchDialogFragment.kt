@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.text.style.StyleSpan
+import android.view.ActionMode
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -71,6 +72,7 @@ import mozilla.components.support.ktx.android.view.findViewInHierarchy
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
+import mozilla.components.support.utils.hideExternalActions
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.BrowserDirection
@@ -180,6 +182,11 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return object : Dialog(requireContext(), this.theme) {
+            override fun onActionModeStarted(mode: ActionMode?) {
+                mode?.menu?.hideExternalActions()
+                super.onActionModeStarted(mode)
+            }
+
             @Deprecated("Deprecated in Java")
             override fun onBackPressed() {
                 this@SearchDialogFragment.onBackPressed()

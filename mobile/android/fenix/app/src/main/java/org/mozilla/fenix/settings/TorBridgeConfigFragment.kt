@@ -9,6 +9,7 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import mozilla.components.support.utils.ActionModeCallback
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
@@ -65,6 +66,10 @@ class TorBridgeConfigFragment : PreferenceFragmentCompat() {
             R.string.pref_key_tor_network_settings_bridge_config_user_provided_bridge
         )
         userProvidedBridges.apply {
+            setOnBindEditTextListener { editText ->
+                editText.customSelectionActionModeCallback = ActionModeCallback()
+            }
+
             setOnPreferenceChangeListener<String> { preference, userProvidedBridge ->
                 builtinBridgeRadioGroups.uncheckAll()
 
