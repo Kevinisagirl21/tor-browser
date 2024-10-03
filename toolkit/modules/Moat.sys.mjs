@@ -108,7 +108,13 @@ export class MoatRPC {
     const procedureURIString = `${Services.prefs.getStringPref(
       TorLauncherPrefs.moat_service
     )}/${procedure}`;
-    return this.#requestBuilder.buildPostRequest(procedureURIString, args);
+    return JSON.parse(
+      await this.#requestBuilder.buildRequest(procedureURIString, {
+        method: "POST",
+        contentType: "application/vnd.api+json",
+        body: JSON.stringify(args),
+      })
+    );
   }
 
   async testInternetConnection() {

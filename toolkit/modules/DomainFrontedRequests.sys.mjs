@@ -523,34 +523,31 @@ export class DomainFrontRequestBuilder {
   }
 
   /**
-   * Make a POST request with a JSON body and a JSON response.
+   * Make a request.
    *
-   * @param {string} url The URL to load
-   * @param {object} args The arguments to send to the procedure. It will be
-   * serialized to JSON by this function and then set as POST body
-   * @returns {Promise<object>} A promise with the parsed response
+   * @param {string} url The URL to request.
+   * @param {object} args The arguments to send to the procedure.
+   * @param {string} args.method The request method.
+   * @param {string} args.body The request body.
+   * @param {string} args.contentType The "Content-Type" header to set.
+   * @returns {string} The response body.
    */
-  async buildPostRequest(url, args) {
+  async buildRequest(url, args) {
     const ch = this.buildHttpHandler(url);
 
-    const argsJson = JSON.stringify(args);
     const inStream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
       Ci.nsIStringInputStream
     );
-    inStream.setData(argsJson, argsJson.length);
+    inStream.setData(args.body, args.body.length);
     const upChannel = ch.QueryInterface(Ci.nsIUploadChannel);
-    const contentType = "application/vnd.api+json";
-    upChannel.setUploadStream(inStream, contentType, argsJson.length);
-    ch.requestMethod = "POST";
+    upChannel.setUploadStream(inStream, args.contentType, args.body.length);
+    ch.requestMethod = args.method;
 
     // Make request
     const listener = new ResponseListener();
     await ch.asyncOpen(listener, ch);
 
     // wait for response
-    const responseJSON = await listener.response();
-
-    // parse that JSON
-    return JSON.parse(responseJSON);
+    return listener.response();
   }
 }
