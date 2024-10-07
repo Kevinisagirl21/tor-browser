@@ -7,8 +7,5 @@ torbutton.jar:
 # browser branding
 % override chrome://branding/locale/brand.properties chrome://torbutton/locale/brand.properties
 
-# Strings for the about:tbupdate page
-% override chrome://browser/locale/aboutTBUpdate.dtd chrome://torbutton/locale/aboutTBUpdate.dtd
-
 % locale torbutton en-US %locale/en-US/
   locale/en-US/ (chrome/locale/en-US/*)
