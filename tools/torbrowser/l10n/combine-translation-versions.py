@@ -15,7 +15,7 @@ arg_parser.add_argument(
     "current_branch", metavar="<current-branch>", help="branch for the newest version"
 )
 arg_parser.add_argument(
-    "filenames", metavar="<filenames>", help="name of the translation files"
+    "files", metavar="<files>", help="JSON specifying the translation files"
 )
 arg_parser.add_argument("outname", metavar="<json>", help="name of the json output")
 
@@ -65,6 +65,14 @@ def git_lines(git_args: list[str]) -> list[str]:
     :returns: The non-empty lines from stdout of the command.
     """
     return [line for line in git_text(git_args).split("\n") if line]
+
+
+class TranslationFile:
+    """Represents a translation file."""
+
+    def __init__(self, path: str, content: str) -> None:
+        self.path = path
+        self.content = content
 
 
 class BrowserBranch:
@@ -134,11 +142,27 @@ class BrowserBranch:
     def __gt__(self, other: "BrowserBranch") -> bool:
         return self._ordered > other._ordered
 
-    def get_file_content(self, filename: str) -> str | None:
+    def _matching_dirs(self, path: str, dir_list: list[str]) -> bool:
+        """Test that a path is contained in the list of dirs.
+
+        :param path: The path to check.
+        :param dir_list: The list of directories to check against.
+        :returns: Whether the path matches.
+        """
+        for dir_path in dir_list:
+            if os.path.commonpath([dir_path, path]) == dir_path:
+                return True
+        return False
+
+    def get_file(
+        self, filename: str, search_dirs: list[str] | None
+    ) -> TranslationFile | None:
         """Fetch the file content for the named file in this branch.
 
         :param filename: The name of the file to fetch the content for.
-        :returns: The file content, or `None` if no file could be found.
+        :param search_dirs: The directories to restrict the search to, or None
+          to search for the file anywhere.
+        :returns: The file, or `None` if no file could be found.
         """
         if self._file_paths is None:
             if not self._is_head:
@@ -152,7 +176,10 @@ class BrowserBranch:
             )
 
         matching = [
-            path for path in self._file_paths if os.path.basename(path) == filename
+            path
+            for path in self._file_paths
+            if os.path.basename(path) == filename
+            and (search_dirs is None or self._matching_dirs(path, search_dirs))
         ]
         if not matching:
             return None
@@ -161,7 +188,9 @@ class BrowserBranch:
 
         path = matching[0]
 
-        return git_text(["cat-file", "blob", f"{self._ref}:{path}"])
+        return TranslationFile(
+            path=path, content=git_text(["cat-file", "blob", f"{self._ref}:{path}"])
+        )
 
 
 def get_stable_branch(
@@ -254,48 +283,63 @@ if os.environ.get("TRANSLATION_INCLUDE_LEGACY", "") != "true":
 
 files_list = []
 
-for translation_branch, name in (
-    part.strip().split(":", 1) for part in args.filenames.split(" ") if part.strip()
-):
-    current_content = current_branch.get_file_content(name)
-    stable_content = stable_branch.get_file_content(name)
+for file_dict in json.loads(args.files):
+    name = file_dict["name"]
+    where_dirs = file_dict.get("where", None)
+    current_file = current_branch.get_file(name, where_dirs)
+    stable_file = stable_branch.get_file(name, where_dirs)
 
-    if current_content is None and stable_content is None:
+    if current_file is None and stable_file is None:
         # No file in either branch.
         logger.warning(f"{name} does not exist in either the current or stable branch")
-    elif current_content is None:
+    elif current_file is None:
         logger.warning(f"{name} deleted in the current branch")
-    elif stable_content is None:
+    elif stable_file is None:
         logger.warning(f"{name} does not exist in the stable branch")
+    elif current_file.path != stable_file.path:
+        logger.warning(
+            f"{name} has different paths in the current and stable branch. "
+            f"{current_file.path} : {stable_file.path}"
+        )
 
     content = combine_files(
         name,
-        current_content,
-        stable_content,
+        None if current_file is None else current_file.content,
+        None if stable_file is None else stable_file.content,
         f"Will be unused in Tor Browser {current_branch.browser_version}!",
     )
 
     if legacy_branch:
-        legacy_content = legacy_branch.get_file_content(name)
-        if (
-            legacy_content is not None
-            and current_content is None
-            and stable_content is None
-        ):
+        legacy_file = legacy_branch.get_file(name, where_dirs)
+        if legacy_file is not None and current_file is None and stable_file is None:
             logger.warning(f"{name} still exists in the legacy branch")
-        elif legacy_content is None:
+        elif legacy_file is None:
             logger.warning(f"{name} does not exist in the legacy branch")
+        elif stable_file is not None and legacy_file.path != stable_file.path:
+            logger.warning(
+                f"{name} has different paths in the stable and legacy branch. "
+                f"{stable_file.path} : {legacy_file.path}"
+            )
+        elif current_file is not None and legacy_file.path != current_file.path:
+            logger.warning(
+                f"{name} has different paths in the current and legacy branch. "
+                f"{current_file.path} : {legacy_file.path}"
+            )
+
         content = combine_files(
             name,
             content,
-            legacy_content,
+            legacy_file.content,
             f"Unused in Tor Browser {stable_branch.browser_version}!",
         )
 
     files_list.append(
         {
             "name": name,
-            "branch": translation_branch,
+            # If "directory" is unspecified, we place the file directly beneath
+            # en-US/ in the translation repository. i.e. "".
+            "directory": file_dict.get("directory", ""),
+            "branch": file_dict["branch"],
             "content": content,
         }
     )
