@@ -42,7 +42,7 @@ x86_macos:
     stage: test
     interruptible: true
     tags:
-      - x86-win11
+      - x86-macos
     variables:
       GIT_STRATEGY: "none"
     rules:
