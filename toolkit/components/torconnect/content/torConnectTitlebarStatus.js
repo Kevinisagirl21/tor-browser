@@ -38,7 +38,7 @@ var gTorConnectTitlebarStatus = {
     // The title also acts as an accessible name for the role="status".
     this.node.setAttribute("title", this._strings.titlebarStatusName);
 
-    this._observeTopic = TorConnectTopics.StateChange;
+    this._observeTopic = TorConnectTopics.StageChange;
     this._stateListener = {
       observe: (subject, topic) => {
         if (topic !== this._observeTopic) {
@@ -66,17 +66,16 @@ var gTorConnectTitlebarStatus = {
     let textId;
     let connected = false;
     let potentiallyBlocked = false;
-    switch (TorConnect.state) {
-      case TorConnectState.Disabled:
+    switch (TorConnect.stageName) {
+      case TorConnectStage.Disabled:
         // Hide immediately.
         this.node.hidden = true;
         return;
-      case TorConnectState.Bootstrapped:
+      case TorConnectStage.Bootstrapped:
         textId = "titlebarStatusConnected";
         connected = true;
         break;
-      case TorConnectState.Bootstrapping:
-      case TorConnectState.AutoBootstrapping:
+      case TorConnectStage.Bootstrapping:
         textId = "titlebarStatusConnecting";
         break;
       default:

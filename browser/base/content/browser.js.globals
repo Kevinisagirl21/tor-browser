@@ -276,7 +276,7 @@
   "TorDomainIsolator",
   "gTorCircuitPanel",
   "TorConnect",
-  "TorConnectState",
+  "TorConnectStage",
   "TorConnectTopics",
   "gTorConnectUrlbarButton",
   "gTorConnectTitlebarStatus"

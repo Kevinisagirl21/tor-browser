@@ -2,27 +2,18 @@
 
 import { TorStrings } from "resource://gre/modules/TorStrings.sys.mjs";
 import {
-  InternetStatus,
   TorConnect,
   TorConnectTopics,
-  TorConnectState,
 } from "resource://gre/modules/TorConnect.sys.mjs";
 import {
   TorSettings,
   TorSettingsTopics,
 } from "resource://gre/modules/TorSettings.sys.mjs";
 
-const BroadcastTopic = "about-torconnect:broadcast";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.sys.jsm",
-});
-
-const log = console.createInstance({
-  maxLogLevel: "Warn",
-  prefix: "TorConnectParent",
 });
 
 /*
@@ -40,31 +31,6 @@ export class TorConnectParent extends JSWindowActorParent {
 
     const self = this;
 
-    this.state = {
-      State: TorConnect.state,
-      StateChanged: false,
-      PreviousState: TorConnectState.Initial,
-      ErrorCode: TorConnect.errorCode,
-      ErrorDetails: TorConnect.errorDetails,
-      BootstrapProgress: TorConnect.bootstrapProgress,
-      InternetStatus: TorConnect.internetStatus,
-      DetectedLocation: TorConnect.detectedLocation,
-      ShowViewLog: TorConnect.logHasWarningOrError,
-      HasEverFailed: TorConnect.hasEverFailed,
-      UIState: TorConnect.uiState,
-    };
-
-    // Workaround for a race condition, but we should fix it asap.
-    // about:torconnect is loaded before TorSettings is actually initialized.
-    // The getter might throw and the page not loaded correctly as a result.
-    // Silence any warning for now, but we should really fix it.
-    // See also tor-browser#41921.
-    try {
-      this.state.QuickStartEnabled = TorSettings.quickstart.enabled;
-    } catch (e) {
-      this.state.QuickStartEnabled = false;
-    }
-
     // JSWindowActiveParent derived objects cannot observe directly, so create a
     // member object to do our observing for us.
     //
@@ -72,103 +38,54 @@ export class TorConnectParent extends JSWindowActorParent {
     // module, and maintains a state object which we pass down to our
     // about:torconnect page, which uses the state object to update its UI.
     this.torConnectObserver = {
-      observe(aSubject, aTopic) {
-        let obj = aSubject?.wrappedJSObject;
-
-        // Update our state struct based on received torconnect topics and
-        // forward on to aboutTorConnect.js.
-        self.state.StateChanged = false;
-        switch (aTopic) {
-          case TorConnectTopics.StateChange: {
-            self.state.PreviousState = self.state.State;
-            self.state.State = obj.state;
-            self.state.StateChanged = true;
-            // Clear any previous error information if we are bootstrapping.
-            if (self.state.State === TorConnectState.Bootstrapping) {
-              self.state.ErrorCode = null;
-              self.state.ErrorDetails = null;
+      observe(subject, topic) {
+        const obj = subject?.wrappedJSObject;
+        switch (topic) {
+          case TorConnectTopics.StageChange:
+            self.sendAsyncMessage("torconnect:stage-change", obj);
+            break;
+          case TorConnectTopics.BootstrapProgress:
+            self.sendAsyncMessage("torconnect:bootstrap-progress", obj);
+            break;
+          case TorSettingsTopics.SettingsChanged:
+            if (!obj.changes.includes("quickstart.enabled")) {
+              break;
             }
-            self.state.BootstrapProgress = TorConnect.bootstrapProgress;
-            self.state.ShowViewLog = TorConnect.logHasWarningOrError;
-            self.state.HasEverFailed = TorConnect.hasEverFailed;
+          // eslint-disable-next-lined no-fallthrough
+          case TorSettingsTopics.Ready:
+            self.sendAsyncMessage(
+              "torconnect:quickstart-changed",
+              TorSettings.quickstart.enabled
+            );
             break;
-          }
-          case TorConnectTopics.BootstrapProgress: {
-            self.state.BootstrapProgress = obj.progress;
-            self.state.ShowViewLog = obj.hasWarnings;
-            break;
-          }
-          case TorConnectTopics.BootstrapComplete: {
-            // noop
-            break;
-          }
-          case TorConnectTopics.Error: {
-            self.state.ErrorCode = obj.code;
-            self.state.ErrorDetails = obj;
-            self.state.InternetStatus = TorConnect.internetStatus;
-            self.state.DetectedLocation = TorConnect.detectedLocation;
-            self.state.ShowViewLog = true;
-            break;
-          }
-          case TorSettingsTopics.Ready: {
-            if (
-              self.state.QuickStartEnabled !== TorSettings.quickstart.enabled
-            ) {
-              self.state.QuickStartEnabled = TorSettings.quickstart.enabled;
-            } else {
-              return;
-            }
-            break;
-          }
-          case TorSettingsTopics.SettingsChanged: {
-            if (
-              aSubject.wrappedJSObject.changes.includes("quickstart.enabled")
-            ) {
-              self.state.QuickStartEnabled = TorSettings.quickstart.enabled;
-            } else {
-              // this isn't a setting torconnect cares about
-              return;
-            }
-            break;
-          }
-          default: {
-            log.warn(`TorConnect: unhandled observe topic '${aTopic}'`);
-          }
         }
-
-        self.sendAsyncMessage("torconnect:state-change", self.state);
       },
     };
 
-    // Observe all of the torconnect:.* topics.
-    for (const key in TorConnectTopics) {
-      const topic = TorConnectTopics[key];
-      Services.obs.addObserver(this.torConnectObserver, topic);
-    }
+    Services.obs.addObserver(
+      this.torConnectObserver,
+      TorConnectTopics.StageChange
+    );
+    Services.obs.addObserver(
+      this.torConnectObserver,
+      TorConnectTopics.BootstrapProgress
+    );
     Services.obs.addObserver(this.torConnectObserver, TorSettingsTopics.Ready);
     Services.obs.addObserver(
       this.torConnectObserver,
       TorSettingsTopics.SettingsChanged
     );
-
-    this.userActionObserver = {
-      observe(aSubject) {
-        let obj = aSubject?.wrappedJSObject;
-        if (obj) {
-          obj.connState = self.state;
-          self.sendAsyncMessage("torconnect:user-action", obj);
-        }
-      },
-    };
-    Services.obs.addObserver(this.userActionObserver, BroadcastTopic);
   }
 
   willDestroy() {
-    // Stop observing all of our torconnect:.* topics.
-    for (const key in TorConnectTopics) {
-      const topic = TorConnectTopics[key];
-      Services.obs.removeObserver(this.torConnectObserver, topic);
-    }
+    Services.obs.removeObserver(
+      this.torConnectObserver,
+      TorConnectTopics.StageChange
+    );
+    Services.obs.removeObserver(
+      this.torConnectObserver,
+      TorConnectTopics.BootstrapProgress
+    );
     Services.obs.removeObserver(
       this.torConnectObserver,
       TorSettingsTopics.Ready
@@ -177,7 +94,6 @@ export class TorConnectParent extends JSWindowActorParent {
       this.torConnectObserver,
       TorSettingsTopics.SettingsChanged
     );
-    Services.obs.removeObserver(this.userActionObserver, BroadcastTopic);
   }
 
   async receiveMessage(message) {
@@ -194,15 +110,6 @@ export class TorConnectParent extends JSWindowActorParent {
       case "torconnect:open-tor-preferences":
         TorConnect.openTorPreferences();
         break;
-      case "torconnect:cancel-bootstrap":
-        TorConnect.cancelBootstrap();
-        break;
-      case "torconnect:begin-bootstrap":
-        TorConnect.beginBootstrap();
-        break;
-      case "torconnect:begin-autobootstrap":
-        TorConnect.beginAutoBootstrap(message.data);
-        break;
       case "torconnect:view-tor-logs":
         TorConnect.viewTorLogs();
         break;
@@ -211,29 +118,43 @@ export class TorConnectParent extends JSWindowActorParent {
           Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit
         );
         break;
-      case "torconnect:set-ui-state":
-        TorConnect.uiState = message.data;
-        this.state.UIState = TorConnect.uiState;
+      case "torconnect:start-again":
+        TorConnect.startAgain();
         break;
-      case "torconnect:broadcast-user-action":
-        Services.obs.notifyObservers(message.data, BroadcastTopic);
+      case "torconnect:choose-region":
+        TorConnect.chooseRegion();
         break;
-      case "torconnect:get-init-args":
+      case "torconnect:begin-bootstrapping":
+        TorConnect.beginBootstrapping(message.data.regionCode);
+        break;
+      case "torconnect:cancel-bootstrapping":
+        TorConnect.cancelBootstrapping();
+        break;
+      case "torconnect:get-init-args": {
         // Called on AboutTorConnect.init(), pass down all state data it needs
         // to init.
 
-        // pretend this is a state transition on init
-        // so we always get fresh UI
-        this.state.StateChanged = true;
-        this.state.UIState = TorConnect.uiState;
+        let quickstartEnabled = false;
+
+        // Workaround for a race condition, but we should fix it asap.
+        // about:torconnect is loaded before TorSettings is actually initialized.
+        // The getter might throw and the page not loaded correctly as a result.
+        // Silence any warning for now, but we should really fix it.
+        // See also tor-browser#41921.
+        try {
+          quickstartEnabled = TorSettings.quickstart.enabled;
+        } catch (e) {
+          // Do not throw.
+        }
+
         return {
           TorStrings,
-          TorConnectState,
-          InternetStatus,
           Direction: Services.locale.isAppLocaleRTL ? "rtl" : "ltr",
-          State: this.state,
           CountryNames: TorConnect.countryNames,
+          stage: TorConnect.stage,
+          quickstartEnabled,
         };
+      }
       case "torconnect:get-country-codes":
         return TorConnect.getCountryCodes();
     }
