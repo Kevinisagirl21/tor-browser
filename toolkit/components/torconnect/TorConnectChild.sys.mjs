@@ -77,7 +77,7 @@ export class TorConnectChild extends RemotePageChild {
   receiveMessage(message) {
     super.receiveMessage(message);
 
-    if (message.name === "torconnect:state-change") {
+    if (message.name === "torconnect:stage-change") {
       this.#maybeRedirect();
     }
   }

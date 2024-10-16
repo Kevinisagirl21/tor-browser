@@ -55,13 +55,13 @@ var gTorConnectUrlbarButton = {
       this.connect();
     });
 
-    this._observeTopic = TorConnectTopics.StateChange;
+    this._observeTopic = TorConnectTopics.StageChange;
     this._stateListener = {
       observe: (subject, topic) => {
         if (topic !== this._observeTopic) {
           return;
         }
-        this._torConnectStateChanged();
+        this._torConnectStageChanged();
       },
     };
     Services.obs.addObserver(this._stateListener, this._observeTopic);
@@ -84,7 +84,7 @@ var gTorConnectUrlbarButton = {
     // switching selected browser.
     gBrowser.addProgressListener(this._locationListener);
 
-    this._torConnectStateChanged();
+    this._torConnectStageChanged();
   },
 
   /**
@@ -105,17 +105,17 @@ var gTorConnectUrlbarButton = {
    * Begin the tor connection bootstrapping process.
    */
   connect() {
-    TorConnect.openTorConnect({ beginBootstrap: true });
+    TorConnect.openTorConnect({ beginBootstrapping: "soft" });
   },
 
   /**
-   * Callback for when the TorConnect state changes.
+   * Callback for when the TorConnect stage changes.
    */
-  _torConnectStateChanged() {
-    if (TorConnect.state === TorConnectState.Disabled) {
+  _torConnectStageChanged() {
+    if (TorConnect.stageName === TorConnectStage.Disabled) {
       // NOTE: We do not uninit early when we reach the
-      // TorConnectState.Bootstrapped state because we can still leave the
-      // Bootstrapped state if the tor process exists early and needs a restart.
+      // TorConnectStage.Bootstrapped stage because we can still leave the
+      // Bootstrapped stage if the tor process exists early and needs a restart.
       this.uninit();
       return;
     }

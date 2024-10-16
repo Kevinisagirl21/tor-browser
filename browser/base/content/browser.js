@@ -85,7 +85,7 @@ ChromeUtils.defineESModuleGetters(this, {
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
-  TorConnectState: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectStage: "resource://gre/modules/TorConnect.sys.mjs",
   TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
   TorUIUtils: "resource:///modules/TorUIUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",

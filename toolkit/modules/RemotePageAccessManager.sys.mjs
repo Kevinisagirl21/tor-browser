@@ -239,19 +239,19 @@ export let RemotePageAccessManager = {
     },
     "about:torconnect": {
       RPMAddMessageListener: [
-        "torconnect:state-change",
-        "torconnect:user-action",
+        "torconnect:stage-change",
+        "torconnect:bootstrap-progress",
+        "torconnect:quickstart-change",
       ],
       RPMSendAsyncMessage: [
         "torconnect:open-tor-preferences",
-        "torconnect:begin-bootstrap",
-        "torconnect:begin-autobootstrap",
-        "torconnect:cancel-bootstrap",
+        "torconnect:begin-bootstrapping",
+        "torconnect:cancel-bootstrapping",
         "torconnect:set-quickstart",
         "torconnect:view-tor-logs",
         "torconnect:restart",
-        "torconnect:set-ui-state",
-        "torconnect:broadcast-user-action",
+        "torconnect:start-again",
+        "torconnect:choose-region",
       ],
       RPMSendQuery: [
         "torconnect:get-init-args",
