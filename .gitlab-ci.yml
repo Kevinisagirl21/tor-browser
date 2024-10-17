@@ -14,7 +14,7 @@
 stages:
   - test
 
-i686_linux:
+i686-debian-bookworm:
     stage: test
     interruptible: true
     tags:
@@ -26,7 +26,7 @@ i686_linux:
     script:
       - uname -a
 
-x86_windows11:
+x86_64-windows11:
     stage: test
     interruptible: true
     tags:
@@ -38,7 +38,7 @@ x86_windows11:
     script:
       - systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
 
-x86_macos:
+x86_64-macos-catalina10.15:
     stage: test
     interruptible: true
     tags:
