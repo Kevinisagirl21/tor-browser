@@ -421,9 +421,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = 1f,
     )
 
+    val shouldDisableNormalMode by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_disable_normal_mode),
+        true
+    )
+
     val shouldShowHistorySuggestions by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_search_browsing_history),
-        default = true,
+        default = !shouldDisableNormalMode,
     )
 
     val shouldShowBookmarkSuggestions by booleanPreference(
@@ -903,11 +908,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
             return touchExplorationIsEnabled || switchServiceIsEnabled
         }
 
-    val shouldDisableNormalMode by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_disable_normal_mode),
-        true
-    )
-
     var lastKnownMode: BrowsingMode = BrowsingMode.Private
         get() {
             val lastKnownModeWasPrivate = preferences.getBoolean(
@@ -1066,7 +1066,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     val shouldShowSearchSuggestions by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_search_suggestions),
-        default = true,
+        default = false,
     )
 
     val shouldAutocompleteInAwesomebar by booleanPreference(
@@ -1081,7 +1081,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     var shouldShowSearchSuggestionsInPrivate by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_search_suggestions_in_private),
-        default = false,
+        default = shouldDisableNormalMode,
     )
 
     var showSearchSuggestionsInPrivateOnboardingFinished by booleanPreference(
