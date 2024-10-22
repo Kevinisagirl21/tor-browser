@@ -119,7 +119,7 @@ export class MoatRPC {
     ch.requestMethod = "HEAD";
 
     const listener = new InternetTestResponseListener();
-    await ch.asyncOpen(listener, ch);
+    ch.asyncOpen(listener, ch);
     return listener.status;
   }
 
