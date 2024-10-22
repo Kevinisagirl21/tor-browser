@@ -444,7 +444,7 @@ export class DomainFrontRequestBuilder {
 
   async init(reflector, front) {
     if (this.#inited) {
-      throw new Error("MoatRPC: Already initialized");
+      throw new Error("DomainFrontRequestBuilder: Already initialized");
     }
 
     const meekTransport =
@@ -464,7 +464,7 @@ export class DomainFrontRequestBuilder {
 
   buildHttpHandler(uriString) {
     if (!this.#inited) {
-      throw new Error("MoatRPC: Not initialized");
+      throw new Error("DomainFrontRequestBuilder: Not initialized");
     }
 
     const { proxyType, proxyAddress, proxyPort, proxyUsername, proxyPassword } =
