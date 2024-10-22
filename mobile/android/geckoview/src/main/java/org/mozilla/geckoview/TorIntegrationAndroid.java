@@ -16,7 +16,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -446,7 +448,9 @@ public class TorIntegrationAndroid implements BundleEventListener {
       return;
     }
     mMeekCounter++;
-    mMeeks.put(new Integer(mMeekCounter), new MeekTransport(callback, mMeekCounter));
+    mMeeks.put(
+        new Integer(mMeekCounter),
+        new MeekTransport(callback, mMeekCounter, message.getStringArray("arguments")));
   }
 
   private synchronized void stopMeek(final GeckoBundle message, final EventCallback callback) {
@@ -466,17 +470,27 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private final EventCallback mCallback;
     private final int mId;
 
-    MeekTransport(final EventCallback callback, int id) {
+    MeekTransport(final EventCallback callback, int id, String[] args) {
       setName("meek-" + id);
-      final ProcessBuilder builder = new ProcessBuilder(mLibraryDir + "/libObfs4proxy.so");
-      {
-        File ptStateDir = new File(mDataDir, "pt_state");
-        final Map<String, String> env = builder.environment();
-        env.put("TOR_PT_MANAGED_TRANSPORT_VER", "1");
-        env.put("TOR_PT_STATE_LOCATION", ptStateDir.getAbsolutePath());
-        env.put("TOR_PT_EXIT_ON_STDIN_CLOSE", "1");
-        env.put("TOR_PT_CLIENT_TRANSPORTS", TRANSPORT);
+
+      final String command = mLibraryDir + "/libObfs4proxy.so";
+      ArrayList<String> argList = new ArrayList<String>();
+      argList.add(command);
+      if (args != null && args.length > 0) {
+        // Normally not used, but it helps to debug only by editing JS.
+        Log.d(TAG, "Requested custom arguments for meek: " + String.join(" ", args));
+        argList.addAll(Arrays.asList(args));
       }
+      final ProcessBuilder builder = new ProcessBuilder(argList);
+
+      File ptStateDir = new File(mDataDir, "pt_state");
+      Log.d(TAG, "Using " + ptStateDir.getAbsolutePath() + " as a state directory for meek.");
+      final Map<String, String> env = builder.environment();
+      env.put("TOR_PT_MANAGED_TRANSPORT_VER", "1");
+      env.put("TOR_PT_STATE_LOCATION", ptStateDir.getAbsolutePath());
+      env.put("TOR_PT_EXIT_ON_STDIN_CLOSE", "1");
+      env.put("TOR_PT_CLIENT_TRANSPORTS", TRANSPORT);
+
       mCallback = callback;
       mId = id;
       try {
@@ -568,18 +582,40 @@ public class TorIntegrationAndroid implements BundleEventListener {
       } else {
         Log.e(TAG, "Failed to get a usable config from the PT: " + error);
         mCallback.sendError(error);
+        return;
       }
+      dumpStdout();
     }
 
     void shutdown() {
       if (mProcess != null) {
+        Log.i(TAG, "Shutting down meek process " + mId);
         mProcess.destroy();
         mProcess = null;
+      } else {
+        Log.w(
+            TAG,
+            "Shutdown request on the meek process " + mId + " that has already been shutdown.");
       }
       try {
         join();
       } catch (InterruptedException e) {
         Log.e(TAG, "Could not join the meek thread", e);
+      }
+    }
+
+    void dumpStdout() {
+      try {
+        BufferedReader reader =
+            new BufferedReader(new InputStreamReader(mProcess.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+          Log.d(TAG, "[meek-" + mId + "] " + line);
+        }
+      } catch (InterruptedIOException e) {
+        // This happens normally, do not log it.
+      } catch (IOException e) {
+        Log.e(TAG, "Failed to read stdout of the meek process process " + mId, e);
       }
     }
   }
