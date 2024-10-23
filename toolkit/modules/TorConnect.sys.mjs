@@ -964,7 +964,6 @@ export const TorConnect = {
     };
   },
 
-  _internetStatus: InternetStatus.Unknown,
   // list of country codes Moat has settings for
   _countryCodes: [],
   _countryNames: Object.freeze(
@@ -978,8 +977,6 @@ export const TorConnect = {
       return codesNames;
     })()
   ),
-  _detectedLocation: "",
-  _errorCode: null,
 
   // This is used as a helper to make the state of about:torconnect persistent
   // during a session, but TorConnect does not use this data at all.
@@ -1214,52 +1211,12 @@ export const TorConnect = {
     return null;
   },
 
-  // TODO: Remove when all pages have switched to "stage".
-  get bootstrapProgress() {
-    return this._bootstrappingStatus.progress;
-  },
-
-  // TODO: Remove when all pages have switched to "stage".
-  get internetStatus() {
-    return this._internetStatus;
-  },
-
   get countryCodes() {
     return this._countryCodes;
   },
 
   get countryNames() {
     return this._countryNames;
-  },
-
-  // TODO: Remove when all pages have switched to "stage".
-  get detectedLocation() {
-    return this._detectedLocation;
-  },
-
-  // TODO: Remove when all pages have switched to "stage".
-  get errorCode() {
-    return this._errorCode;
-  },
-
-  // TODO: Remove when all pages have switched to "stage".
-  get errorDetails() {
-    return this._errorDetails;
-  },
-
-  // TODO: Remove public method when all pages have switched to "stage".
-  get logHasWarningOrError() {
-    return this._bootstrappingStatus.hasWarning;
-  },
-
-  /**
-   * Whether we have ever entered the Error state.
-   *
-   * @type {boolean}
-   */
-  // TODO: Remove public method when all pages have switched to "stage".
-  get hasEverFailed() {
-    return this._potentiallyBlocked;
   },
 
   /**
@@ -1272,27 +1229,6 @@ export const TorConnect = {
    */
   get potentiallyBlocked() {
     return this._potentiallyBlocked;
-  },
-
-  // TODO: Remove when all pages have switched to stage.
-  get uiState() {
-    return this._uiState;
-  },
-  set uiState(newState) {
-    this._uiState = newState;
-    if (
-      newState.currentState === "ConnectToTor" &&
-      this._stageName !== TorConnectStage.Start
-    ) {
-      // User pressed first breadcrumb.
-      this.startAgain();
-    } else if (
-      newState.currentState === "ConnectionAssist" &&
-      this._stageName !== TorConnectStage.ChooseRegion
-    ) {
-      // User pressed second breadcrumb.
-      this.chooseRegion();
-    }
   },
 
   /*
@@ -1337,7 +1273,6 @@ export const TorConnect = {
     if (!(error instanceof TorConnectError)) {
       error = new TorConnectError(TorConnectError.ExternalError, error);
     }
-    this._errorCode = error.code;
     this._errorDetails = error;
 
     // Temporarily set an error state for listeners.
@@ -1497,12 +1432,6 @@ export const TorConnect = {
     // Therefore, the method is effectively "locked" by `_bootstrapAttempt`, so
     // there should only ever be one caller at a time.
 
-    // TODO: Remove when all pages have switched to stage.
-    // Reset the internet status before the bootstrap attempt.
-    // Currently this is only read for about:torconnect at the initial page or
-    // when getting an error. So we can just reset it just before each
-    // bootstrap attempt.
-    this._internetStatus = InternetStatus.Unknown;
     if (regionCode) {
       // Set the default to what the user chose.
       this._defaultRegion = regionCode;
@@ -1534,7 +1463,6 @@ export const TorConnect = {
 
     if (bootstrapAttempt.detectedRegion) {
       this._defaultRegion = bootstrapAttempt.detectedRegion;
-      this._detectedLocation = bootstrapAttempt.detectedRegion;
     }
 
     if (result === "complete") {
@@ -1543,7 +1471,6 @@ export const TorConnect = {
       this._tryAgain = false;
       this._potentiallyBlocked = false;
       this._errorDetails = null;
-      this._errorCode = null;
 
       if (requestedStage) {
         lazy.logger.warn(
@@ -1567,7 +1494,6 @@ export const TorConnect = {
         beginStage === TorConnectStage.Offline)
     ) {
       this._tryAgain = true;
-      this._internetStatus = InternetStatus.Offline;
       this._signalError(new TorConnectError(TorConnectError.Offline));
 
       this._setStage(TorConnectStage.Offline);
@@ -1615,7 +1541,6 @@ export const TorConnect = {
     // TODO: Remove this Offline hack when pages use "stage".
     if (beginStage === TorConnectStage.Offline) {
       // Re-send the "Offline" error to push the pages back to "Offline".
-      this._internetStatus = InternetStatus.Offline;
       this._signalError(new TorConnectError(TorConnectError.Offline));
     }
 
