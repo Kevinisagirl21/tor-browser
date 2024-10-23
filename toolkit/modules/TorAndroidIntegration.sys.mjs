@@ -83,6 +83,7 @@ class TorAndroidIntegrationImpl {
 
   observe(subj, topic) {
     switch (topic) {
+      // TODO: Replace with StageChange.
       case lazy.TorConnectTopics.StateChange:
         lazy.EventDispatcher.instance.sendRequest({
           type: EmittedEvents.connectStateChanged,
@@ -101,6 +102,7 @@ class TorAndroidIntegrationImpl {
           type: EmittedEvents.bootstrapComplete,
         });
         break;
+      // TODO: Replace with StageChange stage.error.
       case lazy.TorConnectTopics.Error:
         lazy.EventDispatcher.instance.sendRequest({
           type: EmittedEvents.connectError,
@@ -159,17 +161,23 @@ class TorAndroidIntegrationImpl {
           await lazy.TorSettings.saveToPrefs();
           break;
         case ListenedEvents.bootstrapBegin:
-          lazy.TorConnect.beginBootstrap();
+          lazy.TorConnect.beginBootstrapping();
           break;
         case ListenedEvents.bootstrapBeginAuto:
-          lazy.TorConnect.beginAutoBootstrap(data.countryCode);
+          // TODO: The countryCode should be set to "automatic" by the caller
+          // rather than `null`, so we can just pass in `data.countryCode`
+          // directly.
+          lazy.TorConnect.beginBootstrapping(data.countryCode || "automatic");
           break;
         case ListenedEvents.bootstrapCancel:
-          lazy.TorConnect.cancelBootstrap();
+          lazy.TorConnect.cancelBootstrapping();
           break;
+        // TODO: Replace with TorConnect.stage.
         case ListenedEvents.bootstrapGetState:
           callback?.onSuccess(lazy.TorConnect.state);
           return;
+        // TODO: Expose TorConnect.startAgain() to allow users to begin
+        // from the start again.
       }
       callback?.onSuccess();
     } catch (e) {
