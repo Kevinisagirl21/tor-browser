@@ -61,6 +61,7 @@ var gTorCircuitPanel = {
 
     this.panel = document.getElementById("tor-circuit-panel");
     this._panelElements = {
+      doc: document.getElementById("tor-circuit-panel-document"),
       heading: document.getElementById("tor-circuit-heading"),
       alias: document.getElementById("tor-circuit-alias"),
       aliasLabel: document.getElementById("tor-circuit-alias-label"),
@@ -138,13 +139,18 @@ var gTorCircuitPanel = {
       this._updateCircuitPanel();
     });
 
-    // Set the initial focus to the panel element itself, which has been made a
-    // focusable target. Similar to dialogs, or webextension-popup-browser.
+    // Set the initial focus to the panel document itself, which has been made a
+    // focusable target. Similar to webextension-popup-browser.
+    // Switching to a document should prompt screen readers to enter "browse
+    // mode" and allow the user to navigate the dialog content.
+    // NOTE: We could set the focus to the first focusable child within the
+    // document, but this would usually be the "New circuit" button, which would
+    // skip over the rest of the document content.
     this.panel.addEventListener("popupshown", event => {
       if (event.target !== this.panel) {
         return;
       }
-      this.panel.focus();
+      this._panelElements.doc.focus();
     });
 
     // this.toolbarButton follows "identity-button" markup, so is a <xul:box>

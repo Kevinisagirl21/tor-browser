@@ -182,6 +182,6 @@
   margin: 0;
 }
 
-.tor-circuit-button label.tor-circuit-button-description {
+.tor-circuit-button .tor-circuit-button-description {
   margin-block-start: var(--space-xsmall);
 }
