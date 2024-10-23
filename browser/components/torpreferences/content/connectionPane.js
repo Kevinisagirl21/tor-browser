@@ -22,7 +22,7 @@ const { TorProviderBuilder, TorProviderTopics } = ChromeUtils.importESModule(
   "resource://gre/modules/TorProviderBuilder.sys.mjs"
 );
 
-const { TorConnect, TorConnectTopics, TorConnectState, TorCensorshipLevel } =
+const { TorConnect, TorConnectTopics, TorConnectStage, TorCensorshipLevel } =
   ChromeUtils.importESModule("resource://gre/modules/TorConnect.sys.mjs");
 
 const { MoatRPC } = ChromeUtils.importESModule(
@@ -2195,18 +2195,7 @@ const gBridgeSettings = {
 
             // Start Bootstrapping, which should use the configured bridges.
             // NOTE: We do this regardless of any previous TorConnect Error.
-            if (TorConnect.canBeginBootstrap) {
-              TorConnect.beginBootstrap();
-            }
-            // Open "about:torconnect".
-            // FIXME: If there has been a previous bootstrapping error then
-            // "about:torconnect" will be trying to get the user to use
-            // AutoBootstrapping. It is not set up to handle a forced direct
-            // entry to plain Bootstrapping from this dialog so the UI will
-            // not be aligned. In particular the
-            // AboutTorConnect.uiState.bootstrapCause will be aligned to
-            // whatever was shown previously in "about:torconnect" instead.
-            TorConnect.openTorConnect();
+            TorConnect.openTorConnect({ beginBootstrapping: "hard" });
           });
         },
         // closedCallback should be called after gSubDialog has already
@@ -2322,27 +2311,27 @@ const gNetworkStatus = {
       "network-status-tor-connect-button"
     );
     this._torConnectButton.addEventListener("click", () => {
-      TorConnect.openTorConnect({ beginBootstrap: true });
+      TorConnect.openTorConnect({ beginBootstrapping: "soft" });
     });
 
     this._updateInternetStatus("unknown");
     this._updateTorConnectionStatus();
 
-    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    Services.obs.addObserver(this, TorConnectTopics.StageChange);
   },
 
   /**
    * Un-initialize the area.
    */
   uninit() {
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+    Services.obs.removeObserver(this, TorConnectTopics.StageChange);
   },
 
   observe(subject, topic) {
     switch (topic) {
       // triggered when tor connect state changes and we may
       // need to update the messagebox
-      case TorConnectTopics.StateChange: {
+      case TorConnectTopics.StageChange: {
         this._updateTorConnectionStatus();
         break;
       }
@@ -2433,7 +2422,8 @@ const gNetworkStatus = {
     const buttonHadFocus = this._torConnectButton.contains(
       document.activeElement
     );
-    const isBootstrapped = TorConnect.state === TorConnectState.Bootstrapped;
+    const isBootstrapped =
+      TorConnect.stageName === TorConnectStage.Bootstrapped;
     const isBlocked = !isBootstrapped && TorConnect.potentiallyBlocked;
     let l10nId;
     if (isBootstrapped) {
@@ -2527,7 +2517,8 @@ const gConnectionPane = (function () {
         );
         chooseForMe.addEventListener("command", () => {
           TorConnect.openTorConnect({
-            beginAutoBootstrap: location.value,
+            beginBootstrapping: "hard",
+            regionCode: location.value,
           });
         });
         this._populateLocations = () => {
@@ -2558,7 +2549,7 @@ const gConnectionPane = (function () {
             locationEntries.append(...items);
           };
           locationEntries.append(
-            createItem("", TorStrings.settings.bridgeLocationAutomatic)
+            createItem("automatic", TorStrings.settings.bridgeLocationAutomatic)
           );
           if (TorConnect.countryCodes.length) {
             locationEntries.append(
@@ -2607,7 +2598,7 @@ const gConnectionPane = (function () {
           this.onViewTorLogs();
         });
 
-      Services.obs.addObserver(this, TorConnectTopics.StateChange);
+      Services.obs.addObserver(this, TorConnectTopics.StageChange);
     },
 
     init() {
@@ -2629,7 +2620,7 @@ const gConnectionPane = (function () {
 
       // unregister our observer topics
       Services.obs.removeObserver(this, TorSettingsTopics.SettingsChanged);
-      Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+      Services.obs.removeObserver(this, TorConnectTopics.StageChange);
     },
 
     // whether the page should be present in about:preferences
@@ -2653,7 +2644,7 @@ const gConnectionPane = (function () {
         }
         // triggered when tor connect state changes and we may
         // need to update the messagebox
-        case TorConnectTopics.StateChange: {
+        case TorConnectTopics.StageChange: {
           this._showAutoconfiguration();
           break;
         }
