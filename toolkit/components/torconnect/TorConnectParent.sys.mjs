@@ -108,10 +108,14 @@ export class TorConnectParent extends JSWindowActorParent {
         TorSettings.saveToPrefs().applySettings();
         break;
       case "torconnect:open-tor-preferences":
-        TorConnect.openTorPreferences();
+        this.browsingContext.top.embedderElement.ownerGlobal.openPreferences(
+          "connection"
+        );
         break;
       case "torconnect:view-tor-logs":
-        TorConnect.viewTorLogs();
+        this.browsingContext.top.embedderElement.ownerGlobal.openPreferences(
+          "connection-viewlogs"
+        );
         break;
       case "torconnect:restart":
         Services.startup.quit(
