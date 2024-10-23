@@ -1438,7 +1438,4 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
         navHost.navController.navigate(NavGraphDirections.actionStartupHome())
     }
     override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) = Unit
-    override fun onSettingsRequested() {
-        navHost.navController.navigate(NavGraphDirections.actionGlobalSettingsFragment())
-    }
 }
