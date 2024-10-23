@@ -1742,10 +1742,11 @@ export const TorConnect = {
    * potentially blocked.
    *
    * @param {object} [options] - extra options.
-   * @property {boolean} [options.beginBootstrap=false] - Whether to try and
-   *   begin Bootstrapping.
-   * @property {string} [options.beginAutoBootstrap] - The location to use to
-   *   begin AutoBootstrapping, if possible.
+   * @property {"soft"|"hard"} [options.beginBootstrapping] - Whether to try and
+   *   begin bootstrapping. "soft" will only trigger the bootstrap if we are not
+   *   `potentiallyBlocked`. "hard" will try begin the bootstrap regardless.
+   * @property {string} [options.regionCode] - A region to pass in for
+   *   auto-bootstrapping.
    */
   openTorConnect(options) {
     // FIXME: Should we move this to the about:torconnect actor?
@@ -1753,20 +1754,23 @@ export const TorConnect = {
     win.switchToTabHavingURI("about:torconnect", true, {
       ignoreQueryString: true,
     });
-    if (
-      options?.beginBootstrap &&
-      this.canBeginBootstrap &&
-      !this.potentiallyBlocked
-    ) {
-      this.beginBootstrap();
+
+    if (!options?.beginBootstrapping || !this.canBeginBootstrap) {
+      return;
     }
-    // options.beginAutoBootstrap can be an empty string.
-    if (
-      options?.beginAutoBootstrap !== undefined &&
-      this.canBeginAutoBootstrap
-    ) {
-      this.beginAutoBootstrap(options.beginAutoBootstrap);
+
+    if (options.beginBootstrapping === "hard") {
+      if (this.canBeginAutoBootstrap && !options.regionCode) {
+        // Treat as an addition startAgain request to first move back to the
+        // "Start" stage before bootstrapping.
+        this.startAgain();
+      }
+    } else if (this.potentiallyBlocked) {
+      // Do not trigger the bootstrap if we have ever had an error.
+      return;
     }
+
+    this.beginBootstrapping(options.regionCode);
   },
 
   // TODO: Move to TorConnectParent.
