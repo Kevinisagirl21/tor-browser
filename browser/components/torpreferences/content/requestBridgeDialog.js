@@ -91,14 +91,14 @@ const gRequestBridgeDialog = {
       selectors.incorrectCaptchaHbox
     );
 
-    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    Services.obs.addObserver(this, TorConnectTopics.StageChange);
     this.onAcceptStateChange();
   },
 
   uninit() {
     BridgeDB.close();
     // Unregister our observer topics.
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+    Services.obs.removeObserver(this, TorConnectTopics.StageChange);
   },
 
   onAcceptStateChange() {
@@ -113,7 +113,7 @@ const gRequestBridgeDialog = {
 
   observe(subject, topic) {
     switch (topic) {
-      case TorConnectTopics.StateChange:
+      case TorConnectTopics.StageChange:
         this.onAcceptStateChange();
         break;
     }

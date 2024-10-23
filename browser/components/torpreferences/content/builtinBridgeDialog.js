@@ -79,14 +79,14 @@ const gBuiltinBridgeDialog = {
 
     this._acceptButton = dialog.getButton("accept");
 
-    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    Services.obs.addObserver(this, TorConnectTopics.StageChange);
 
     this.onSelectChange();
     this.onAcceptStateChange();
   },
 
   uninit() {
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+    Services.obs.removeObserver(this, TorConnectTopics.StageChange);
   },
 
   onSelectChange() {
@@ -107,7 +107,7 @@ const gBuiltinBridgeDialog = {
 
   observe(subject, topic) {
     switch (topic) {
-      case TorConnectTopics.StateChange:
+      case TorConnectTopics.StageChange:
         this.onAcceptStateChange();
         break;
     }

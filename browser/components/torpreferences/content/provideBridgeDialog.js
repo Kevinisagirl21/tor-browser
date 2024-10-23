@@ -128,14 +128,14 @@ const gProvideBridgeDialog = {
       this.onDialogAccept(event)
     );
 
-    Services.obs.addObserver(this, TorConnectTopics.StateChange);
+    Services.obs.addObserver(this, TorConnectTopics.StageChange);
 
     this.setPage("entry");
     this.checkValue();
   },
 
   uninit() {
-    Services.obs.removeObserver(this, TorConnectTopics.StateChange);
+    Services.obs.removeObserver(this, TorConnectTopics.StageChange);
   },
 
   /**
@@ -512,7 +512,7 @@ const gProvideBridgeDialog = {
 
   observe(subject, topic) {
     switch (topic) {
-      case TorConnectTopics.StateChange:
+      case TorConnectTopics.StageChange:
         this.onAcceptStateChange();
         break;
     }
