@@ -1644,11 +1644,6 @@ export const TorConnect = {
   /*
     Further external commands and helper methods
    */
-  // TODO: Move to TorConnectParent.
-  openTorPreferences() {
-    const win = lazy.BrowserWindowTracker.getTopWindow();
-    win.switchToTabHavingURI("about:preferences#connection", true);
-  },
 
   /**
    * Open the "about:torconnect" tab.
@@ -1689,12 +1684,6 @@ export const TorConnect = {
     }
 
     this.beginBootstrapping(options.regionCode);
-  },
-
-  // TODO: Move to TorConnectParent.
-  viewTorLogs() {
-    const win = lazy.BrowserWindowTracker.getTopWindow();
-    win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
   },
 
   async getCountryCodes() {
