@@ -251,9 +251,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             getString(R.string.delete_browsing_data_quit_off)
         }
 
-        val tabSettingsPreference =
-            requirePreference<Preference>(R.string.pref_key_tabs)
-        tabSettingsPreference.summary = context?.settings()?.getTabTimeoutString()
+        if (!settings.shouldDisableNormalMode) {
+            val tabSettingsPreference =
+                requirePreference<Preference>(R.string.pref_key_tabs)
+            tabSettingsPreference.summary = context?.settings()?.getTabTimeoutString()
+        }
 
 //        val autofillPreference = requirePreference<Preference>(R.string.pref_key_credit_cards)
 //        autofillPreference.title = if (settings.addressFeature) {
