@@ -23,7 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DomainFrontRequestResponseError:
     "resource://gre/modules/DomainFrontedRequests.sys.mjs",
   TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
-  TorConnectState: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectStage: "resource://gre/modules/TorConnect.sys.mjs",
   TorSettings: "resource://gre/modules/TorSettings.sys.mjs",
   TorSettingsTopics: "resource://gre/modules/TorSettings.sys.mjs",
   TorBridgeSource: "resource://gre/modules/TorSettings.sys.mjs",
@@ -1049,7 +1049,7 @@ class LoxImpl {
     const method = "POST";
     const contentType = "application/vnd.api+json";
 
-    if (lazy.TorConnect.state === lazy.TorConnectState.Bootstrapped) {
+    if (lazy.TorConnect.stageName === lazy.TorConnectStage.Bootstrapped) {
       let request;
       try {
         request = await fetch(url, {
