@@ -8,7 +8,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   MoatRPC: "resource://gre/modules/Moat.sys.mjs",
   TorBootstrapRequest: "resource://gre/modules/TorBootstrapRequest.sys.mjs",
   TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
@@ -1645,17 +1644,6 @@ export const TorConnect = {
   /*
     Further external commands and helper methods
    */
-  // TODO: Move to TorConnectParent.
-  openTorPreferences() {
-    if (lazy.TorLauncherUtil.isAndroid) {
-      lazy.EventDispatcher.instance.sendRequest({
-        type: "GeckoView:Tor:OpenSettings",
-      });
-      return;
-    }
-    const win = lazy.BrowserWindowTracker.getTopWindow();
-    win.switchToTabHavingURI("about:preferences#connection", true);
-  },
 
   /**
    * Open the "about:torconnect" tab.
@@ -1696,12 +1684,6 @@ export const TorConnect = {
     }
 
     this.beginBootstrapping(options.regionCode);
-  },
-
-  // TODO: Move to TorConnectParent.
-  viewTorLogs() {
-    const win = lazy.BrowserWindowTracker.getTopWindow();
-    win.switchToTabHavingURI("about:preferences#connection-viewlogs", true);
   },
 
   async getCountryCodes() {
