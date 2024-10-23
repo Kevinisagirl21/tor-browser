@@ -131,13 +131,13 @@ class HomeMenu(
             onItemTapped.invoke(Item.Bookmarks)
         }
 
-        // val historyItem = BrowserMenuImageText(
-        //     context.getString(R.string.library_history),
-        //     R.drawable.ic_history,
-        //     primaryTextColor,
-        // ) {
-        //     onItemTapped.invoke(Item.History)
-        // }
+        val historyItem = BrowserMenuImageText(
+            context.getString(R.string.library_history),
+            R.drawable.ic_history,
+            primaryTextColor,
+        ) {
+            onItemTapped.invoke(Item.History)
+        }
 
         val downloadsItem = BrowserMenuImageText(
             context.getString(R.string.library_downloads),
@@ -228,7 +228,7 @@ class HomeMenu(
 
         val menuItems = listOfNotNull(
             bookmarksItem,
-            //historyItem,
+            if (context.settings().shouldDisableNormalMode) null else historyItem,
             downloadsItem,
             passwordsItem,
             // extensionsItem,
