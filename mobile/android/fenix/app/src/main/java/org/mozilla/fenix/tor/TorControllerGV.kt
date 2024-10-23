@@ -316,9 +316,4 @@ class TorControllerGV(
     override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) {
         lastKnownError = TorError(code ?: "", message ?: "", phase ?: "", reason ?: "")
     }
-
-    // TorEventsBootstrapStateChangeListener
-    override fun onSettingsRequested() {
-        // noop
-    }
 }
