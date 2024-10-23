@@ -3,18 +3,20 @@
        aria-labelledby="tor-circuit-heading"
        type="arrow"
        orient="vertical"
-       class="cui-widget-panel panel-no-padding"
-       tabindex="0">
+       class="cui-widget-panel panel-no-padding">
   <!-- Use same semantic structure as #identity-popup and #protections-popup
      - with a role="alertdialog" wrapping a role="document", except we use a
      - "dialog" rather than an "alertdialog".
      - Moreover, since this "dialog" may just be for reading, we also make the
-     - "dialog" part of the focus cycle and receive the initial focus, rather
+     - "document" part of the focus cycle and receive the initial focus, rather
      - than finding the first focusable target within.
      - We do not set "aria-describedby" for this "dialog" because the content
      - is complex, so a flat string would not make sense. -->
-  <vbox id="tor-circuit-panel-document"
-        role="document">
+  <!-- NOTE: Currently Orca fails to read the content of this panel, so the
+     - circuit details are not accessible. This effects mozilla-central as well.
+     - See bugzilla bug 1820765 and bugzilla bug 1926374.
+     - The focusable elements are still operable though. -->
+  <vbox id="tor-circuit-panel-document" role="document" tabindex="0">
     <vbox class="panel-header">
       <html:h1 id="tor-circuit-heading"></html:h1>
       <html:div id="tor-circuit-alias" hidden="hidden">
@@ -75,10 +77,12 @@
           class="toolbarbutton-text"
           data-l10n-id="tor-circuit-panel-new-button"
         />
-        <label
+        <!-- NOTE: Use html:span rather than xul:label. Otherwise Orca will
+           - treat this as a label for the dialog. -->
+        <html:span
           id="tor-circuit-new-circuit-description"
           class="tor-circuit-button-description"
-        />
+        ></html:span>
       </vbox>
     </toolbarbutton>
   </vbox>
