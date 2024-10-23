@@ -908,28 +908,27 @@ export const TorConnect = {
     if (!this.enabled) {
       // Disabled
       this._changeState(TorConnectState.Disabled);
-    } else {
-      let observeTopic = addTopic => {
-        Services.obs.addObserver(this, addTopic);
-        lazy.logger.debug(`Observing topic '${addTopic}'`);
-      };
-
-      // Wait for TorSettings, as we will need it.
-      // We will wait for a TorProvider only after TorSettings is ready,
-      // because the TorProviderBuilder initialization might not have finished
-      // at this point, and TorSettings initialization is a prerequisite for
-      // having a provider.
-      // So, we prefer initializing TorConnect as soon as possible, so that
-      // the UI will be able to detect it is in the Initializing state and act
-      // consequently.
-      lazy.TorSettings.initializedPromise.then(() =>
-        this._settingsInitialized()
-      );
-
-      // register the Tor topics we always care about
-      observeTopic(lazy.TorProviderTopics.ProcessExited);
-      observeTopic(lazy.TorProviderTopics.HasWarnOrErr);
+      return;
     }
+
+    let observeTopic = addTopic => {
+      Services.obs.addObserver(this, addTopic);
+      lazy.logger.debug(`Observing topic '${addTopic}'`);
+    };
+
+    // Wait for TorSettings, as we will need it.
+    // We will wait for a TorProvider only after TorSettings is ready,
+    // because the TorProviderBuilder initialization might not have finished
+    // at this point, and TorSettings initialization is a prerequisite for
+    // having a provider.
+    // So, we prefer initializing TorConnect as soon as possible, so that
+    // the UI will be able to detect it is in the Initializing state and act
+    // consequently.
+    lazy.TorSettings.initializedPromise.then(() => this._settingsInitialized());
+
+    // register the Tor topics we always care about
+    observeTopic(lazy.TorProviderTopics.ProcessExited);
+    observeTopic(lazy.TorProviderTopics.HasWarnOrErr);
   },
 
   async observe(subject, topic) {
