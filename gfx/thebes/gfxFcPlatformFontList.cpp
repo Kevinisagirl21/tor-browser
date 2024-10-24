@@ -1369,7 +1369,7 @@ static nsresult SetFontconfigConfigFile() {
 
   nsAutoCString confPath;
   rv = confFile->GetNativePath(confPath);
-  if (setenv("FONTCONFIG_FILE", confPath.BeginReading(), 1) != 0) {
+  if (NS_WARN_IF(setenv("FONTCONFIG_FILE", confPath.BeginReading(), 1) != 0)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
