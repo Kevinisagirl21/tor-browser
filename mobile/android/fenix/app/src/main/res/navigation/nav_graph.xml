@@ -28,6 +28,12 @@
         app:popUpToInclusive="true" />
 
     <action
+        android:id="@+id/action_connect_to_tor_before_opening_links"
+        app:destination="@+id/torConnectionAssistFragment"
+        app:popUpTo="@id/torConnectionAssistFragment"
+        app:popUpToInclusive="true"/>
+
+    <action
         android:id="@+id/action_global_home"
         app:destination="@id/homeFragment"
         app:popUpTo="@id/homeFragment"
@@ -264,7 +270,7 @@
     <fragment
         android:id="@+id/torConnectionAssistFragment"
         android:name="org.mozilla.fenix.tor.TorConnectionAssistFragment"
-        tools:layout="@layout/fragment_home">
+        tools:layout="@layout/fragment_tor_connection_assist">
         <action
             android:id="@+id/action_home"
             app:destination="@id/homeFragment"

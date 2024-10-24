@@ -4,6 +4,8 @@ package org.mozilla.fenix.tor
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LifecycleCoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import org.mozilla.fenix.ext.components
 import org.mozilla.geckoview.TorIntegrationAndroid
@@ -54,20 +56,22 @@ class TorControllerGV(
     private var torListeners = mutableListOf<TorEvents>()
     private var torLogListeners = mutableListOf<TorLogs>()
 
-    internal var lastKnownStatus = TorConnectState.Initial
+    private val _lastKnownStatus = MutableStateFlow(TorConnectState.Initial)
+    internal val lastKnownStatus: StateFlow<TorConnectState> = _lastKnownStatus
+
     internal var lastKnownError: TorError? = null
     private var wasTorBootstrapped = false
     private var isTorRestarting = false
 
     private var isTorBootstrapped = false
-        get() = ((lastKnownStatus.isStarted()) && wasTorBootstrapped)
+        get() = ((_lastKnownStatus.value.isStarted()) && wasTorBootstrapped)
 
     private val entries = mutableListOf<Pair<String?, String?>>()
     override val logEntries get() = entries
-    override val isStarting get() = lastKnownStatus.isStarting()
+    override val isStarting get() = _lastKnownStatus.value.isStarting()
     override val isRestarting get() = isTorRestarting
     override val isBootstrapped get() = isTorBootstrapped
-    override val isConnected get() = (lastKnownStatus.isStarted() && !isTorRestarting)
+    override val isConnected get() = (_lastKnownStatus.value.isStarted() && !isTorRestarting)
 
     override var quickstart: Boolean
         get() {
@@ -267,13 +271,13 @@ class TorControllerGV(
     }
 
     override fun setTorStopped() {
-        lastKnownStatus = TorConnectState.Configuring
+        _lastKnownStatus.value = TorConnectState.Configuring
         onTorStatusUpdate(null, lastKnownStatus.toString(), 0.0)
         onTorStopped()
     }
 
     override fun restartTor() {
-        if (!lastKnownStatus.isStarted() && wasTorBootstrapped) {
+        if (!_lastKnownStatus.value.isStarted() && wasTorBootstrapped) {
             // If we aren't started, but we were previously bootstrapped,
             // then we handle a "restart" request as a "start" restart
             initiateTorBootstrap()
@@ -321,42 +325,22 @@ class TorControllerGV(
             }
         }
 
-        if (lastKnownStatus.isOff() && newState.isStarting()) {
+        if (_lastKnownStatus.value.isOff() && newState.isStarting()) {
             isTorRestarting = false
         }
 
-        lastKnownStatus = newState
+        _lastKnownStatus.value = newState
         onTorStatusUpdate(null, newStateVal, null)
     }
 
     // TorEventsBootstrapStateChangeListener
     override fun onBootstrapProgress(progress: Double, hasWarnings: Boolean) {
-        Log.d(TAG, "onBootstrapProgress($progress, $hasWarnings)")
-	// TODO: onBootstrapProgress should only be used to change the shown
-	// bootstrap percentage or a Tor log option during a "Bootstrapping"
-	// stage.
-	// The progress value should not be used to change the `lastKnownStatus`
-	// value or determine if a bootstrap has started or completed. The
-	// TorConnectStage should be used instead.
-        if (progress == 100.0) {
-            lastKnownStatus = TorConnectState.Bootstrapped
-            wasTorBootstrapped = true
-            onTorConnected()
-        } else if (lastKnownStatus == TorConnectState.Bootstrapping) {
-            onTorConnecting()
-        }
-        onTorStatusUpdate("", lastKnownStatus.toTorStatus().status, progress)
+        Log.d(TAG, "onBootstrapProgress(progress = $progress, hasWarnings = $hasWarnings)")
+        onTorStatusUpdate("", _lastKnownStatus.value.toTorStatus().status, progress)
     }
 
     // TorEventsBootstrapStateChangeListener
-    override fun onBootstrapComplete() {
-	// TODO: There should be no need to respond to the BootstrapComplete
-	// event if we are already handling TorConnectStage.Bootstrapped.
-	// In particular, `lastKnownStatus` and onTorConnected should be set in
-	// response to a change in TorConnectStage instead.
-        lastKnownStatus = TorConnectState.Bootstrapped
-        this.onTorConnected()
-    }
+    override fun onBootstrapComplete() = Unit
 
     // TorEventsBootstrapStateChangeListener
     override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) {

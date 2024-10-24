@@ -25,6 +25,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -40,6 +41,7 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.feature.addons.ui.AddonFilePicker
 import mozilla.components.service.glean.private.NoExtras
+import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.BrowserDirection
@@ -77,7 +79,7 @@ import kotlin.system.exitProcess
 import org.mozilla.fenix.GleanMetrics.Settings as SettingsMetrics
 
 @Suppress("LargeClass", "TooManyFunctions")
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), UserInteractionHandler {
 
     private val args by navArgs<SettingsFragmentArgs>()
     private lateinit var accountUiView: AccountUiView
@@ -882,5 +884,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         private const val SCROLL_INDICATOR_DELAY = 10L
         private const val FXA_SYNC_OVERRIDE_EXIT_DELAY = 2000L
         private const val AMO_COLLECTION_OVERRIDE_EXIT_DELAY = 3000L
+    }
+
+    override fun onBackPressed(): Boolean {
+        // If tor is already bootstrapped, skip going back to [TorConnectionAssistFragment] and instead go directly to [HomeFragment]
+        if (requireComponents.torController.isBootstrapped) {
+            val navController = findNavController()
+            if (navController.previousBackStackEntry?.destination?.id == R.id.torConnectionAssistFragment) {
+                navController.navigate(
+                    SettingsFragmentDirections.actionGlobalHomeFragment(),
+                )
+                return true
+            }
+        }
+        return false
     }
 }

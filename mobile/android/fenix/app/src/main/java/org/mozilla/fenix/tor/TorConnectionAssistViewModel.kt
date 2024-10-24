@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.NavController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.mozilla.fenix.ext.components
@@ -44,20 +45,25 @@ class TorConnectionAssistViewModel(
     }
 
     init {
-        Log.d(TAG, "initiating TorConnectionAssistViewModel")
+        Log.d(TAG, "initiating TorConnectionAssistViewModel $this")
         _torController.registerTorListener(this)
-        handleTorConnectStateToScreen() // should cover the case of when we have an onBootStrapStateChange() event before this is initialized, which lead to being stuck on the splash screen
     }
 
-    private fun handleConnect(
+    var urlToLoadAfterConnecting: String? = null
+
+    fun handleConnect(
+        urlToLoadAfterConnecting: String? = null,
         withDebugLogging: Boolean = false,
         lifecycleScope: LifecycleCoroutineScope? = null,
     ) {
-        Log.d(TAG, "handleConnect initiatingTorBootstrap with lifecycleScope = $lifecycleScope")
-        _torController.initiateTorBootstrap(
-            withDebugLogging = withDebugLogging,
-            lifecycleScope = lifecycleScope,
-        )
+        this.urlToLoadAfterConnecting = urlToLoadAfterConnecting
+        if (_torController.lastKnownStatus.value.isOff()) {
+            Log.d(TAG, "handleConnect() triggered, initiatingTorBootstrap")
+            _torController.initiateTorBootstrap(
+                withDebugLogging = withDebugLogging,
+                lifecycleScope = lifecycleScope,
+            )
+        }
     }
 
     fun handleQuickstartChecked(checked: Boolean) {
@@ -96,18 +102,19 @@ class TorConnectionAssistViewModel(
             _progress.value = progress.toInt()
         }
 
-        handleTorConnectStateToScreen()
     }
 
-    fun handleTorConnectStateToScreen() {
-        when (_torController.lastKnownStatus) {
-            TorConnectState.Initial -> _torConnectScreen.value = ConnectAssistUiState.Splash
-            TorConnectState.Configuring -> handleConfiguring()
-            TorConnectState.AutoBootstrapping -> handleBootstrap()
-            TorConnectState.Bootstrapping -> handleBootstrap()
-            TorConnectState.Bootstrapped -> _shouldOpenHome.value = true
-            TorConnectState.Disabled -> _shouldOpenHome.value = true
-            TorConnectState.Error -> handleError()
+    suspend fun collectLastKnownStatus() {
+        _torController.lastKnownStatus.collect {
+            when (it) {
+                TorConnectState.Initial -> _torConnectScreen.value = ConnectAssistUiState.Splash
+                TorConnectState.Configuring -> handleConfiguring()
+                TorConnectState.AutoBootstrapping -> handleBootstrap()
+                TorConnectState.Bootstrapping -> handleBootstrap()
+                TorConnectState.Bootstrapped -> _shouldOpenHome.value = true
+                TorConnectState.Disabled -> _shouldOpenHome.value = true
+                TorConnectState.Error -> handleError()
+            }
         }
     }
 
@@ -253,5 +260,11 @@ class TorConnectionAssistViewModel(
             }
         }
         return true
+    }
+
+    fun openHome(navController: NavController) {
+        navController.navigate(
+            TorConnectionAssistFragmentDirections.actionHome(),
+        )
     }
 }

@@ -19,7 +19,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -34,7 +34,7 @@ import org.mozilla.fenix.ext.hideToolbar
 class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
 
     private val TAG = "TorConnectionAssistFrag"
-    private val viewModel: TorConnectionAssistViewModel by viewModels()
+    private val viewModel: TorConnectionAssistViewModel by activityViewModels()
     private var _binding: FragmentTorConnectionAssistBinding? = null
     private val binding get() = _binding!!
 
@@ -46,6 +46,11 @@ class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
         _binding = FragmentTorConnectionAssistBinding.inflate(
             inflater, container, false,
         )
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.collectLastKnownStatus()
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -62,7 +67,6 @@ class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
     override fun onResume() {
         super.onResume()
         hideToolbar()
-        viewModel.handleTorConnectStateToScreen() // Covers the case where the app is backgrounded when the bootstrap finishes
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -71,11 +75,7 @@ class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
         viewModel.progress().observe(
             viewLifecycleOwner,
         ) { progress ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                binding.torBootstrapProgressBar.setProgress(progress, true)
-            } else {
-                binding.torBootstrapProgressBar.progress = progress
-            }
+            setProgressBarCompat(progress)
         }
 
         viewModel.quickstartToggle().observe(
@@ -93,6 +93,14 @@ class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
             }
         }
 
+    }
+
+    private fun setProgressBarCompat(progress: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            binding.torBootstrapProgressBar.setProgress(progress, true)
+        } else {
+            binding.torBootstrapProgressBar.progress = progress
+        }
     }
 
     private fun showScreen(screen: ConnectAssistUiState) {
@@ -269,7 +277,7 @@ class TorConnectionAssistFragment : Fragment(), UserInteractionHandler {
 
     private fun openHome() {
         Log.d(TAG, "openHome()")
-        findNavController().navigate(TorConnectionAssistFragmentDirections.actionStartupHome())
+        viewModel.openHome(findNavController())
     }
 
     private fun openSettings(preferenceToScrollTo: String? = null) {

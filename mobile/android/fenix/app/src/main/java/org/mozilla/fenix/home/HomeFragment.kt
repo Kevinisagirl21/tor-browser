@@ -160,6 +160,7 @@ import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.tor.TorBootstrapFragmentDirections
 import org.mozilla.fenix.tor.TorBootstrapStatus
+import org.mozilla.fenix.tor.TorConnectionAssistViewModel
 import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -179,6 +180,7 @@ class HomeFragment : Fragment(), UserInteractionHandler {
     private val binding get() = _binding!!
 
     private val homeViewModel: HomeScreenViewModel by activityViewModels()
+    private val torConnectionAssistViewModel: TorConnectionAssistViewModel by activityViewModels()
 
     private val snackbarAnchorView: View?
         get() = when (requireContext().settings().toolbarPosition) {
@@ -898,6 +900,17 @@ class HomeFragment : Fragment(), UserInteractionHandler {
             owner = viewLifecycleOwner,
             view = view,
         )
+
+        torConnectionAssistViewModel.urlToLoadAfterConnecting.also {
+            if(!it.isNullOrBlank()){
+                (requireActivity() as HomeActivity).openToBrowserAndLoad(
+                    searchTermOrURL = it,
+                    newTab = true,
+                    from = BrowserDirection.FromHome,
+                )
+                torConnectionAssistViewModel.urlToLoadAfterConnecting = null // Only load this url once
+            }
+        }
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(

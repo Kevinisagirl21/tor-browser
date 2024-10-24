@@ -25,6 +25,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager.LayoutParams.FLAG_SECURE
+import androidx.activity.viewModels
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
 import androidx.annotation.RequiresApi
@@ -32,7 +33,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.widget.Toolbar
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -151,10 +151,10 @@ import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 import java.util.Locale
 
-import androidx.navigation.fragment.findNavController
 import mozilla.components.browser.engine.gecko.GeckoEngine
-import mozilla.components.browser.state.selector.findCustomTab
+import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.home.HomeFragment
+import org.mozilla.fenix.tor.TorConnectionAssistViewModel
 import org.mozilla.geckoview.TorIntegrationAndroid
 
 /**
@@ -237,6 +237,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
     private lateinit var startupTypeTelemetry: StartupTypeTelemetry
 
     private var dialog: RedirectDialogFragment? = null
+
+    private val torConnectionAssistViewModel: TorConnectionAssistViewModel by viewModels()
 
     @Suppress("ComplexMethod")
     final override fun onCreate(savedInstanceState: Bundle?) {
@@ -1115,6 +1117,25 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
         historyMetadata: HistoryMetadataKey? = null,
         additionalHeaders: Map<String, String>? = null,
     ) {
+        if (!components.torController.isBootstrapped && !searchTermOrURL.startsWith("about:")) {
+            FenixSnackbar.make(
+                view = binding.root,
+                isDisplayedWithBrowserToolbar = true,
+            )
+                .setText(getString(R.string.connection_assist_connect_to_tor_before_opening_links))
+                .setAction(getString(R.string.connection_assist_connect_to_tor_before_opening_links_confirmation)) {
+                    torConnectionAssistViewModel.handleConnect(searchTermOrURL)
+                    if (navHost.navController.previousBackStackEntry?.destination?.id == R.id.torConnectionAssistFragment) {
+                        supportFragmentManager.popBackStack()
+                    } else {
+                        navHost.navController.navigate(
+                            TorConnectionAssistFragmentDirections.actionConnectToTorBeforeOpeningLinks()
+                        )
+                    }
+                }
+                .show()
+            return
+        }
         openToBrowser(from, customTabSessionId)
         load(
             searchTermOrURL = searchTermOrURL,
@@ -1434,8 +1455,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
     override fun onBootstrapStateChange(state: String) = Unit
     override fun onBootstrapProgress(progress: Double, hasWarnings: Boolean) = Unit
     override fun onBootstrapComplete() {
-        components.useCases.tabsUseCases.removeAllTabs()
-        navHost.navController.navigate(NavGraphDirections.actionStartupHome())
+        if (settings().useHtmlConnectionUi) {
+            components.useCases.tabsUseCases.removeAllTabs()
+            navHost.navController.navigate(NavGraphDirections.actionStartupHome())
+        }
     }
     override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) = Unit
 }
