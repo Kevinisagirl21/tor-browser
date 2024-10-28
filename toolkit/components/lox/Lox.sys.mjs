@@ -694,6 +694,8 @@ class LoxImpl {
     // It's fine to get pubkey here without a delay since the user will not have a Lox
     // credential yet
     await this.#getPubKeys();
+    // NOTE: We currently only handle "open invites".
+    // "trusted invites" are not yet supported. tor-browser#42974.
     let request = await lazy.open_invite(JSON.parse(invite).invite);
     let response;
     try {
