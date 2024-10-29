@@ -522,14 +522,14 @@ class _RFPHelper {
   /**
    * Given a width or height, rounds it with the proper stepping.
    */
-  steppedSize(aDimension, isWidth = false) {
+  steppedRange(aDimension) {
     let stepping;
     if (aDimension <= 50) {
       return 0;
     } else if (aDimension <= 500) {
       stepping = 50;
     } else if (aDimension <= 1600) {
-      stepping = isWidth ? 200 : 100;
+      stepping = 100;
     } else {
       stepping = 200;
     }
@@ -607,7 +607,10 @@ class _RFPHelper {
       // If the set is empty, we will round the content with the default
       // stepping size.
       if (!this._letterboxingDimensions.length) {
-        return r(this.steppedSize(aWidth, true), this.steppedSize(aHeight));
+        result = {
+          width: this.steppedRange(aWidth),
+          height: this.steppedRange(aHeight),
+        };
       }
 
       let matchingArea = aWidth * aHeight;
