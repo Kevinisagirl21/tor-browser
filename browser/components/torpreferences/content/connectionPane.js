@@ -2354,8 +2354,11 @@ const gNetworkStatus = {
     this._internetTestDisabled = true;
     // We use "aria-disabled" rather than the "disabled" attribute so that the
     // button can remain focusable during the test.
+    // TODO: Replace with moz-button when it handles this for us. See
+    // tor-browser#43275.
     this._internetTestButton.setAttribute("aria-disabled", "true");
     this._internetTestButton.classList.add("spoof-button-disabled");
+    this._internetTestButton.tabIndex = -1;
     try {
       this._updateInternetStatus("testing");
       const mrpc = new MoatRPC();
@@ -2376,6 +2379,7 @@ const gNetworkStatus = {
     } finally {
       this._internetTestButton.removeAttribute("aria-disabled");
       this._internetTestButton.classList.remove("spoof-button-disabled");
+      this._internetTestButton.tabIndex = 0;
       this._internetTestDisabled = false;
     }
   },

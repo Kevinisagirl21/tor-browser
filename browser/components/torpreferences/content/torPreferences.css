@@ -6,7 +6,9 @@
 }
 
 /* Make a button appear disabled, whilst still allowing it to keep keyboard
- * focus. */
+ * focus.
+ * TODO: Replace with moz-button when it handles this for us. See
+ * tor-browser#43275. */
 button.spoof-button-disabled {
   /* Borrow the :disabled rule from common-shared.css */
   opacity: 0.4;
