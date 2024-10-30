@@ -14,6 +14,20 @@ var gOnionServicesSavedKeysDialog = {
     return this._busyCount > 0;
   },
 
+  /**
+   * Whether the "remove selected" button is disabled.
+   *
+   * @type {boolean}
+   */
+  _removeSelectedDisabled: true,
+
+  /**
+   * Whether the "remove all" button is disabled.
+   *
+   * @type {boolean}
+   */
+  _removeAllDisabled: true,
+
   async _deleteSelectedKeys() {
     this._showError(null);
     this._withBusy(async () => {
@@ -36,6 +50,15 @@ var gOnionServicesSavedKeysDialog = {
           for (let i = indexesToDelete.length - 1; i >= 0; --i) {
             await this._deleteOneKey(provider, indexesToDelete[i]);
           }
+          // If successful and the user focus is still on the buttons move focus
+          // to the table with the updated state. We do this before calling
+          // _updateButtonState and potentially making the buttons disabled.
+          if (
+            this._removeButton.contains(document.activeElement) ||
+            this._removeAllButton.contains(document.activeElement)
+          ) {
+            this._tree.focus();
+          }
         } catch (e) {
           console.error("Removing a saved key failed", e);
           this._showError(
@@ -51,10 +74,37 @@ var gOnionServicesSavedKeysDialog = {
     await this._deleteSelectedKeys();
   },
 
+  /**
+   * Show the given button as being disabled or enabled.
+   *
+   * @param {Button} button - The button to change.
+   * @param {boolean} disable - Whether to show the button as disabled or
+   *   enabled.
+   */
+  _disableButton(button, disable) {
+    // If we are disabled we show the button as disabled, and we also remove it
+    // from the tab focus cycle using `tabIndex = -1`.
+    // This is similar to using the `disabled` attribute, except that
+    // `tabIndex = -1` still allows the button to be focusable. I.e. not part of
+    // the focus cycle but can *keep* existing focus when the button becomes
+    // disabled to avoid loosing focus to the top of the dialog.
+    // TODO: Replace with moz-button when it handles this for us. See
+    // tor-browser#43275.
+    button.classList.toggle("spoof-button-disabled", disable);
+    button.tabIndex = disable ? -1 : 0;
+    if (disable) {
+      this._removeButton.setAttribute("aria-disabled", "true");
+    } else {
+      this._removeButton.removeAttribute("aria-disabled");
+    }
+  },
+
   _updateButtonsState() {
     const haveSelection = this._tree.view.selection.getRangeCount() > 0;
-    this._removeButton.disabled = this._isBusy || !haveSelection;
-    this._removeAllButton.disabled = this._isBusy || this.rowCount === 0;
+    this._removeSelectedDisabled = this._isBusy || !haveSelection;
+    this._removeAllDisabled = this._isBusy || this.rowCount === 0;
+    this._disableButton(this._removeButton, this._removeSelectedDisabled);
+    this._disableButton(this._removeAllButton, this._removeAllDisabled);
   },
 
   // Private functions.
@@ -79,12 +129,18 @@ var gOnionServicesSavedKeysDialog = {
       "onionservices-savedkeys-remove"
     );
     this._removeButton.addEventListener("click", () => {
+      if (this._removeSelectedDisabled) {
+        return;
+      }
       this._deleteSelectedKeys();
     });
     this._removeAllButton = document.getElementById(
       "onionservices-savedkeys-removeall"
     );
     this._removeAllButton.addEventListener("click", () => {
+      if (this._removeAllDisabled) {
+        return;
+      }
       this._deleteAllKeys();
     });
 

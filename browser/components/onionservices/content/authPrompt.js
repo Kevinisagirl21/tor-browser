@@ -32,6 +32,8 @@ var OnionAuthPrompt = {
 
   /**
    * The currently shown details in the prompt.
+   *
+   * @type {?PromptDetails}
    */
   _shownDetails: null,
 
@@ -264,16 +266,18 @@ var OnionAuthPrompt = {
    */
   _showWarning(warningMessageId) {
     this._logger.debug(`Showing warning: ${warningMessageId}`);
+
     if (warningMessageId) {
-      document.l10n.setAttributes(this._warningEl, warningMessageId);
+      document.l10n.setAttributes(this._warningTextEl, warningMessageId);
       this._warningEl.removeAttribute("hidden");
       this._keyInput.classList.add("invalid");
+      this._keyInput.setAttribute("aria-invalid", "true");
     } else {
-      // Clean up.
-      this._warningEl.removeAttribute("data-l10n-id");
-      this._warningEl.textContent = "";
+      this._warningTextEl.removeAttribute("data-l10n-id");
+      this._warningTextEl.textContent = "";
       this._warningEl.setAttribute("hidden", "true");
       this._keyInput.classList.remove("invalid");
+      this._keyInput.removeAttribute("aria-invalid");
     }
   },
 
@@ -344,6 +348,9 @@ var OnionAuthPrompt = {
       "tor-clientauth-persistkey-checkbox"
     );
     this._warningEl = document.getElementById("tor-clientauth-warning");
+    this._warningTextEl = document.getElementById(
+      "tor-clientauth-warning-text"
+    );
     this._descriptionEl = document.getElementById(
       "tor-clientauth-notification-desc"
     );
