@@ -215,7 +215,10 @@ const gProvideBridgeDialog = {
     this._acceptDisabled = disabled;
     // Spoof the button to look and act as if it is disabled, but still allow
     // keyboard focus so the user can sit on this button whilst we are loading.
+    // TODO: Replace with moz-button when it handles this for us. See
+    // tor-browser#43275.
     this._acceptButton.classList.toggle("spoof-button-disabled", disabled);
+    this._acceptButton.tabIndex = disabled ? -1 : 0;
     if (disabled) {
       this._acceptButton.setAttribute("aria-disabled", "true");
     } else {

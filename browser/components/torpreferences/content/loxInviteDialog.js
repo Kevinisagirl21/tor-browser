@@ -255,15 +255,11 @@ const gLoxInvites = {
     // When generating we use "aria-disabled" rather than the "disabled"
     // attribute so that the button can remain focusable whilst we generate
     // invites.
-    // NOTE: When we generate the invite the focus will move to the invite list,
-    // so it should be safe to make the button non-focusable in this case.
-    const spoofDisabled = this._generating;
-    this._generateButton.disabled = disabled && !spoofDisabled;
-    this._generateButton.classList.toggle(
-      "spoof-button-disabled",
-      spoofDisabled
-    );
-    if (spoofDisabled) {
+    // TODO: Replace with moz-button when it handles this for us. See
+    // tor-browser#43275.
+    this._generateButton.classList.toggle("spoof-button-disabled", disabled);
+    this._generateButton.tabIndex = disabled ? -1 : 0;
+    if (disabled) {
       this._generateButton.setAttribute("aria-disabled", "true");
     } else {
       this._generateButton.removeAttribute("aria-disabled");
