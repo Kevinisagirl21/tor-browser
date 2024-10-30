@@ -23,3 +23,15 @@
   -moz-context-properties: fill;
   fill: var(--in-content-warning-icon-color);
 }
+
+/* Make a button appear disabled, whilst still allowing it to keep keyboard
+ * focus.
+ * Duplicate of rule in torPreferences.css.
+ * TODO: Replace with moz-button when it handles this for us. See
+ * tor-browser#43275. */
+button.spoof-button-disabled {
+  /* Borrow the :disabled rule from common-shared.css */
+  opacity: 0.4;
+  /* Also ensure it does not get hover or active styling. */
+  pointer-events: none;
+}
