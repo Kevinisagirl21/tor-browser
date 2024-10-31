@@ -588,14 +588,24 @@ export class TorProvider {
     logger.debug("Trying to start the tor process.");
     const res = await this.#torProcess.start();
     if (TorLauncherUtil.isAndroid) {
+      logger.debug("Configuration from TorProcessAndriod", res);
       this.#controlPortSettings = {
         ipcFile: new lazy.FileUtils.File(res.controlPortPath),
         cookieFilePath: res.cookieFilePath,
       };
       this.#socksSettings = {
         transproxy: false,
-        ipcFile: new lazy.FileUtils.File(res.socksPath),
       };
+      if (res.socksPath) {
+        this.#socksSettings.ipcFile = new lazy.FileUtils.File(res.socksPath);
+      } else if (res.socksPort !== undefined) {
+        this.#socksSettings.host = res.socksHost ?? "127.0.0.1";
+        this.#socksSettings.port = res.socksPort;
+      } else {
+        throw new Error(
+          "TorProcessAndroid did not return a valid SOCKS configuration."
+        );
+      }
     }
     logger.info("Started a tor process");
   }

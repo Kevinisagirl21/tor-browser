@@ -77,6 +77,10 @@ export class TorProcessAndroid {
       config = await lazy.EventDispatcher.instance.sendRequestForResult({
         type: TorOutgoingEvents.start,
         handle: this.#processHandle,
+        tcpSocks: Services.prefs.getBoolPref(
+          "extensions.torlauncher.socks_port_use_tcp",
+          false
+        ),
       });
       logger.debug("Sent the start event.");
     } catch (e) {
