@@ -345,6 +345,25 @@ export class TorProvider {
    */
   async connect() {
     await this.#controller.setNetworkEnabled(true);
+    if (this.#socksSettings.port === 0) {
+      // Enablign/disabling network resets also the SOCKS listener.
+      // So, every time we do it, we need to update the browser's configuration
+      // to use the updated port.
+      const settings = structuredClone(this.#socksSettings);
+      for (const listener of await this.#controller.getSocksListeners()) {
+        // When set to automatic port, ignore any IPC listener, as the intention
+        // was to use TCP.
+        if (listener.ipcPath) {
+          continue;
+        }
+        // The tor daemon can have any number of SOCKS listeners (see SocksPort
+        // in man 1 tor). We take for granted that any TCP one will work for us.
+        settings.host = listener.host;
+        settings.port = listener.port;
+        break;
+      }
+      TorLauncherUtil.setProxyConfiguration(settings);
+    }
     this.#lastWarning = {};
     this.retrieveBootstrapStatus();
   }

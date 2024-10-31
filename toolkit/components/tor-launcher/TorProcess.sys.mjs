@@ -53,13 +53,16 @@ export class TorProcess {
       throw new Error("Unauthenticated control port is not supported");
     }
 
-    const checkPort = port =>
+    const checkPort = (port, allowZero) =>
       port === undefined ||
-      (Number.isInteger(port) && port > 0 && port < 65535);
-    if (!checkPort(controlSettings?.port)) {
+      (Number.isInteger(port) &&
+        port < 65535 &&
+        (port > 0 || (allowZero && port === 0)));
+    if (!checkPort(controlSettings?.port, false)) {
       throw new Error("Invalid control port");
     }
-    if (!checkPort(socksSettings.port)) {
+    // Port 0 for SOCKS means automatic port.
+    if (!checkPort(socksSettings.port, true)) {
       throw new Error("Invalid port specified for the SOCKS port");
     }
 
@@ -296,10 +299,12 @@ export class TorProcess {
     let socksPortArg;
     if (this.#socksSettings.ipcFile) {
       socksPortArg = this.#socksSettings.ipcFile;
-    } else if (this.#socksSettings.port != 0) {
+    } else if (this.#socksSettings.port > 0) {
       socksPortArg = this.#socksSettings.host
         ? `${this.#socksSettings.host}:${this.#socksSettings.port}`
         : this.#socksSettings.port.toString();
+    } else {
+      socksPortArg = "auto";
     }
     if (socksPortArg) {
       const socksPortFlags = Services.prefs.getCharPref(
