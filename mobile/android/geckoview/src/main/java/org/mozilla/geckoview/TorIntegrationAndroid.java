@@ -220,12 +220,18 @@ public class TorIntegrationAndroid implements BundleEventListener {
     if (previousProcess != null) {
       Log.w(TAG, "We still have a running process: " + previousProcess.getHandle());
     }
-    mTorProcess = new TorProcess(handle);
+
+    boolean tcpSocks = message.getBoolean("tcpSocks", false);
+    mTorProcess = new TorProcess(handle, tcpSocks);
 
     GeckoBundle bundle = new GeckoBundle(3);
     bundle.putString("controlPortPath", mIpcDirectory + CONTROL_PORT_FILE);
-    bundle.putString("socksPath", mIpcDirectory + SOCKS_FILE);
     bundle.putString("cookieFilePath", mIpcDirectory + COOKIE_AUTH_FILE);
+    if (tcpSocks) {
+      bundle.putInt("socksPort", 0);
+    } else {
+      bundle.putString("socksPath", mIpcDirectory + SOCKS_FILE);
+    }
     callback.sendSuccess(bundle);
   }
 
@@ -254,10 +260,12 @@ public class TorIntegrationAndroid implements BundleEventListener {
     private static final String EVENT_TOR_START_FAILED = "GeckoView:Tor:TorStartFailed";
     private static final String EVENT_TOR_EXITED = "GeckoView:Tor:TorExited";
     private final String mHandle;
+    private final boolean mTcpSocks;
     private Process mProcess = null;
 
-    TorProcess(String handle) {
+    TorProcess(String handle, boolean tcpSocks) {
       mHandle = handle;
+      mTcpSocks = tcpSocks;
       setName("tor-process-" + handle);
       start();
     }
@@ -273,8 +281,13 @@ public class TorIntegrationAndroid implements BundleEventListener {
       args.add("1");
       args.add("+__ControlPort");
       args.add("unix:" + ipcDir + CONTROL_PORT_FILE);
+      final String socksFlags = " IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth";
       args.add("+__SocksPort");
-      args.add("unix:" + ipcDir + SOCKS_FILE + " IPv6Traffic PreferIPv6 KeepAliveIsolateSOCKSAuth");
+      args.add("unix:" + ipcDir + SOCKS_FILE + socksFlags);
+      if (mTcpSocks) {
+        args.add("+__SocksPort");
+        args.add("auto " + socksFlags);
+      }
       args.add("CookieAuthentication");
       args.add("1");
       args.add("CookieAuthFile");
