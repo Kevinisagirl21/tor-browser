@@ -145,7 +145,7 @@ class BrowserBranch:
                 # Minimal fetch of non-HEAD branch to get the file paths.
                 # Individual file blobs will be downloaded as needed.
                 git_run(
-                    ["fetch", "--depth=1", "--filter=blob:none", "origin", self._ref]
+                    ["fetch", "--depth=1", "--filter=blob:none", "origin", self.name]
                 )
             self._file_paths = git_lines(
                 ["ls-tree", "-r", "--format=%(path)", self._ref]
@@ -178,7 +178,7 @@ def get_stable_branch(
     # Moreover, we *assume* that the branch with the most recent ESR version
     # with such a tag will be used in the *next* stable build in
     # tor-browser-build.
-    tag_glob = f"{compare_version.prefix}-*esr-*-*-build1"
+    tag_glob = f"{compare_version.prefix}-*-build1"
 
     # To speed up, only fetch the tags without blobs.
     git_run(
@@ -188,10 +188,15 @@ def get_stable_branch(
     legacy_branches = []
     stable_annotation_regex = re.compile(r"\bstable\b")
     legacy_annotation_regex = re.compile(r"\blegacy\b")
+    tag_pattern = re.compile(
+        rf"^{re.escape(compare_version.prefix)}-[^-]+esr-[^-]+-[^-]+-build1$"
+    )
 
     for build_tag, annotation in (
         line.split(" ", 1) for line in git_lines(["tag", "-n1", "--list", tag_glob])
     ):
+        if not tag_pattern.match(build_tag):
+            continue
         is_stable = bool(stable_annotation_regex.search(annotation))
         is_legacy = bool(legacy_annotation_regex.search(annotation))
         if not is_stable and not is_legacy:
