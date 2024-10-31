@@ -7,6 +7,9 @@
         - "**/*.properties"
         - "**/*.dtd"
         - "**/*strings.xml"
+        - "**/update-translations.yml"
+        - "**/l10n/combine/combine.py"
+        - "**/l10n/combine-translation-versions.py"
     - if: $FORCE_UPDATE_TRANSLATIONS == "true"
   variables:
     TOR_BROWSER_COMBINED_FILES_JSON: "combined-translation-files.json"
