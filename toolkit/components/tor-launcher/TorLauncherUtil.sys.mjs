@@ -449,7 +449,7 @@ export const TorLauncherUtil = Object.freeze({
    *   If network.proxy.socks contains a file: URL, a default value of
    *     "127.0.0.1" is used instead.
    *   If the network.proxy.socks_port value is not valid (outside the
-   *     (0; 65535] range), a default value of 9150 is used instead.
+   *     (0; 65535] range), we will let the tor daemon choose a port.
    *
    * The SOCKS configuration will not influence the launch of a tor daemon and
    * the configuration of the control port in any way.
@@ -457,13 +457,6 @@ export const TorLauncherUtil = Object.freeze({
    * will try to configure the tor instance to use the required configuration.
    * This also applies to TOR_TRANSPROXY (at least for now): tor will be
    * launched with its defaults.
-   *
-   * TODO: add a preference to ignore the current configuration, and let tor
-   * listen on any free port. Then, the browser will prompt the daemon the port
-   * to use through the control port (even though this is quite dangerous at the
-   * moment, because with network disabled tor will disable also the SOCKS
-   * listeners, so it means that we will have to check it every time we change
-   * the network status).
    *
    * @returns {SocksSettings}
    */
@@ -491,7 +484,7 @@ export const TorLauncherUtil = Object.freeze({
       }
       if (Services.env.exists("TOR_SOCKS_PORT")) {
         const port = parseInt(Services.env.get("TOR_SOCKS_PORT"), 10);
-        if (Number.isInteger(port) && port > 0 && port <= 65535) {
+        if (Number.isInteger(port) && port >= 0 && port <= 65535) {
           socksPortInfo.port = port;
           useIPC = false;
         }
@@ -522,20 +515,32 @@ export const TorLauncherUtil = Object.freeze({
         socksPortInfo.host = socksAddrHasHost ? socksAddr : "127.0.0.1";
       }
 
-      if (!socksPortInfo.port) {
+      if (socksPortInfo.port === undefined) {
         let socksPort = Services.prefs.getIntPref(
           "network.proxy.socks_port",
-          0
+          9150
         );
-        // This pref is set as 0 by default in Firefox, use 9150 if we get 0.
-        socksPortInfo.port =
-          socksPort > 0 && socksPort <= 65535 ? socksPort : 9150;
+        if (socksPort > 0 && socksPort <= 65535) {
+          socksPortInfo.port = socksPort;
+        } else {
+          // Automatic port number, we have to query tor over the control port
+          // every time we change DisableNetwork.
+          socksPortInfo.port = 0;
+        }
       }
     }
 
     return socksPortInfo;
   },
 
+  /**
+   * Apply our proxy configuration to the browser.
+   *
+   * Currently, we try to configure the Tor daemon to match the browser's
+   * configuration, but this might change in the future (tor-browser#42062).
+   *
+   * @param {SocksSettings} socksPortInfo The configuration to apply
+   */
   setProxyConfiguration(socksPortInfo) {
     if (socksPortInfo.transproxy) {
       Services.prefs.setBoolPref("network.proxy.socks_remote_dns", false);
@@ -556,7 +561,7 @@ export const TorLauncherUtil = Object.freeze({
       if (socksPortInfo.host) {
         Services.prefs.setCharPref("network.proxy.socks", socksPortInfo.host);
       }
-      if (socksPortInfo.port) {
+      if (socksPortInfo.port > 0 && socksPortInfo.port <= 65535) {
         Services.prefs.setIntPref(
           "network.proxy.socks_port",
           socksPortInfo.port

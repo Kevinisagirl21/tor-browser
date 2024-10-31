@@ -299,6 +299,12 @@ class AsyncSocket {
  * exec)
  */
 /**
+ * @typedef {object} SocksListener
+ * @property {string} [ipcPath] path to a Unix socket to use for an IPC proxy
+ * @property {string} [host] The host to connect for a TCP proxy
+ * @property {number} [port] The port number to use for a TCP proxy
+ */
+/**
  * @typedef {object} OnionAuthKeyInfo
  * @property {string} address The address of the onion service
  * @property {string} typeAndKey Onion service key and type of key, as
@@ -744,6 +750,32 @@ export class TorController {
   async getIPCountry(ip) {
     this.#expectString(ip, "ip");
     return this.#getInfo(`ip-to-country/${ip}`);
+  }
+
+  /**
+   * Ask tor which ports it is listening to for SOCKS connections.
+   *
+   * @returns {Promise<SocksListener[]>} An array of addresses. It might be
+   * empty (e.g., when DisableNetwork is set)
+   */
+  async getSocksListeners() {
+    const listeners = await this.#getInfo("net/listeners/socks");
+    return Array.from(
+      listeners.matchAll(/\s*("(?:[^"\\]|\\.)*"|\S+)\s*/g),
+      m => {
+        const listener = TorParsers.unescapeString(m[1]);
+        if (listener.startsWith("unix:/")) {
+          return { ipcPath: listener.substring(5) };
+        }
+        const idx = listener.lastIndexOf(":");
+        const host = listener.substring(0, idx);
+        const port = parseInt(listener.substring(idx + 1));
+        if (isNaN(port) || port <= 0 || port > 65535 || !host || !port) {
+          throw new Error(`Could not parse the SOCKS listener ${listener}.`);
+        }
+        return { host, port };
+      }
+    );
   }
 
   /**
