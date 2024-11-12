@@ -1230,25 +1230,6 @@ export const TorConnect = {
     return this._potentiallyBlocked;
   },
 
-  /*
-    These functions allow external consumers to tell TorConnect to transition states
-   */
-
-  // TODO: Remove when all pages switch to `beginBootstrapping`.
-  beginBootstrap() {
-    this.beginBootstrapping();
-  },
-
-  // TODO: Remove when all pages switch to `cancelBootstrapping`.
-  cancelBootstrap() {
-    this.cancelBootstrapping();
-  },
-
-  // TODO: Remove when all pages switch to `beginBootstrapping`.
-  beginAutoBootstrap(countryCode) {
-    this.beginBootstrapping(countryCode || "automatic");
-  },
-
   /**
    * Ensure that we are not disabled.
    */
