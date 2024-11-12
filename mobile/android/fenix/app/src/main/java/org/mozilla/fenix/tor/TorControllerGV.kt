@@ -293,14 +293,18 @@ class TorControllerGV(
     // TorEventsBootstrapStateChangeListener
     override fun onBootstrapProgress(progress: Double, hasWarnings: Boolean) {
         Log.d(TAG, "onBootstrapProgress($progress, $hasWarnings)")
+	// TODO: onBootstrapProgress should only be used to change the shown
+	// bootstrap percentage or a Tor log option during a "Bootstrapping"
+	// stage.
+	// The progress value should not be used to change the `lastKnownStatus`
+	// value or determine if a bootstrap has started or completed. The
+	// TorConnectStage should be used instead.
         if (progress == 100.0) {
             lastKnownStatus = TorConnectState.Bootstrapped
             wasTorBootstrapped = true
             onTorConnected()
-        } else {
-            lastKnownStatus = TorConnectState.Bootstrapping
+        } else if (lastKnownStatus == TorConnectState.Bootstrapping) {
             onTorConnecting()
-
         }
         entries.add(Pair("", lastKnownStatus.toTorStatus().status))
         onTorStatusUpdate("", lastKnownStatus.toTorStatus().status, progress)
@@ -308,6 +312,10 @@ class TorControllerGV(
 
     // TorEventsBootstrapStateChangeListener
     override fun onBootstrapComplete() {
+	// TODO: There should be no need to respond to the BootstrapComplete
+	// event if we are already handling TorConnectStage.Bootstrapped.
+	// In particular, `lastKnownStatus` and onTorConnected should be set in
+	// response to a change in TorConnectStage instead.
         lastKnownStatus = TorConnectState.Bootstrapped
         this.onTorConnected()
     }
