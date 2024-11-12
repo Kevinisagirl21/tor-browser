@@ -475,11 +475,7 @@ class LoxImpl {
         // The UpdateCredOption rust struct serializes to "req" rather than
         // "request".
         const { updated, req: request } = JSON.parse(
-          lazy.check_lox_pubkeys_update(
-            pubKeys,
-            prevKeys,
-            cred
-          )
+          lazy.check_lox_pubkeys_update(pubKeys, prevKeys, cred)
         );
         if (!updated) {
           return null;
@@ -813,18 +809,14 @@ class LoxImpl {
     }
 
     const cred = await this.#changeCredentials(loxId, async cred => {
-    let request = lazy.issue_invite(
-      cred,
-      this.#encTable,
-      this.#pubKeys
-    );
-    let response = await this.#makeRequest("issueinvite", request);
-    // TODO: Do we ever expect handle_issue_invite to fail (beyond
-    // implementation bugs)?
-    // TODO: What happens if #pubkeys for `issue_invite` differs from the value
-    // when calling `handle_issue_invite`? Should we cache the value at the
-    // start of this method?
-    return lazy.handle_issue_invite(request, response, this.#pubKeys);
+      let request = lazy.issue_invite(cred, this.#encTable, this.#pubKeys);
+      let response = await this.#makeRequest("issueinvite", request);
+      // TODO: Do we ever expect handle_issue_invite to fail (beyond
+      // implementation bugs)?
+      // TODO: What happens if #pubkeys for `issue_invite` differs from the value
+      // when calling `handle_issue_invite`? Should we cache the value at the
+      // start of this method?
+      return lazy.handle_issue_invite(request, response, this.#pubKeys);
     });
 
     const invite = lazy.prepare_invite(cred);
@@ -855,35 +847,26 @@ class LoxImpl {
   }
 
   async #blockageMigration(loxId) {
-    return Boolean(await this.#changeCredentials(loxId, async cred => {
-    let request;
-    try {
-      request = lazy.check_blockage(cred, this.#pubKeys);
-    } catch {
-      lazy.logger.log("Not ready for blockage migration");
-      return null;
-    }
-    let response = await this.#makeRequest("checkblockage", request);
-    // NOTE: If a later method fails, we should be ok to re-call "checkblockage"
-    // from the Lox authority. So there shouldn't be any adverse side effects to
-    // loosing migrationCred.
-    // TODO: Confirm this is safe to lose.
-    const migrationCred = lazy.handle_check_blockage(
-      cred,
-      response
+    return Boolean(
+      await this.#changeCredentials(loxId, async cred => {
+        let request;
+        try {
+          request = lazy.check_blockage(cred, this.#pubKeys);
+        } catch {
+          lazy.logger.log("Not ready for blockage migration");
+          return null;
+        }
+        let response = await this.#makeRequest("checkblockage", request);
+        // NOTE: If a later method fails, we should be ok to re-call "checkblockage"
+        // from the Lox authority. So there shouldn't be any adverse side effects to
+        // loosing migrationCred.
+        // TODO: Confirm this is safe to lose.
+        const migrationCred = lazy.handle_check_blockage(cred, response);
+        request = lazy.blockage_migration(cred, migrationCred, this.#pubKeys);
+        response = await this.#makeRequest("blockagemigration", request);
+        return lazy.handle_blockage_migration(cred, response, this.#pubKeys);
+      })
     );
-    request = lazy.blockage_migration(
-      cred,
-      migrationCred,
-      this.#pubKeys
-    );
-    response = await this.#makeRequest("blockagemigration", request);
-    return lazy.handle_blockage_migration(
-      cred,
-      response,
-      this.#pubKeys
-    );
-    }));
   }
 
   /**
@@ -901,25 +884,26 @@ class LoxImpl {
       // attempt trust promotion instead
       return this.#trustMigration(loxId);
     }
-    return Boolean(await this.#changeCredentials(loxId, async cred => {
-    let request = lazy.level_up(
-      cred,
-      this.#encTable,
-      this.#pubKeys
+    return Boolean(
+      await this.#changeCredentials(loxId, async cred => {
+        let request = lazy.level_up(cred, this.#encTable, this.#pubKeys);
+        let response;
+        try {
+          response = await this.#makeRequest("levelup", request);
+        } catch (error) {
+          if (
+            error instanceof LoxError &&
+            error.code === LoxError.ErrorResponse
+          ) {
+            // Not an error.
+            lazy.logger.debug("Not ready for level up", error);
+            return null;
+          }
+          throw error;
+        }
+        return lazy.handle_level_up(request, response, this.#pubKeys);
+      })
     );
-    let response;
-    try {
-      response = await this.#makeRequest("levelup", request);
-    } catch (error) {
-      if (error instanceof LoxError && error.code === LoxError.ErrorResponse) {
-        // Not an error.
-        lazy.logger.debug("Not ready for level up", error);
-        return null;
-      }
-      throw error;
-    }
-    return lazy.handle_level_up(request, response, this.#pubKeys);
-    }));
   }
 
   /**
@@ -935,42 +919,37 @@ class LoxImpl {
       this.#getPubKeys();
       return false;
     }
-    return Boolean(await this.#changeCredentials(loxId, async cred => {
-    let request;
-    try {
-      request = lazy.trust_promotion(
-        cred,
-        this.#pubKeys
-      );
-    } catch (err) {
-      // This function is called routinely during the background tasks without
-      // previous checks on whether an upgrade is possible, so it is expected to
-      // fail with a certain frequency. Therefore, do not relay the error to the
-      // caller and just log the message for debugging.
-      lazy.logger.debug("Not ready to upgrade", err);
-      return null;
-    }
+    return Boolean(
+      await this.#changeCredentials(loxId, async cred => {
+        let request;
+        try {
+          request = lazy.trust_promotion(cred, this.#pubKeys);
+        } catch (err) {
+          // This function is called routinely during the background tasks without
+          // previous checks on whether an upgrade is possible, so it is expected to
+          // fail with a certain frequency. Therefore, do not relay the error to the
+          // caller and just log the message for debugging.
+          lazy.logger.debug("Not ready to upgrade", err);
+          return null;
+        }
 
-    let response = await this.#makeRequest("trustpromo", request);
-    // FIXME: Store response to "trustpromo" in case handle_trust_promotion
-    // or "trustmig" fails. The Lox authority will not accept a re-request
-    // to "trustpromo" with the same credentials.
-    let promoCred = lazy.handle_trust_promotion(request, response);
-    lazy.logger.debug("Formatted promotion cred: ", promoCred);
+        let response = await this.#makeRequest("trustpromo", request);
+        // FIXME: Store response to "trustpromo" in case handle_trust_promotion
+        // or "trustmig" fails. The Lox authority will not accept a re-request
+        // to "trustpromo" with the same credentials.
+        let promoCred = lazy.handle_trust_promotion(request, response);
+        lazy.logger.debug("Formatted promotion cred: ", promoCred);
 
-    request = lazy.trust_migration(
-      cred,
-      promoCred,
-      this.#pubKeys
+        request = lazy.trust_migration(cred, promoCred, this.#pubKeys);
+        response = await this.#makeRequest("trustmig", request);
+        lazy.logger.debug("Got new credential: ", response);
+
+        // FIXME: Store response to "trustmig" in case handle_trust_migration
+        // fails. The Lox authority will not accept a re-request to "trustmig" with
+        // the same credentials.
+        return lazy.handle_trust_migration(request, response);
+      })
     );
-    response = await this.#makeRequest("trustmig", request);
-    lazy.logger.debug("Got new credential: ", response);
-
-    // FIXME: Store response to "trustmig" in case handle_trust_migration
-    // fails. The Lox authority will not accept a re-request to "trustmig" with
-    // the same credentials.
-    return lazy.handle_trust_migration(request, response);
-    }));
   }
 
   /**
