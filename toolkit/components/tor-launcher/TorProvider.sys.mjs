@@ -27,23 +27,23 @@ const logger = console.createInstance({
  * @typedef {object} ControlPortSettings An object with the settings to use for
  * the control port. All the entries are optional, but an authentication
  * mechanism and a communication method must be specified.
- * @property {Uint8Array=} password The clear text password as an array of
+ * @property {Uint8Array} [password] The clear text password as an array of
  * bytes. It must always be defined, unless cookieFilePath is
- * @property {string=} cookieFilePath The path to the cookie file to use for
+ * @property {string} [cookieFilePath] The path to the cookie file to use for
  * authentication
- * @property {nsIFile=} ipcFile The nsIFile object with the path to a Unix
+ * @property {nsIFile} [ipcFile] The nsIFile object with the path to a Unix
  * socket to use for control socket
- * @property {string=} host The host to connect for a TCP control port
- * @property {number=} port The port number to use for a TCP control port
+ * @property {string} [host] The host to connect for a TCP control port
+ * @property {number} [port] The port number to use for a TCP control port
  */
 /**
  * @typedef {object} SocksSettings An object that includes the proxy settings to
  * be configured in the browser.
- * @property {boolean=} transproxy If true, no proxy is configured
- * @property {nsIFile=} ipcFile The nsIFile object with the path to a Unix
+ * @property {boolean} [transproxy] If true, no proxy is configured
+ * @property {nsIFile} [ipcFile] The nsIFile object with the path to a Unix
  * socket to use for an IPC proxy
- * @property {string=} host The host to connect for a TCP proxy
- * @property {number=} port The port number to use for a TCP proxy
+ * @property {string} [host] The host to connect for a TCP proxy
+ * @property {number} [port] The port number to use for a TCP proxy
  */
 /**
  * @typedef {object} LogEntry An object with a log message
