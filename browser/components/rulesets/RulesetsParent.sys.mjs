@@ -30,7 +30,7 @@ export class RulesetsParent extends JSWindowActorParent {
     );
   }
 
-  willDestroy() {
+  didDestroy() {
     Services.obs.removeObserver(
       this.observer,
       OnionAliasStoreTopics.ChannelsChanged
