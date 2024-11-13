@@ -77,7 +77,7 @@ export class TorConnectParent extends JSWindowActorParent {
     );
   }
 
-  willDestroy() {
+  didDestroy() {
     Services.obs.removeObserver(
       this.torConnectObserver,
       TorConnectTopics.StageChange
