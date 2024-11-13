@@ -86,6 +86,7 @@ binary_http = { path = "../../../../netwerk/protocol/http/binary_http" }
 oblivious_http = { path = "../../../../netwerk/protocol/http/oblivious_http" }
 mime-guess-ffi = { path = "../../../../dom/fs/parent/rust/mime-guess-ffi" }
 uniffi = { workspace = true }
+lox_tor_browser = { path = "../../../components/lox" }
 
 # Note: `modern_sqlite` means rusqlite's bindings file be for a sqlite with
 # version less than or equal to what we link to. This isn't a problem because we
