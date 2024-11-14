@@ -189,3 +189,5 @@ pub extern "C" fn uniffi_rustbuffer_free(
 ) {
     uniffi::uniffi_rustbuffer_free(buf, call_status)
 }
+
+extern crate lox_tor_browser;

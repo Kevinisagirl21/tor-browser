@@ -5,3 +5,11 @@ EXTRA_JS_MODULES += [
 ]
 
 JAR_MANIFESTS += ["jar.mn"]
+
+XPIDL_MODULE = "lox"
+XPIDL_SOURCES += ["ILoxService.idl"]
+XPCOM_MANIFESTS += [
+    "components.conf",
+]
+
+EXPORTS.torproject += ["LoxService.h"]

@@ -3601,12 +3601,17 @@ name = "lox_tor_browser"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "cstr",
  "libc",
  "lox-library",
  "lox-zkp",
  "lox_utils",
  "nserror",
  "nsstring",
+ "serde",
+ "serde_json",
+ "thin-vec",
+ "uuid",
  "xpcom",
 ]
 
