@@ -122,7 +122,7 @@ body:not(.show-tor-check) #tor-check {
   border-color: var(--in-content-box-border-color);
 }
 
-#search-form.search-input-focus-visible {
+#search-form:has(#search-input:focus-visible) {
   outline: var(--focus-outline);
 }
 
@@ -209,13 +209,13 @@ body:not(.show-tor-check) #tor-check {
     border-color: transparent;
   }
 
-  #search-form.search-input-focus-visible {
+  #search-form:has(#search-input:focus-visible) {
     /* Use a light-themed inner-border to contrast with the dark-themed
      * focus outline. */
     border-color: var(--tor-focus-outline-color-light);
   }
 
-  #search-form.onionized-search:not(.search-input-focus-visible) {
+  #search-form.onionized-search:has(#search-input:not(:focus-visible)) {
     box-shadow: 0 4px 40px #9400ff66, 0 4px 16px #9400ff33;
   }
 
