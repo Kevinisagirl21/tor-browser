@@ -52,18 +52,6 @@ const SearchWidget = {
       },
       { capture: true }
     );
-
-    // Focus styling on form.
-    const searchInput = document.getElementById("search-input");
-    const updateInputFocus = () => {
-      this.searchForm.classList.toggle(
-        "search-input-focus-visible",
-        searchInput.matches(":focus-visible")
-      );
-    };
-    updateInputFocus();
-    searchInput.addEventListener("focus", updateInputFocus);
-    searchInput.addEventListener("blur", updateInputFocus);
   },
 
   _updateOnionize() {
