@@ -1,6 +1,6 @@
 stages:
-  - lint
   - update-container-images
+  - lint
   - update-translations
 
 variables:
