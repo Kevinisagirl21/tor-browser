@@ -13,3 +13,4 @@ build-base-image:
     - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PROJECT_NAMESPACE == 'tpo/applications')
       changes:
           - '.gitlab/ci/containers/base/Containerfile'
+          - '.gitlab-ci.yml'
