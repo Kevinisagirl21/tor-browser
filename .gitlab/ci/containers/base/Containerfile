@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
         libxi-dev \
         libxrandr-dev \
         libxtst-dev \
+        make \
         m4 \
         mercurial \
         nasm \
