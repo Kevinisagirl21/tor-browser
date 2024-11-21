@@ -34,7 +34,7 @@
 eslint:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l eslint
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l eslint
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -63,7 +63,7 @@ eslint:
 stylelint:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l stylelint
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l stylelint
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -81,7 +81,7 @@ stylelint:
 py-black:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l black
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l black
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -100,7 +100,7 @@ py-black:
 py-ruff:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l ruff
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l ruff
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -119,7 +119,7 @@ py-ruff:
 yaml:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l yaml
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l yaml
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -134,7 +134,7 @@ yaml:
 shellcheck:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l shellcheck
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l shellcheck
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -149,7 +149,7 @@ clang-format:
   extends: .base
   script:
     - ./mach configure --without-wasm-sandboxed-libraries --with-base-browser-version=0.0.0
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l clang-format
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l clang-format
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -168,7 +168,7 @@ clang-format:
 rustfmt:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l rustfmt
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l rustfmt
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -182,7 +182,7 @@ rustfmt:
 fluent-lint:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l fluent-lint
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l fluent-lint
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -197,7 +197,7 @@ fluent-lint:
 localization:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l l10n
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l l10n
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -214,7 +214,7 @@ localization:
 mingw-capitalization:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l mingw-capitalization
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l mingw-capitalization
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -231,7 +231,7 @@ mingw-capitalization:
 mscom-init:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l mscom-init
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l mscom-init
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -248,7 +248,7 @@ mscom-init:
 file-whitespace:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l file-whitespace
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l file-whitespace
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -278,7 +278,7 @@ file-whitespace:
 test-manifest:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l test-manifest-alpha -l test-manifest-disable -l test-manifest-skip-if
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l test-manifest-alpha -l test-manifest-disable -l test-manifest-skip-if
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
@@ -293,7 +293,7 @@ test-manifest:
 trojan-source:
   extends: .base
   script:
-    - .gitlab/ci/scripts/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l trojan-source
+    - .gitlab/ci/jobs/lint/helpers.py --get-changed-files | xargs -d '\n' ./mach lint -l trojan-source
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       changes:
