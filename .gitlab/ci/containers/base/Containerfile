@@ -29,6 +29,8 @@ RUN apt-get update && apt-get install -y \
         nasm \
         pkgconf \
         unzip \
+        x11-utils \
+        xvfb \
         xz-utils \
         wget && \
     apt-get clean && \
