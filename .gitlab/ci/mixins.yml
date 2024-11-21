@@ -1,0 +1,37 @@
+.with-local-repo-bash:
+  variables:
+      GIT_STRATEGY: "none"
+  before_script:
+    - git init
+    - git remote add local "$LOCAL_REPO_PATH"
+    - git fetch --depth 500 local
+    - git remote add origin "$CI_REPOSITORY_URL"
+    - |
+      if [ -z "${CI_COMMIT_BRANCH:-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}" ]; then
+          echo "No branch specified. Stopping the pipeline."
+          exit 1
+      fi
+    - echo "Fetching from remote branch ${CI_COMMIT_BRANCH:-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
+    - git fetch origin "${CI_COMMIT_BRANCH:-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
+    - git checkout origin/${CI_COMMIT_BRANCH:-$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}
+
+.with-local-repo-pwsh:
+  variables:
+      GIT_STRATEGY: "none"
+  before_script:
+    - git init
+    - git remote add local $env:LOCAL_REPO_PATH
+    - git fetch --depth 500 local
+    - git remote add origin $env:CI_REPOSITORY_URL
+    - |
+      $branchName = $env:CI_COMMIT_BRANCH
+      if ([string]::IsNullOrEmpty($branchName)) {
+          $branchName = $env:CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+      }
+      if ([string]::IsNullOrEmpty($branchName)) {
+          Write-Output "No branch specified. Stopping the pipeline."
+          exit 1
+      }
+    - Write-Output "Fetching from remote branch $branchName"
+    - git fetch origin $branchName
+    - git checkout origin/$branchName
