@@ -15,7 +15,7 @@ const log = console.createInstance({
 
 const gRequestBridgeDialog = {
   selectors: {
-    dialogHeader: "h3#torPreferences-requestBridge-header",
+    dialogHeader: "#torPreferences-requestBridge-header",
     captchaImage: "image#torPreferences-requestBridge-captchaImage",
     captchaEntryTextbox: "input#torPreferences-requestBridge-captchaTextbox",
     refreshCaptchaButton:

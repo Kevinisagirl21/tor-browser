@@ -793,11 +793,7 @@ button.spoof-button-disabled {
   font-weight: 700;
 }
 
-/* Advanced Settings */
-
-h3#torPreferences-requestBridge-header {
-  margin: 0;
-}
+/* Request bridges */
 
 image#torPreferences-requestBridge-captchaImage {
   margin: 16px 0 8px 0;
