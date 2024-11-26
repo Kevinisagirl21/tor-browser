@@ -131,17 +131,23 @@
 ### **Sign and Tag**
 
 - [ ] Sign/Tag `HEAD` of the merged `tor-browser` branch:
-  - **Tag**: `tor-browser-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1-build1`
-  - **Message**: `Tagging build1 for $(ESR_VERSION)esr-based alpha`
+  - In **tor-browser.git**, checkout the new alpha `tor-browser` branch
+  - In **tor-browser-build.git**, run signing script:
+    ```bash
+    ./tools/browser/sign-tag.torbrowser alpha build1
+    ```
   - [ ] Push tag to `upstream`
 - [ ] Sign/Tag HEAD of the merged `base-browser` branch:
-  - **Tag**: `base-browser-$(ESR_VERSION)esr-$(BROWSER_MAJOR).$(BROWSER_MINOR)-1-build1`
-  - **Message**: `Tagging build1 for $(ESR_VERSION)esr-based alpha`
+  - In **tor-browser.git**, checkout the new alpha `base-browser` branch
+  - In **tor-browser-build.git**, run signing script:
+    ```bash
+    ./tools/browser/sign-tag.basebrowser alpha build1
+    ```
   - [ ] Push tag to `upstream`
-- [ ] Update tor-browser-build's main (no MR required, you can just push it if you have the permissions)
+- [ ] Update tor-browser-build's `main` branch (no MR required, you can just push it if you have the permissions)
   - [ ] Update `projects/firefox/config`
     - [ ] Update `firefox_platform_version`
     - [ ] Set `browser_build` to 1 (to prevent failures in alpha testbuilds)
   - [ ] Update `projects/geckoview/config`
-    - [ ] Update `geckoview_version`
-    - [ ] Set `browser_build` to 1
+    - [ ] Update `firefox_platform_version`
+    - [ ] Set `browser_build` to 1 (to prevent failures in alpha testbuilds)
