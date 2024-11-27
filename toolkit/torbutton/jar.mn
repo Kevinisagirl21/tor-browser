@@ -4,8 +4,5 @@ torbutton.jar:
 % resource torbutton %
 % category l10n-registry torbutton resource://torbutton/locale/{locale}/
 
-# browser branding
-% override chrome://branding/locale/brand.properties chrome://torbutton/locale/brand.properties
-
 % locale torbutton en-US %locale/en-US/
   locale/en-US/ (chrome/locale/en-US/*)
