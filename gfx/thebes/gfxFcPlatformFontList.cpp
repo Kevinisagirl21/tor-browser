@@ -1356,20 +1356,20 @@ static nsresult SetFontconfigConfigFile() {
   nsCOMPtr<nsIProperties> dirSvc(
       do_GetService("@mozilla.org/file/directory_service;1"));
   NS_ENSURE_TRUE(dirSvc, NS_ERROR_NOT_AVAILABLE);
-  nsCOMPtr<nsIFile> appFile, confFile;
+  nsCOMPtr<nsIFile> appFile, confDir;
   nsresult rv = dirSvc->Get(XRE_EXECUTABLE_FILE, NS_GET_IID(nsIFile),
                             getter_AddRefs(appFile));
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = appFile->GetParent(getter_AddRefs(confFile));
+  rv = appFile->GetParent(getter_AddRefs(confDir));
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = confFile->AppendNative("fonts"_ns);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = confFile->AppendNative("fonts.conf"_ns);
+  rv = confDir->AppendNative("fonts"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString confPath;
-  rv = confFile->GetNativePath(confPath);
-  if (NS_WARN_IF(setenv("FONTCONFIG_FILE", confPath.BeginReading(), 1) != 0)) {
+  rv = confDir->GetNativePath(confPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(setenv("FONTCONFIG_PATH", confPath.BeginReading(), 1) != 0 ||
+                 setenv("FONTCONFIG_FILE", "fonts.conf", 1) != 0)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
