@@ -5,6 +5,8 @@
  * Tor Launcher Util JS Module
  *************************************************************************/
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -333,6 +335,13 @@ class TorFile {
 export const TorLauncherUtil = Object.freeze({
   get isAndroid() {
     return Services.appinfo.OS === "Android";
+  },
+
+  get isLinux() {
+    // Use AppConstants for Linux rather then appinfo because we are sure it
+    // will catch also various Unix flavors for which unofficial ports might
+    // exist (which should work as Linux, as far as we know).
+    return AppConstants.platform === "linux";
   },
 
   get isMac() {

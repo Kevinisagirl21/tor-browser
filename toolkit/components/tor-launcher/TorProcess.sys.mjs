@@ -125,6 +125,16 @@ export class TorProcess {
         stderr: "stdout",
         workdir: lazy.TorLauncherUtil.getTorFile("pt-startup-dir", false).path,
       };
+      if (lazy.TorLauncherUtil.isLinux) {
+        let ldLibPath = Services.env.get("LD_LIBRARY_PATH") ?? "";
+        if (ldLibPath) {
+          ldLibPath = ":" + ldLibPath;
+        }
+        options.environment = {
+          LD_LIBRARY_PATH: this.#exeFile.parent.path + ldLibPath,
+        };
+        options.environmentAppend = true;
+      }
       this.#subprocess = await Subprocess.call(options);
       this.#status = TorProcessStatus.Running;
     } catch (e) {
