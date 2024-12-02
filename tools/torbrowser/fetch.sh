@@ -10,7 +10,7 @@ TOR_BROWSER_VERSION=$(grep -Eo "\"version\":\"[0-9.a]+\"" downloads.json | grep 
 if [ "$(uname)" = "Darwin" ]; then
     TOR_BROWSER_PACKAGE="tor-browser-macos-${TOR_BROWSER_VERSION}.dmg"
   else
-    TOR_BROWSER_PACKAGE="tor-browser-linux-x86_64-${TOR_BROWSER_VERSION}.tar.xz"
+    TOR_BROWSER_PACKAGE="tor-browser-linux-$(uname -m)-${TOR_BROWSER_VERSION}.tar.xz"
 fi
 TOR_BROWSER_PACKAGE_URL="https://dist.torproject.org/torbrowser/${TOR_BROWSER_VERSION}/${TOR_BROWSER_PACKAGE}"
 
