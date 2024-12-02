@@ -20,18 +20,29 @@ combine-en-US-translations:
   image: python
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-    TRANSLATION_FILES: '
-      tor-browser:tor-browser.ftl
-      tor-browser:aboutTBUpdate.dtd
-      tor-browser:torbutton.dtd
-      tor-browser:onionLocation.properties
-      tor-browser:settings.properties
-      tor-browser:torbutton.properties
-      tor-browser:torConnect.properties
-      tor-browser:torlauncher.properties
-      base-browser:base-browser.ftl
-      fenix-torbrowserstringsxml:torbrowser_strings.xml
-    '
+    TRANSLATION_FILES: '[
+      {
+        "name": "brand.ftl",
+        "where": ["browser/branding/tb-release", "toolkit/torbutton"],
+        "branch": "tor-browser",
+        "directory": "branding"
+      },
+      {
+        "name": "brand.properties",
+        "where": ["browser/branding/tb-release", "toolkit/torbutton"],
+        "branch": "tor-browser"
+      },
+      { "name": "tor-browser.ftl", "branch": "tor-browser" },
+      { "name": "aboutTBUpdate.dtd", "branch": "tor-browser" },
+      { "name": "torbutton.dtd", "branch": "tor-browser" },
+      { "name": "onionLocation.properties", "branch": "tor-browser" },
+      { "name": "settings.properties", "branch": "tor-browser" },
+      { "name": "torbutton.properties", "branch": "tor-browser" },
+      { "name": "torConnect.properties", "branch": "tor-browser" },
+      { "name": "torlauncher.properties", "branch": "tor-browser" },
+      { "name": "base-browser.ftl", "branch": "base-browser" },
+      { "name": "torbrowser_strings.xml", "branch": "fenix-torbrowserstringsxml" }
+    ]'
     TRANSLATION_INCLUDE_LEGACY: "true"
   cache:
     paths:
