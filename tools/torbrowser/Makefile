@@ -12,11 +12,17 @@ ifeq ($(ARCHITECTURE), "arm64")
   ARCHITECTURE = "aarch64"
 endif
 
+ifeq ($(ARCHITECTURE), "aarch64")
+  LINUX_VENDOR = "unknown"
+else
+  LINUX_VENDOR = "pc"
+endif
+
 # Define build output path based on the platform.
 ifeq ("$(shell uname)", "Darwin")
   BUILD_OUTPUT = "$(DEV_ROOT)/obj-$(ARCHITECTURE)-apple-darwin$(shell uname -r)"
 else
-  BUILD_OUTPUT = "$(DEV_ROOT)/obj-$(ARCHITECTURE)-pc-linux-gnu"
+  BUILD_OUTPUT = "$(DEV_ROOT)/obj-$(ARCHITECTURE)-$(LINUX_VENDOR)-linux-gnu"
 endif
 
 # Define the run command based on the platform.
