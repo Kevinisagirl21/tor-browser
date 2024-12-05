@@ -164,8 +164,13 @@
        - See https://github.com/WICG/proposals/issues/112
        -->
     <!-- NOTE: This area is hidden by default, and is only shown temporarily
-       - when a notification is added. -->
-    <html:div id="tor-bridges-update-area" hidden="hidden">
+       - when a notification is added. It should never match with search
+       - queries. -->
+    <html:div
+      id="tor-bridges-update-area"
+      hidden="hidden"
+      data-hidden-from-search="true"
+    >
       <!-- NOTE: This first span's text content will *not* be read out as part
          - of the notification because it does not have an aria-live
          - attribute. Instead it is just here to give context to the following
@@ -182,11 +187,11 @@
         aria-live="polite"
       ></html:span>
     </html:div>
-    <html:div id="tor-bridges-none">
+    <html:div id="tor-bridges-none" hidden="hidden">
       <html:img id="tor-bridges-none-icon" alt="" />
       <html:div data-l10n-id="tor-bridges-none-added"></html:div>
     </html:div>
-    <html:div id="tor-bridges-current">
+    <html:div id="tor-bridges-current" hidden="hidden">
       <html:div id="tor-bridges-current-header-bar">
         <html:h2
           id="tor-bridges-current-heading"
@@ -221,7 +226,10 @@
           aria-controls="tor-bridges-all-options-menu"
           data-l10n-id="tor-bridges-options-button"
         ></html:button>
-        <html:panel-list id="tor-bridges-all-options-menu">
+        <html:panel-list
+          id="tor-bridges-all-options-menu"
+          data-hidden-from-search="true"
+        >
           <html:panel-item
             id="tor-bridges-options-qr-all-menu-item"
             data-l10n-attrs="accesskey"
@@ -244,7 +252,7 @@
           ></html:panel-item>
         </html:panel-list>
       </html:div>
-      <html:div id="tor-bridges-built-in-display">
+      <html:div id="tor-bridges-built-in-display" hidden="hidden">
         <html:div id="tor-bridges-built-in-type-name"></html:div>
         <html:div
           id="tor-bridges-built-in-connected"
@@ -262,6 +270,7 @@
         class="tor-bridges-grid"
         role="grid"
         aria-labelledby="tor-bridges-current-heading"
+        hidden="hidden"
       ></html:div>
       <html:template id="tor-bridges-grid-row-template">
         <html:div class="tor-bridges-grid-row" role="row">
@@ -297,7 +306,10 @@
                 aria-expanded="false"
                 data-l10n-id="tor-bridges-individual-bridge-options-button"
               ></html:button>
-              <html:panel-list class="tor-bridges-individual-options-menu">
+              <html:panel-list
+                class="tor-bridges-individual-options-menu"
+                data-hidden-from-search="true"
+              >
                 <html:panel-item
                   class="tor-bridges-options-qr-one-menu-item"
                   data-l10n-attrs="accesskey"
@@ -318,7 +330,11 @@
           </html:span>
         </html:div>
       </html:template>
-      <html:div id="tor-bridges-share" class="tor-bridges-details-box">
+      <html:div
+        id="tor-bridges-share"
+        class="tor-bridges-details-box"
+        hidden="hidden"
+      >
         <html:h3
           id="tor-bridges-share-heading"
           data-l10n-id="tor-bridges-share-heading"
@@ -336,11 +352,12 @@
           data-l10n-id="tor-bridges-qr-addresses-button"
         ></html:button>
       </html:div>
-      <html:div id="tor-bridges-lox-status">
+      <html:div id="tor-bridges-lox-status" hidden="hidden">
         <html:div data-l10n-id="tor-bridges-lox-description"></html:div>
         <html:div
           id="tor-bridges-lox-details"
           class="tor-bridges-details-box tor-bridges-lox-box"
+          hidden="hidden"
         >
           <html:img alt="" class="tor-bridges-lox-image-inner" />
           <html:img alt="" class="tor-bridges-lox-image-outer" />
@@ -354,29 +371,37 @@
               id="tor-bridges-lox-next-unlock-gain-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-unlock-two-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-next-unlock-first-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
               data-l10n-id="tor-bridges-lox-unlock-first-invites"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-next-unlock-more-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
               data-l10n-id="tor-bridges-lox-unlock-more-invites"
+              hidden="hidden"
             ></html:li>
           </html:ul>
-          <html:div id="tor-bridges-lox-remaining-invites"></html:div>
+          <html:div
+            id="tor-bridges-lox-remaining-invites"
+            hidden="hidden"
+          ></html:div>
           <html:button
             id="tor-bridges-lox-show-invites-button"
             class="tor-bridges-lox-button"
             data-l10n-id="tor-bridges-lox-show-invites-button"
+            hidden="hidden"
           ></html:button>
         </html:div>
         <html:div
           id="tor-bridges-lox-unlock-alert"
           role="alert"
           class="tor-bridges-details-box tor-bridges-lox-box"
+          hidden="hidden"
         >
           <html:img alt="" class="tor-bridges-lox-image-inner" />
           <html:img alt="" class="tor-bridges-lox-image-outer" />
@@ -389,15 +414,18 @@
               id="tor-bridges-lox-unlock-alert-gain-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-gained-two-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-unlock-alert-new-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-new-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-unlock-alert-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
+              hidden="hidden"
             ></html:li>
           </html:ul>
           <html:button

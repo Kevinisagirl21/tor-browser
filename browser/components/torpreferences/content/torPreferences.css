@@ -182,43 +182,8 @@ button.spoof-button-disabled {
   clip-path: inset(50%);
 }
 
-#torPreferences-bridges-group:not(.have-bridges, .no-bridges) {
+#torPreferences-bridges-group:not(.bridges-initialized) {
   /* Hide bridge settings whilst not initialized. */
-  display: none;
-}
-
-#torPreferences-bridges-group:not(.have-bridges) #tor-bridges-current {
-  display: none;
-}
-
-#torPreferences-bridges-group:not(.no-bridges) #tor-bridges-none {
-  display: none;
-}
-
-#tor-bridges-current:not(.source-built-in) #tor-bridges-built-in-label {
-  display: none;
-}
-
-#tor-bridges-current:not(.source-user) #tor-bridges-user-label {
-  display: none;
-}
-
-#tor-bridges-current:not(.source-requested) #tor-bridges-requested-label {
-  display: none;
-}
-
-#tor-bridges-current:not(.source-lox) #tor-bridges-lox-label {
-  display: none;
-}
-
-#tor-bridges-current:not(
-  .source-user,
-  .source-requested
-) #tor-bridges-share {
-  display: none;
-}
-
-#tor-bridges-current:not(.source-lox) #tor-bridges-lox-status {
   display: none;
 }
 
@@ -228,7 +193,7 @@ button.spoof-button-disabled {
   margin-block: 32px;
 }
 
-#tor-bridges-none {
+#tor-bridges-none:not([hidden]) {
   display: grid;
   justify-items: center;
   text-align: center;
@@ -282,7 +247,7 @@ button.spoof-button-disabled {
   grid-area: button;
 }
 
-#tor-bridges-lox-label {
+#tor-bridges-lox-label:not([hidden]) {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -317,7 +282,7 @@ button.spoof-button-disabled {
   fill: currentColor;
 }
 
-#tor-bridges-built-in-display {
+#tor-bridges-built-in-display:not([hidden]) {
   display: grid;
   grid-template:
     "type status" min-content
@@ -325,10 +290,6 @@ button.spoof-button-disabled {
     / max-content 1fr;
   gap: 12px 1.5em;
   margin-block-end: 16px;
-}
-
-#tor-bridges-built-in-display:not(.built-in-active) {
-  display: none;
 }
 
 #tor-bridges-built-in-type-name {
@@ -345,7 +306,7 @@ button.spoof-button-disabled {
   grid-area: description;
 }
 
-.tor-bridges-grid {
+.tor-bridges-grid:not([hidden]) {
   display: grid;
   grid-template-columns: max-content repeat(4, max-content) 1fr;
   --tor-bridges-grid-column-gap: 8px;
@@ -353,10 +314,6 @@ button.spoof-button-disabled {
   /* For #tor-bridges-grid-display we want each grid item to have the same
    * height so that their focus outlines match. */
   align-items: stretch;
-}
-
-#tor-bridges-grid-display:not(.grid-active) {
-  display: none;
 }
 
 .tor-bridges-grid-row {
@@ -483,7 +440,7 @@ button.spoof-button-disabled {
   padding: 16px;
 }
 
-#tor-bridges-share {
+#tor-bridges-share:not([hidden]) {
   display: grid;
   grid-template:
     "heading heading heading" min-content
@@ -538,15 +495,7 @@ button.spoof-button-disabled {
   margin-block-start: 8px;
 }
 
-#tor-bridges-lox-status:not(.show-next-unlock) #tor-bridges-lox-details {
-  display: none;
-}
-
-#tor-bridges-lox-status:not(.show-unlock-alert) #tor-bridges-lox-unlock-alert {
-  display: none;
-}
-
-.tor-bridges-lox-box {
+.tor-bridges-lox-box:not([hidden]) {
   display: grid;
   grid-template:
     "image intro intro" min-content
@@ -619,11 +568,11 @@ button.spoof-button-disabled {
   gap: 8px 0;
 }
 
-.tor-bridges-lox-list-item {
+.tor-bridges-lox-list-item:not([hidden]) {
   display: contents;
 }
 
-.tor-bridges-lox-list-item::before {
+.tor-bridges-lox-list-item:not([hidden])::before {
   /* We use ::before rather than list-style-image to have more control. */
   box-sizing: content-box;
   width: 18px;
@@ -655,42 +604,10 @@ button.spoof-button-disabled {
   stroke: var(--in-content-success-icon-color);
 }
 
-#tor-bridges-lox-details:not(.lox-next-gain-bridges) #tor-bridges-lox-next-unlock-gain-bridges {
-  display: none;
-}
-
-#tor-bridges-lox-details:not(.lox-next-first-invites) #tor-bridges-lox-next-unlock-first-invites {
-  display: none;
-}
-
-#tor-bridges-lox-details:not(.lox-next-more-invites) #tor-bridges-lox-next-unlock-more-invites {
-  display: none;
-}
-
-
-#tor-bridges-lox-unlock-alert:not(.lox-unlock-gain-bridges) #tor-bridges-lox-unlock-alert-gain-bridges {
-  display: none;
-}
-
-#tor-bridges-lox-unlock-alert:not(.lox-unlock-new-bridges) #tor-bridges-lox-unlock-alert-new-bridges {
-  display: none;
-}
-
-#tor-bridges-lox-unlock-alert:not(.lox-unlock-invites) #tor-bridges-lox-unlock-alert-invites {
-  display: none;
-}
-
 #tor-bridges-lox-remaining-invites {
   grid-area: invites;
   justify-self: end;
   align-self: center;
-}
-
-#tor-bridges-lox-details:not(.lox-has-invites) :is(
-  #tor-bridges-lox-remaining-invites,
-  #tor-bridges-lox-show-invites-button
-) {
-  display: none;
 }
 
 .tor-bridges-lox-button {
