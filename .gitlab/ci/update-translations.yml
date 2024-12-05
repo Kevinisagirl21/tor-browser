@@ -41,7 +41,11 @@ combine-en-US-translations:
       { "name": "torConnect.properties", "branch": "tor-browser" },
       { "name": "torlauncher.properties", "branch": "tor-browser" },
       { "name": "base-browser.ftl", "branch": "base-browser" },
-      { "name": "torbrowser_strings.xml", "branch": "fenix-torbrowserstringsxml" }
+      {
+        "name": "torbrowser_strings.xml",
+        "branch": "fenix-torbrowserstringsxml",
+        "exclude-legacy": true
+      }
     ]'
     TRANSLATION_INCLUDE_LEGACY: "true"
   cache:
