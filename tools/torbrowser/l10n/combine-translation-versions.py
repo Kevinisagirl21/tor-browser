@@ -309,7 +309,7 @@ for file_dict in json.loads(args.files):
         f"Will be unused in Tor Browser {current_branch.browser_version}!",
     )
 
-    if legacy_branch:
+    if legacy_branch and not file_dict.get("exclude-legacy", False):
         legacy_file = legacy_branch.get_file(name, where_dirs)
         if legacy_file is not None and current_file is None and stable_file is None:
             logger.warning(f"{name} still exists in the legacy branch")
@@ -332,6 +332,8 @@ for file_dict in json.loads(args.files):
             legacy_file.content,
             f"Unused in Tor Browser {stable_branch.browser_version}!",
         )
+    elif legacy_branch:
+        logger.info(f"Excluding legacy branch for {name}")
 
     files_list.append(
         {
