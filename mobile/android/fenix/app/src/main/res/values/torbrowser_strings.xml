@@ -149,4 +149,9 @@
     <string name="connection_assist_final_error_troubleshoot_connection_link">troubleshooting your connection</string>
     <!-- Connection assist. -->
     <string name="connection_assist_final_error_learn_more_link">Learn more</string>
+    <!-- Connection assist. Description for a shown "Snackbar" (special popup notification) with an action to connect. -->
+    <string name="connection_assist_connect_to_tor_before_opening_links">Connect to Tor before opening links</string>
+    <!-- Connection assist. Confirmation button for a shown "Snackbar" (special popup notification). -->
+    <string name="connection_assist_connect_to_tor_before_opening_links_confirmation">CONNECT</string>
+
 </resources>
