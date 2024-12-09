@@ -117,6 +117,7 @@ class TorAndroidIntegrationImpl {
           type: EmittedEvents.torLogs,
           logType: subj.wrappedJSObject.type ?? "",
           message: subj.wrappedJSObject.msg ?? "",
+          timestamp: subj.wrappedJSObject.timestamp ?? "",
         });
         break;
       case lazy.TorSettingsTopics.Ready:

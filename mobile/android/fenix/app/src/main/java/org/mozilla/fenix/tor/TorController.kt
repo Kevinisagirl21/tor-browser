@@ -20,7 +20,7 @@ class TorError(
 ) { }
 
 interface TorLogs {
-    fun onLog(type: String?, message: String?)
+    fun onLog(type: String?, message: String?, timestamp: String?)
 }
 
 internal enum class TorStatus(val status: String) {
@@ -32,7 +32,7 @@ internal enum class TorStatus(val status: String) {
 }
 
 interface TorController: TorEvents {
-    val logEntries: MutableList<Pair<String?, String?>>
+    val logEntries: MutableList<TorLog>
     val isStarting: Boolean
     val isRestarting: Boolean
     val isBootstrapped: Boolean
