@@ -660,12 +660,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIn
             // and not only the top Activity/Task. Therefore we kill the
             // underlying Application, as well.
             (application as FenixApplication).terminate()
-        }
-
-        val engine = components.core.engine
-        if (engine is GeckoEngine) {
-            val torIntegration = engine.getTorIntegrationController()
-            torIntegration.unregisterBootstrapStateChangeListener(this)
+            if (settings().useHtmlConnectionUi) {
+                val engine = components.core.engine
+                if (engine is GeckoEngine) {
+                    val torIntegration = engine.getTorIntegrationController()
+                    torIntegration.unregisterBootstrapStateChangeListener(this)
+                }
+            }
         }
     }
 
