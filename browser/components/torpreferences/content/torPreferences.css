@@ -118,6 +118,48 @@ button.spoof-button-disabled {
 
 /* Bridge settings */
 
+.tor-medium-heading {
+  /* Same font size as mozilla preferences h2. */
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.tor-small-heading {
+  font-size: inherit;
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+/* Hide the tor-search-heading elements when the group's search header is
+ * hidden. These only appear in search results.
+ * See tor-browser#43320.
+ * NOTE: `.search-header[hidden] ~ :is(* .tor-search-heading)` will not match
+ * (possibly because the `~` selector is unsure how to integrate with the
+ * non-compound `* .tor-search-heading` selector). So we need to duplicate the
+ * `.search-header[hidden]` rule. */
+#torPreferences-bridges-group :is(
+  .search-header[hidden] ~ * .tor-search-heading,
+  .search-header[hidden] ~ .tor-search-heading
+) {
+  display: none;
+}
+
+/* Hide the tor-non-search-heading elements when the group's search header is
+ * not hidden. These only appear outside of search results.
+ * See tor-browser#43320. */
+#torPreferences-bridges-group :is(
+  .search-header:not([hidden]) ~ * .tor-non-search-heading,
+  .search-header:not([hidden]) ~ .tor-non-search-heading
+) {
+  display: none;
+}
+
+.tor-focusable-heading {
+  /* Do not occupy more horizontal space than necessary. */
+  width: fit-content;
+}
+
 .tor-focusable-heading:focus-visible {
   outline-offset: var(--in-content-focus-outline-offset);
 }
@@ -230,9 +272,7 @@ button.spoof-button-disabled {
   white-space: nowrap;
 }
 
-#tor-bridges-current-heading {
-  margin: 0;
-  font-size: inherit;
+.tor-bridges-current-heading {
   grid-area: heading;
 }
 
@@ -453,12 +493,9 @@ button.spoof-button-disabled {
   align-items: center;
 }
 
-#tor-bridges-share-heading {
+.tor-bridges-share-heading {
   grid-area: heading;
-  font-size: inherit;
-  margin: 0;
   margin-block-end: 4px;
-  font-weight: 700;
 }
 
 #tor-bridges-share-description {
@@ -550,11 +587,8 @@ button.spoof-button-disabled {
 
 .tor-bridges-lox-intro {
   grid-area: intro;
-  font-weight: 700;
-  font-size: inherit;
   align-self: center;
   justify-self: start;
-  margin: 0;
 }
 
 .tor-bridges-lox-list {
@@ -616,8 +650,7 @@ button.spoof-button-disabled {
   align-self: center;
 }
 
-#tor-bridges-provider-heading {
-  font-size: 1.14em;
+.tor-bridges-provider-heading {
   margin-block: 48px 8px;
 }
 

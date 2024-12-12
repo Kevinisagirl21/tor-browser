@@ -1249,11 +1249,13 @@ const gLoxStatus = {
    */
   _nextUnlockItems: null,
   /**
-   * The day counter for the next unlock.
+   * The day counter headings for the next unlock.
    *
-   * @type {Element?}
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
    */
-  _nextUnlockCounterEl: null,
+  _nextUnlockCounterEls: null,
   /**
    * Shows the number of remaining invites.
    *
@@ -1319,8 +1321,8 @@ const gLoxStatus = {
         "tor-bridges-lox-next-unlock-more-invites"
       ),
     };
-    this._nextUnlockCounterEl = document.getElementById(
-      "tor-bridges-lox-next-unlock-counter"
+    this._nextUnlockCounterEls = Array.from(
+      document.querySelectorAll(".tor-bridges-lox-next-unlock-counter")
     );
     this._remainingInvitesEl = document.getElementById(
       "tor-bridges-lox-remaining-invites"
@@ -1632,11 +1634,13 @@ const gLoxStatus = {
             (24 * 60 * 60 * 1000)
         )
       );
-      document.l10n.setAttributes(
-        this._nextUnlockCounterEl,
-        "tor-bridges-lox-days-until-unlock",
-        { numDays }
-      );
+      for (const counterEl of this._nextUnlockCounterEls) {
+        document.l10n.setAttributes(
+          counterEl,
+          "tor-bridges-lox-days-until-unlock",
+          { numDays }
+        );
+      }
 
       // Gain 2 bridges from level 0 to 1. After that gain invites.
       this._nextUnlockItems.gainBridges.hidden =
@@ -1650,7 +1654,22 @@ const gLoxStatus = {
     if (alertHadFocus && !showAlert) {
       // Alert has become hidden, move focus back up to the now revealed details
       // area.
-      this._nextUnlockCounterEl.focus();
+      // NOTE: We have two headings: one shown during a search and one shown
+      // otherwise. We focus the heading that is currently visible.
+      // See tor-browser#43320.
+      // TODO: It might be better if we could use the # named anchor to
+      // re-orient the screen reader position instead of using tabIndex=-1, but
+      // about:preferences currently uses the anchor for showing categories
+      // only. See bugzilla bug 1799153.
+      if (
+        this._nextUnlockCounterEls[0].checkVisibility({
+          visibilityProperty: true,
+        })
+      ) {
+        this._nextUnlockCounterEls[0].focus();
+      } else {
+        this._nextUnlockCounterEls[1].focus();
+      }
     } else if (detailsHadFocus && showAlert) {
       this._unlockAlertButton.focus();
     }
@@ -1727,17 +1746,21 @@ const gBridgeSettings = {
    */
   _shareEl: null,
   /**
-   * The heading for the bridge settings.
+   * The two headings for the bridge settings.
    *
-   * @type {Element?}
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
    */
-  _bridgesSettingsHeading: null,
+  _bridgesSettingsHeadings: null,
   /**
-   * The current bridges heading, at the start of the area.
+   * The two headings for the current bridges, at the start of the area.
+   *
+   * One heading is shown during a search, the other is shown otherwise.
    *
    * @type {Element?}
    */
-  _currentBridgesHeading: null,
+  _currentBridgesHeadings: null,
   /**
    * The area for showing no bridges.
    *
@@ -1745,11 +1768,13 @@ const gBridgeSettings = {
    */
   _noBridgesEl: null,
   /**
-   * The heading element for changing bridges.
+   * The heading elements for changing bridges.
    *
-   * @type {Element?}
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
    */
-  _changeHeadingEl: null,
+  _changeHeadingEls: null,
   /**
    * The button for user to provide a bridge address or share code.
    *
@@ -1769,11 +1794,11 @@ const gBridgeSettings = {
   init() {
     gBridgesNotification.init();
 
-    this._bridgesSettingsHeading = document.getElementById(
-      "torPreferences-bridges-header"
+    this._bridgesSettingsHeadings = Array.from(
+      document.querySelectorAll(".tor-bridges-subcategory-heading")
     );
-    this._currentBridgesHeading = document.getElementById(
-      "tor-bridges-current-heading"
+    this._currentBridgesHeadings = Array.from(
+      document.querySelectorAll(".tor-bridges-current-heading")
     );
     this._bridgesEl = document.getElementById("tor-bridges-current");
     this._noBridgesEl = document.getElementById("tor-bridges-none");
@@ -1809,8 +1834,8 @@ const gBridgeSettings = {
       });
     });
 
-    this._changeHeadingEl = document.getElementById(
-      "tor-bridges-change-heading"
+    this._changeHeadingEls = Array.from(
+      document.querySelectorAll(".tor-bridges-change-heading")
     );
     this._userProvideButton = document.getElementById(
       "tor-bridges-open-user-provide-dialog-button"
@@ -2000,12 +2025,14 @@ const gBridgeSettings = {
     this._bridgesEl.hidden = !haveBridges;
     this._noBridgesEl.hidden = haveBridges;
 
-    document.l10n.setAttributes(
-      this._changeHeadingEl,
-      haveBridges
-        ? "tor-bridges-replace-bridges-heading"
-        : "tor-bridges-add-bridges-heading"
-    );
+    for (const headingEl of this._changeHeadingEls) {
+      document.l10n.setAttributes(
+        headingEl,
+        haveBridges
+          ? "tor-bridges-replace-bridges-heading"
+          : "tor-bridges-add-bridges-heading"
+      );
+    }
     document.l10n.setAttributes(
       this._userProvideButton,
       haveBridges ? "tor-bridges-replace-button" : "tor-bridges-add-new-button"
@@ -2024,17 +2051,27 @@ const gBridgeSettings = {
     }
 
     // Make sure we have the latest value for _haveBridges.
-    // We also ensure that the _currentBridgesHeading element is visible before
+    // We also ensure that the _currentBridgesHeadings element is visible before
     // we focus it.
     this._updateHaveBridges();
-    if (this._haveBridges) {
-      // Move focus to the start of the area, which is the heading.
-      // It has tabindex="-1" so should be focusable, even though it is not part
-      // of the usual tab navigation.
-      this._currentBridgesHeading.focus();
+
+    // Move focus to the start of the relevant section, which is a heading.
+    // They have tabindex="-1" so should be focusable, even though they are not
+    // part of the usual tab navigation.
+    // NOTE: We have two headings: one shown during a search and one shown
+    // otherwise. We focus the heading that is currently visible.
+    // See tor-browser#43320.
+    // TODO: It might be better if we could use the # named anchor to
+    // re-orient the screen reader position instead of using tabIndex=-1, but
+    // about:preferences currently uses the anchor for showing categories
+    // only. See bugzilla bug 1799153.
+    const focusHeadings = this._haveBridges
+      ? this._currentBridgesHeadings // The heading above the new bridges.
+      : this._bridgesSettingsHeadings; // The top of the bridge settings.
+    if (focusHeadings[0].checkVisibility({ visibilityProperty: true })) {
+      focusHeadings[0].focus();
     } else {
-      // Move focus to the top of the bridge settings.
-      this._bridgesSettingsHeading.focus();
+      focusHeadings[1].focus();
     }
   },
 
