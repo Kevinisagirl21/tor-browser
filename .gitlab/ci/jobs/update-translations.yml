@@ -17,6 +17,7 @@
 
 combine-en-US-translations:
   extends: .update-translation-base
+  needs: []
   image: python
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
