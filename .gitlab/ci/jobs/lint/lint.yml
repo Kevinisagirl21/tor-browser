@@ -44,7 +44,7 @@ eslint:
         - 'tools/lint/eslint/eslint-plugin-mozilla/**'
         - 'tools/lint/eslint/eslint-plugin-spidermonkey-js/**'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 stylelint:
   extends: .base
@@ -62,7 +62,7 @@ stylelint:
         - '**/.stylelintignore'
         - '**/*stylelintrc*'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 py-black:
   extends: .base
@@ -81,7 +81,7 @@ py-black:
         - 'pyproject.toml'
         - 'tools/lint/black.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 py-ruff:
   extends: .base
@@ -100,7 +100,7 @@ py-ruff:
         - 'tools/lint/python/ruff.py'
         - 'tools/lint/python/ruff_requirements.txt'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 yaml:
   extends: .base
@@ -115,7 +115,7 @@ yaml:
         - '**/*.yaml'
         - '**/.ymllint'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 shellcheck:
   extends: .base
@@ -129,7 +129,7 @@ shellcheck:
         - '**/*.sh'
         - 'tools/lint/shellcheck.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 clang-format:
   extends: .base
@@ -149,7 +149,7 @@ clang-format:
         - '**/*.mm'
         - 'tools/lint/clang-format.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 rustfmt:
   extends: .base
@@ -163,7 +163,7 @@ rustfmt:
         - '**/*.rs'
         - 'tools/lint/rustfmt.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 fluent-lint:
   extends: .base
@@ -178,7 +178,7 @@ fluent-lint:
         - 'tools/lint/fluent-lint.yml'
         - 'tools/lint/fluent-lint/exclusions.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 localization:
   extends: .base
@@ -195,7 +195,7 @@ localization:
         - 'third_party/python/fluent/**'
         - 'tools/lint/l10n.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 mingw-capitalization:
   extends: .base
@@ -212,7 +212,7 @@ mingw-capitalization:
         - '**/*.h'
         - 'tools/lint/mingw-capitalization.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 mscom-init:
   extends: .base
@@ -229,7 +229,7 @@ mscom-init:
         - '**/*.h'
         - 'tools/lint/mscom-init.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 file-whitespace:
   extends: .base
@@ -259,7 +259,7 @@ file-whitespace:
         - '**/*.java'
         - 'tools/lint/file-whitespace.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 test-manifest:
   extends: .base
@@ -274,7 +274,7 @@ test-manifest:
         - 'python/mozlint/**'
         - 'tools/lint/**'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
 
 trojan-source:
   extends: .base
@@ -293,4 +293,4 @@ trojan-source:
         - '**/*.rs'
         - 'tools/lint/trojan-source.yml'
     # Run job whenever a commit is merged to a protected branch
-    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true')
+    - if: ($CI_COMMIT_BRANCH && $CI_COMMIT_REF_PROTECTED == 'true' && $CI_PIPELINE_SOURCE == 'push')
