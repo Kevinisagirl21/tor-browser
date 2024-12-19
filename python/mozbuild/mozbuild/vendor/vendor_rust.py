@@ -302,6 +302,8 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             "qlog",
         ],
         "BSD-3-Clause": [
+            "curve25519-dalek",
+            "ed25519-dalek",
             "subtle",
         ],
     }

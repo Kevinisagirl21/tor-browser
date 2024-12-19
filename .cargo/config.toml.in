@@ -105,6 +105,11 @@ git = "https://github.com/zakarumych/gpu-descriptor"
 rev = "7b71a4e47c81903ad75e2c53deb5ab1310f6ff4d"
 replace-with = "vendored-sources"
 
+[source."git+https://gitlab.torproject.org/onyinyang/lox.git?rev=f8923e2d38aa8ce3d8465dddac201b8cf84d8958"]
+git = "https://gitlab.torproject.org/onyinyang/lox.git"
+rev = "f8923e2d38aa8ce3d8465dddac201b8cf84d8958"
+replace-with = "vendored-sources"
+
 
 # Take advantage of the fact that cargo will treat lines starting with #
 # as comments to add preprocessing directives. This file can thus by copied

@@ -166,6 +166,8 @@ class LoxImpl {
    */
   #activeLoxId = null;
 
+  #loxService;
+
   get activeLoxId() {
     return this.#activeLoxId;
   }
@@ -672,6 +674,16 @@ class LoxImpl {
     }
     this.#load();
     this.#initialized = true;
+
+    try {
+      this.#loxService = Cc["@torproject.org/lox-service;1"].createInstance(
+        Ci.ILoxService
+      );
+      // TODO: Actually load the data from the file system.
+      this.#loxService.initialize(this, JSON.stringify([12, 3, 4]));
+    } catch (e) {
+      lazy.logger.error("Could not initialize the Lox service", e);
+    }
   }
 
   async uninit() {
@@ -680,6 +692,11 @@ class LoxImpl {
     }
     Services.obs.removeObserver(this, lazy.TorSettingsTopics.SettingsChanged);
     Services.obs.removeObserver(this, lazy.TorSettingsTopics.Ready);
+    try {
+      this.#loxService?.uninitialize();
+    } catch (e) {
+      lazy.logger.warn("Failed to uninitialize the Lox service", e);
+    }
     if (this.#domainFrontedRequests !== null) {
       try {
         const domainFronting = await this.#domainFrontedRequests;
@@ -1144,6 +1161,25 @@ class LoxImpl {
       );
     }
     return JSON.stringify(jsonResponse);
+  }
+
+  runRequest(procedure, request, handler) {
+    this.#makeRequest(procedure, request ? request : null)
+      .then(val => handler.handle(Ci.ILoxRequestHandler.NO_ERROR, val))
+      .catch(e => {
+        if (e instanceof LoxError && e.code === LoxError.LoxServerUnreachable) {
+          handler.handle(Ci.ILoxRequestHandler.UNREACHABLE, e.message);
+        } else {
+          handler.handle(Ci.ILoxRequestHandler.REQUEST_FAILED, e.message);
+        }
+      });
+  }
+
+  store(_data) {}
+
+  // Only for ease of development.
+  _service() {
+    return this.#loxService;
   }
 }
 
