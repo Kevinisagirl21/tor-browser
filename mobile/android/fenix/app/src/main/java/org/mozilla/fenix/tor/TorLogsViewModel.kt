@@ -10,7 +10,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -23,9 +22,7 @@ class TorLogsViewModel(application: Application) : AndroidViewModel(application)
     private val clipboardManager =
         application.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-    private val _torLogs: MutableLiveData<List<TorLog>> = MutableLiveData(
-        mutableListOf(TorLog("---------------" + application.getString(R.string.tor_initializing_log) + "---------------")),
-    )
+    private val _torLogs: MutableLiveData<List<TorLog>> = MutableLiveData(mutableListOf())
 
     fun torLogs(): LiveData<List<TorLog>> {
         return _torLogs
@@ -38,20 +35,14 @@ class TorLogsViewModel(application: Application) : AndroidViewModel(application)
     init {
         setupClipboardListener()
         torController.registerTorLogListener(this)
-        val currentEntries = torController.logEntries.filter { it.second != null }
-            .filter { !(it.second!!.startsWith("Circuit") && it.first == "ON") }
-            // Keep synchronized with format in onTorStatusUpdate
-            .flatMap { listOf(TorLog("[${it.first}] ${it.second}")) }
+        val currentEntries = torController.logEntries
         for (log in currentEntries) {
             addLog(log)
         }
     }
 
-    override fun onLog(type: String?, message: String?) {
-        if (message == null || type == null) return
-        if (type == "ON" && type.startsWith("Circuit")) return
-
-        addLog(TorLog("[$type] $message"))
+    override fun onLog(type: String?, message: String?, timestamp: String?) {
+        addLog(TorLog(type ?: "null", message ?: "null", timestamp ?: "null"))
     }
 
     override fun onCleared() {
@@ -86,14 +77,8 @@ class TorLogsViewModel(application: Application) : AndroidViewModel(application)
         var ret = ""
         for (log in torLogs().value
             ?: return getApplication<Application>().getString(R.string.default_error_msg)) {
-            ret += log.text + '\n'
+            ret += log.timestamp + " [${log.type}] " + log.text + '\n'
         }
         return ret
     }
 }
-
-@Stable
-data class TorLog(
-    val text: String,
-    val timestamp: Timestamp = Timestamp(System.currentTimeMillis()),
-)

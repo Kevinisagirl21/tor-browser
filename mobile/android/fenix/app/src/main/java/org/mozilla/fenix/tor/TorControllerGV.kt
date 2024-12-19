@@ -66,7 +66,7 @@ class TorControllerGV(
     private var isTorBootstrapped = false
         get() = ((_lastKnownStatus.value.isStarted()) && wasTorBootstrapped)
 
-    private val entries = mutableListOf<Pair<String?, String?>>()
+    private val entries = mutableListOf<TorLog>()
     override val logEntries get() = entries
     override val isStarting get() = _lastKnownStatus.value.isStarting()
     override val isRestarting get() = isTorRestarting
@@ -217,10 +217,10 @@ class TorControllerGV(
         }
     }
 
-    override fun onLog(type: String?, message: String?) {
+    override fun onLog(type: String?, message: String?, timestamp: String?) {
         synchronized(torLogListeners) {
-            entries.add(Pair(type, message))
-            torLogListeners.toList().forEach { it.onLog(type, message) }
+            entries.add(TorLog(type ?: "null", message ?: "null", timestamp ?: "null"))
+            torLogListeners.toList().forEach { it.onLog(type ?: "null", message ?: "null", timestamp) }
         }
     }
 

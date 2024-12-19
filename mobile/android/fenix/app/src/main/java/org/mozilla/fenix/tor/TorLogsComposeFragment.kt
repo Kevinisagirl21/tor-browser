@@ -108,16 +108,14 @@ class TorLogsComposeFragment : Fragment() {
                     bottom = 16.dp,
                 ),
         ) {
-            DisableSelection {
-                Text(
-                    text = log.timestamp.toString(),
-                    color = PhotonColors.LightGrey40,
-                    modifier = modifier
-                        .padding(bottom = 4.dp),
-                )
-            }
             Text(
-                text = log.text,
+                text = log.timestamp,
+                color = PhotonColors.LightGrey40,
+                modifier = modifier
+                    .padding(bottom = 4.dp),
+            )
+            Text(
+                text = "[${log.type}] " + log.text,
                 color = PhotonColors.LightGrey05,
             )
         }

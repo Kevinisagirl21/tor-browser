@@ -47,7 +47,8 @@ const logger = console.createInstance({
  */
 /**
  * @typedef {object} LogEntry An object with a log message
- * @property {Date} date The date at which we received the message
+ * @property {string} timestamp The UTC date-time stamp at which we received the
+ *   message
  * @property {string} type The message level
  * @property {string} msg The message
  */
@@ -508,13 +509,7 @@ export class TorProvider {
    */
   getLog() {
     return this.#logs
-      .map(logObj => {
-        const timeStr = logObj.date
-          .toISOString()
-          .replace("T", " ")
-          .replace("Z", "");
-        return `${timeStr} [${logObj.type}] ${logObj.msg}`;
-      })
+      .map(logObj => `${logObj.timestamp} [${logObj.type}] ${logObj.msg}`)
       .join(TorLauncherUtil.isWindows ? "\r\n" : "\n");
   }
 
@@ -1031,9 +1026,16 @@ export class TorProvider {
       Services.obs.notifyObservers(null, TorProviderTopics.HasWarnOrErr);
     }
 
-    Services.obs.notifyObservers({ type, msg }, TorProviderTopics.TorLog);
+    const timestamp = new Date()
+      .toISOString()
+      .replace("T", " ")
+      .replace("Z", "");
 
-    const date = new Date();
+    Services.obs.notifyObservers(
+      { type, msg, timestamp },
+      TorProviderTopics.TorLog
+    );
+
     const maxEntries = Services.prefs.getIntPref(
       Preferences.MaxLogEntries,
       1000
@@ -1042,7 +1044,7 @@ export class TorProvider {
       this.#logs.splice(0, 1);
     }
 
-    this.#logs.push({ date, type, msg });
+    this.#logs.push({ type, msg, timestamp });
     switch (type) {
       case "ERR":
         logger.error(`[Tor error] ${msg}`);
