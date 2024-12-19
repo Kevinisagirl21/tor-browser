@@ -37,6 +37,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getColor
+import androidx.core.view.children
+import androidx.core.view.doOnLayout
+import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -82,10 +85,12 @@ import mozilla.components.feature.top.sites.TopSitesProviderConfig
 import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.service.glean.private.NoExtras
+import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.BrowserDirection
+import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.GleanMetrics.HomeScreen
 import org.mozilla.fenix.GleanMetrics.Homepage
 import org.mozilla.fenix.GleanMetrics.Logins
@@ -153,6 +158,9 @@ import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.tor.TorBootstrapFragmentDirections
+import org.mozilla.fenix.tor.TorBootstrapStatus
+import org.mozilla.fenix.tor.TorConnectionAssistViewModel
 import org.mozilla.fenix.utils.Settings.Companion.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -160,7 +168,7 @@ import java.lang.ref.WeakReference
 import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 
 @Suppress("TooManyFunctions", "LargeClass")
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), UserInteractionHandler {
     private val args by navArgs<HomeFragmentArgs>()
 
     @VisibleForTesting
@@ -172,6 +180,7 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val homeViewModel: HomeScreenViewModel by activityViewModels()
+    private val torConnectionAssistViewModel: TorConnectionAssistViewModel by activityViewModels()
 
     private val snackbarAnchorView: View?
         get() = when (requireContext().settings().toolbarPosition) {
@@ -253,6 +262,7 @@ class HomeFragment : Fragment() {
     private val bottomToolbarContainerIntegration = ViewBoundFeatureWrapper<BottomToolbarContainerIntegration>()
 
     private lateinit var savedLoginsLauncher: ActivityResultLauncher<Intent>
+    private lateinit var torBootstrapStatus: TorBootstrapStatus
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
@@ -285,12 +295,28 @@ class HomeFragment : Fragment() {
         val activity = activity as HomeActivity
         val components = requireComponents
 
+        torBootstrapStatus = TorBootstrapStatus(
+            !BuildConfig.DISABLE_TOR,
+            components.torController,
+            ::dispatchModeChanges
+        )
+
         val currentWallpaperName = requireContext().settings().currentWallpaperName
         applyWallpaper(
             wallpaperName = currentWallpaperName,
             orientationChange = false,
             orientation = requireContext().resources.configuration.orientation,
         )
+
+        // Splits by full stops or commas and puts the parts in different lines.
+        // Ignoring separators at the end of the string, it is expected
+        // that there are at most two parts (e.g. "Explore. Privately.").
+        val localBinding = binding
+        binding.exploreprivately.text = localBinding
+            .exploreprivately
+            .text
+            ?.replace(" *([.,。।]) *".toRegex(), "$1\n")
+            ?.trim()
 
         components.appStore.dispatch(AppAction.ModeChange(browsingModeManager.mode))
 
@@ -489,7 +515,7 @@ class HomeFragment : Fragment() {
 
         activity.themeManager.applyStatusBarTheme(activity)
 
-        FxNimbus.features.homescreen.recordExposure()
+        // FxNimbus.features.homescreen.recordExposure()
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
@@ -805,6 +831,8 @@ class HomeFragment : Fragment() {
             Homepage.privateModeIconTapped.record(mozilla.telemetry.glean.private.NoExtras())
         }
 
+        binding.privateBrowsingButton.isGone = view.context.settings().shouldDisableNormalMode
+
         consumeFrom(requireComponents.core.store) {
             tabCounterView?.update(it)
             showCollectionsPlaceholder(it)
@@ -872,6 +900,17 @@ class HomeFragment : Fragment() {
             owner = viewLifecycleOwner,
             view = view,
         )
+
+        torConnectionAssistViewModel.urlToLoadAfterConnecting.also {
+            if(!it.isNullOrBlank()){
+                (requireActivity() as HomeActivity).openToBrowserAndLoad(
+                    searchTermOrURL = it,
+                    newTab = true,
+                    from = BrowserDirection.FromHome,
+                )
+                torConnectionAssistViewModel.urlToLoadAfterConnecting = null // Only load this url once
+            }
+        }
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
@@ -998,6 +1037,7 @@ class HomeFragment : Fragment() {
     override fun onStop() {
         dismissRecommendPrivateBrowsingShortcut()
         super.onStop()
+        torBootstrapStatus.unregisterTorListener()
     }
 
     override fun onStart() {
@@ -1050,6 +1090,15 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun dispatchModeChanges(isBootstrapping: Boolean) {
+        if (isBootstrapping) {
+            val directions =
+                TorBootstrapFragmentDirections
+                    .actionStartupTorbootstrap()
+            findNavController().navigate(directions)
+        }
+    }
+
     @VisibleForTesting
     internal fun removeCollectionWithUndo(tabCollection: TabCollection) {
         val snackbarMessage = getString(R.string.snackbar_collection_deleted)
@@ -1073,6 +1122,7 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        torBootstrapStatus.registerTorListener()
         if (browsingModeManager.mode == BrowsingMode.Private) {
             activity?.window?.setBackgroundDrawableResource(R.drawable.private_home_background_gradient)
         }
@@ -1306,7 +1356,8 @@ class HomeFragment : Fragment() {
             else -> ColorStateList.valueOf(color)
         }
 
-        binding.wordmarkText.imageTintList = tintColor
+        // tor-browser#42590
+        // binding.wordmarkText.imageTintList = tintColor
         binding.privateBrowsingButton.imageTintList = tintColor
     }
 
@@ -1358,5 +1409,10 @@ class HomeFragment : Fragment() {
 
         // Elevation for undo toasts
         internal const val TOAST_ELEVATION = 80f
+    }
+
+    override fun onBackPressed(): Boolean {
+        requireActivity().finish()
+        return true
     }
 }

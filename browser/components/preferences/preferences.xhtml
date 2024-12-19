@@ -42,6 +42,14 @@
     href="chrome://browser/skin/preferences/containers.css"
   />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/privacy.css" />
+  <link
+    rel="stylesheet"
+    href="chrome://browser/content/preferences/letterboxing.css"
+  />
+
+  <link rel="stylesheet" href="chrome://browser/content/securitylevel/securityLevelPreferences.css" />
+  <link rel="stylesheet" href="chrome://browser/content/torpreferences/torPreferences.css" />
+  <link rel="stylesheet" href="chrome://browser/content/onionservices/authPreferences.css" />
 
   <link rel="localization" href="branding/brand.ftl"/>
   <link rel="localization" href="browser/browser.ftl"/>
@@ -73,6 +81,8 @@
   <link rel="localization" href="security/certificates/certManager.ftl"/>
   <link rel="localization" href="security/certificates/deviceManager.ftl"/>
   <link rel="localization" href="toolkit/updates/history.ftl"/>
+  <link rel="localization" href="toolkit/global/base-browser.ftl"/>
+  <link rel="localization" href="toolkit/global/tor-browser.ftl"/>
 
   <link rel="shortcut icon" href="chrome://global/skin/icons/settings.svg"/>
 
@@ -83,6 +93,7 @@
   <script src="chrome://browser/content/preferences/findInPage.js"/>
   <script src="chrome://browser/content/migration/migration-wizard.mjs" type="module"></script>
   <script type="module" src="chrome://browser/content/backup/backup-settings.mjs"></script>
+  <script src="chrome://browser/content/torpreferences/bridgemoji/BridgeEmoji.js"/>
 </head>
 
 <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -195,6 +206,8 @@
                       value="paneTranslations"
                       helpTopic="prefs-translations"/>
 
+#include ../torpreferences/content/connectionCategory.inc.xhtml
+
       </richlistbox>
 
       <spacer flex="1"/>
@@ -246,6 +259,7 @@
 #include sync.inc.xhtml
 #include experimental.inc.xhtml
 #include moreFromMozilla.inc.xhtml
+#include ../torpreferences/content/connectionPane.xhtml
         </vbox>
       </vbox>
     </vbox>

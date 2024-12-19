@@ -28,6 +28,13 @@
                 <menuitem id="menu_newPrivateWindow"
                           command="Tools:PrivateBrowsing"
                           key="key_privatebrowsing" data-l10n-id="menu-file-new-private-window"/>
+                <menuseparator/>
+                <menuitem id="menu_newIdentity"
+                          key="new-identity-key" data-l10n-id="menu-new-identity"/>
+                <menuitem id="menu_newCircuit"
+                          key="new-circuit-key" data-l10n-id="menu-new-tor-circuit"
+                          oncommand="TorDomainIsolator.newCircuitForBrowser(gBrowser.selectedBrowser);"/>
+                <menuseparator/>
                 <menuitem id="menu_openLocation"
                           hidden="true"
                           command="Browser:OpenLocation"
@@ -450,8 +457,14 @@
               <menupopup id="menu_HelpPopup" onpopupshowing="buildHelpMenu();">
 <!-- Note: Items under here are cloned to the AppMenu Help submenu. The cloned items
      have their strings defined by appmenu-data-l10n-id. -->
+                <!-- Add Tor Browser manual link -->
+                <menuitem id="torBrowserUserManual"
+                          oncommand="gBrowser.selectedTab = gBrowser.addTab('about:manual', {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()});"
+                          data-l10n-id="menu-open-tor-manual"
+                          appmenu-data-l10n-id="appmenu-open-tor-manual"/>
                 <menuitem id="menu_openHelp"
                           oncommand="openHelpLink('firefox-help')"
+                          hidden="true"
                           data-l10n-id="menu-get-help"
                           appmenu-data-l10n-id="appmenu-get-help"
 #ifdef XP_MACOSX
@@ -466,14 +479,17 @@
                           appmenu-data-l10n-id="menu-report-broken-site"/>
                 <menuitem id="feedbackPage"
                           oncommand="openFeedbackPage()"
+                          hidden="true"
                           data-l10n-id="menu-help-share-ideas"
                           appmenu-data-l10n-id="appmenu-help-share-ideas"/>
                 <menuitem id="helpSafeMode"
                           oncommand="safeModeRestart();"
+                          hidden="true"
                           data-l10n-id="menu-help-enter-troubleshoot-mode2"
                           appmenu-data-l10n-id="appmenu-help-enter-troubleshoot-mode2"/>
                 <menuitem id="troubleShooting"
                           oncommand="openTroubleshootingPage()"
+                          hidden="true"
                           data-l10n-id="menu-help-more-troubleshooting-info"
                           appmenu-data-l10n-id="appmenu-help-more-troubleshooting-info"/>
                 <menuitem id="help_reportSiteIssue"
@@ -495,6 +511,7 @@
                           hidden="true"/>
                 <menuitem id="helpSwitchDevice"
                           oncommand="openSwitchingDevicesPage();"
+                          hidden="true"
                           data-l10n-id="menu-help-switch-device"
                           appmenu-data-l10n-id="appmenu-help-switch-device"/>
                 <menuseparator id="aboutSeparator"/>

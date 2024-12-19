@@ -71,6 +71,7 @@ export let RemotePageAccessManager = {
       RPMAddMessageListener: ["WWWReachable"],
       RPMTryPingSecureWWWLink: ["*"],
       RPMOpenSecureWWWLink: ["*"],
+      RPMSendQuery: ["ShouldShowTorConnect"],
     },
     "about:certificate": {
       RPMSendQuery: ["getCertificates"],
@@ -120,35 +121,12 @@ export let RemotePageAccessManager = {
       RPMGetTRRDomain: ["*"],
       RPMIsSiteSpecificTRRError: ["*"],
       RPMSetTRRDisabledLoadFlags: ["*"],
-      RPMSendQuery: ["Browser:AddTRRExcludedDomain"],
+      RPMSendQuery: ["Browser:AddTRRExcludedDomain", "ShouldShowTorConnect"],
       RPMGetIntPref: ["network.trr.mode"],
     },
     "about:newtab": {
       RPMSendAsyncMessage: ["ActivityStream:ContentToMain"],
       RPMAddMessageListener: ["ActivityStream:MainToContent"],
-    },
-    "about:pocket-saved": {
-      RPMSendAsyncMessage: ["*"],
-      RPMAddMessageListener: ["*"],
-      RPMRemoveMessageListener: ["*"],
-      RPMGetStringPref: ["extensions.pocket.site"],
-    },
-    "about:pocket-signup": {
-      RPMSendAsyncMessage: ["*"],
-      RPMAddMessageListener: ["*"],
-      RPMRemoveMessageListener: ["*"],
-      RPMGetStringPref: ["extensions.pocket.site"],
-    },
-    "about:pocket-home": {
-      RPMSendAsyncMessage: ["*"],
-      RPMAddMessageListener: ["*"],
-      RPMRemoveMessageListener: ["*"],
-      RPMGetStringPref: ["extensions.pocket.site"],
-    },
-    "about:pocket-style-guide": {
-      RPMSendAsyncMessage: ["*"],
-      RPMAddMessageListener: ["*"],
-      RPMRemoveMessageListener: ["*"],
     },
     "about:privatebrowsing": {
       RPMSendAsyncMessage: [
@@ -239,25 +217,46 @@ export let RemotePageAccessManager = {
       ],
       RPMRecordTelemetryEvent: ["*"],
     },
-    "about:shoppingsidebar": {
-      RPMSetPref: [
-        "browser.shopping.experience2023.optedIn",
-        "browser.shopping.experience2023.active",
-        "browser.shopping.experience2023.ads.userEnabled",
-        "browser.shopping.experience2023.sidebarClosedCount",
-        "browser.shopping.experience2023.showKeepSidebarClosedMessage",
-        "browser.shopping.experience2023.autoOpen.userEnabled",
+    "about:rulesets": {
+      RPMAddMessageListener: ["rulesets:channels-change"],
+      RPMSendAsyncMessage: [
+        "rulesets:delete-channel",
+        "rulesets:enable-channel",
+        "rulesets:set-show-warning",
       ],
-      RPMGetFormatURLPref: ["app.support.baseURL"],
-      RPMGetIntPref: ["browser.shopping.experience2023.sidebarClosedCount"],
-      RPMGetBoolPref: [
-        "browser.shopping.experience2023.showKeepSidebarClosedMessage",
+      RPMSendQuery: [
+        "rulesets:get-channels",
+        "rulesets:get-init-args",
+        "rulesets:set-channel",
+        "rulesets:update-channel",
       ],
     },
+    // Removed about:shoppingsidebar. tor-browser#42831.
     "about:tabcrashed": {
       RPMSendAsyncMessage: ["Load", "closeTab", "restoreTab", "restoreAll"],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
+    },
+    "about:torconnect": {
+      RPMAddMessageListener: [
+        "torconnect:stage-change",
+        "torconnect:bootstrap-progress",
+        "torconnect:quickstart-change",
+      ],
+      RPMSendAsyncMessage: [
+        "torconnect:open-tor-preferences",
+        "torconnect:begin-bootstrapping",
+        "torconnect:cancel-bootstrapping",
+        "torconnect:set-quickstart",
+        "torconnect:view-tor-logs",
+        "torconnect:restart",
+        "torconnect:start-again",
+        "torconnect:choose-region",
+      ],
+      RPMSendQuery: [
+        "torconnect:get-init-args",
+        "torconnect:get-country-codes",
+      ],
     },
     "about:welcome": {
       RPMSendAsyncMessage: ["ActivityStream:ContentToMain"],

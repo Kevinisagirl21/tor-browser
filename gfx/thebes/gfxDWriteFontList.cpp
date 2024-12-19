@@ -32,7 +32,7 @@
 
 #include "harfbuzz/hb.h"
 
-#include "StandardFonts-win10.inc"
+#include "StandardFonts-win10-bb.inc"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -910,7 +910,9 @@ void gfxDWriteFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 gfxDWriteFontList::gfxDWriteFontList() : mForceGDIClassicMaxFontSize(0.0) {
   CheckFamilyList(kBaseFonts);
+#ifndef BASE_BROWSER_VERSION
   CheckFamilyList(kLangPackFonts);
+#endif
 }
 
 // bug 602792 - CJK systems default to large CJK fonts which cause excessive
@@ -1153,9 +1155,11 @@ FontVisibility gfxDWriteFontList::GetVisibilityForFamily(
   if (FamilyInList(aName, kBaseFonts)) {
     return FontVisibility::Base;
   }
+#ifndef BASE_BROWSER_VERSION
   if (FamilyInList(aName, kLangPackFonts)) {
     return FontVisibility::LangPack;
   }
+#endif
   return FontVisibility::User;
 }
 
@@ -1164,8 +1168,10 @@ gfxDWriteFontList::GetFilteredPlatformFontLists() {
   nsTArray<std::pair<const char**, uint32_t>> fontLists;
 
   fontLists.AppendElement(std::make_pair(kBaseFonts, ArrayLength(kBaseFonts)));
+#ifndef BASE_BROWSER_VERSION
   fontLists.AppendElement(
       std::make_pair(kLangPackFonts, ArrayLength(kLangPackFonts)));
+#endif
 
   return fontLists;
 }
@@ -1953,6 +1959,20 @@ static void RemoveCharsetFromFontSubstitute(nsACString& aName) {
 #define MAX_VALUE_DATA 512
 
 nsresult gfxDWriteFontList::GetFontSubstitutes() {
+  if (nsContentUtils::ShouldResistFingerprinting(
+          "Ignore any fingerprintable user font customization and normalize "
+          "font substitutes across different Windows SKUs.",
+          RFPTarget::FontVisibilityLangPack)) {
+    for (const FontSubstitute& fs : kFontSubstitutes) {
+      nsAutoCString substituteName(fs.substituteName);
+      nsAutoCString actualFontName(fs.actualFontName);
+      BuildKeyNameFromFontName(substituteName);
+      BuildKeyNameFromFontName(actualFontName);
+      AddSubstitute(substituteName, actualFontName);
+    }
+    return NS_OK;
+  }
+
   HKEY hKey;
   DWORD i, rv, lenAlias, lenActual, valueType;
   WCHAR aliasName[MAX_VALUE_NAME];
@@ -1987,39 +2007,46 @@ nsresult gfxDWriteFontList::GetFontSubstitutes() {
     BuildKeyNameFromFontName(substituteName);
     RemoveCharsetFromFontSubstitute(actualFontName);
     BuildKeyNameFromFontName(actualFontName);
-    if (SharedFontList()) {
-      // Skip substitution if the original font is available, unless the option
-      // to apply substitutions unconditionally is enabled.
-      if (!StaticPrefs::gfx_windows_font_substitutes_always_AtStartup()) {
-        // Font substitutions are recorded for the canonical family names; we
-        // don't need FindFamily to consider localized aliases when searching.
-        if (SharedFontList()->FindFamily(substituteName,
-                                         /*aPrimaryNameOnly*/ true)) {
-          continue;
-        }
-      }
-      if (SharedFontList()->FindFamily(actualFontName,
+    AddSubstitute(substituteName, actualFontName);
+  }
+
+  return NS_OK;
+}
+
+void gfxDWriteFontList::AddSubstitute(const nsCString& substituteName,
+                                      const nsCString& actualFontName) {
+  if (SharedFontList()) {
+    // Skip substitution if the original font is available, unless the
+    // option to apply substitutions unconditionally is enabled.
+    if (!StaticPrefs::gfx_windows_font_substitutes_always_AtStartup()) {
+      // Font substitutions are recorded for the canonical family names;
+      // we don't need FindFamily to consider localized aliases when
+      // searching.
+      if (SharedFontList()->FindFamily(substituteName,
                                        /*aPrimaryNameOnly*/ true)) {
-        mSubstitutions.InsertOrUpdate(substituteName,
-                                      MakeUnique<nsCString>(actualFontName));
-      } else if (mSubstitutions.Get(actualFontName)) {
-        mSubstitutions.InsertOrUpdate(
-            substituteName,
-            MakeUnique<nsCString>(*mSubstitutions.Get(actualFontName)));
-      } else {
-        mNonExistingFonts.AppendElement(substituteName);
-      }
-    } else {
-      gfxFontFamily* ff;
-      if (!actualFontName.IsEmpty() &&
-          (ff = mFontFamilies.GetWeak(actualFontName))) {
-        mFontSubstitutes.InsertOrUpdate(substituteName, RefPtr{ff});
-      } else {
-        mNonExistingFonts.AppendElement(substituteName);
+        return;
       }
     }
+    if (SharedFontList()->FindFamily(actualFontName,
+                                     /*aPrimaryNameOnly*/ true)) {
+      mSubstitutions.InsertOrUpdate(substituteName,
+                                    MakeUnique<nsCString>(actualFontName));
+    } else if (mSubstitutions.Get(actualFontName)) {
+      mSubstitutions.InsertOrUpdate(
+          substituteName,
+          MakeUnique<nsCString>(*mSubstitutions.Get(actualFontName)));
+    } else {
+      mNonExistingFonts.AppendElement(substituteName);
+    }
+  } else {
+    gfxFontFamily* ff;
+    if (!actualFontName.IsEmpty() &&
+        (ff = mFontFamilies.GetWeak(actualFontName))) {
+      mFontSubstitutes.InsertOrUpdate(substituteName, RefPtr{ff});
+    } else {
+      mNonExistingFonts.AppendElement(substituteName);
+    }
   }
-  return NS_OK;
 }
 
 struct FontSubstitution {

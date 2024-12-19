@@ -36,6 +36,7 @@ const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
 const PREF_SYS_ADDON_UPDATE_ENABLED = "extensions.systemAddon.update.enabled";
 const PREF_REMOTESETTINGS_DISABLED = "extensions.remoteSettings.disabled";
 const PREF_USE_REMOTE = "extensions.webextensions.remote";
+const PREF_EM_LAST_FORK_VERSION = "extensions.lastTorBrowserVersion";
 
 const PREF_MIN_WEBEXT_PLATFORM_VERSION =
   "extensions.webExtensionsMinPlatformVersion";
@@ -82,7 +83,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AbuseReporter: "resource://gre/modules/AbuseReporter.sys.mjs",
   AddonRepository: "resource://gre/modules/addons/AddonRepository.sys.mjs",
+  GeckoViewWebExtension: "resource://gre/modules/GeckoViewWebExtension.sys.mjs",
+  EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   Extension: "resource://gre/modules/Extension.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   TelemetryTimestamps: "resource://gre/modules/TelemetryTimestamps.sys.mjs",
   isGatedPermissionType:
@@ -634,6 +638,24 @@ var AddonManagerInternal = {
         Services.prefs.setIntPref(
           PREF_BLOCKLIST_PINGCOUNTVERSION,
           appChanged === undefined ? 0 : -1
+        );
+      }
+
+      // To ensure that extension and plugin code gets a chance to run after
+      // each browser update, set appChanged = true when BASE_BROWSER_VERSION
+      // has changed even if the Mozilla app version has not changed.
+      const forkChanged =
+        AppConstants.BASE_BROWSER_VERSION !==
+        Services.prefs.getCharPref(PREF_EM_LAST_FORK_VERSION, "");
+      if (forkChanged) {
+        // appChanged could be undefined (in case of a new profile)
+        if (appChanged === false) {
+          appChanged = true;
+        }
+
+        Services.prefs.setCharPref(
+          PREF_EM_LAST_FORK_VERSION,
+          AppConstants.BASE_BROWSER_VERSION
         );
       }
 
@@ -2327,6 +2349,24 @@ var AddonManagerInternal = {
     return promiseInstall;
   },
 
+  async installGeckoViewWebExtension(extensionUri) {
+    const installId = Services.uuid.generateUUID().toString();
+    let { extension } = await lazy.GeckoViewWebExtension.installWebExtension(
+      installId,
+      extensionUri
+    );
+    if (lazy.PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      extension = await lazy.GeckoViewWebExtension.setPrivateBrowsingAllowed(
+        extension.webExtensionId,
+        true
+      );
+    }
+    await lazy.EventDispatcher.instance.sendRequest({
+      type: "GeckoView:WebExtension:OnInstalled",
+      extension,
+    });
+  },
+
   /**
    * Starts installation of an AddonInstall notifying the registered
    * web install listener of a blocked or started install.
@@ -2499,6 +2539,11 @@ var AddonManagerInternal = {
       );
 
       if (installAllowed) {
+        if (AppConstants.platform == "android") {
+          aInstall.cancel();
+          this.installGeckoViewWebExtension(aInstall.sourceURI);
+          return;
+        }
         startInstall("AMO");
       } else if (installPerm === Ci.nsIPermissionManager.DENY_ACTION) {
         // Block without prompt

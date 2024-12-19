@@ -25,6 +25,8 @@
 #include "mozilla/net/DNS.h"
 #include "mozilla/Unused.h"
 
+#include "IOnionAliasService.h"
+
 using mozilla::LogLevel;
 using namespace mozilla::net;
 
@@ -841,11 +843,23 @@ PRStatus nsSOCKSSocketInfo::WriteV5ConnectRequest() {
   // Add the address to the SOCKS 5 request. SOCKS 5 supports several
   // address types, so we pick the one that works best for us.
   if (proxy_resolve) {
-    // Add the host name. Only a single byte is used to store the length,
-    // so we must prevent long names from being used.
-    buf2 = buf.WriteUint8(0x03)  // addr type -- domainname
-               .WriteUint8(mDestinationHost.Length())             // name length
-               .WriteString<MAX_HOSTNAME_LEN>(mDestinationHost);  // Hostname
+    if (StringEndsWith(mDestinationHost, ".tor.onion"_ns)) {
+      nsAutoCString realHost;
+      nsCOMPtr<IOnionAliasService> oas = do_GetService(ONIONALIAS_CID);
+      if (NS_FAILED(oas->GetOnionAlias(mDestinationHost, realHost))) {
+        HandshakeFinished(PR_BAD_ADDRESS_ERROR);
+        return PR_FAILURE;
+      }
+      buf2 = buf.WriteUint8(0x03)
+                 .WriteUint8(realHost.Length())
+                 .WriteString<MAX_HOSTNAME_LEN>(realHost);
+    } else {
+      // Add the host name. Only a single byte is used to store the length,
+      // so we must prevent long names from being used.
+      buf2 = buf.WriteUint8(0x03)  // addr type -- domainname
+                 .WriteUint8(mDestinationHost.Length())  // name length
+                 .WriteString<MAX_HOSTNAME_LEN>(mDestinationHost);  // Hostname
+    }
     if (!buf2) {
       LOGERROR(("socks5: destination host name is too long!"));
       HandshakeFinished(PR_BAD_ADDRESS_ERROR);
@@ -959,6 +973,55 @@ PRStatus nsSOCKSSocketInfo::ReadV5ConnectResponseTop() {
              "08, Address type not supported."));
         c = PR_BAD_ADDRESS_ERROR;
         break;
+      case 0xF0:  // Tor SOCKS5_HS_NOT_FOUND
+        LOGERROR(
+            ("socks5: connect failed: F0,"
+             " Tor onion service descriptor can not be found."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_NOT_FOUND);
+        break;
+      case 0xF1:  // Tor SOCKS5_HS_IS_INVALID
+        LOGERROR(
+            ("socks5: connect failed: F1,"
+             " Tor onion service descriptor is invalid."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_IS_INVALID);
+        break;
+      case 0xF2:  // Tor SOCKS5_HS_INTRO_FAILED
+        LOGERROR(
+            ("socks5: connect failed: F2,"
+             " Tor onion service introduction failed."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_INTRO_FAILED);
+        break;
+      case 0xF3:  // Tor SOCKS5_HS_REND_FAILED
+        LOGERROR(
+            ("socks5: connect failed: F3,"
+             " Tor onion service rendezvous failed."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_REND_FAILED);
+        break;
+      case 0xF4:  // Tor SOCKS5_HS_MISSING_CLIENT_AUTH
+        LOGERROR(
+            ("socks5: connect failed: F4,"
+             " Tor onion service missing client authorization."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_MISSING_CLIENT_AUTH);
+        break;
+      case 0xF5:  // Tor SOCKS5_HS_BAD_CLIENT_AUTH
+        LOGERROR(
+            ("socks5: connect failed: F5,"
+             " Tor onion service wrong client authorization."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_BAD_CLIENT_AUTH);
+        break;
+      case 0xF6:  // Tor SOCKS5_HS_BAD_ADDRESS
+        LOGERROR(
+            ("socks5: connect failed: F6,"
+             " Tor onion service bad address."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_BAD_ADDRESS);
+        break;
+      case 0xF7:  // Tor SOCKS5_HS_INTRO_TIMEDOUT
+        LOGERROR(
+            ("socks5: connect failed: F7,"
+             " Tor onion service introduction timed out."));
+        c = static_cast<uint32_t>(NS_ERROR_TOR_ONION_SVC_INTRO_TIMEDOUT);
+        break;
+
       default:
         LOGERROR(("socks5: connect failed."));
         break;

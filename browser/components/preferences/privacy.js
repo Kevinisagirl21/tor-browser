@@ -61,6 +61,19 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIParentalControlsService"
 );
 
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["OnionServicesAuthPreferences"],
+  "chrome://browser/content/onionservices/authPreferences.js"
+);
+
+// TODO: module import via ChromeUtils.defineModuleGetter
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["SecurityLevelPreferences"],
+  "chrome://browser/content/securitylevel/securityLevel.js"
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "gIsFirstPartyIsolated",
@@ -370,6 +383,16 @@ var gPrivacyPane = {
   _pane: null,
 
   /**
+   * Show the Security Level UI
+   */
+  _initSecurityLevel() {
+    SecurityLevelPreferences.init();
+    window.addEventListener("unload", () => SecurityLevelPreferences.uninit(), {
+      once: true,
+    });
+  },
+
+  /**
    * Whether the prompt to restart Firefox should appear when changing the autostart pref.
    */
   _shouldPromptForRestart: true,
@@ -488,7 +511,8 @@ var gPrivacyPane = {
     let canConfigureThirdPartyCerts =
       (AppConstants.platform == "win" || AppConstants.platform == "macosx") &&
       typeof Services.policies.getActivePolicies()?.Certificates
-        ?.ImportEnterpriseRoots == "undefined";
+        ?.ImportEnterpriseRoots == "undefined" &&
+      !AppConstants.BASE_BROWSER_VERSION;
 
     document.getElementById("certEnableThirdPartyToggleBox").hidden =
       !canConfigureThirdPartyCerts;
@@ -967,6 +991,8 @@ var gPrivacyPane = {
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
     this._initThirdPartyCertsToggle();
+    OnionServicesAuthPreferences.init();
+    this._initSecurityLevel();
 
     Services.telemetry.setEventRecordingEnabled("privacy.ui.fpp", true);
 
@@ -3036,8 +3062,12 @@ var gPrivacyPane = {
   },
 
   _updateRelayIntegrationUI() {
-    document.getElementById("relayIntegrationBox").hidden =
-      !FirefoxRelay.isAvailable;
+    // In Base Browser, we always hide the integration checkbox since
+    // FirefoxRelay should remain disabled.
+    // See tor-browser#43109 and tor-browser#42814.
+    // NOTE: FirefoxRelay.isAvailable will be true whenever
+    // FirefoxRelay.isDisabled is true.
+    document.getElementById("relayIntegrationBox").hidden = true;
     document.getElementById("relayIntegration").checked =
       FirefoxRelay.isAvailable && !FirefoxRelay.isDisabled;
   },

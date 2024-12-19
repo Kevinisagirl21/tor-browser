@@ -2746,6 +2746,18 @@ void nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
   *aOutputHeight = resultHeight;
 }
 
+bool nsContentUtils::ShouldRoundWindowSizeForResistingFingerprinting() {
+  return !(
+      Preferences::GetBool("privacy.resistFingerprinting.letterboxing",
+                           false) &&
+      // We want to round window size at least once in the browser's life time:
+      // AppWindow::ForceRoundedDimensions() will set this preference to true.
+      Preferences::GetBool(
+          "privacy.resistFingerprinting.letterboxing.didForceSize", false) &&
+      Preferences::GetBool(
+          "privacy.resistFingerprinting.letterboxing.rememberSize", false));
+}
+
 bool nsContentUtils::ThreadsafeIsCallerChrome() {
   return NS_IsMainThread() ? IsCallerChrome()
                            : IsCurrentThreadRunningChromeWorker();
@@ -10022,6 +10034,25 @@ bool nsContentUtils::ComputeIsSecureContext(nsIChannel* aChannel) {
   }
 
   return principal->GetIsOriginPotentiallyTrustworthy();
+}
+
+/* static */ bool nsContentUtils::DocumentHasOnionURI(Document* aDocument) {
+  if (!aDocument) {
+    return false;
+  }
+
+  nsIURI* uri = aDocument->GetDocumentURI();
+  if (!uri) {
+    return false;
+  }
+
+  nsAutoCString host;
+  if (NS_SUCCEEDED(uri->GetHost(host))) {
+    bool hasOnionURI = StringEndsWith(host, ".onion"_ns);
+    return hasOnionURI;
+  }
+
+  return false;
 }
 
 /* static */

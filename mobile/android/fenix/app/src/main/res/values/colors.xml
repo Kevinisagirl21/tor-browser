@@ -300,6 +300,8 @@
     <color name="sync_disconnected_icon_fill_private_theme">@color/photonYellow70</color>
     <color name="sync_disconnected_background_private_theme">#5B5846</color>
     <color name="prompt_login_edit_text_cursor_color_private_theme">@color/photonViolet50</color>
+    <color name="backgroundGradientDark">#FF3A3274</color>
+    <color name="backgroundGradientLight">#FF7329A4</color>
 
     <!-- Normal theme colors for light mode -->
     <color name="accent_normal_theme">@color/photonInk20</color>
@@ -375,4 +377,9 @@
 
     <!-- Private Mode mask icon circle fill colors -->
     <color name="mozac_ui_private_mode_circle_fill" tools:ignore="UnusedResources">@color/photonPurple60</color>
+
+    <!-- Connection Assist -->
+    <color name="connect_button_purple">#9059FF</color>
+    <color name="configure_connection_button_white">#E1E0E7</color>
+    <color name="warning_yellow">#FFA436</color>
 </resources>

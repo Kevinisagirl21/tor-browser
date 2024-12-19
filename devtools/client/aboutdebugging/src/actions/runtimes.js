@@ -59,21 +59,8 @@ const {
 const CONNECTION_TIMING_OUT_DELAY = 3000;
 const CONNECTION_CANCEL_DELAY = 13000;
 
-async function getRuntimeIcon(runtime, channel) {
-  if (runtime.isFenix) {
-    switch (channel) {
-      case "release":
-      case "beta":
-        return "chrome://devtools/skin/images/aboutdebugging-fenix.svg";
-      case "aurora":
-      default:
-        return "chrome://devtools/skin/images/aboutdebugging-fenix-nightly.svg";
-    }
-  }
-
-  return channel === "release" || channel === "beta" || channel === "aurora"
-    ? `chrome://devtools/skin/images/aboutdebugging-firefox-${channel}.svg`
-    : "chrome://devtools/skin/images/aboutdebugging-firefox-nightly.svg";
+async function getRuntimeIcon(_runtime, _channel) {
+  return "chrome://branding/content/about-logo.svg";
 }
 
 function onRemoteDevToolsClientClosed() {

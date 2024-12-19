@@ -298,6 +298,7 @@ static const char kPrefThemeId[] = "extensions.activeThemeID";
 static const char kPrefBrowserStartupBlankWindow[] =
     "browser.startup.blankWindow";
 static const char kPrefPreXulSkeletonUI[] = "browser.startup.preXulSkeletonUI";
+static const char kPrefResistFingerprinting[] = "privacy.resistFingerprinting";
 #endif  // defined(XP_WIN)
 
 #if defined(MOZ_WIDGET_GTK)
@@ -460,13 +461,14 @@ bool IsWaylandEnabled() {
         return true;
       }
     }
+    // Keep wayland disabled in Base Browser. See tor-browser#43092.
+    return false;
     // Enable by default when we're running on a recent enough GTK version. We'd
     // like to check further details like compositor version and so on ideally
     // to make sure we don't enable it on old Mutter or what not, but we can't,
     // so let's assume that if the user is running on a Wayland session by
     // default we're ok, since either the distro has enabled Wayland by default,
     // or the user has gone out of their way to use Wayland.
-    return !gtk_check_version(3, 24, 30);
   }();
   return isWaylandEnabled;
 }
@@ -2108,8 +2110,10 @@ static void DumpHelp() {
       "  --migration        Start with migration wizard.\n"
       "  --ProfileManager   Start with ProfileManager.\n"
 #ifdef MOZ_HAS_REMOTE
-      "  --no-remote        Do not accept or send remote commands; implies\n"
+      "  --no-remote        (default) Do not accept or send remote commands; "
+      "implies\n"
       "                     --new-instance.\n"
+      "  --allow-remote     Accept and send remote commands.\n"
       "  --new-instance     Open new instance, not a new window in running "
       "instance.\n"
 #endif
@@ -2267,6 +2271,7 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   bool shouldBeEnabled =
       Preferences::GetBool(kPrefPreXulSkeletonUI, false) &&
       Preferences::GetBool(kPrefBrowserStartupBlankWindow, false) &&
+      !Preferences::GetBool(kPrefResistFingerprinting, false) &&
       LookAndFeel::DrawInTitlebar();
   if (shouldBeEnabled && Preferences::HasUserValue(kPrefThemeId)) {
     nsCString themeId;
@@ -2594,6 +2599,8 @@ nsresult LaunchChild(bool aBlankCommandLine, bool aTryExec) {
   return NS_ERROR_LAUNCHED_CHILD_PROCESS;
 }
 
+static const char kBrandProperties[] =
+    "chrome://branding/locale/brand.properties";
 static const char kProfileProperties[] =
     "chrome://mozapps/locale/profile/profileSelection.properties";
 
@@ -2663,12 +2670,20 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
         mozilla::components::StringBundle::Service();
     NS_ENSURE_TRUE(sbs, NS_ERROR_FAILURE);
 
+    nsCOMPtr<nsIStringBundle> brandBundle;
+    sbs->CreateBundle(kBrandProperties, getter_AddRefs(brandBundle));
+    NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
     nsCOMPtr<nsIStringBundle> sb;
     sbs->CreateBundle(kProfileProperties, getter_AddRefs(sb));
     NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
 
-    NS_ConvertUTF8toUTF16 appName(gAppData->name);
-    AutoTArray<nsString, 2> params = {appName, appName};
+    nsAutoString appName;
+    rv = brandBundle->GetStringFromName("brandShortName", appName);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_ABORT);
+
+    AutoTArray<nsString, 2> params;
+    params.AppendElement(appName);
+    params.AppendElement(appName);
 
     // profileMissing
     nsAutoString missingMessage;
@@ -2690,6 +2705,8 @@ static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
 #endif    // MOZ_WIDGET_ANDROID
 }
 
+// If aUnlocker is NULL, it is also OK for the following arguments to be NULL:
+//   aProfileDir, aProfileLocalDir, aResult.
 static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
                                               nsIFile* aProfileLocalDir,
                                               nsIProfileUnlocker* aUnlocker,
@@ -2697,10 +2714,12 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
                                               nsIProfileLock** aResult) {
   nsresult rv;
 
-  bool exists;
-  aProfileDir->Exists(&exists);
-  if (!exists) {
-    return ProfileMissingDialog(aNative);
+  if (aProfileDir) {
+    bool exists;
+    aProfileDir->Exists(&exists);
+    if (!exists) {
+      return ProfileMissingDialog(aNative);
+    }
   }
 
   ScopedXPCOMStartup xpcom;
@@ -2710,7 +2729,7 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
 #if defined(MOZ_TELEMETRY_REPORTING)
   // We cannot check if telemetry has been disabled by the user, yet.
   // So, rely on the build time settings, instead.
-  mozilla::Telemetry::WriteFailedProfileLock(aProfileDir);
+  if (aProfileDir) mozilla::Telemetry::WriteFailedProfileLock(aProfileDir);
 #endif
 
   rv = xpcom.SetWindowCreator(aNative);
@@ -2726,12 +2745,21 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
         mozilla::components::StringBundle::Service();
     NS_ENSURE_TRUE(sbs, NS_ERROR_FAILURE);
 
+    nsCOMPtr<nsIStringBundle> brandBundle;
+    sbs->CreateBundle(kBrandProperties, getter_AddRefs(brandBundle));
+    NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
     nsCOMPtr<nsIStringBundle> sb;
     sbs->CreateBundle(kProfileProperties, getter_AddRefs(sb));
     NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
 
-    NS_ConvertUTF8toUTF16 appName(gAppData->name);
-    AutoTArray<nsString, 3> params = {appName, appName, appName};
+    nsAutoString appName;
+    rv = brandBundle->GetStringFromName("brandShortName", appName);
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_ABORT);
+
+    AutoTArray<nsString, 3> params;
+    params.AppendElement(appName);
+    params.AppendElement(appName);
+    params.AppendElement(appName);
 
     nsAutoString killMessage;
 #ifndef XP_MACOSX
@@ -3441,6 +3469,11 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
   gLastAppBuildID.Assign(gAppData->buildID);
 
   nsAutoCString buf;
+
+  nsAutoCString forkVersion(BASE_BROWSER_VERSION_QUOTED);
+  rv = parser.GetString("Compatibility", "LastTorBrowserVersion", buf);
+  if (NS_FAILED(rv) || !forkVersion.Equals(buf)) return false;
+
   rv = parser.GetString("Compatibility", "LastOSABI", buf);
   if (NS_FAILED(rv) || !aOSABI.Equals(buf)) return false;
 
@@ -3525,6 +3558,12 @@ static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
 
   PR_Write(fd, kHeader, sizeof(kHeader) - 1);
   PR_Write(fd, aVersion.get(), aVersion.Length());
+
+  nsAutoCString forkVersion(BASE_BROWSER_VERSION_QUOTED);
+  static const char kForkVersionHeader[] =
+      NS_LINEBREAK "LastTorBrowserVersion=";
+  PR_Write(fd, kForkVersionHeader, sizeof(kForkVersionHeader) - 1);
+  PR_Write(fd, forkVersion.get(), forkVersion.Length());
 
   static const char kOSABIHeader[] = NS_LINEBREAK "LastOSABI=";
   PR_Write(fd, kOSABIHeader, sizeof(kOSABIHeader) - 1);
@@ -4341,17 +4380,21 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
                                         &gSafeMode);
 
 #if defined(MOZ_HAS_REMOTE)
-  // Handle --no-remote and --new-instance command line arguments. Setup
-  // the environment to better accommodate other components and various
-  // restart scenarios.
+  // We disable remoting by default, unless -osint is used.
+  bool allowRemote = (CheckArg("allow-remote") == ARG_FOUND);
+  bool isOsint = (CheckArg("osint", nullptr, CheckArgFlag::None) == ARG_FOUND);
   ar = CheckArg("no-remote");
-  if (ar == ARG_FOUND || EnvHasValue("MOZ_NO_REMOTE")) {
+  if ((ar == ARG_FOUND) && allowRemote) {
+    PR_fprintf(PR_STDERR,
+               "Error: argument --no-remote is invalid when argument "
+               "--allow-remote is specified\n");
+    return 1;
+  }
+  if (!allowRemote && !isOsint) {
     mDisableRemoteClient = true;
     mDisableRemoteServer = true;
     gRestartWithoutRemote = true;
-    // We don't want to propagate MOZ_NO_REMOTE to potential child
-    // process.
-    SaveToEnv("MOZ_NO_REMOTE=");
+    SaveToEnv("MOZ_NO_REMOTE=1");
   }
 
   ar = CheckArg("new-instance");
@@ -5049,8 +5092,18 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     NS_ENSURE_SUCCESS(rv, 1);
     rv = exeFile->GetParent(getter_AddRefs(exeDir));
     NS_ENSURE_SUCCESS(rv, 1);
+
+#  ifdef BASE_BROWSER_VERSION_QUOTED
+    nsAutoCString compatVersion(BASE_BROWSER_VERSION_QUOTED);
+#  endif
     ProcessUpdates(mDirProvider.GetGREDir(), exeDir, updRoot, gRestartArgc,
-                   gRestartArgv, mAppData->version);
+                   gRestartArgv,
+#  ifdef BASE_BROWSER_VERSION_QUOTED
+                   compatVersion.get()
+#  else
+                   mAppData->version
+#  endif
+    );
     if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
       SaveToEnv("MOZ_TEST_PROCESS_UPDATES=");
       *aExitFlag = true;

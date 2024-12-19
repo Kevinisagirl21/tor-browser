@@ -14,6 +14,7 @@
 #include "mozilla/ContentBlockingLog.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/dom/ScreenOrientationBinding.h"
 #include "js/RealmOptions.h"
 #include "nsHashtablesFwd.h"
 #include "nsICookieJarSettings.h"
@@ -63,7 +64,7 @@
 #if defined(MOZ_WIDGET_ANDROID)
 #  define SPOOFED_HTTP_UA_OS "Android 10; Mobile"
 #else
-#  define SPOOFED_HTTP_UA_OS "Windows NT 10.0"
+#  define SPOOFED_HTTP_UA_OS "Windows NT 10.0; Win64; x64"
 #endif
 
 struct JSContext;
@@ -367,6 +368,16 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   // detect suspicious fingerprinting activities.
   static bool CheckSuspiciousFingerprintingActivity(
       nsTArray<ContentBlockingLog::LogEntry>& aLogs);
+
+  // Converts the viewport size to the angle.
+  static uint16_t ViewportSizeToAngle(int32_t aWidth, int32_t aHeight);
+
+  // Converts the viewport size to the orientation type.
+  static dom::OrientationType ViewportSizeToOrientationType(int32_t aWidth,
+                                                            int32_t aHeight);
+
+  // Returns the default orientation type for the given platform.
+  static dom::OrientationType GetDefaultOrientationType();
 
  private:
   nsresult Init();

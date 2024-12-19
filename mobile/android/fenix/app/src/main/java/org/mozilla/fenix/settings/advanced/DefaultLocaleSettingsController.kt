@@ -12,6 +12,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleUseCases
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.ext.components
 import java.util.Locale
 
 interface LocaleSettingsController {
@@ -39,7 +40,7 @@ class DefaultLocaleSettingsController(
         LocaleManager.updateBaseConfiguration(activity, locale)
 
         // Invalidate cached values to use the new locale
-        FxNimbus.features.nimbusValidation.withCachedValue(null)
+        // FxNimbus.features.nimbusValidation.withCachedValue(null)
         activity.recreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, 0, 0)
@@ -59,7 +60,7 @@ class DefaultLocaleSettingsController(
         LocaleManager.updateBaseConfiguration(activity, localeSettingsStore.state.localeList[0])
 
         // Invalidate cached values to use the default locale
-        FxNimbus.features.nimbusValidation.withCachedValue(null)
+        // FxNimbus.features.nimbusValidation.withCachedValue(null)
         activity.recreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             activity.overrideActivityTransition(Activity.OVERRIDE_TRANSITION_OPEN, 0, 0)
@@ -83,5 +84,9 @@ class DefaultLocaleSettingsController(
         config.setLocale(locale)
         config.setLayoutDirection(locale)
         resources.updateConfiguration(config, resources.displayMetrics)
+        // A slightly hacky way of triggering a `runtime.settings.locales` update,
+        // so that the locales are updated in GeckoView.
+        val spoofEnglish = context.components.core.engine.settings.spoofEnglish
+        context.components.core.engine.settings.spoofEnglish = spoofEnglish
     }
 }

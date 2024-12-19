@@ -78,6 +78,7 @@ function isBlankPageURL(aURL) {
   return (
     aURL == "about:blank" ||
     aURL == "about:home" ||
+    aURL == "about:tor" ||
     aURL == BROWSER_NEW_TAB_URL ||
     aURL == "chrome://browser/content/blanktab.html"
   );
@@ -558,6 +559,9 @@ function makeURLAbsolute(aBase, aUrl) {
 }
 
 function getHelpLinkURL(aHelpTopic) {
+  if (aHelpTopic === "firefox-help" || aHelpTopic === "firefox-osxkey") {
+    return "about:manual";
+  }
   var url = Services.urlFormatter.formatURLPref("app.support.baseURL");
   return url + aHelpTopic;
 }

@@ -112,6 +112,10 @@ nsIFile* gDataDirHome = nullptr;
 nsCOMPtr<nsIFile> gDataDirProfileLocal = nullptr;
 nsCOMPtr<nsIFile> gDataDirProfile = nullptr;
 
+#if defined(RELATIVE_DATA_DIR)
+mozilla::Maybe<nsCOMPtr<nsIFile>> gDataDirPortable;
+#endif
+
 // These are required to allow nsXREDirProvider to be usable in xpcshell tests.
 // where gAppData is null.
 #if defined(XP_MACOSX) || defined(XP_UNIX)
@@ -231,7 +235,9 @@ nsresult nsXREDirProvider::GetUserProfilesRootDir(nsIFile** aResult) {
   nsresult rv = GetUserDataDirectory(getter_AddRefs(file), false);
 
   if (NS_SUCCEEDED(rv)) {
-#if !defined(XP_UNIX) || defined(XP_MACOSX)
+    // For some reason, we have decided not to append "Profiles" in Tor Browser.
+    // So, let's keep removing it, or we should somehow migrate the profile.
+#if !defined(TOR_BROWSER) && (!defined(XP_UNIX) || defined(XP_MACOSX))
     rv = file->AppendNative("Profiles"_ns);
 #endif
     // We must create the profile directory here if it does not exist.
@@ -249,7 +255,7 @@ nsresult nsXREDirProvider::GetUserProfilesLocalDir(nsIFile** aResult) {
   nsresult rv = GetUserDataDirectory(getter_AddRefs(file), true);
 
   if (NS_SUCCEEDED(rv)) {
-#if !defined(XP_UNIX) || defined(XP_MACOSX)
+#if !defined(TOR_BROWSER) && (!defined(XP_UNIX) || defined(XP_MACOSX))
     rv = file->AppendNative("Profiles"_ns);
 #endif
     // We must create the profile directory here if it does not exist.
@@ -738,6 +744,25 @@ void nsXREDirProvider::FinishInitializingUserPrefs() {
   }
 }
 
+#ifdef MOZ_WIDGET_GTK
+static nsresult SetFontconfigConfigFile(nsCOMPtr<nsIFile> appDir) {
+  NS_ENSURE_TRUE(appDir, NS_ERROR_NULL_POINTER);
+  nsCOMPtr<nsIFile> confDir;
+  nsresult rv = appDir->Clone(getter_AddRefs(confDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = confDir->AppendNative("fonts"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoCString confPath;
+  rv = confDir->GetNativePath(confPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(setenv("FONTCONFIG_PATH", confPath.BeginReading(), 1) != 0 ||
+                 setenv("FONTCONFIG_FILE", "fonts.conf", 1) != 0)) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+#endif
+
 NS_IMETHODIMP
 nsXREDirProvider::DoStartup() {
   nsresult rv;
@@ -755,6 +780,13 @@ nsXREDirProvider::DoStartup() {
        other code run from this notification since they may cause crashes.
     */
     MOZ_ASSERT(mPrefsInitialized);
+
+#ifdef MOZ_WIDGET_GTK
+    // FontConfig might be initialized by GTK/Pango, so we need to define its
+    // config variables before doing anything.
+    rv = SetFontconfigConfigFile(mGREDir);
+    NS_ENSURE_SUCCESS(rv, rv);
+#endif
 
     bool safeModeNecessary = false;
     nsCOMPtr<nsIAppStartup> appStartup(
@@ -1110,7 +1142,52 @@ nsresult nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult,
   rv = appFile->GetParent(getter_AddRefs(updRoot));
   NS_ENSURE_SUCCESS(rv, rv);
 
-#ifdef XP_MACOSX
+#if defined(BASE_BROWSER_UPDATE)
+  // For Base Browser and derivatives, we store update history, etc. within the
+  // UpdateInfo directory under the user data directory.
+#  if defined(ANDROID)
+#    error "The Base Browser updater is not supported on Android."
+#  endif
+  nsCOMPtr<nsIFile> dataDir;
+  rv = GetUserDataDirectoryHome(getter_AddRefs(dataDir), false);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = dataDir->GetParent(getter_AddRefs(updRoot));
+  NS_ENSURE_SUCCESS(rv, rv);
+#  if !defined(XP_MACOSX)
+  // For Tor Browser, the profile directory is TorBrowser/Data/Browser.
+  // Updates used to be in TorBrowser/updateInfo, so go up two directories.
+  // If we switch to data directory outside also on Windows and on Linux, we
+  // should remove this block.
+  dataDir = updRoot;
+  rv = dataDir->GetParent(getter_AddRefs(updRoot));
+  NS_ENSURE_SUCCESS(rv, rv);
+#  endif
+  rv = updRoot->AppendNative("UpdateInfo"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+#  if defined(XP_MACOSX)
+  // Since the data directory may be shared among different installations of the
+  // application, embed the app path in the update dir so that the update
+  // history is partitioned. This is much less likely to be an issue on Linux or
+  // Windows, because our packages for those platforms include a "container"
+  // folder that provides partitioning by default, and we do not support use of
+  // a shared, OS-recommended area for user data on those platforms.
+  nsAutoString appPath;
+  rv = appFile->GetPath(appPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+  int32_t dotIndex = appPath.RFind(u".app");
+  if (dotIndex == kNotFound) {
+    dotIndex = appPath.Length();
+  }
+  appPath = Substring(appPath, 1, dotIndex - 1);
+  rv = updRoot->AppendRelativePath(appPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+#  endif
+
+  updRoot.forget(aResult);
+  return NS_OK;
+// The rest of the function is for ! BASE_BROWSER_UPDATE
+#elif defined(XP_MACOSX)
   nsCOMPtr<nsIFile> appRootDirFile;
   nsCOMPtr<nsIFile> localDir;
   nsAutoString appDirPath;
@@ -1226,10 +1303,124 @@ nsresult nsXREDirProvider::SetUserDataProfileDirectory(nsCOMPtr<nsIFile>& aFile,
   return NS_OK;
 }
 
+#if defined(RELATIVE_DATA_DIR)
+nsresult nsXREDirProvider::GetPortableDataDir(nsIFile** aFile,
+                                              bool& aIsPortable) {
+  if (gDataDirPortable) {
+    if (*gDataDirPortable) {
+      nsresult rv = (*gDataDirPortable)->Clone(aFile);
+      NS_ENSURE_SUCCESS(rv, rv);
+      aIsPortable = true;
+    } else {
+      aIsPortable = false;
+    }
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIFile> exeFile, exeDir;
+  bool persistent = false;
+  nsresult rv =
+      GetFile(XRE_EXECUTABLE_FILE, &persistent, getter_AddRefs(exeFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = exeFile->Normalize();
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = exeFile->GetParent(getter_AddRefs(exeDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+#  if defined(XP_MACOSX)
+  nsAutoString exeDirPath;
+  rv = exeDir->GetPath(exeDirPath);
+  NS_ENSURE_SUCCESS(rv, rv);
+  // When the browser is installed in /Applications, we never run in portable
+  // mode.
+  if (exeDirPath.LowerCaseFindASCII("/applications/") == 0) {
+    aIsPortable = false;
+    gDataDirPortable.emplace(nullptr);
+    return NS_OK;
+  }
+#  endif
+
+#  if defined(MOZ_WIDGET_GTK)
+  // On Linux, Firefox supports the is-packaged-app for the .deb distribution.
+  // We cannot use mozilla::widget::IsPackagedAppFileExists because it relies on
+  // this service to be initialized, but this function is called during the
+  // initialization. Therefore, we need to re-implement this check.
+  nsLiteralCString systemInstallNames[] = {"system-install"_ns,
+                                           "is-packaged-app"_ns};
+#  else
+  nsLiteralCString systemInstallNames[] = {"system-install"_ns};
+#  endif
+  for (const nsLiteralCString& fileName : systemInstallNames) {
+    nsCOMPtr<nsIFile> systemInstallFile;
+    rv = exeDir->Clone(getter_AddRefs(systemInstallFile));
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = systemInstallFile->AppendNative(fileName);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    bool exists = false;
+    rv = systemInstallFile->Exists(&exists);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (exists) {
+      gDataDirPortable.emplace(nullptr);
+      return NS_OK;
+    }
+  }
+
+  nsCOMPtr<nsIFile> localDir = exeDir;
+#  if defined(XP_MACOSX)
+  rv = exeDir->GetParent(getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+  exeDir = localDir;
+  rv = exeDir->GetParent(getter_AddRefs(localDir));
+  NS_ENSURE_SUCCESS(rv, rv);
+#  endif
+  rv = localDir->SetRelativePath(localDir.get(),
+                                 nsLiteralCString(RELATIVE_DATA_DIR));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+#  if defined(XP_MACOSX)
+  // On macOS we try to create the directory immediately to switch to
+  // system-install mode if needed (e.g., when running from the DMG).
+  bool exists = false;
+  rv = localDir->Exists(&exists);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!exists) {
+    rv = localDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+    if (NS_FAILED(rv)) {
+      aIsPortable = false;
+      gDataDirPortable.emplace(nullptr);
+      return NS_OK;
+    }
+  }
+#  endif
+
+  gDataDirPortable.emplace(localDir);
+  rv = (*gDataDirPortable)->Clone(aFile);
+  NS_ENSURE_SUCCESS(rv, rv);
+  aIsPortable = true;
+  return rv;
+}
+#endif
+
+NS_IMETHODIMP nsXREDirProvider::GetIsPortableMode(bool* aIsPortableMode) {
+#ifdef RELATIVE_DATA_DIR
+  if (gDataDirPortable) {
+    *aIsPortableMode = *gDataDirPortable;
+  } else {
+    nsCOMPtr<nsIFile> dir;
+    GetPortableDataDir(getter_AddRefs(dir), *aIsPortableMode);
+  }
+#else
+  *aIsPortableMode = false;
+#endif
+  return NS_OK;
+}
+
 nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
                                                     bool aLocal) {
   // Copied from nsAppFileLocationProvider (more or less)
   nsresult rv;
+  NS_ENSURE_ARG_POINTER(aFile);
   nsCOMPtr<nsIFile> localDir;
 
   if (aLocal && gDataDirHomeLocal) {
@@ -1239,18 +1430,40 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
     return gDataDirHome->Clone(aFile);
   }
 
+#if defined(RELATIVE_DATA_DIR)
+  RefPtr<nsXREDirProvider> singleton = GetSingleton();
+  if (!singleton) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  bool isPortable = false;
+  rv = singleton->GetPortableDataDir(getter_AddRefs(localDir), isPortable);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (isPortable) {
+    if (aLocal) {
+      rv = localDir->AppendNative("Caches"_ns);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    NS_IF_ADDREF(*aFile = localDir);
+    return rv;
+  }
+#endif
+
 #if defined(XP_MACOSX)
   FSRef fsRef;
+#  if defined(TOR_BROWSER)
+  OSType folderType = kApplicationSupportFolderType;
+#  else
   OSType folderType;
   if (aLocal) {
     folderType = kCachedDataFolderType;
   } else {
-#  ifdef MOZ_THUNDERBIRD
+#    ifdef MOZ_THUNDERBIRD
     folderType = kDomainLibraryFolderType;
-#  else
+#    else
     folderType = kApplicationSupportFolderType;
-#  endif
+#    endif
   }
+#  endif
   OSErr err = ::FSFindFolder(kUserDomain, folderType, kCreateFolder, &fsRef);
   NS_ENSURE_FALSE(err, NS_ERROR_FAILURE);
 
@@ -1262,6 +1475,17 @@ nsresult nsXREDirProvider::GetUserDataDirectoryHome(nsIFile** aFile,
 
   rv = dirFileMac->InitWithFSRef(&fsRef);
   NS_ENSURE_SUCCESS(rv, rv);
+
+#  if defined(TOR_BROWSER)
+  rv = dirFileMac->AppendNative("TorBrowser-Data"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = dirFileMac->AppendNative("Browser"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (aLocal) {
+    rv = dirFileMac->AppendNative("Caches"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+#  endif
 
   localDir = dirFileMac;
 #elif defined(XP_IOS)
@@ -1432,6 +1656,13 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
     return NS_OK;
   }
 
+#if defined(RELATIVE_DATA_DIR)
+  if (gDataDirPortable && *gDataDirPortable) {
+    // Do nothing in portable mode
+    return NS_OK;
+  }
+#endif
+
   nsAutoCString profile;
   nsAutoCString appName;
   nsAutoCString vendor;
@@ -1445,6 +1676,9 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
   nsresult rv = NS_OK;
 
 #if defined(XP_MACOSX)
+#  ifndef TOR_BROWSER
+  // For Tor Browser we already prepare the data directory as we need it, even
+  // when we are running a system install.
   if (!profile.IsEmpty()) {
     rv = AppendProfileString(aFile, profile.get());
   } else {
@@ -1454,6 +1688,7 @@ nsresult nsXREDirProvider::AppendProfilePath(nsIFile* aFile, bool aLocal) {
     rv = aFile->AppendNative(appName);
   }
   NS_ENSURE_SUCCESS(rv, rv);
+#  endif
 
 #elif defined(XP_WIN)
   if (!profile.IsEmpty()) {
@@ -1537,4 +1772,22 @@ nsresult nsXREDirProvider::AppendProfileString(nsIFile* aFile,
   }
 
   return NS_OK;
+}
+
+nsresult nsXREDirProvider::GetTorBrowserUserDataDir(nsIFile** aFile) {
+#ifdef ANDROID
+  // We expect this function not to be called on Android.
+  // But, for sake of completeness, we handle also this case.
+  const char* homeDir = getenv("HOME");
+  if (!homeDir || !*homeDir) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_NewNativeLocalFile(nsDependentCString(homeDir), true, aFile);
+#endif
+
+  NS_ENSURE_ARG_POINTER(aFile);
+  nsCOMPtr<nsIFile> dataDir;
+  nsresult rv = GetUserDataDirectoryHome(getter_AddRefs(dataDir), false);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return dataDir->GetParent(aFile);
 }

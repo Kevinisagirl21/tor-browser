@@ -34,15 +34,23 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
             rootKey,
         )
 
-        requirePreference<SwitchPreference>(R.string.pref_key_show_sponsored_suggestions).apply {
-            isVisible = context.settings().enableFxSuggest
+        findPreference<CheckBoxPreference>(getString(R.string.pref_key_show_search_suggestions_in_private))?.apply {
+            isVisible = !context.settings().shouldDisableNormalMode
         }
-        requirePreference<SwitchPreference>(R.string.pref_key_show_nonsponsored_suggestions).apply {
-            isVisible = context.settings().enableFxSuggest
+
+        findPreference<SwitchPreference>(getString(R.string.pref_key_search_browsing_history))?.apply {
+            isVisible = !context.settings().shouldDisableNormalMode
         }
-        requirePreference<Preference>(R.string.pref_key_learn_about_fx_suggest).apply {
-            isVisible = context.settings().enableFxSuggest
-        }
+
+//        requirePreference<SwitchPreference>(R.string.pref_key_show_sponsored_suggestions).apply {
+//            isVisible = context.settings().enableFxSuggest
+//        }
+//        requirePreference<SwitchPreference>(R.string.pref_key_show_nonsponsored_suggestions).apply {
+//            isVisible = context.settings().enableFxSuggest
+//        }
+//        requirePreference<Preference>(R.string.pref_key_learn_about_fx_suggest).apply {
+//            isVisible = context.settings().enableFxSuggest
+//        }
 
         view?.hideKeyboard()
     }
@@ -83,10 +91,10 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
                 isChecked = context.settings().shouldShowBookmarkSuggestions
             }
 
-        val showSyncedTabsSuggestions =
-            requirePreference<SwitchPreference>(R.string.pref_key_search_synced_tabs).apply {
-                isChecked = context.settings().shouldShowSyncedTabsSuggestions
-            }
+//        val showSyncedTabsSuggestions =
+//            requirePreference<SwitchPreference>(R.string.pref_key_search_synced_tabs).apply {
+//                isChecked = context.settings().shouldShowSyncedTabsSuggestions
+//            }
 
         val showClipboardSuggestions =
             requirePreference<SwitchPreference>(R.string.pref_key_show_clipboard_suggestions).apply {
@@ -98,28 +106,28 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
                 isChecked = context.settings().shouldShowVoiceSearch
             }
 
-        val showSponsoredSuggestionsPreference =
-            requirePreference<SwitchPreference>(R.string.pref_key_show_sponsored_suggestions).apply {
-                isChecked = context.settings().showSponsoredSuggestions
-                summary = getString(
-                    R.string.preferences_show_sponsored_suggestions_summary,
-                    getString(R.string.app_name),
-                )
-            }
-
-        val showNonSponsoredSuggestionsPreference =
-            requirePreference<SwitchPreference>(R.string.pref_key_show_nonsponsored_suggestions).apply {
-                isChecked = context.settings().showNonSponsoredSuggestions
-                title = getString(
-                    R.string.preferences_show_nonsponsored_suggestions,
-                    getString(R.string.app_name),
-                )
-            }
+//        val showSponsoredSuggestionsPreference =
+//            requirePreference<SwitchPreference>(R.string.pref_key_show_sponsored_suggestions).apply {
+//                isChecked = context.settings().showSponsoredSuggestions
+//                summary = getString(
+//                    R.string.preferences_show_sponsored_suggestions_summary,
+//                    getString(R.string.app_name),
+//                )
+//            }
+//
+//        val showNonSponsoredSuggestionsPreference =
+//            requirePreference<SwitchPreference>(R.string.pref_key_show_nonsponsored_suggestions).apply {
+//                isChecked = context.settings().showNonSponsoredSuggestions
+//                title = getString(
+//                    R.string.preferences_show_nonsponsored_suggestions,
+//                    getString(R.string.app_name),
+//                )
+//            }
 
         searchSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
         showHistorySuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showBookmarkSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
-        showSyncedTabsSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
+//        showSyncedTabsSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showClipboardSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         searchSuggestionsInPrivatePreference.onPreferenceChangeListener = SharedPreferenceUpdater()
         showVoiceSearchPreference.onPreferenceChangeListener = object : Preference.OnPreferenceChangeListener {
@@ -135,15 +143,15 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         autocompleteURLsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
 
         searchSuggestionsPreference.setOnPreferenceClickListener {
-            if (!searchSuggestionsPreference.isChecked) {
+            if (!requireContext().settings().shouldDisableNormalMode && !searchSuggestionsPreference.isChecked) {
                 searchSuggestionsInPrivatePreference.isChecked = false
                 searchSuggestionsInPrivatePreference.callChangeListener(false)
             }
             true
         }
 
-        showSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
-        showNonSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
+//        showSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
+//        showNonSponsoredSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {

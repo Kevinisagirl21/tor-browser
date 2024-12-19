@@ -15,7 +15,7 @@
 </hbox>
 
 <!-- Tracking / Content Blocking -->
-<groupbox id="trackingGroup" data-category="panePrivacy" hidden="true" aria-describedby="contentBlockingDescription" class="highlighting-group">
+<groupbox id="trackingGroup" data-category="panePrivacy" data-hidden-from-search="true" hidden="true" aria-describedby="contentBlockingDescription" class="highlighting-group">
   <label id="contentBlockingHeader"><html:h2 data-l10n-id="content-blocking-enhanced-tracking-protection"/></label>
   <vbox data-subcategory="trackingprotection">
     <hbox align="start">
@@ -358,7 +358,7 @@
     </vbox>
   </vbox>
 </groupbox>
-<groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" data-subcategory="nontechnicalprivacy" hidden="true">
+<groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" data-subcategory="nontechnicalprivacy" data-hidden-from-search="true" hidden="true">
   <label id="nonTechnicalPrivacyHeader"><html:h2 data-l10n-id="non-technical-privacy-header"/></label>
   <vbox id="nonTechnicalPrivacyBox">
     <hbox id="globalPrivacyControlBox" flex="1" align="center" hidden="true">
@@ -604,6 +604,8 @@
   <label id="fips-title" hidden="true" data-l10n-id="forms-primary-pw-fips-title"></label>
   <label id="fips-desc" hidden="true" data-l10n-id="forms-master-pw-fips-desc"></label>
 </groupbox>
+
+#include ../onionservices/content/authPreferences.inc.xhtml
 
 <!-- The form autofill section is inserted in to this box
      after the form autofill extension has initialized. -->
@@ -1061,6 +1063,8 @@
   <html:h1 data-l10n-id="security-header"/>
 </hbox>
 
+#include ../securitylevel/content/securityLevelPreferences.inc.xhtml
+
 <!-- addons, forgery (phishing) UI Security -->
 <groupbox id="browsingProtectionGroup" data-category="panePrivacy" hidden="true">
   <label><html:h2 data-l10n-id="security-browsing-protection"/></label>
@@ -1185,11 +1189,12 @@
 <hbox id="DoHCategory"
       class="subcategory"
       hidden="true"
-      data-category="panePrivacy">
+      data-category="panePrivacy"
+      data-hidden-from-search="true">
   <html:h1 data-l10n-id="preferences-doh-header"/>
 </hbox>
 
-<groupbox id="dohBox" data-category="panePrivacy" data-subcategory="doh" hidden="true" class="highlighting-group">
+<groupbox id="dohBox" data-category="panePrivacy" data-subcategory="doh" data-hidden-from-search="true" hidden="true" class="highlighting-group">
   <label class="search-header" searchkeywords="doh trr" hidden="true"><html:h2 data-l10n-id="preferences-doh-header"/></label>
   <vbox flex="1">
     <description id="dohDescription" class="tail-with-learn-more description-deemphasized" data-l10n-id="preferences-doh-description2"></description>

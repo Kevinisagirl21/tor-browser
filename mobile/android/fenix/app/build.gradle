@@ -30,7 +30,17 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 apply from: 'benchmark.gradle'
 
+def obtainTestBuildType() {
+    def result = "debug";
+    if (project.hasProperty("testBuildType")) {
+        result = project.getProperties().get("testBuildType")
+    }
+    result
+}
+
 android {
+    testBuildType obtainTestBuildType()
+
     project.maybeConfigForJetpackBenchmark(it)
     if (project.hasProperty("testBuildType")) {
         // Allowing to configure the test build type via command line flag (./gradlew -PtestBuildType=beta ..)
@@ -39,7 +49,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "org.mozilla"
+        applicationId "org.torproject"
         minSdkVersion config.minSdkVersion
         compileSdk config.compileSdkVersion
         targetSdkVersion config.targetSdkVersion
@@ -70,8 +80,7 @@ android {
                 "}"
         // This should be the base URL used to call the AMO API.
         buildConfigField "String", "AMO_SERVER_URL", "\"https://services.addons.mozilla.org\""
-
-        def deepLinkSchemeValue = "fenix-dev"
+        def deepLinkSchemeValue = "torbrowser-dev"
         buildConfigField "String", "DEEP_LINK_SCHEME", "\"$deepLinkSchemeValue\""
 
         // This allows overriding the target activity for MozillaOnline builds, which happens
@@ -92,6 +101,8 @@ android {
         ]
 
         buildConfigField "String[]", "SUPPORTED_LOCALE_ARRAY", getSupportedLocales()
+
+        buildConfigField "boolean", "DATA_COLLECTION_DISABLED", "true"
     }
 
     def releaseTemplate = {
@@ -119,14 +130,14 @@ android {
         debug {
             shrinkResources false
             minifyEnabled false
-            applicationIdSuffix ".fenix.debug"
+            applicationIdSuffix ".torbrowser_debug"
             resValue "bool", "IS_DEBUG", "true"
             pseudoLocalesEnabled true
         }
         nightly releaseTemplate >> {
-            applicationIdSuffix ".fenix"
+            applicationIdSuffix ".torbrowser_nightly"
             buildConfigField "boolean", "USE_RELEASE_VERSIONING", "true"
-            def deepLinkSchemeValue = "fenix-nightly"
+            def deepLinkSchemeValue = "torbrowser-nightly"
             buildConfigField "String", "DEEP_LINK_SCHEME", "\"$deepLinkSchemeValue\""
             manifestPlaceholders.putAll([
                     "deepLinkScheme": deepLinkSchemeValue
@@ -134,8 +145,8 @@ android {
         }
         beta releaseTemplate >> {
             buildConfigField "boolean", "USE_RELEASE_VERSIONING", "true"
-            applicationIdSuffix ".firefox_beta"
-            def deepLinkSchemeValue = "fenix-beta"
+            applicationIdSuffix ".torbrowser_alpha"
+            def deepLinkSchemeValue = "torbrowser-alpha"
             buildConfigField "String", "DEEP_LINK_SCHEME", "\"$deepLinkSchemeValue\""
             manifestPlaceholders.putAll([
                     // This release type is meant to replace Firefox (Beta channel) and therefore needs to inherit
@@ -145,14 +156,14 @@ android {
                     // fatal consequences. For example see:
                     //  - https://issuetracker.google.com/issues/36924841
                     //  - https://issuetracker.google.com/issues/36905922
-                    "sharedUserId": "org.mozilla.firefox.sharedID",
+                    "sharedUserId": "org.torproject.torbrowser_alpha.sharedID",
                     "deepLinkScheme": deepLinkSchemeValue,
             ])
         }
         release releaseTemplate >> {
             buildConfigField "boolean", "USE_RELEASE_VERSIONING", "true"
-            applicationIdSuffix ".firefox"
-            def deepLinkSchemeValue = "fenix"
+            applicationIdSuffix ".torbrowser"
+            def deepLinkSchemeValue = "torbrowser"
             buildConfigField "String", "DEEP_LINK_SCHEME", "\"$deepLinkSchemeValue\""
             manifestPlaceholders.putAll([
                     // This release type is meant to replace Firefox (Release channel) and therefore needs to inherit
@@ -162,7 +173,7 @@ android {
                     // fatal consequences. For example see:
                     //  - https://issuetracker.google.com/issues/36924841
                     //  - https://issuetracker.google.com/issues/36905922
-                    "sharedUserId": "org.mozilla.firefox.sharedID",
+                    "sharedUserId": "org.torproject.torbrowser.sharedID",
                     "deepLinkScheme": deepLinkSchemeValue,
             ])
         }
@@ -296,14 +307,24 @@ android.applicationVariants.configureEach { variant ->
 // -------------------------------------------------------------------------------------------------
 
     def isDebug = variant.buildType.resValues['bool/IS_DEBUG']?.value ?: false
+    def isDataCollectionDisabled = variant.buildType.buildConfigFields['DATA_COLLECTION_DISABLED']?.value ?: true
+    def isDebugOrDCD = isDebug || isDataCollectionDisabled
     def useReleaseVersioning = variant.buildType.buildConfigFields['USE_RELEASE_VERSIONING']?.value ?: false
+
+    def disableTor = false
+    if (project.hasProperty("disableTor")) {
+        disableTor = project.getProperty("disableTor")
+    }
 
     println("----------------------------------------------")
     println("Variant name:      " + variant.name)
     println("Application ID:    " + [variant.applicationId, variant.buildType.applicationIdSuffix].findAll().join())
     println("Build type:        " + variant.buildType.name)
     println("Flavor:            " + variant.flavorName)
-    println("Telemetry enabled: " + !isDebug)
+    println("Telemetry enabled: " + !isDebugOrDCD)
+    println("Tor is disabled:   " + disableTor)
+
+    buildConfigField "boolean", "DISABLE_TOR", "$disableTor"
 
     if (useReleaseVersioning) {
         // The Google Play Store does not allow multiple APKs for the same app that all have the
@@ -345,7 +366,7 @@ android.applicationVariants.configureEach { variant ->
 // -------------------------------------------------------------------------------------------------
 
     buildConfigField 'String', 'SENTRY_TOKEN', 'null'
-    if (!isDebug) {
+    if (!isDebugOrDCD) {
         buildConfigField 'boolean', 'CRASH_REPORTING', 'true'
         // Reading sentry token from local file (if it exists). In a release task on taskcluster it will be available.
         try {
@@ -356,7 +377,7 @@ android.applicationVariants.configureEach { variant ->
         buildConfigField 'boolean', 'CRASH_REPORTING', 'false'
     }
 
-    if (!isDebug) {
+    if (!isDebugOrDCD) {
         buildConfigField 'boolean', 'TELEMETRY', 'true'
     } else {
         buildConfigField 'boolean', 'TELEMETRY', 'false'
@@ -377,7 +398,7 @@ android.applicationVariants.configureEach { variant ->
 
     print("Adjust token: ")
 
-    if (!isDebug) {
+    if (!isDebugOrDCD) {
         try {
             def token = new File("${rootDir}/.adjust_token").text.trim()
             buildConfigField 'String', 'ADJUST_TOKEN', '"' + token + '"'
@@ -612,9 +633,9 @@ dependencies {
     implementation project(':feature-share')
     implementation project(':feature-accounts-push')
     implementation project(':feature-webauthn')
-    implementation project(':feature-webcompat')
+//  implementation project(':feature-webcompat')
     implementation project(':feature-webnotifications')
-    implementation project(':feature-webcompat-reporter')
+//  implementation project(':feature-webcompat-reporter')
 
     implementation project(':service-pocket')
     implementation project(':service-contile')
@@ -687,10 +708,7 @@ dependencies {
     implementation FenixDependencies.protobuf_javalite
     implementation ComponentsDependencies.google_material
 
-    implementation FenixDependencies.adjust
     implementation FenixDependencies.installreferrer // Required by Adjust
-
-    implementation FenixDependencies.google_ads_id // Required for the Google Advertising ID
 
     // Required for in-app reviews
     implementation ComponentsDependencies.play_review
@@ -754,6 +772,9 @@ dependencies {
 
     lintPublish project(":mozilla-lint-rules")
     lintChecks project(':tooling-lint')
+
+    // Tor Expert Bundle
+    implementation files('tor-expert-bundle.aar')
 }
 
 protobuf {
@@ -911,14 +932,22 @@ def getSupportedLocales() {
     // This isn't running as a task, instead the array is build when the gradle file is parsed.
     // https://github.com/mozilla-mobile/fenix/issues/14175
     def foundLocales = new StringBuilder()
+    def languageCodes = []
     foundLocales.append("new String[]{")
 
     fileTree("src/main/res").visit { FileVisitDetails details ->
-        if (details.file.path.endsWith("${File.separator}strings.xml")) {
+        if (details.file.path.endsWith("${File.separator}torbrowser_strings.xml")) {
             def languageCode = details.file.parent.tokenize(File.separator).last().replaceAll('values-', '').replaceAll('-r', '-')
             languageCode = (languageCode == "values") ? "en-US" : languageCode
-            foundLocales.append("\"").append(languageCode).append("\"").append(",")
+            languageCodes.add(languageCode)
         }
+    }
+
+    // The order of files in a `FileTree` is not stable, even on a single
+    // computer. Thus we need to sort the `languageCode`s. See: fenix#40083.
+    languageCodes.sort()
+    languageCodes.each {
+        foundLocales.append("\"").append(it).append("\"").append(",")
     }
 
     foundLocales.append("}")

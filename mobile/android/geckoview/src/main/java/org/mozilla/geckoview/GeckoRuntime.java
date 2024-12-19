@@ -178,7 +178,11 @@ public final class GeckoRuntime implements Parcelable {
       GeckoAppShell.resumeLocation();
       // Monitor network status and send change notifications to Gecko
       // while active.
-      GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
+      if (!BuildConfig.TOR_BROWSER) {
+        GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
+      } else {
+        Log.d(LOGTAG, "Tor Browser: skip GeckoNetworkManager startup");
+      }
 
       // Set settings that may have changed between last app opening
       GeckoAppShell.setIs24HourFormat(
@@ -192,7 +196,9 @@ public final class GeckoRuntime implements Parcelable {
       // Pause listening for locations when in background
       GeckoAppShell.pauseLocation();
       // Stop monitoring network status while inactive.
-      GeckoNetworkManager.getInstance().stop();
+      if (!BuildConfig.TOR_BROWSER) {
+        GeckoNetworkManager.getInstance().stop();
+      }
       GeckoThread.onPause();
     }
   }
@@ -237,6 +243,8 @@ public final class GeckoRuntime implements Parcelable {
   private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
   private final ProfilerController mProfilerController;
   private final GeckoScreenChangeListener mScreenChangeListener;
+
+  private TorIntegrationAndroid mTorIntegration;
 
   private GeckoRuntime() {
     mWebExtensionController = new WebExtensionController(this);
@@ -487,6 +495,8 @@ public final class GeckoRuntime implements Parcelable {
       mScreenChangeListener.enable();
     }
 
+    mTorIntegration = new TorIntegrationAndroid(context);
+
     mProfilerController.addMarker(
         "GeckoView Initialization START", mProfilerController.getProfilerTime());
     return true;
@@ -595,6 +605,10 @@ public final class GeckoRuntime implements Parcelable {
 
     if (mScreenChangeListener != null) {
       mScreenChangeListener.disable();
+    }
+
+    if (mTorIntegration != null) {
+      mTorIntegration.shutdown();
     }
 
     GeckoThread.forceQuit();
@@ -995,6 +1009,14 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     return mPushController;
+  }
+
+  /**
+   * Get the Tor integration controller for this runtime.
+   */
+  @UiThread
+  public @NonNull TorIntegrationAndroid getTorIntegrationController() {
+    return mTorIntegration;
   }
 
   /**

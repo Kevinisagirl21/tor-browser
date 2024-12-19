@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* import-globals-from extensionControlled.js */
+/* import-globals-from letterboxing.js */
 /* import-globals-from preferences.js */
 /* import-globals-from /toolkit/mozapps/preferences/fontbuilder.js */
 /* import-globals-from /browser/base/content/aboutDialog-appUpdater.js */
@@ -483,7 +484,23 @@ var gMainPane = {
       "command",
       makeDisableControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY)
     );
-    setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
+    // setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
+    {
+      const spoofEnglish = document.getElementById("spoofEnglish");
+      const kPrefSpoofEnglish = "privacy.spoof_english";
+      const preference = Preferences.add({
+        id: kPrefSpoofEnglish,
+        type: "int",
+      });
+      const spoofEnglishChanged = () => {
+        spoofEnglish.checked = preference.value == 2;
+      };
+      spoofEnglishChanged();
+      preference.on("change", spoofEnglishChanged);
+      setEventListener("spoofEnglish", "command", () => {
+        preference.value = spoofEnglish.checked ? 2 : 1;
+      });
+    }
     // TODO (Bug 1817084) Remove this code when we disable the extension
     setEventListener(
       "fxtranslateButton",
@@ -574,16 +591,10 @@ var gMainPane = {
         .setAttribute("style", "display: none !important");
     }
     // Initialize the Firefox Updates section.
-    let version = AppConstants.MOZ_APP_VERSION_DISPLAY;
+    let version = AppConstants.BASE_BROWSER_VERSION;
 
-    // Include the build ID if this is an "a#" (nightly) build
-    if (/a\d+$/.test(version)) {
-      let buildID = Services.appinfo.appBuildID;
-      let year = buildID.slice(0, 4);
-      let month = buildID.slice(4, 6);
-      let day = buildID.slice(6, 8);
-      version += ` (${year}-${month}-${day})`;
-    }
+    // Base Browser and derivatives: do not include the build ID in our alphas,
+    // since they are not actually related to the build date.
 
     // Append "(32-bit)" or "(64-bit)" build architecture to the version number:
     let bundle = Services.strings.createBundle(
@@ -765,6 +776,7 @@ var gMainPane = {
     );
 
     AppearanceChooser.init();
+    gLetterboxingPrefs.init();
 
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "main-pane-loaded");
@@ -1431,8 +1443,30 @@ var gMainPane = {
       available,
       { preferNative: true }
     );
-    let locales = available.map((code, i) => ({ code, name: localeNames[i] }));
-    locales.sort((a, b) => a.name > b.name);
+    let locales = available.map((code, i) => {
+      let name = localeNames[i].replace(/\s*\(.+\)$/g, "");
+      if (code === "ja-JP-macos") {
+        // Mozilla codebases handle Japanese in macOS in different ways,
+        // sometimes they call it ja-JP-mac and sometimes they call it
+        // ja-JP-macos. The former is translated to Japanese when specifying
+        // preferNative to true, the latter is not. Since seeing ja-JP-macos
+        // would be confusing anyway, we treat it as a special case.
+        // See tor-browser#41372 and Bug 1726586.
+        name =
+          Services.intl.getLocaleDisplayNames(undefined, ["ja"], {
+            preferNative: true,
+          })[0] + " (ja)";
+      } else {
+        name += ` (${code})`;
+      }
+      return {
+        code,
+        name,
+      };
+    });
+    // tor-browser#42335: Sort language codes independently from the locale,
+    // so do not use localeCompare.
+    locales.sort((a, b) => a.code > b.code);
 
     let fragment = document.createDocumentFragment();
     for (let { code, name } of locales) {
@@ -1732,7 +1766,9 @@ var gMainPane = {
       let defaultBrowserBox = document.getElementById("defaultBrowserBox");
       let isInFlatpak = gGIOService?.isRunningUnderFlatpak;
       // Flatpak does not support setting nor detection of default browser
-      if (!shellSvc || isInFlatpak) {
+      // tor-browser#41822 disable making Tor Browser the default browser
+      // eslint-disable-next-line no-constant-condition
+      if (shellSvc || isInFlatpak || true) {
         defaultBrowserBox.hidden = true;
         return;
       }
@@ -2602,6 +2638,7 @@ var gMainPane = {
     Services.prefs.removeObserver(PREF_CONTAINERS_EXTENSION, this);
     Services.obs.removeObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
     Services.obs.removeObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
+    gLetterboxingPrefs.destroy();
     AppearanceChooser.destroy();
   },
 

@@ -11,6 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.sys.mjs",
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
+  RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
+  TorAndroidIntegration: "resource://gre/modules/TorAndroidIntegration.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("Startup");
@@ -258,6 +261,11 @@ export class GeckoViewStartup {
           "GeckoView:InitialForeground",
         ]);
 
+        this.#migratePreferences();
+
+        lazy.TorAndroidIntegration.init();
+        lazy.TorDomainIsolator.init();
+
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
 
@@ -339,6 +347,10 @@ export class GeckoViewStartup {
         if (aData.requestedLocales) {
           Services.locale.requestedLocales = aData.requestedLocales;
         }
+        lazy.RFPHelper._handleSpoofEnglishChanged();
+        if (Services.prefs.getIntPref("privacy.spoof_english", 0) === 2) {
+          break;
+        }
         const pls = Cc["@mozilla.org/pref-localizedstring;1"].createInstance(
           Ci.nsIPrefLocalizedString
         );
@@ -359,6 +371,50 @@ export class GeckoViewStartup {
         });
         break;
     }
+  }
+
+  /**
+   * This is the equivalent of BrowserGlue._migrateUITBB.
+   */
+  #migratePreferences() {
+    const MIGRATION_VERSION = 1;
+    const MIGRATION_PREF = "torbrowser.migration_android.version";
+
+    // We do not have a way to check for new profiles on Android.
+    // However, the first version is harmless for new installs, so run it
+    // anyway.
+    const currentVersion = Services.prefs.getIntPref(MIGRATION_PREF, 0);
+    if (currentVersion < 1) {
+      // First implementation of the migration on Android (tor-browser#43124,
+      // 14.0a5, September 2024).
+      const prefToClear = [
+        // Old torbutton preferences not used anymore.
+        // Some of them should have never been set on Android, as on Android we
+        // force PBM... But who knows about very old profiles.
+        "browser.cache.disk.enable",
+        "places.history.enabled",
+        "security.nocertdb",
+        "permissions.memory_only",
+        "extensions.torbutton.loglevel",
+        "extensions.torbutton.logmethod",
+        "extensions.torbutton.pref_fixup_version",
+        "extensions.torbutton.resize_new_windows",
+        "extensions.torbutton.startup",
+        "extensions.torlauncher.prompt_for_locale",
+        "extensions.torlauncher.loglevel",
+        "extensions.torlauncher.logmethod",
+        "extensions.torlauncher.torrc_fixup_version",
+        // tor-browser#42149: Do not change HTTPS-Only settings in the security
+        // level.
+        "dom.security.https_only_mode_send_http_background_request",
+      ];
+      for (const pref of prefToClear) {
+        if (Services.prefs.prefHasUserValue(pref)) {
+          Services.prefs.clearUserPref(pref);
+        }
+      }
+    }
+    Services.prefs.setIntPref(MIGRATION_PREF, MIGRATION_VERSION);
   }
 }
 

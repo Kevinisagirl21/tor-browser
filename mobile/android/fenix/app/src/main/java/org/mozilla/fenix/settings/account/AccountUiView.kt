@@ -86,7 +86,7 @@ class AccountUiView(
 
             // Signed-out.
         } else {
-            preferenceSignIn.isVisible = true
+            preferenceSignIn.isVisible = false
             preferenceFirefoxAccount.isVisible = false
             preferenceFirefoxAccountAuthError.isVisible = false
             accountPreferenceCategory.isVisible = false
@@ -104,7 +104,7 @@ class AccountUiView(
      * Returns generic avatar for accounts.
      */
     private fun genericAvatar(context: Context) =
-        AppCompatResources.getDrawable(context, R.drawable.ic_account)
+        AppCompatResources.getDrawable(context, R.drawable.mozac_lib_crash_notification)
 
     /**
      * Gets a rounded drawable from a URL if possible, else null.

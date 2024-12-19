@@ -191,7 +191,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             view = view,
         )
 
-        if (context.settings().shouldShowOpenInAppCfr) {
+        if (false) { // context.settings().shouldShowOpenInAppCfr
             openInAppOnboardingObserver.set(
                 feature = OpenInAppOnboardingObserver(
                     context = context,
@@ -765,7 +765,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
 
     override fun navToQuickSettingsSheet(tab: SessionState, sitePermissions: SitePermissions?) {
         val useCase = requireComponents.useCases.trackingProtectionUseCases
-        FxNimbus.features.cookieBanners.recordExposure()
+        // FxNimbus.features.cookieBanners.recordExposure()
         useCase.containsException(tab.id) { hasTrackingProtectionException ->
             lifecycleScope.launch {
                 val cookieBannersStorage = requireComponents.core.cookieBannersStorage

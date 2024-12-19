@@ -1883,7 +1883,8 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
     return false;
   }
 
-  if (nsContentUtils::HttpsStateIsModern(aDocument)) {
+  if (nsContentUtils::HttpsStateIsModern(aDocument) ||
+      nsContentUtils::DocumentHasOnionURI(aDocument)) {
     return true;
   }
 
@@ -6004,6 +6005,9 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
     NS_ENSURE_SUCCESS_VOID(rv);
 
     if (!StringBeginsWith(url, u"about:neterror"_ns) &&
+        // we want about:torconnect pages to be able to close themselves after
+        // bootstrap
+        !StringBeginsWith(url, u"about:torconnect"_ns) &&
         !mBrowsingContext->GetTopLevelCreatedByWebContent() &&
         !aTrustedCaller && !IsOnlyTopLevelDocumentInSHistory()) {
       bool allowClose =

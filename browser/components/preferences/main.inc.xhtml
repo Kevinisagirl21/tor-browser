@@ -155,6 +155,9 @@
     </vbox>
 </groupbox>
 
+<!-- Letterboxing -->
+#include ./letterboxing.inc.xhtml
+
 <hbox id="languageAndAppearanceCategory"
       class="subcategory"
       hidden="true"
@@ -163,7 +166,7 @@
 </hbox>
 
 <!-- Website appearance -->
-<groupbox id="webAppearanceGroup" data-category="paneGeneral" hidden="true">
+<groupbox id="webAppearanceGroup" data-category="paneGeneral" hidden="true" data-hidden-from-search="true">
   <html:h2 data-l10n-id="preferences-web-appearance-header"/>
   <html:div id="webAppearanceSettings">
     <description class="description-deemphasized" data-l10n-id="preferences-web-appearance-description"/>
@@ -333,7 +336,7 @@
 </groupbox>
 
 <!-- Languages -->
-<groupbox id="languagesGroup" data-category="paneGeneral" hidden="true">
+<groupbox id="languagesGroup" data-category="paneGeneral" hidden="true" data-subcategory="language">
   <label><html:h2 data-l10n-id="language-header"/></label>
 
   <vbox id="browserLanguagesBox" align="start" hidden="true">
@@ -354,6 +357,7 @@
   </hbox>
 
   <hbox id="languagesBox" align="center">
+    <!--
     <description flex="1" control="chooseLanguage" data-l10n-id="choose-language-description"/>
     <button id="chooseLanguage"
             is="highlightable-button"
@@ -368,6 +372,9 @@
               languages-customize-select-language.placeholder,
               languages-customize-add.label,
             " />
+    -->
+    <checkbox id="spoofEnglish"
+              data-l10n-id="languages-customize-spoof-english"/>
   </hbox>
 
   <checkbox id="useSystemLocale" hidden="true"
@@ -724,7 +731,8 @@
             preference="general.autoScroll"/>
   <checkbox id="useSmoothScrolling"
             data-l10n-id="browsing-use-smooth-scrolling"
-            preference="general.smoothScroll"/>
+            preference="general.smoothScroll"
+            hidden="true"/>
 #ifdef MOZ_WIDGET_GTK
   <checkbox id="useOverlayScrollbars"
             data-l10n-id="browsing-gtk-use-non-overlay-scrollbars"
@@ -745,7 +753,8 @@
 #endif
   <checkbox id="alwaysUnderlineLinks"
             data-l10n-id="browsing-always-underline-links"
-            preference="layout.css.always_underline_links"/>
+            preference="layout.css.always_underline_links"
+            hidden="true"/>
   <checkbox id="searchStartTyping"
             data-l10n-id="browsing-search-on-start-typing"
             preference="accessibility.typeaheadfind"/>
@@ -769,7 +778,7 @@
           support-page="media-keyboard-control"
     />
   </hbox>
-  <hbox align="center" data-subcategory="cfraddons">
+  <hbox align="center" data-subcategory="cfraddons" hidden="true">
     <checkbox id="cfrRecommendations"
             class="tail-with-learn-more"
             data-l10n-id="browsing-cfr-recommendations"
@@ -779,7 +788,7 @@
           support-page="extensionrecommendations"
     />
   </hbox>
-  <hbox align="center" data-subcategory="cfrfeatures">
+  <hbox align="center" data-subcategory="cfrfeatures" hidden="true">
     <checkbox id="cfrRecommendations-features"
             class="tail-with-learn-more"
             data-l10n-id="browsing-cfr-features"
@@ -794,12 +803,13 @@
 <hbox id="networkProxyCategory"
       class="subcategory"
       hidden="true"
+      data-hidden-from-search="true"
       data-category="paneGeneral">
   <html:h1 data-l10n-id="network-settings-title"/>
 </hbox>
 
 <!-- Network Settings-->
-<groupbox id="connectionGroup" data-category="paneGeneral" hidden="true">
+<groupbox id="connectionGroup" data-category="paneGeneral" data-hidden-from-search="true" hidden="true">
   <label class="search-header" hidden="true"><html:h2 data-l10n-id="network-settings-title"/></label>
 
   <hbox align="center"

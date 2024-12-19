@@ -5,6 +5,7 @@
 package org.mozilla.fenix
 
 import android.app.assist.AssistContent
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_MAIN
@@ -24,6 +25,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager.LayoutParams.FLAG_SECURE
+import androidx.activity.viewModels
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
 import androidx.annotation.RequiresApi
@@ -56,6 +58,8 @@ import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.storage.HistoryMetadataKey
+import mozilla.components.feature.app.links.RedirectDialogFragment
+import mozilla.components.feature.app.links.SimpleRedirectDialogFragment
 import mozilla.components.feature.contextmenu.DefaultSelectionActionDelegate
 import mozilla.components.feature.media.ext.findActiveMediaTab
 import mozilla.components.feature.privatemode.notification.PrivateNotificationFeature
@@ -75,6 +79,8 @@ import mozilla.components.support.utils.BootUtils
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.ManufacturerCodes
 import mozilla.components.support.utils.SafeIntent
+import mozilla.components.support.utils.TorUtils
+import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import mozilla.components.support.utils.toSafeIntent
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import mozilla.telemetry.glean.private.NoExtras
@@ -139,9 +145,17 @@ import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.ThemeManager
+import org.mozilla.fenix.tor.TorConnectionAssistFragmentDirections
+import org.mozilla.fenix.tor.TorEvents
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 import java.util.Locale
+
+import mozilla.components.browser.engine.gecko.GeckoEngine
+import org.mozilla.fenix.components.FenixSnackbar
+import org.mozilla.fenix.home.HomeFragment
+import org.mozilla.fenix.tor.TorConnectionAssistViewModel
+import org.mozilla.geckoview.TorIntegrationAndroid
 
 /**
  * The main activity of the application. The application is primarily a single Activity (this one)
@@ -150,7 +164,7 @@ import java.util.Locale
  * - browser screen
  */
 @SuppressWarnings("TooManyFunctions", "LargeClass", "LongMethod")
-open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
+open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, TorIntegrationAndroid.BootstrapStateChangeListener {
     private lateinit var binding: ActivityHomeBinding
     lateinit var themeManager: ThemeManager
     lateinit var browsingModeManager: BrowsingModeManager
@@ -161,6 +175,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         null
 
     private var isToolbarInflated = false
+
+    private var isBeingRecreated = false
 
     private val webExtensionPopupObserver by lazy {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
@@ -205,7 +221,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             OpenSpecificTabIntentProcessor(this),
             OpenPasswordManagerIntentProcessor(),
             OpenRecentlyClosedIntentProcessor(),
-            ReEngagementIntentProcessor(this, settings()),
+            //ReEngagementIntentProcessor(this, settings()),
         )
     }
 
@@ -219,6 +235,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     private val startupPathProvider = StartupPathProvider()
     private lateinit var startupTypeTelemetry: StartupTypeTelemetry
+
+    private var dialog: RedirectDialogFragment? = null
+
+    private val torConnectionAssistViewModel: TorConnectionAssistViewModel by viewModels()
 
     @Suppress("ComplexMethod")
     final override fun onCreate(savedInstanceState: Bundle?) {
@@ -308,6 +328,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             it.start()
         }
 
+        /*
         if (settings().shouldShowOnboarding(
                 hasUserBeenOnboarded = components.fenixOnboarding.userHasBeenOnboarded(),
                 isLauncherIntent = intent.toSafeIntent().isLauncherIntent,
@@ -318,8 +339,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 navHost.navController.navigate(NavGraphDirections.actionGlobalOnboarding())
             }
         } else {
+         */
             lifecycleScope.launch(IO) {
-                showFullscreenMessageIfNeeded(applicationContext)
+                // showFullscreenMessageIfNeeded(applicationContext)
             }
 
             // Unless the activity is recreated, navigate to home first (without rendering it)
@@ -333,11 +355,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             } else {
                 StartOnHome.enterHomeScreen.record(NoExtras())
             }
-
+            /*
             if (settings().showHomeOnboardingDialog && components.fenixOnboarding.userHasBeenOnboarded()) {
                 navHost.navController.navigate(NavGraphDirections.actionGlobalHomeOnboardingDialog())
             }
-        }
+            */
+        //}
 
         Performance.processIntentIfPerformanceTest(intent, this)
 
@@ -356,7 +379,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 ?.also {
                     Events.appOpened.record(Events.AppOpenedExtra(it))
                     // This will record an event in Nimbus' internal event store. Used for behavioral targeting
-                    components.nimbus.events.recordEvent("app_opened")
+                    // components.nimbus.events.recordEvent("app_opened")
 
                     if (safeIntent.action.equals(ACTION_OPEN_PRIVATE_TAB) && it == APP_ICON) {
                         AppIcon.newPrivateTabTapped.record(NoExtras())
@@ -430,6 +453,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
         components.notificationsDelegate.bindToActivity(this)
 
+        val engine = components.core.engine
+        if (engine is GeckoEngine) {
+            val torIntegration = engine.getTorIntegrationController()
+            torIntegration.registerBootstrapStateChangeListener(this)
+        }
+
         StartupTimeline.onActivityCreateEndHome(this) // DO NOT MOVE ANYTHING BELOW HERE.
     }
 
@@ -444,7 +473,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             }
         }
 
-        if (FxNimbus.features.splashScreen.value().enabled) {
+        if (false) { // FxNimbus.features.splashScreen.value().enabled
             val splashScreen = installSplashScreen()
             var maxDurationReached = false
             val delay = FxNimbus.features.splashScreen.value().maximumDurationMs.toLong()
@@ -594,7 +623,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     override fun onProvideAssistContent(outContent: AssistContent?) {
         super.onProvideAssistContent(outContent)
         val currentTabUrl = components.core.store.state.selectedTab?.content?.url
-        outContent?.webUri = currentTabUrl?.let { Uri.parse(it) }
+        if (components.core.store.state.selectedTab?.content?.private == false) {
+            outContent?.webUri = currentTabUrl?.let { Uri.parse(it) }
+        }
     }
 
     @CallSuper
@@ -620,6 +651,21 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         if (this !is ExternalAppBrowserActivity && !activityStartedWithLink) {
             stopMediaSession()
         }
+
+        if (!isBeingRecreated && !(application as FenixApplication).isTerminating()) {
+            // We assume the Activity is being destroyed because the user
+            // swiped away the app on the Recent screen. When this happens,
+            // we assume the user expects the entire Application is destroyed
+            // and not only the top Activity/Task. Therefore we kill the
+            // underlying Application, as well.
+            (application as FenixApplication).terminate()
+        }
+
+        val engine = components.core.engine
+        if (engine is GeckoEngine) {
+            val torIntegration = engine.getTorIntegrationController()
+            torIntegration.unregisterBootstrapStateChangeListener(this)
+        }
     }
 
     final override fun onConfigurationChanged(newConfig: Configuration) {
@@ -639,13 +685,53 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             message = "recreate()",
         )
 
+        isBeingRecreated = true
+
         super.recreate()
+    }
+
+    // Copied from mozac AppLinksFeature.kt
+    internal fun getOrCreateDialog(): RedirectDialogFragment {
+        val existingDialog = dialog
+        if (existingDialog != null) {
+            return existingDialog
+        }
+
+        SimpleRedirectDialogFragment.newInstance().also {
+            dialog = it
+            return it
+        }
+    }
+    private fun isAlreadyADialogCreated(): Boolean {
+        return findPreviousDialogFragment() != null
+    }
+
+    private fun findPreviousDialogFragment(): RedirectDialogFragment? {
+        return supportFragmentManager.findFragmentByTag(RedirectDialogFragment.FRAGMENT_TAG) as? RedirectDialogFragment
     }
 
     /**
      * Handles intents received when the activity is open.
      */
     final override fun onNewIntent(intent: Intent?) {
+        if (intent?.action == ACTION_MAIN || components.torController.isConnected) {
+            onNewIntentInternal(intent)
+        } else {
+            // Wait until Tor is connected to handle intents from external apps for links, search, etc.
+            components.torController.registerTorListener(object : TorEvents {
+                override fun onTorConnected() {
+                    components.torController.unregisterTorListener(this)
+                    onNewIntentInternal(intent)
+                }
+                override fun onTorConnecting() { /* no-op */ }
+                override fun onTorStopped() { /* no-op */ }
+                override fun onTorStatusUpdate(entry: String?, status: String?, progress: Double?) { /* no-op */ }
+            })
+            return
+        }
+    }
+
+    private fun onNewIntentInternal(intent: Intent?) {
         super.onNewIntent(intent)
         intent?.let {
             handleNewIntent(it)
@@ -656,6 +742,26 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     @VisibleForTesting
     internal fun handleNewIntent(intent: Intent) {
         if (this is ExternalAppBrowserActivity) {
+            return
+        }
+
+        val startIntent = intent.getParcelableExtraCompat(TorUtils.TORBROWSER_START_ACTIVITY_PROMPT, PendingIntent::class.java)
+        if (startIntent != null) {
+            if (startIntent.creatorPackage == applicationContext.packageName) {
+                val dialog = getOrCreateDialog()
+                dialog.onConfirmRedirect = {
+                    @Suppress("EmptyCatchBlock")
+                    try {
+                        startIntent.send()
+                    } catch (error: PendingIntent.CanceledException) {
+                    }
+                }
+                dialog.onCancelRedirect = {}
+
+                if (!isAlreadyADialogCreated()) {
+                    dialog.showNow(supportFragmentManager, RedirectDialogFragment.FRAGMENT_TAG)
+                }
+            }
             return
         }
 
@@ -893,11 +999,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     internal fun getModeFromIntentOrLastKnown(intent: Intent?): BrowsingMode {
         intent?.toSafeIntent()?.let {
             if (it.hasExtra(PRIVATE_BROWSING_MODE)) {
-                val startPrivateMode = it.getBooleanExtra(PRIVATE_BROWSING_MODE, false)
+                val startPrivateMode = settings().shouldDisableNormalMode ||
+                    it.getBooleanExtra(PRIVATE_BROWSING_MODE, settings().openLinksInAPrivateTab)
                 return BrowsingMode.fromBoolean(isPrivate = startPrivateMode)
             }
         }
-        return settings().lastKnownMode
+        return when {
+            settings().shouldDisableNormalMode -> BrowsingMode.Private
+            settings().openLinksInAPrivateTab -> BrowsingMode.Private
+            else -> settings().lastKnownMode
+        }
     }
 
     /**
@@ -1004,6 +1115,25 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         historyMetadata: HistoryMetadataKey? = null,
         additionalHeaders: Map<String, String>? = null,
     ) {
+        if (!components.torController.isBootstrapped && !searchTermOrURL.startsWith("about:")) {
+            FenixSnackbar.make(
+                view = binding.root,
+                isDisplayedWithBrowserToolbar = true,
+            )
+                .setText(getString(R.string.connection_assist_connect_to_tor_before_opening_links))
+                .setAction(getString(R.string.connection_assist_connect_to_tor_before_opening_links_confirmation)) {
+                    torConnectionAssistViewModel.handleConnect(searchTermOrURL)
+                    if (navHost.navController.previousBackStackEntry?.destination?.id == R.id.torConnectionAssistFragment) {
+                        supportFragmentManager.popBackStack()
+                    } else {
+                        navHost.navController.navigate(
+                            TorConnectionAssistFragmentDirections.actionConnectToTorBeforeOpeningLinks()
+                        )
+                    }
+                }
+                .show()
+            return
+        }
         openToBrowser(from, customTabSessionId)
         load(
             searchTermOrURL = searchTermOrURL,
@@ -1139,11 +1269,20 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     @VisibleForTesting
     internal fun navigateToHome(navController: NavController) {
-        if (this is ExternalAppBrowserActivity) {
-            return
-        }
+        //if (this is ExternalAppBrowserActivity) {
+        //    return
+        //}
 
-        navController.navigate(NavGraphDirections.actionStartupHome())
+        if (!settings().useHtmlConnectionUi) {
+            navController.navigate(NavGraphDirections.actionStartupTorConnectionAssist())
+        } else {
+            navController.navigate(NavGraphDirections.actionStartupHome())
+            openToBrowserAndLoad(
+                searchTermOrURL = "about:torconnect",
+                newTab = true,
+                from = BrowserDirection.FromHome,
+            )
+        }
     }
 
     final override fun attachBaseContext(base: Context) {
@@ -1232,14 +1371,17 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     /**
      *  Indicates if the user should be redirected to the [BrowserFragment] or to the [HomeFragment],
-     *  links from an external apps should always opened in the [BrowserFragment].
+     *  links from an external apps should always opened in the [BrowserFragment],
+     *  unless Tor is not yet connected.
      */
     @VisibleForTesting
     internal fun shouldStartOnHome(intent: Intent? = this.intent): Boolean {
         return components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
             // We only want to open on home when users tap the app,
-            // we want to ignore other cases when the app gets open by users clicking on links.
-            getSettings().shouldStartOnHome() && intent?.action == ACTION_MAIN
+            // we want to ignore other cases when the app gets open by users clicking on links,
+            // unless Tor is not yet connected.
+            getSettings().shouldStartOnHome() && (intent?.action == ACTION_MAIN ||
+                    !components.torController.isConnected)
         }
     }
 
@@ -1270,10 +1412,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             keyDismissButtonText = null,
         )
 
+        /*
         researchSurfaceDialogFragment.onAccept = {
             processIntent(messaging.getIntentForMessage(nextMessage))
             components.appStore.dispatch(AppAction.MessagingAction.MessageClicked(nextMessage))
         }
+        */
 
         researchSurfaceDialogFragment.onDismiss = {
             components.appStore.dispatch(AppAction.MessagingAction.MessageDismissed(nextMessage))
@@ -1286,10 +1430,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             )
         }
 
-        // Update message as displayed.
-        val currentBootUniqueIdentifier = BootUtils.getBootIdentifier(context)
-
-        messaging.onMessageDisplayed(nextMessage, currentBootUniqueIdentifier)
+//        // Update message as displayed.
+//        val currentBootUniqueIdentifier = BootUtils.getBootIdentifier(context)
+//
+//        messaging.onMessageDisplayed(nextMessage, currentBootUniqueIdentifier)
     }
 
     companion object {
@@ -1305,4 +1449,14 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // telemetry purposes.
         private const val PWA_RECENTLY_USED_THRESHOLD = DateUtils.DAY_IN_MILLIS * 30L
     }
+
+    override fun onBootstrapStateChange(state: String) = Unit
+    override fun onBootstrapProgress(progress: Double, hasWarnings: Boolean) = Unit
+    override fun onBootstrapComplete() {
+        if (settings().useHtmlConnectionUi) {
+            components.useCases.tabsUseCases.removeAllTabs()
+            navHost.navController.navigate(NavGraphDirections.actionStartupHome())
+        }
+    }
+    override fun onBootstrapError(code: String?, message: String?, phase: String?, reason: String?) = Unit
 }

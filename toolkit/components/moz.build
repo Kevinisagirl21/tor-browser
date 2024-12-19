@@ -46,6 +46,7 @@ DIRS += [
     "httpsonlyerror",
     "jsoncpp/src/lib_json",
     "kvstore",
+    "lox",
     "mediasniffer",
     "ml",
     "mozintl",
@@ -66,6 +67,7 @@ DIRS += [
     "reportbrokensite",
     "resistfingerprinting",
     "search",
+    "securitylevel",
     "sessionstore",
     "shell",
     "shopping",
@@ -77,6 +79,8 @@ DIRS += [
     "thumbnails",
     "timermanager",
     "tooltiptext",
+    "torconnect",
+    "tor-launcher",
     "typeaheadfind",
     "utils",
     "url-classifier",
@@ -130,7 +134,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] not in ("android", "windows"):
     DIRS += ["aboutwebauthn"]
 
 if CONFIG["MOZ_BUILD_APP"] == "browser":
-    DIRS += ["featuregates", "messaging-system", "normandy"]
+    if CONFIG["MOZ_NORMANDY"]:
+        DIRS += ["normandy"]
+    DIRS += ["featuregates", "messaging-system"]
 
 DIRS += ["nimbus"]
 

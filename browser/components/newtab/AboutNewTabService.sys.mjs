@@ -421,20 +421,19 @@ class BaseAboutNewTabService {
    * the newtab page has no effect on the result of this function.
    */
   get defaultURL() {
-    // Generate the desired activity stream resource depending on state, e.g.,
-    // "resource://activity-stream/prerendered/activity-stream.html"
-    // "resource://activity-stream/prerendered/activity-stream-debug.html"
-    // "resource://activity-stream/prerendered/activity-stream-noscripts.html"
-    return [
-      "resource://activity-stream/prerendered/",
-      "activity-stream",
-      // Debug version loads dev scripts but noscripts separately loads scripts
-      this.activityStreamDebug && !this.privilegedAboutProcessEnabled
-        ? "-debug"
-        : "",
-      this.privilegedAboutProcessEnabled ? "-noscripts" : "",
-      ".html",
-    ].join("");
+    // NOTE: We return "about:tor" rather than the "chrome:" path
+    // "chrome://browser/content/abouttor/aboutTor.html"
+    // The result is that the channel created in NewChannel in
+    // browser/components/about/AboutRedirector.cpp will have its
+    // resultPrincipalURI set to "about:tor".
+    // What this means in practice is that the loaded document's documentURI and
+    // currentURI will be "about:tor" rather than "about:newtab", "about:home",
+    // "about:welcome" or "about:privatebrowsing".
+    // The disadvantage of this is that we often need to add "about:tor" to
+    // places where "about:newtab" or other URIs appear.
+    // The advantage is that we maintain more control against changes in
+    // mozilla-central.
+    return "about:tor";
   }
 
   get welcomeURL() {

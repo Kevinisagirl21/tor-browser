@@ -1446,6 +1446,12 @@
   value: false
   mirror: always
 
+# tor-browser#42220
+- name: browser.download.ignore_content_disposition
+  type: bool
+  value: true
+  mirror: always
+
 # See bug 1811830
 - name: browser.download.force_save_internally_handled_attachments
   type: bool
@@ -1855,6 +1861,14 @@
 - name: browser.ui.zoom.force-user-scalable
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+# tor-browser#28005, tor-browser#40458: enable .tor.onion aliases by default.
+# When they are enabled, the browser will need to refresh the alias lists by
+# connecting to third parties periodically.
+- name: browser.urlbar.onionRewrites.enabled
+  type: RelaxedAtomicBool
+  value: true
   mirror: always
 
 - name: browser.viewport.desktopWidth
@@ -14354,12 +14368,12 @@
 
 - name: privacy.window.maxInnerWidth
   type: int32_t
-  value: 1000
+  value: 1400
   mirror: always
 
 - name: privacy.window.maxInnerHeight
   type: int32_t
-  value: 1000
+  value: 900
   mirror: always
 
 - name: privacy.sanitize.useOldClearHistoryDialog

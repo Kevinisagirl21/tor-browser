@@ -109,6 +109,13 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
    */
   nsresult GetProfileDir(nsIFile** aResult);
 
+  /**
+   * Get the Tor Browser user data directory.
+   * We take for granted that for Tor Browser we can take the parent directory
+   * of the one returned by GetUserDataDirectoryHome (with aLocal = false).
+   */
+  nsresult GetTorBrowserUserDataDir(nsIFile** aFile);
+
  private:
   nsresult GetFilesInternal(const char* aProperty,
                             nsISimpleEnumerator** aResult);
@@ -138,6 +145,14 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 #endif
 
   void Append(nsIFile* aDirectory);
+
+#if defined(RELATIVE_DATA_DIR)
+  /**
+   * Get the path to the portable data dir, if the application is running in
+   * portable mode.
+   */
+  nsresult GetPortableDataDir(nsIFile** aFile, bool& aIsPortable);
+#endif
 
   // On OSX, mGREDir points to .app/Contents/Resources
   nsCOMPtr<nsIFile> mGREDir;

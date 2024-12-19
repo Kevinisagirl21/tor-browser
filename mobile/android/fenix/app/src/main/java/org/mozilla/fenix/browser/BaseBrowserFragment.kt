@@ -67,8 +67,8 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.storage.LoginEntry
-import mozilla.components.feature.accounts.FxaCapability
-import mozilla.components.feature.accounts.FxaWebChannelFeature
+// import mozilla.components.feature.accounts.FxaCapability
+// import mozilla.components.feature.accounts.FxaWebChannelFeature
 import mozilla.components.feature.app.links.AppLinksFeature
 import mozilla.components.feature.contextmenu.ContextMenuCandidate
 import mozilla.components.feature.contextmenu.ContextMenuFeature
@@ -83,7 +83,8 @@ import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.feature.prompts.PromptFeature.Companion.PIN_REQUEST
 import mozilla.components.feature.prompts.address.AddressDelegate
 import mozilla.components.feature.prompts.creditcard.CreditCardDelegate
-import mozilla.components.feature.prompts.dialog.FullScreenNotificationDialog
+import mozilla.components.feature.prompts.dialog.FullScreenNotificationToast
+import mozilla.components.feature.prompts.dialog.GestureNavUtils
 import mozilla.components.feature.prompts.identitycredential.DialogColors
 import mozilla.components.feature.prompts.identitycredential.DialogColorsProvider
 import mozilla.components.feature.prompts.login.LoginDelegate
@@ -253,7 +254,7 @@ abstract class BaseBrowserFragment :
     private val sitePermissionsFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val fullScreenFeature = ViewBoundFeatureWrapper<FullScreenFeature>()
     private val swipeRefreshFeature = ViewBoundFeatureWrapper<SwipeRefreshFeature>()
-    private val webchannelIntegration = ViewBoundFeatureWrapper<FxaWebChannelFeature>()
+//  private val webchannelIntegration = ViewBoundFeatureWrapper<FxaWebChannelFeature>()
     private val sitePermissionWifiIntegration =
         ViewBoundFeatureWrapper<SitePermissionsWifiIntegration>()
     private val secureWindowFeature = ViewBoundFeatureWrapper<SecureWindowFeature>()
@@ -618,7 +619,7 @@ abstract class BaseBrowserFragment :
                 PreferenceManager.getDefaultSharedPreferences(context).getBoolean(
                     context.getPreferenceKey(R.string.pref_key_external_download_manager),
                     false,
-                )
+                ) && false
             },
             promptsStyling = DownloadsFeature.PromptsStyling(
                 gravity = Gravity.BOTTOM,
@@ -1021,6 +1022,7 @@ abstract class BaseBrowserFragment :
             )
         }
 
+/*
         webchannelIntegration.set(
             feature = FxaWebChannelFeature(
                 customTabSessionId,
@@ -1033,6 +1035,7 @@ abstract class BaseBrowserFragment :
             owner = this,
             view = view,
         )
+*/
 
         initializeEngineView(
             topToolbarHeight = context.settings().getTopToolbarHeight(
@@ -1546,6 +1549,9 @@ abstract class BaseBrowserFragment :
                 val bottomToolbarHeight = context.settings().getBottomToolbarHeight()
                 resumeDownloadDialogState(selectedTab.id, context.components.core.store, context, bottomToolbarHeight)
                 it.announceForAccessibility(selectedTab.toDisplayTitle())
+                if (getCurrentTab()?.content?.url == "about:torconnect") {
+                    browserToolbarView.view.visibility = View.GONE
+                }
             }
         } else {
             view?.let { view -> initializeUI(view) }
@@ -1570,6 +1576,22 @@ abstract class BaseBrowserFragment :
                     openLinksInExternalApp
                 }
             }
+        handleBetaHtmlTorConnect()
+    }
+
+    private fun handleBetaHtmlTorConnect() {
+        val currentTab = getCurrentTab() ?: return
+        if (currentTab.content.url == "about:torconnect") {
+            if (!requireActivity().settings().useHtmlConnectionUi) {
+                requireContext().components.useCases.tabsUseCases.removeTab(currentTab.id)
+                (requireActivity() as HomeActivity).navigateToHome(findNavController())
+            } else {
+                // This just makes it not flash (be visible for a split second) before handleTabSelected() hides it again
+                browserToolbarView.view.visibility = View.GONE
+            }
+        } else if (currentTab.content.url == "about:tor") {
+            requireContext().components.useCases.tabsUseCases.removeTab(currentTab.id)
+        }
     }
 
     @CallSuper
@@ -1857,15 +1879,19 @@ abstract class BaseBrowserFragment :
 
     @VisibleForTesting
     internal fun fullScreenChanged(inFullScreen: Boolean) {
+        val activity = activity ?: return
         if (inFullScreen) {
             // Close find in page bar if opened
             findInPageIntegration.onBackPressed()
 
-            FullScreenNotificationDialog(R.layout.full_screen_notification_dialog).show(
-                parentFragmentManager,
-            )
+            FullScreenNotificationToast(
+                activity = activity,
+                gestureNavString = getString(R.string.exit_fullscreen_with_gesture),
+                backButtonString = getString(R.string.exit_fullscreen_with_back_button),
+                GestureNavUtils,
+            ).show()
 
-            activity?.enterImmersiveMode()
+            activity.enterImmersiveMode()
             (view as? SwipeGestureLayout)?.isSwipeEnabled = false
             browserToolbarView.collapse()
             browserToolbarView.gone()
@@ -1880,12 +1906,12 @@ abstract class BaseBrowserFragment :
 
             MediaState.fullscreen.record(NoExtras())
         } else {
-            activity?.exitImmersiveMode()
+            activity.exitImmersiveMode()
             (view as? SwipeGestureLayout)?.isSwipeEnabled = true
-            (activity as? HomeActivity)?.let { activity ->
+            (activity as? HomeActivity)?.let { homeActivity ->
                 // ExternalAppBrowserActivity exclusively handles it's own theming unless in private mode.
-                if (activity !is ExternalAppBrowserActivity || activity.browsingModeManager.mode.isPrivate) {
-                    activity.themeManager.applyStatusBarTheme(activity)
+                if (homeActivity !is ExternalAppBrowserActivity || homeActivity.browsingModeManager.mode.isPrivate) {
+                    homeActivity.themeManager.applyStatusBarTheme(homeActivity)
                 }
             }
             if (webAppToolbarShouldBeVisible) {

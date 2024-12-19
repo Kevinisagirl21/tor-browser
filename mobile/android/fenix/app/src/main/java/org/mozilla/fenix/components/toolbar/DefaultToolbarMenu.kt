@@ -32,7 +32,7 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
+// import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
@@ -71,7 +71,6 @@ open class DefaultToolbarMenu(
     private var isCurrentUrlBookmarked = false
     private var isBookmarkedJob: Job? = null
 
-    private val shouldDeleteDataOnQuit = context.settings().shouldDeleteBrowsingDataOnQuit
     private val shouldUseBottomToolbar = context.settings().shouldUseBottomToolbar
     private val shouldShowMenuToolbar = !IncompleteRedesignToolbarFeature(context.settings()).isEnabled
     private val shouldShowTopSites = context.settings().showTopSitesFeature
@@ -212,6 +211,14 @@ open class DefaultToolbarMenu(
         onItemTapped.invoke(ToolbarMenu.Item.NewTab)
     }
 
+    private val newCircuitItem = BrowserMenuImageText(
+        context.getString(R.string.library_new_circuit),
+        R.drawable.new_circuit,
+        primaryTextColor(),
+    ) {
+        onItemTapped.invoke(ToolbarMenu.Item.NewTorCircuit)
+    }
+
     private val historyItem = BrowserMenuImageText(
         context.getString(R.string.library_history),
         R.drawable.ic_history,
@@ -266,12 +273,12 @@ open class DefaultToolbarMenu(
         onItemTapped.invoke(ToolbarMenu.Item.RequestDesktop(checked))
     }
 
-    private val openInRegularTabItem = BrowserMenuImageText(
-        label = context.getString(R.string.browser_menu_open_in_regular_tab),
-        imageResource = R.drawable.ic_open_in_regular_tab,
-    ) {
-        onItemTapped.invoke(ToolbarMenu.Item.OpenInRegularTab)
-    }
+    // private val openInRegularTabItem = BrowserMenuImageText(
+    //     label = context.getString(R.string.browser_menu_open_in_regular_tab),
+    //     imageResource = R.drawable.ic_open_in_regular_tab,
+    // ) {
+    //     onItemTapped.invoke(ToolbarMenu.Item.OpenInRegularTab)
+    // }
 
     private val customizeReaderView = BrowserMenuImageText(
         label = context.getString(R.string.browser_menu_customize_reader_view),
@@ -294,23 +301,23 @@ open class DefaultToolbarMenu(
         onItemTapped.invoke(ToolbarMenu.Item.OpenInApp)
     }
 
-    private val reportSiteIssuePlaceholder = WebExtensionPlaceholderMenuItem(
-        id = WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID,
-        iconTintColorResource = primaryTextColor(),
-    )
+    //private val reportSiteIssuePlaceholder = WebExtensionPlaceholderMenuItem(
+    //    id = WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID,
+    //    iconTintColorResource = primaryTextColor(),
+    //)
 
-    private val addToHomeScreenItem = BrowserMenuImageText(
-        label = context.getString(R.string.browser_menu_add_to_homescreen),
-        imageResource = R.drawable.mozac_ic_add_to_homescreen_24,
-        iconTintColorResource = primaryTextColor(),
-        isCollapsingMenuLimit = true,
-    ) {
-        if (context.components.useCases.webAppUseCases.isInstallable()) {
-            onItemTapped.invoke(ToolbarMenu.Item.InstallPwaToHomeScreen)
-        } else {
-            onItemTapped.invoke(ToolbarMenu.Item.AddToHomeScreen)
-        }
-    }
+    //private val addToHomeScreenItem = BrowserMenuImageText(
+    //    label = context.getString(R.string.browser_menu_add_to_homescreen),
+    //    imageResource = R.drawable.mozac_ic_add_to_homescreen_24,
+    //    iconTintColorResource = primaryTextColor(),
+    //    isCollapsingMenuLimit = true,
+    //) {
+    //    if (context.components.useCases.webAppUseCases.isInstallable()) {
+    //        onItemTapped.invoke(ToolbarMenu.Item.InstallPwaToHomeScreen)
+    //    } else {
+    //        onItemTapped.invoke(ToolbarMenu.Item.AddToHomeScreen)
+    //    }
+    //}
 
     private val addRemoveTopSitesItem = TwoStateBrowserMenuImageText(
         primaryLabel = context.getString(R.string.browser_menu_add_to_shortcuts),
@@ -330,13 +337,13 @@ open class DefaultToolbarMenu(
         },
     )
 
-    private val saveToCollectionItem = BrowserMenuImageText(
-        label = context.getString(R.string.browser_menu_save_to_collection_2),
-        imageResource = R.drawable.ic_tab_collection,
-        iconTintColorResource = primaryTextColor(),
-    ) {
-        onItemTapped.invoke(ToolbarMenu.Item.SaveToCollection)
-    }
+    //private val saveToCollectionItem = BrowserMenuImageText(
+    //    label = context.getString(R.string.browser_menu_save_to_collection_2),
+    //    imageResource = R.drawable.ic_tab_collection,
+    //    iconTintColorResource = primaryTextColor(),
+    //) {
+    //    onItemTapped.invoke(ToolbarMenu.Item.SaveToCollection)
+    //}
 
     private val printPageItem = BrowserMenuImageText(
         label = context.getString(R.string.menu_print),
@@ -361,7 +368,7 @@ open class DefaultToolbarMenu(
             primaryTextColor()
         },
         highlight = BrowserMenuHighlight.HighPriority(
-            endImageResource = R.drawable.ic_sync_disconnected,
+            endImageResource = R.drawable.mozac_lib_crash_notification,
             backgroundTint = context.getColorFromAttr(R.attr.syncDisconnectedBackground),
             canPropagate = false,
         ),
@@ -395,13 +402,13 @@ open class DefaultToolbarMenu(
         onItemTapped.invoke(ToolbarMenu.Item.Quit)
     }
 
-    private fun syncMenuItem(): BrowserMenuItem {
-        return BrowserMenuSignIn(primaryTextColor()) {
-            onItemTapped.invoke(
-                ToolbarMenu.Item.SyncAccount(accountManager.accountState),
-            )
-        }
-    }
+    //private fun syncMenuItem(): BrowserMenuItem {
+    //    return BrowserMenuSignIn(primaryTextColor()) {
+    //        onItemTapped.invoke(
+    //            ToolbarMenu.Item.SyncAccount(accountManager.accountState),
+    //        )
+    //    }
+    //}
 
     @VisibleForTesting(otherwise = PRIVATE)
     val coreMenuItems by lazy {
@@ -410,28 +417,30 @@ open class DefaultToolbarMenu(
                 if (shouldUseBottomToolbar || !shouldShowMenuToolbar) null else menuToolbar,
                 newTabItem,
                 BrowserMenuDivider(),
+                newCircuitItem,
+                BrowserMenuDivider(),
                 bookmarksItem,
-                historyItem,
+                if (context.settings().shouldDisableNormalMode) null else historyItem,
                 downloadsItem,
                 passwordsItem,
                 extensionsItem,
-                syncMenuItem(),
+                // syncMenuItem(),
                 BrowserMenuDivider(),
                 findInPageItem,
                 translationsItem.apply { visible = ::shouldShowTranslations },
                 desktopSiteItem,
-                openInRegularTabItem.apply { visible = ::shouldShowOpenInRegularTab },
+                // openInRegularTabItem.apply { visible = ::shouldShowOpenInRegularTab },
                 customizeReaderView.apply { visible = ::shouldShowReaderViewCustomization },
-                openInApp.apply { visible = ::shouldShowOpenInApp },
-                reportSiteIssuePlaceholder,
+                // openInApp.apply { visible = ::shouldShowOpenInApp },
+                // reportSiteIssuePlaceholder,
                 BrowserMenuDivider(),
-                addToHomeScreenItem.apply { visible = ::canAddToHomescreen },
-                if (shouldShowTopSites) addRemoveTopSitesItem else null,
-                saveToCollectionItem,
-                if (FxNimbus.features.print.value().browserPrintEnabled) printPageItem else null,
+                // addToHomeScreenItem.apply { visible = ::canAddToHomescreen },
+                // if (shouldShowTopSites) addRemoveTopSitesItem else null,
+                // saveToCollectionItem,
+                printPageItem,
                 BrowserMenuDivider(),
                 settingsItem,
-                if (shouldDeleteDataOnQuit) deleteDataOnQuit else null,
+                deleteDataOnQuit,
                 if (shouldUseBottomToolbar) BrowserMenuDivider() else null,
                 if (shouldUseBottomToolbar && shouldShowMenuToolbar) menuToolbar else null,
             )

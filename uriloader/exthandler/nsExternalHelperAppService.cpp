@@ -857,8 +857,32 @@ nsresult nsExternalHelperAppService::GetFileTokenForPath(
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // begin external protocol service default implementation...
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static const char kExternalProtocolPrefPrefix[] =
+    "network.protocol-handler.external.";
+static const char kExternalProtocolDefaultPref[] =
+    "network.protocol-handler.external-default";
+
 NS_IMETHODIMP nsExternalHelperAppService::ExternalProtocolHandlerExists(
     const char* aProtocolScheme, bool* aHandlerExists) {
+  // Replicate the same check performed in LoadURI.
+  // Deny load if the prefs say to do so
+  nsAutoCString externalPref(kExternalProtocolPrefPrefix);
+  externalPref += aProtocolScheme;
+  bool allowLoad = false;
+  *aHandlerExists = false;
+  if (NS_FAILED(Preferences::GetBool(externalPref.get(), &allowLoad))) {
+    // no scheme-specific value, check the default
+    if (NS_FAILED(
+            Preferences::GetBool(kExternalProtocolDefaultPref, &allowLoad))) {
+      return NS_OK;  // missing default pref
+    }
+  }
+
+  if (!allowLoad) {
+    return NS_OK;  // explicitly denied
+  }
+
   nsCOMPtr<nsIHandlerInfo> handlerInfo;
   nsresult rv = GetProtocolHandlerInfo(nsDependentCString(aProtocolScheme),
                                        getter_AddRefs(handlerInfo));
@@ -900,11 +924,6 @@ NS_IMETHODIMP nsExternalHelperAppService::IsExposedProtocol(
 
   return NS_OK;
 }
-
-static const char kExternalProtocolPrefPrefix[] =
-    "network.protocol-handler.external.";
-static const char kExternalProtocolDefaultPref[] =
-    "network.protocol-handler.external-default";
 
 // static
 nsresult nsExternalHelperAppService::EscapeURI(nsIURI* aURI, nsIURI** aResult) {
@@ -1869,6 +1888,12 @@ bool nsExternalAppHandler::IsDownloadSpam(nsIChannel* aChannel) {
   nsCOMPtr<nsIPermissionManager> permissionManager =
       mozilla::services::GetPermissionManager();
   nsCOMPtr<nsIPrincipal> principal = loadInfo->TriggeringPrincipal();
+
+  // Always allow WebExtensions
+  if (principal && principal->SchemeIs("moz-extension")) {
+    return false;
+  }
+
   bool exactHostMatch = false;
   constexpr auto type = "automatic-download"_ns;
   nsCOMPtr<nsIPermission> permission;
@@ -1892,13 +1917,11 @@ bool nsExternalAppHandler::IsDownloadSpam(nsIChannel* aChannel) {
     if (capability == nsIPermissionManager::PROMPT_ACTION) {
       nsCOMPtr<nsIObserverService> observerService =
           mozilla::services::GetObserverService();
-      RefPtr<BrowsingContext> browsingContext;
-      loadInfo->GetBrowsingContext(getter_AddRefs(browsingContext));
 
       nsAutoCString cStringURI;
       loadInfo->TriggeringPrincipal()->GetPrePath(cStringURI);
       observerService->NotifyObservers(
-          browsingContext, "blocked-automatic-download",
+          loadInfo, "blocked-automatic-download",
           NS_ConvertASCIItoUTF16(cStringURI.get()).get());
       // FIXME: In order to escape memory leaks, currently we cancel blocked
       // downloads. This is temporary solution, because download data should be

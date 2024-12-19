@@ -285,6 +285,22 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  FilesFilter: {
+    parent: {
+      esModuleURI: "resource://gre/actors/FilesFilterParent.sys.mjs",
+    },
+
+    child: {
+      esModuleURI: "resource://gre/actors/FilesFilterChild.sys.mjs",
+      events: {
+        drop: {},
+        paste: { capture: true },
+      },
+    },
+
+    allFrames: true,
+  },
+
   FindBar: {
     parent: {
       esModuleURI: "resource://gre/actors/FindBarParent.sys.mjs",
@@ -517,6 +533,20 @@ let JSWINDOWACTORS = {
     ],
     messageManagerGroups: ["browsers"],
     allFrames: true,
+  },
+
+  TorConnect: {
+    parent: {
+      esModuleURI: "resource://gre/actors/TorConnectParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/TorConnectChild.sys.mjs",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+
+    matches: ["about:torconnect", "about:torconnect?*"],
   },
 
   // This actor is available for all pages that one can

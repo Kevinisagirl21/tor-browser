@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   UpdateLog: "resource://gre/modules/UpdateLog.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
@@ -230,6 +231,7 @@ const SERVICE_ERRORS = [
 // Custom update error codes
 const BACKGROUNDCHECK_MULTIPLE_FAILURES = 110;
 const NETWORK_ERROR_OFFLINE = 111;
+const PROXY_SERVER_CONNECTION_REFUSED = 2152398920;
 
 // Error codes should be < 1000. Errors above 1000 represent http status codes
 const HTTP_ERROR_OFFSET = 1000;
@@ -342,6 +344,15 @@ ChromeUtils.defineLazyGetter(
     return bts.isBackgroundTaskMode;
   }
 );
+
+async function _shouldRegisterBootstrapObserver() {
+  try {
+    const provider = await lazy.TorProviderBuilder.build();
+    return !provider.isBootstrapDone && provider.ownsTorDaemon;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Changes `nsIApplicationUpdateService.currentState` and causes
@@ -657,6 +668,11 @@ function areDirectoryEntriesWriteable(aDir) {
  * @return true if elevation is required, false otherwise
  */
 function getElevationRequired() {
+  if (AppConstants.BASE_BROWSER_UPDATE) {
+    // To avoid potential security holes associated with running the updater
+    // process with elevated privileges, Tor Browser does not support elevation.
+    return false;
+  }
   if (AppConstants.platform != "macosx") {
     return false;
   }
@@ -776,7 +792,7 @@ function getCanApplyUpdates() {
     return false;
   }
 
-  if (AppConstants.platform == "macosx") {
+  if (!AppConstants.BASE_BROWSER_UPDATE && AppConstants.platform == "macosx") {
     LOG(
       "getCanApplyUpdates - bypass the write since elevation can be used " +
         "on Mac OS X"
@@ -784,7 +800,7 @@ function getCanApplyUpdates() {
     return true;
   }
 
-  if (shouldUseService()) {
+  if (!AppConstants.BASE_BROWSER_UPDATE && shouldUseService()) {
     LOG(
       "getCanApplyUpdates - bypass the write checks because the Windows " +
         "Maintenance Service can be used"
@@ -1668,7 +1684,11 @@ function handleUpdateFailure(update) {
     );
     cancelations++;
     Services.prefs.setIntPref(PREF_APP_UPDATE_CANCELATIONS, cancelations);
-    if (AppConstants.platform == "macosx") {
+    if (AppConstants.platform == "macosx" && AppConstants.BASE_BROWSER_UPDATE) {
+      cleanupActiveUpdates();
+      update.statusText =
+        lazy.gUpdateBundle.GetStringFromName("elevationFailure");
+    } else if (AppConstants.platform == "macosx") {
       let osxCancelations = Services.prefs.getIntPref(
         PREF_APP_UPDATE_CANCELATIONS_OSX,
         0
@@ -1942,13 +1962,22 @@ function updateIsAtLeastAsOldAs(update, version, buildID) {
 }
 
 /**
+ * This returns the current version of the browser to use to check updates.
+ */
+function getCompatVersion() {
+  return AppConstants.BASE_BROWSER_VERSION
+    ? AppConstants.BASE_BROWSER_VERSION
+    : Services.appinfo.version;
+}
+
+/**
  * This returns true if the passed update is the same version or older than
  * currently installed Firefox version.
  */
 function updateIsAtLeastAsOldAsCurrentVersion(update) {
   return updateIsAtLeastAsOldAs(
     update,
-    Services.appinfo.version,
+    getCompatVersion(),
     Services.appinfo.appBuildID
   );
 }
@@ -2341,7 +2370,34 @@ class Update {
       this._patches.push(patch);
     }
 
-    if (!this._patches.length && !update.hasAttribute("unsupported")) {
+    if (update.hasAttribute("unsupported")) {
+      this.unsupported = "true" == update.getAttribute("unsupported");
+    } else if (update.hasAttribute("minSupportedOSVersion")) {
+      let minOSVersion = update.getAttribute("minSupportedOSVersion");
+      try {
+        let osVersion = Services.sysinfo.getProperty("version");
+        this.unsupported = Services.vc.compare(osVersion, minOSVersion) < 0;
+      } catch (e) {}
+    }
+    if (
+      !this.unsupported &&
+      update.hasAttribute("minSupportedInstructionSet")
+    ) {
+      let minInstructionSet = update.getAttribute("minSupportedInstructionSet");
+      if (
+        ["MMX", "SSE", "SSE2", "SSE3", "SSE4A", "SSE4_1", "SSE4_2"].includes(
+          minInstructionSet
+        )
+      ) {
+        try {
+          this.unsupported = !Services.sysinfo.getProperty(
+            "has" + minInstructionSet
+          );
+        } catch (e) {}
+      }
+    }
+
+    if (!this._patches.length && !this.unsupported) {
       throw Components.Exception("", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
 
@@ -2379,9 +2435,7 @@ class Update {
         if (!isNaN(attr.value)) {
           this.promptWaitTime = parseInt(attr.value);
         }
-      } else if (attr.name == "unsupported") {
-        this.unsupported = attr.value == "true";
-      } else {
+      } else if (attr.name != "unsupported") {
         switch (attr.name) {
           case "appVersion":
           case "buildID":
@@ -2406,7 +2460,7 @@ class Update {
     }
 
     if (!this.previousAppVersion) {
-      this.previousAppVersion = Services.appinfo.version;
+      this.previousAppVersion = getCompatVersion();
     }
 
     if (!this.elevationFailure) {
@@ -2734,6 +2788,9 @@ export class UpdateService {
     switch (topic) {
       case "network:offline-status-changed":
         await this._offlineStatusChanged(data);
+        break;
+      case "torconnect:bootstrap-complete":
+        this._bootstrapComplete();
         break;
       case "quit-application":
         Services.obs.removeObserver(this, topic);
@@ -3227,6 +3284,35 @@ export class UpdateService {
     await this._attemptResume();
   }
 
+  _registerBootstrapObserver() {
+    if (this._registeredBootstrapObserver) {
+      LOG(
+        "UpdateService:_registerBootstrapObserver - observer already registered"
+      );
+      return;
+    }
+
+    LOG(
+      "UpdateService:_registerBootstrapObserver - waiting for tor bootstrap " +
+        "to be complete, then forcing another check"
+    );
+
+    Services.obs.addObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = true;
+  }
+
+  _bootstrapComplete() {
+    Services.obs.removeObserver(this, "torconnect:bootstrap-complete");
+    this._registeredBootstrapObserver = false;
+
+    LOG(
+      "UpdateService:_bootstrapComplete - bootstrapping complete, forcing " +
+        "another background check"
+    );
+
+    this._attemptResume();
+  }
+
   /**
    * See nsIUpdateService.idl
    */
@@ -3259,6 +3345,14 @@ export class UpdateService {
       if (this._pingSuffix) {
         AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_OFFLINE);
       }
+      return;
+    } else if (
+      update.errorCode === PROXY_SERVER_CONNECTION_REFUSED &&
+      (await _shouldRegisterBootstrapObserver())
+    ) {
+      // Register boostrap observer to try again, but only when we own the
+      // tor process.
+      this._registerBootstrapObserver();
       return;
     }
 
@@ -3657,18 +3751,20 @@ export class UpdateService {
 
       switch (update.type) {
         case "major":
-          if (!majorUpdate) {
+          if (!majorUpdate || majorUpdate.unsupported) {
             majorUpdate = update;
           } else if (
+            !update.unsupported &&
             vc.compare(majorUpdate.appVersion, update.appVersion) <= 0
           ) {
             majorUpdate = update;
           }
           break;
         case "minor":
-          if (!minorUpdate) {
+          if (!minorUpdate || minorUpdate.unsupported) {
             minorUpdate = update;
           } else if (
+            !update.unsupported &&
             vc.compare(minorUpdate.appVersion, update.appVersion) <= 0
           ) {
             minorUpdate = update;
@@ -4106,7 +4202,7 @@ export class UpdateService {
         "UpdateService:downloadUpdate - Skipping download of update since " +
           "it is for an earlier or same application version and build ID.\n" +
           "current application version: " +
-          Services.appinfo.version +
+          getCompatVersion() +
           "\n" +
           "update application version : " +
           update.appVersion +
@@ -5080,7 +5176,7 @@ export class CheckerService {
   }
 
   #getCanMigrate() {
-    if (AppConstants.platform != "win") {
+    if (AppConstants.platform != "win" || AppConstants.BASE_BROWSER_UPDATE) {
       return false;
     }
 
@@ -6540,6 +6636,7 @@ class Downloader {
     var state = this._patch.state;
     var shouldShowPrompt = false;
     var shouldRegisterOnlineObserver = false;
+    var shouldRegisterBootstrapObserver = false;
     var shouldRetrySoon = false;
     var deleteActiveUpdate = false;
     let migratedToReadyUpdate = false;
@@ -6670,7 +6767,23 @@ class Downloader {
       );
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
-
+    } else if (
+      status === PROXY_SERVER_CONNECTION_REFUSED &&
+      (await _shouldRegisterBootstrapObserver())
+    ) {
+      // Register a bootstrap observer to try again.
+      // The bootstrap observer will continue the incremental download by
+      // calling downloadUpdate on the active update which continues
+      // downloading the file from where it was.
+      LOG(
+        "Downloader:onStopRequest - not bootstrapped, register bootstrap observer: true"
+      );
+      AUSTLMY.pingDownloadCode(
+        this.isCompleteUpdate,
+        AUSTLMY.DWNLD_RETRY_OFFLINE
+      );
+      shouldRegisterBootstrapObserver = true;
+      deleteActiveUpdate = false;
       // Each of NS_ERROR_NET_TIMEOUT, ERROR_CONNECTION_REFUSED,
       // NS_ERROR_NET_RESET and NS_ERROR_DOCUMENT_NOT_CACHED can be returned
       // when disconnecting the internet while a download of a MAR is in
@@ -6793,7 +6906,11 @@ class Downloader {
 
     // Only notify listeners about the stopped state if we
     // aren't handling an internal retry.
-    if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
+    if (
+      !shouldRetrySoon &&
+      !shouldRegisterOnlineObserver &&
+      !shouldRegisterBootstrapObserver
+    ) {
       this.updateService.forEachDownloadListener(listener => {
         listener.onStopRequest(request, status);
       });
@@ -6992,6 +7109,9 @@ class Downloader {
     if (shouldRegisterOnlineObserver) {
       LOG("Downloader:onStopRequest - Registering online observer");
       this.updateService._registerOnlineObserver();
+    } else if (shouldRegisterBootstrapObserver) {
+      LOG("Downloader:onStopRequest - Registering bootstrap observer");
+      this.updateService._registerBootstrapObserver();
     } else if (shouldRetrySoon) {
       LOG("Downloader:onStopRequest - Retrying soon");
       this.updateService._consecutiveSocketErrors++;

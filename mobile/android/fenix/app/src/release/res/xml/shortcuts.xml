@@ -4,6 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
     <shortcut
         android:shortcutId="password_manager"
         android:enabled="true"
@@ -21,7 +22,7 @@
         android:shortcutShortLabel="@string/home_screen_shortcut_open_new_tab_2">
         <intent
             android:action="org.mozilla.fenix.OPEN_TAB"
-            android:targetPackage="org.mozilla.firefox"
+            android:targetPackage="org.torproject.torbrowser"
             android:targetClass="org.mozilla.fenix.IntentReceiverActivity" />
     </shortcut>
     <shortcut
@@ -31,7 +32,8 @@
         android:shortcutShortLabel="@string/home_screen_shortcut_open_new_private_tab_2">
         <intent
             android:action="org.mozilla.fenix.OPEN_PRIVATE_TAB"
-            android:targetPackage="org.mozilla.firefox"
+            android:targetPackage="org.torproject.torbrowser"
             android:targetClass="org.mozilla.fenix.IntentReceiverActivity" />
     </shortcut>
+    -->
 </shortcuts>

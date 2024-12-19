@@ -42,6 +42,9 @@ ChromeUtils.defineLazyGetter(lazy, "gWindowsAlertsService", () => {
     ?.QueryInterface(Ci.nsIWindowsAlertsService);
 });
 
+const FORK_VERSION_PREF =
+  "browser.startup.homepage_override.torbrowser.version";
+
 // One-time startup homepage override configurations
 const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
 const ONCE_PREF = "browser.startup.homepage_override.once";
@@ -116,7 +119,7 @@ const OVERRIDE_NEW_BUILD_ID = 3;
  *       if this is the first run with a new profile.
  *     OVERRIDE_NEW_MSTONE
  *       if this is the first run with a build with a different Gecko milestone
- *       (i.e. right after an upgrade).
+ *       or fork version (i.e. right after an upgrade).
  *     OVERRIDE_NEW_BUILD_ID
  *       if this is the first run with a new build ID of the same Gecko
  *       milestone (i.e. after a nightly upgrade).
@@ -134,6 +137,8 @@ function needHomepageOverride(updateMilestones = true) {
   }
 
   var mstone = Services.appinfo.platformVersion;
+
+  var savedForkVersion = Services.prefs.getCharPref(FORK_VERSION_PREF, null);
 
   var savedBuildID = Services.prefs.getCharPref(
     "browser.startup.homepage_override.buildID",
@@ -163,8 +168,26 @@ function needHomepageOverride(updateMilestones = true) {
         "browser.startup.homepage_override.buildID",
         buildID
       );
+      Services.prefs.setCharPref(
+        FORK_VERSION_PREF,
+        AppConstants.BASE_BROWSER_VERSION
+      );
     }
     return savedmstone ? OVERRIDE_NEW_MSTONE : OVERRIDE_NEW_PROFILE;
+  }
+
+  if (AppConstants.BASE_BROWSER_VERSION != savedForkVersion) {
+    if (updateMilestones) {
+      Services.prefs.setCharPref(
+        "browser.startup.homepage_override.buildID",
+        buildID
+      );
+      Services.prefs.setCharPref(
+        FORK_VERSION_PREF,
+        AppConstants.BASE_BROWSER_VERSION
+      );
+    }
+    return OVERRIDE_NEW_MSTONE;
   }
 
   if (buildID != savedBuildID) {
@@ -697,6 +720,23 @@ nsBrowserContentHandler.prototype = {
       }
     }
 
+    // Retrieve the home page early so we can compare it against about:tor
+    // to decide whether or not we need an override page (second tab) after
+    // an update was applied.
+    var startPage = "";
+    try {
+      var choice = Services.prefs.getIntPref("browser.startup.page");
+      if (choice == 1 || choice == 3) {
+        startPage = lazy.HomePage.get();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (startPage == "about:blank") {
+      startPage = "";
+    }
+
     var override;
     var overridePage = "";
     var additionalPage = "";
@@ -715,6 +755,10 @@ nsBrowserContentHandler.prototype = {
         "browser.startup.homepage_override.buildID",
         "unknown"
       );
+
+      // We do the same for the fork version.
+      let old_forkVersion = Services.prefs.getCharPref(FORK_VERSION_PREF, null);
+
       override = needHomepageOverride();
       if (override != OVERRIDE_NONE) {
         switch (override) {
@@ -795,9 +839,10 @@ nsBrowserContentHandler.prototype = {
               }
             }
 
+            let old_version = old_forkVersion ? old_forkVersion : old_mstone;
             if (
               update &&
-              Services.vc.compare(update.appVersion, old_mstone) > 0
+              Services.vc.compare(update.appVersion, old_version) > 0
             ) {
               overridePage = getPostUpdateOverridePage(
                 update,
@@ -827,6 +872,31 @@ nsBrowserContentHandler.prototype = {
             }
 
             overridePage = overridePage.replace("%OLD_VERSION%", old_mstone);
+            overridePage = overridePage.replace(
+              "%OLD_BASE_BROWSER_VERSION%",
+              old_forkVersion
+            );
+            if (overridePage && AppConstants.BASE_BROWSER_UPDATE) {
+              // Tor Browser: Instead of opening the post-update "override page"
+              // directly, we ensure that about:tor will be opened, which should
+              // notify the user that their browser was updated.
+              //
+              // The overridePage comes from the openURL attribute within the
+              // updates.xml file or, if no showURL action is present, from the
+              // startup.homepage_override_url pref.
+              Services.prefs.setCharPref(
+                "torbrowser.post_update.url",
+                overridePage
+              );
+              Services.prefs.setBoolPref(
+                "torbrowser.post_update.shouldNotify",
+                true
+              );
+              // If the user's homepage is about:tor, we will inform them
+              // about the update on that page; otherwise, we arrange to
+              // open about:tor in a secondary tab.
+              overridePage = startPage === "about:tor" ? "" : "about:tor";
+            }
             break;
           }
           case OVERRIDE_NEW_BUILD_ID:
@@ -899,20 +969,6 @@ nsBrowserContentHandler.prototype = {
       } else {
         overridePage = additionalPage;
       }
-    }
-
-    var startPage = "";
-    try {
-      var choice = prefb.getIntPref("browser.startup.page");
-      if (choice == 1 || choice == 3) {
-        startPage = lazy.HomePage.get();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    if (startPage == "about:blank") {
-      startPage = "";
     }
 
     let skipStartPage =

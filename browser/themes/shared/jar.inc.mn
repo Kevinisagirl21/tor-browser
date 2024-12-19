@@ -28,6 +28,8 @@
   skin/classic/browser/sidebar.css                             (../shared/sidebar.css)
   skin/classic/browser/toolbarbuttons.css                      (../shared/toolbarbuttons.css)
   skin/classic/browser/toolbarbutton-icons.css                 (../shared/toolbarbutton-icons.css)
+  skin/classic/browser/tor-branding.css                        (../shared/tor-branding.css)
+  skin/classic/browser/tor-urlbar-button.css                   (../shared/tor-urlbar-button.css)
   skin/classic/browser/urlbar-dynamic-results.css              (../shared/urlbar-dynamic-results.css)
   skin/classic/browser/urlbar-searchbar.css                    (../shared/urlbar-searchbar.css)
   skin/classic/browser/urlbarView.css                          (../shared/urlbarView.css)
@@ -284,3 +286,7 @@
   skin/classic/browser/weather/night-partly-cloudy-with-showers.svg (../shared/weather/night-partly-cloudy-with-showers.svg)
   skin/classic/browser/weather/night-partly-cloudy-with-thunderstorms.svg (../shared/weather/night-partly-cloudy-with-thunderstorms.svg)
   skin/classic/browser/weather/night-mostly-cloudy-with-flurries.svg (../shared/weather/night-mostly-cloudy-with-flurries.svg)
+
+  skin/classic/browser/new_identity.svg                        (../shared/icons/new_identity.svg)
+
+  skin/classic/browser/new_circuit.svg                         (../shared/icons/new_circuit.svg)

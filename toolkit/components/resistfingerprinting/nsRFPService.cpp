@@ -904,12 +904,17 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   // https://developer.mozilla.org/en-US/docs/Web/API/NavigatorID/userAgent
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
 
+  const bool spoofOs =
+      isForHTTPHeader &&
+      Preferences::GetBool(
+          "privacy.resistFingerprinting.spoofOsInUserAgentHeader", true);
+
   // These magic numbers are the lengths of the UA string literals below.
   // Assume three-digit Firefox version numbers so we have room to grow.
   size_t preallocatedLength =
       13 +
-      (isForHTTPHeader ? mozilla::ArrayLength(SPOOFED_HTTP_UA_OS)
-                       : mozilla::ArrayLength(SPOOFED_UA_OS)) -
+      (spoofOs ? mozilla::ArrayLength(SPOOFED_HTTP_UA_OS)
+               : mozilla::ArrayLength(SPOOFED_UA_OS)) -
       1 + 5 + 3 + 10 + mozilla::ArrayLength(LEGACY_UA_GECKO_TRAIL) - 1 + 9 + 3 +
       2;
   userAgent.SetCapacity(preallocatedLength);
@@ -917,7 +922,7 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   // "Mozilla/5.0 (%s; rv:%d.0) Gecko/%d Firefox/%d.0"
   userAgent.AssignLiteral("Mozilla/5.0 (");
 
-  if (isForHTTPHeader) {
+  if (spoofOs) {
     userAgent.AppendLiteral(SPOOFED_HTTP_UA_OS);
   } else {
     userAgent.AppendLiteral(SPOOFED_UA_OS);
@@ -2278,4 +2283,37 @@ Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   }
 
   return result;
+}
+
+/* static */
+uint16_t nsRFPService::ViewportSizeToAngle(int32_t aWidth, int32_t aHeight) {
+  // Note that, if screen is square, we return portrait-primary.
+  // That's why we use > on non-android and >= on Android.
+#ifdef MOZ_WIDGET_ANDROID
+  bool neutral = aHeight >= aWidth;
+#else
+  bool neutral = aWidth > aHeight;
+#endif
+  if (neutral) {
+    return 0;
+  }
+  return 90;
+}
+
+/* static */
+dom::OrientationType nsRFPService::ViewportSizeToOrientationType(
+    int32_t aWidth, int32_t aHeight) {
+  if (aWidth > aHeight) {
+    return dom::OrientationType::Landscape_primary;
+  }
+  return dom::OrientationType::Portrait_primary;
+}
+
+/* static */
+dom::OrientationType nsRFPService::GetDefaultOrientationType() {
+#ifdef MOZ_WIDGET_ANDROID
+  return dom::OrientationType::Portrait_primary;
+#else
+  return dom::OrientationType::Landscape_primary;
+#endif
 }

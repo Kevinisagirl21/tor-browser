@@ -20,7 +20,7 @@ import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompletePro
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import mozilla.components.browser.engine.gecko.cookiebanners.GeckoCookieBannersStorage
-import mozilla.components.browser.engine.gecko.cookiebanners.ReportSiteDomainsRepository
+//import mozilla.components.browser.engine.gecko.cookiebanners.ReportSiteDomainsRepository
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.permission.GeckoSitePermissionsStorage
 import mozilla.components.browser.icons.BrowserIcons
@@ -58,21 +58,21 @@ import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedTabsStorage
 import mozilla.components.feature.search.ext.createApplicationSearchEngine
-import mozilla.components.feature.search.middleware.AdsTelemetryMiddleware
+// import mozilla.components.feature.search.middleware.AdsTelemetryMiddleware
 import mozilla.components.feature.search.middleware.SearchExtraParams
 import mozilla.components.feature.search.middleware.SearchMiddleware
 import mozilla.components.feature.search.region.RegionMiddleware
-import mozilla.components.feature.search.telemetry.SerpTelemetryRepository
-import mozilla.components.feature.search.telemetry.ads.AdsTelemetry
-import mozilla.components.feature.search.telemetry.incontent.InContentTelemetry
+// import mozilla.components.feature.search.telemetry.SerpTelemetryRepository
+// import mozilla.components.feature.search.telemetry.ads.AdsTelemetry
+// import mozilla.components.feature.search.telemetry.incontent.InContentTelemetry
 import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
-import mozilla.components.feature.webcompat.WebCompatFeature
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
+// import mozilla.components.feature.webcompat.WebCompatFeature
+// import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.contile.ContileTopSitesProvider
@@ -156,7 +156,9 @@ class Core(
             cookieBannerHandlingDetectOnlyMode = context.settings().shouldEnableCookieBannerDetectOnly,
             cookieBannerHandlingGlobalRules = context.settings().shouldEnableCookieBannerGlobalRules,
             cookieBannerHandlingGlobalRulesSubFrames = context.settings().shouldEnableCookieBannerGlobalRulesSubFrame,
-            emailTrackerBlockingPrivateBrowsing = true,
+            emailTrackerBlockingPrivateBrowsing = false,
+            torSecurityLevel = context.settings().torSecurityLevel().intRepresentation,
+            spoofEnglish = context.settings().spoofEnglish,
         )
 
         GeckoEngine(
@@ -164,7 +166,7 @@ class Core(
             defaultSettings,
             geckoRuntime,
         ).also {
-            WebCompatFeature.install(it)
+            // WebCompatFeature.install(it)
 
             /**
              * There are some issues around localization to be resolved, as well as questions around
@@ -172,9 +174,11 @@ class Core(
              * disabled in Fenix Release builds for now.
              * This is consistent with both Fennec and Firefox Desktop.
              */
-            if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
-                WebCompatReporterFeature.install(it, "fenix")
-            }
+            // if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
+            //     WebCompatReporterFeature.install(it, "fenix")
+            // }
+
+            TorBrowserFeatures.install(context, it)
         }
     }
 
@@ -210,14 +214,14 @@ class Core(
         )
     }
 
-    private val Context.dataStore by preferencesDataStore(
-        name = ReportSiteDomainsRepository.REPORT_SITE_DOMAINS_REPOSITORY_NAME,
-    )
+//    private val Context.dataStore by preferencesDataStore(
+//        name = ReportSiteDomainsRepository.REPORT_SITE_DOMAINS_REPOSITORY_NAME,
+//    )
 
     val cookieBannersStorage by lazyMonitored {
         GeckoCookieBannersStorage(
             geckoRuntime,
-            ReportSiteDomainsRepository(context.dataStore),
+//            ReportSiteDomainsRepository(context.dataStore),
         )
     }
 
@@ -238,7 +242,7 @@ class Core(
     }
 
     val applicationSearchEngines: List<SearchEngine> by lazyMonitored {
-        listOf(
+        listOfNotNull(
             createApplicationSearchEngine(
                 id = BOOKMARKS_SEARCH_ENGINE_ID,
                 name = context.getString(R.string.library_bookmarks),
@@ -251,12 +255,16 @@ class Core(
                 url = "",
                 icon = getDrawable(context, R.drawable.ic_tabs_search)?.toBitmap()!!,
             ),
-            createApplicationSearchEngine(
-                id = HISTORY_SEARCH_ENGINE_ID,
-                name = context.getString(R.string.library_history),
-                url = "",
-                icon = getDrawable(context, R.drawable.ic_history_search)?.toBitmap()!!,
-            ),
+            if (!context.settings().shouldDisableNormalMode) {
+                createApplicationSearchEngine(
+                    id = HISTORY_SEARCH_ENGINE_ID,
+                    name = context.getString(R.string.library_history),
+                    url = "",
+                    icon = getDrawable(context, R.drawable.ic_history_search)?.toBitmap()!!,
+                )
+            } else {
+                null
+            },
         )
     }
 
@@ -292,7 +300,7 @@ class Core(
                 ),
                 RecordingDevicesMiddleware(context, context.components.notificationsDelegate),
                 PromptMiddleware(),
-                AdsTelemetryMiddleware(adsTelemetry),
+                // AdsTelemetryMiddleware(adsTelemetry),
                 LastMediaAccessMiddleware(),
                 HistoryMetadataMiddleware(historyMetadataService),
                 SessionPrioritizationMiddleware(),
@@ -322,6 +330,7 @@ class Core(
             // Install the "icons" WebExtension to automatically load icons for every visited website.
             icons.install(engine, this)
 
+/*
             CoroutineScope(Dispatchers.Main).launch {
                 val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
                 val providerList = withContext(Dispatchers.IO) {
@@ -341,12 +350,13 @@ class Core(
                 // Install the "cookies" WebExtension and tracks user interaction with SERPs.
                 searchTelemetry.install(engine, this@apply, providerList)
             }
+*/
 
             WebNotificationFeature(
                 context,
                 engine,
                 icons,
-                R.drawable.ic_status_logo,
+                R.drawable.mozac_lib_crash_notification,
                 permissionStorage.permissionsStorage,
                 IntentReceiverActivity::class.java,
                 notificationsDelegate = context.components.notificationsDelegate,
@@ -386,13 +396,13 @@ class Core(
         context.components.analytics.metrics
     }
 
-    val adsTelemetry by lazyMonitored {
-        AdsTelemetry()
-    }
+    // val adsTelemetry by lazyMonitored {
+    //     AdsTelemetry()
+    // }
 
-    val searchTelemetry by lazyMonitored {
-        InContentTelemetry()
-    }
+    // val searchTelemetry by lazyMonitored {
+    //     InContentTelemetry()
+    // }
 
     /**
      * Shortcut component for managing shortcuts on the device home screen.

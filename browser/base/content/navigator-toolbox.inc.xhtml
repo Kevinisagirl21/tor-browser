@@ -104,6 +104,12 @@
                      oncommand="ContentAnalysis.showPanel(this, PanelUI);"
                      class="toolbarbutton-1 content-analysis-indicator-icon"/>
 
+      <html:div id="tor-connect-titlebar-status" role="status">
+        <html:img alt=""
+                  src="chrome://global/content/torconnect/tor-not-connected-to-connected-animated.svg" />
+        <html:span id="tor-connect-titlebar-status-label"></html:span>
+      </html:div>
+
 #include titlebar-items.inc.xhtml
 
     </toolbar>
@@ -180,6 +186,17 @@
                  align="center"
                  collapsed="true">
                 <image id="remote-control-icon"/>
+            </box>
+            <!-- We follow the surrounding code and use a
+               - <xul:box role="button"> rather than a more semantic
+               - <html:button>, <xul:button> or <xul:toolbarbutton> -->
+            <box id="tor-circuit-button"
+                 role="button"
+                 class="identity-box-button"
+                 align="center"
+                 data-l10n-id="tor-circuit-urlbar-button"
+                 hidden="true">
+              <image id="tor-circuit-button-icon"/>
             </box>
             <box class="chromeclass-toolbar-additional urlbar-search-button"/>
             <!-- Use onclick instead of normal popup= syntax since the popup
@@ -275,6 +292,7 @@
                        data-l10n-id="urlbar-indexed-db-notification-anchor"/>
                 <image id="password-notification-icon" class="notification-anchor-icon" role="button"
                        data-l10n-id="urlbar-password-notification-anchor"/>
+#include ../../components/onionservices/content/authNotificationIcon.inc.xhtml
                 <image id="web-notifications-notification-icon" class="notification-anchor-icon desktop-notification-icon" role="button"
                        data-l10n-id="urlbar-web-notification-anchor"/>
                 <image id="webRTC-shareDevices-notification-icon" class="notification-anchor-icon camera-icon" role="button"
@@ -380,6 +398,8 @@
                 <image class="urlbar-icon" id="translations-button-circle-arrows" />
                 <html:span id="translations-button-locale" aria-hidden="true" />
               </hbox>
+              <!-- #shopping-sidebar-button should remain hidden.
+                 - tor-browser#42831. -->
               <hbox id="shopping-sidebar-button"
                   class="urlbar-page-action"
                   role="button"
@@ -410,6 +430,15 @@
                        class="urlbar-icon"/>
               </hbox>
             </hbox>
+
+            <hbox id="tor-connect-urlbar-button"
+                  role="button"
+                  class="tor-button tor-urlbar-button"
+                  hidden="true">
+              <label id="tor-connect-urlbar-button-label"/>
+            </hbox>
+
+#include ../../components/onionservices/content/onionlocation-urlbar.inc.xhtml
           </hbox>
         </hbox>
         <toolbartabstop/>
@@ -447,6 +476,8 @@
           <image class="toolbarbutton-animatable-image" id="downloads-indicator-finish-image"/>
         </box>
       </toolbarbutton>
+
+#include ../../components/securitylevel/content/securityLevelButton.inc.xhtml
 
       <toolbarbutton id="fxa-toolbar-menu-button" class="toolbarbutton-1 chromeclass-toolbar-additional subviewbutton-nav"
                      badged="true"
@@ -586,6 +617,13 @@
                    ondrop="newWindowButtonObserver.onDrop(event)"
                    ondragover="newWindowButtonObserver.onDragOver(event)"
                    ondragenter="newWindowButtonObserver.onDragOver(event)"/>
+
+    <toolbarbutton id="new-identity-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   data-l10n-id="toolbar-new-identity"/>
+
+    <toolbarbutton id="new-circuit-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
+                   data-l10n-id="toolbar-new-tor-circuit"
+                   oncommand="TorDomainIsolator.newCircuitForBrowser(gBrowser.selectedBrowser);"/>
 
     <toolbarbutton id="fullscreen-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
                    observes="View:FullScreen"

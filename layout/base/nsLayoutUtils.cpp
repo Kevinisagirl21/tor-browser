@@ -7765,28 +7765,23 @@ size_t nsLayoutUtils::SizeOfTextRunsForFrames(nsIFrame* aFrame,
 
 /* static */
 void nsLayoutUtils::RecomputeSmoothScrollDefault() {
-  if (nsContentUtils::ShouldResistFingerprinting(
-          "We use the global RFP pref to maintain consistent scroll behavior "
-          "in the browser.",
-          RFPTarget::CSSPrefersReducedMotion)) {
-    // When resist fingerprinting is enabled, we should not default disable
-    // smooth scrolls when the user prefers-reduced-motion to avoid leaking
-    // the value of the OS pref to sites.
-    Preferences::SetBool(StaticPrefs::GetPrefName_general_smoothScroll(), true,
-                         PrefValueKind::Default);
-  } else {
-    // We want prefers-reduced-motion to determine the default
-    // value of the general.smoothScroll pref. If the user
-    // changed the pref we want to respect the change.
-    Preferences::SetBool(
-        StaticPrefs::GetPrefName_general_smoothScroll(),
-        !LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0),
-        PrefValueKind::Default);
-  }
+  // We want prefers-reduced-motion to determine the default
+  // value of the general.smoothScroll pref. If the user
+  // changed the pref we want to respect the change.
+  Preferences::SetBool(
+      StaticPrefs::GetPrefName_general_smoothScroll(),
+      !LookAndFeel::GetInt(LookAndFeel::IntID::PrefersReducedMotion, 0),
+      PrefValueKind::Default);
 }
 
 /* static */
 bool nsLayoutUtils::IsSmoothScrollingEnabled() {
+  if (nsContentUtils::ShouldResistFingerprinting(
+          "We use the global RFP pref to maintain consistent scroll behavior "
+          "in the browser.",
+          RFPTarget::CSSPrefersReducedMotion)) {
+    return true;
+  }
   return StaticPrefs::general_smoothScroll();
 }
 
@@ -9720,7 +9715,9 @@ static void GetSpoofedSystemFontForRFP(LookAndFeel::FontID aFontID,
   // In general, Linux uses some sans-serif, but its size can vary between
   // 12px and 16px. We chose 15px because it is what Firefox is doing for the
   // UI font-size.
-  aName = u"sans-serif"_ns;
+  // tor-browser#43141: Hardcode Arimo in case our custom fontconfig is
+  // missing.
+  aName = u"Arimo"_ns;
   aStyle.size = 15;
 #else
 #  error "Unknown platform"

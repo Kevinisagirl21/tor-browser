@@ -53,6 +53,8 @@ const val MAX_URI_LENGTH = 25000
 
 private const val FILE_PREFIX = "file://"
 private const val MAX_VALID_PORT = 65_535
+private const val SPACE = " "
+private const val UNDERSCORE = "_"
 
 /**
  * Shortens URLs to be more user friendly.
@@ -244,6 +246,15 @@ fun String.urlContainsQueryParameters(searchParameters: String): Boolean = try {
 }
 
 /**
+ * Returns whether the string is an .onion URL.
+ */
+fun String.isOnionUrl(): Boolean = try {
+    URL(this).host.endsWith(".onion")
+} catch (e: MalformedURLException) {
+    false
+}
+
+/**
  * Compares 2 URLs and returns true if they have the same origin,
  * which means: same protocol, same host, same port.
  * It will return false if either this or [other] is not a valid URL.
@@ -307,7 +318,9 @@ fun String.sanitizeFileName(): String {
         file.name.replace("\\.\\.+".toRegex(), ".")
     } else {
         file.name.replace(".", "")
-    }.replaceEscapedCharacters()
+    }.replaceContinuousSpaces()
+        .replaceEscapedCharacters()
+        .trim()
 }
 
 /**
@@ -315,8 +328,16 @@ fun String.sanitizeFileName(): String {
  * and is correctly displayed.
  */
 private fun String.replaceEscapedCharacters(): String {
-    val controlCharactersRegex = "[\\x00-\\x13/*\"?<>:|\\\\]".toRegex()
-    return replace(controlCharactersRegex, "_")
+    val escapedCharactersRegex = "[\\x00-\\x13*\"?<>:|\\\\]".toRegex()
+    return replace(escapedCharactersRegex, UNDERSCORE)
+}
+
+/**
+ * Replaces continuous spaces with a single space.
+ */
+private fun String.replaceContinuousSpaces(): String {
+    val escapedCharactersRegex = "[\\p{Z}\\s]+".toRegex()
+    return replace(escapedCharactersRegex, SPACE)
 }
 
 /**

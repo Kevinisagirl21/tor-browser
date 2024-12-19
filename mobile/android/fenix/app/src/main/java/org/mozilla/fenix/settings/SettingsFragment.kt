@@ -13,7 +13,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
@@ -23,6 +25,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -38,6 +41,7 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.feature.addons.ui.AddonFilePicker
 import mozilla.components.service.glean.private.NoExtras
+import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.BrowserDirection
@@ -50,6 +54,7 @@ import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ReleaseChannel
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.databinding.AmoCollectionOverrideDialogBinding
 import org.mozilla.fenix.ext.application
@@ -60,15 +65,21 @@ import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.gecko.GeckoProvider
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.ProfilerViewModel
 import org.mozilla.fenix.settings.account.AccountUiView
+import org.mozilla.fenix.tor.QuickStartPreference
+import org.mozilla.fenix.tor.SecurityLevel
+import org.mozilla.fenix.tor.TorBridgeTransportConfig
+import org.mozilla.fenix.tor.TorEvents
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.geckoview.BuildConfig
 import kotlin.system.exitProcess
 import org.mozilla.fenix.GleanMetrics.Settings as SettingsMetrics
 
 @Suppress("LargeClass", "TooManyFunctions")
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), UserInteractionHandler {
 
     private val args by navArgs<SettingsFragmentArgs>()
     private lateinit var accountUiView: AccountUiView
@@ -166,6 +177,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        //setPreferencesFromResource(R.xml.tor_network_settings_preferences, rootKey)
+        //setupConnectionPreferences()
         setPreferencesFromResource(R.xml.preferences, rootKey)
     }
 
@@ -173,11 +186,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
 
-        // Use nimbus to set the title, and a trivial addition
-        val nimbusValidation = FxNimbus.features.nimbusValidation.value()
+        // IN TOR BROWSER: We don't talk about Nimbus!
+        // ~Use nimbus to set the title, and a trivial addition~
+        // val nimbusValidation = FxNimbus.features.nimbusValidation.value()
 
-        val title = nimbusValidation.settingsTitle
-        val suffix = nimbusValidation.settingsPunctuation
+        // val title = nimbusValidation.settingsTitle
+        // val suffix = nimbusValidation.settingsPunctuation
+        val title = getString(R.string.settings_title)
+        val suffix = ""
 
         showToolbar("$title$suffix")
 
@@ -186,7 +202,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         update(shouldUpdateAccountUIState = !creatingFragment)
 
         requireView().findViewById<RecyclerView>(R.id.recycler_view)
-            ?.hideInitialScrollBar(viewLifecycleOwner.lifecycleScope)
+            .also {
+                it?.hideInitialScrollBar(viewLifecycleOwner.lifecycleScope)
+                // Prevent disabled settings from having a collapsing animation on open
+                it?.disableHidingAnimation()
+            }
 
         args.preferenceToScrollTo?.let {
             scrollToPreference(it)
@@ -233,20 +253,26 @@ class SettingsFragment : PreferenceFragmentCompat() {
             getString(R.string.delete_browsing_data_quit_off)
         }
 
-        val tabSettingsPreference =
-            requirePreference<Preference>(R.string.pref_key_tabs)
-        tabSettingsPreference.summary = context?.settings()?.getTabTimeoutString()
-
-        val autofillPreference = requirePreference<Preference>(R.string.pref_key_credit_cards)
-        autofillPreference.title = if (settings.addressFeature) {
-            getString(R.string.preferences_autofill)
-        } else {
-            getString(R.string.preferences_credit_cards_2)
+        if (!settings.shouldDisableNormalMode) {
+            val tabSettingsPreference =
+                requirePreference<Preference>(R.string.pref_key_tabs)
+            tabSettingsPreference.summary = context?.settings()?.getTabTimeoutString()
         }
 
-        val openLinksInAppsSettingsPreference =
-            requirePreference<Preference>(R.string.pref_key_open_links_in_apps)
-        openLinksInAppsSettingsPreference.summary = context?.settings()?.getOpenLinksInAppsString()
+//        val autofillPreference = requirePreference<Preference>(R.string.pref_key_credit_cards)
+//        autofillPreference.title = if (settings.addressFeature) {
+//            getString(R.string.preferences_autofill)
+//        } else {
+//            getString(R.string.preferences_credit_cards_2)
+//        }
+
+//        val openLinksInAppsSettingsPreference =
+//            requirePreference<Preference>(R.string.pref_key_open_links_in_apps)
+//        openLinksInAppsSettingsPreference.summary = context?.settings()?.getOpenLinksInAppsString()
+
+        // Hide "Delete browsing data on quit" when in Private Browsing-only mode
+        deleteBrowsingDataPreference.isVisible =
+            !deleteBrowsingDataPreference.context.settings().shouldDisableNormalMode
 
         setupPreferences()
 
@@ -294,9 +320,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SettingsFragmentDirections.actionSettingsFragmentToTabsSettingsFragment()
             }
 
-            resources.getString(R.string.pref_key_home) -> {
-                SettingsFragmentDirections.actionSettingsFragmentToHomeSettingsFragment()
-            }
+//            resources.getString(R.string.pref_key_home) -> {
+//                SettingsFragmentDirections.actionSettingsFragmentToHomeSettingsFragment()
+//            }
 
             resources.getString(R.string.pref_key_customize) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToCustomizationFragment()
@@ -307,10 +333,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SettingsFragmentDirections.actionSettingsFragmentToSavedLoginsAuthFragment()
             }
 
-            resources.getString(R.string.pref_key_credit_cards) -> {
-                SettingsMetrics.autofill.record()
-                SettingsFragmentDirections.actionSettingsFragmentToAutofillSettingFragment()
-            }
+//            resources.getString(R.string.pref_key_credit_cards) -> {
+//                SettingsMetrics.autofill.record()
+//                SettingsFragmentDirections.actionSettingsFragmentToAutofillSettingFragment()
+//            }
 
             resources.getString(R.string.pref_key_accessibility) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToAccessibilityFragment()
@@ -328,6 +354,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             /* Privacy and security preferences */
             resources.getString(R.string.pref_key_private_browsing) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToPrivateBrowsingFragment()
+            }
+
+            resources.getString(R.string.pref_key_tor_security_level_settings) -> {
+                SettingsFragmentDirections.actionSettingsFragmentToTorSecurityLevelFragment()
             }
 
             resources.getString(R.string.pref_key_https_only_settings) -> {
@@ -415,9 +445,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 null
             }
 
-            resources.getString(R.string.pref_key_open_links_in_apps) -> {
-                SettingsFragmentDirections.actionSettingsFragmentToOpenLinksInAppsFragment()
-            }
+//            resources.getString(R.string.pref_key_open_links_in_apps) -> {
+//                SettingsFragmentDirections.actionSettingsFragmentToOpenLinksInAppsFragment()
+//            }
 
             resources.getString(R.string.pref_key_sync_debug) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToSyncDebugFragment()
@@ -441,6 +471,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             resources.getString(R.string.pref_key_about) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToAboutFragment()
+            }
+
+            resources.getString(R.string.pref_key_donate) -> {
+                (activity as HomeActivity).openToBrowserAndLoad(
+                    searchTermOrURL = SupportUtils.DONATE_URL,
+                    newTab = true,
+                    from = BrowserDirection.FromSettings
+                )
+                null
             }
 
             // Only displayed when secret settings are enabled
@@ -480,6 +519,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val preferenceRemoteDebugging = findPreference<Preference>(debuggingKey)
         val preferenceMakeDefaultBrowser =
             requirePreference<DefaultBrowserPreference>(R.string.pref_key_make_default_browser)
+
+        requirePreference<Preference>(R.string.pref_key_allow_screenshots_in_private_mode).apply {
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+                override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                    if (newValue == false) {
+                        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                    return super.onPreferenceChange(preference, newValue)
+                }
+            }
+        }
 
         if (!Config.channel.isReleased) {
             preferenceLeakCanary?.setOnPreferenceChangeListener { _, newValue ->
@@ -527,11 +579,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setupAmoCollectionOverridePreference(requireContext().settings())
         setupGeckoLogsPreference(requireContext().settings())
         setupAllowDomesticChinaFxaServerPreference()
+        setupSecurityLevelPreference()
         setupHttpsOnlyPreferences()
         setupNotificationPreference()
         setupSearchPreference()
         setupHomepagePreference()
         setupTrackingProtectionPreference()
+        setupConnectionPreferences()
     }
 
     /**
@@ -566,6 +620,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    private fun RecyclerView.disableHidingAnimation() {
+        this.setItemAnimator(null)
+        this.setLayoutAnimation(null)
+    }
     private fun updateFxAAllowDomesticChinaServerMenu() {
         val settings = requireContext().settings()
         val preferenceAllowDomesticChinaServer =
@@ -667,20 +725,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     @VisibleForTesting
     internal fun setupHomepagePreference() {
-        with(requirePreference<Preference>(R.string.pref_key_home)) {
-            summary = when {
-                context.settings().alwaysOpenTheHomepageWhenOpeningTheApp ->
-                    getString(R.string.opening_screen_homepage_summary)
-
-                context.settings().openHomepageAfterFourHoursOfInactivity ->
-                    getString(R.string.opening_screen_after_four_hours_of_inactivity_summary)
-
-                context.settings().alwaysOpenTheLastTabWhenOpeningTheApp ->
-                    getString(R.string.opening_screen_last_tab_summary)
-
-                else -> null
-            }
-        }
+//        with(requirePreference<Preference>(R.string.pref_key_home)) {
+//            summary = when {
+//                context.settings().alwaysOpenTheHomepageWhenOpeningTheApp ->
+//                    getString(R.string.opening_screen_homepage_summary)
+//
+//                context.settings().openHomepageAfterFourHoursOfInactivity ->
+//                    getString(R.string.opening_screen_after_four_hours_of_inactivity_summary)
+//
+//                context.settings().alwaysOpenTheLastTabWhenOpeningTheApp ->
+//                    getString(R.string.opening_screen_last_tab_summary)
+//
+//                else -> null
+//            }
+//        }
     }
 
     @VisibleForTesting
@@ -704,9 +762,46 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    internal fun setupConnectionPreferences() {
+        // will be needed for phase2
+        //val torController = requireContext().components.torController
+
+        requirePreference<Preference>(R.string.pref_key_tor_network_settings_bridge_config).apply {
+            setOnPreferenceClickListener {
+                val directions =
+                    SettingsFragmentDirections
+                        .actionSettingsFragmentToTorBridgeConfigFragment()
+                requireView().findNavController().navigate(directions)
+                true
+            }
+        }
+
+        requirePreference<QuickStartPreference>(R.string.pref_key_quick_start).apply {
+            setOnPreferenceClickListener {
+                context.components.torController.quickstart = !context.components.torController.quickstart
+                updateSwitch()
+                true
+            }
+        }
+
+        requirePreference<Preference>(R.string.pref_key_use_html_connection_ui).apply {
+            onPreferenceChangeListener = object : SharedPreferenceUpdater() {}
+            isVisible = Config.channel != ReleaseChannel.Release
+        }
+
+        requirePreference<Preference>(R.string.pref_key_tor_logs).apply {
+            setOnPreferenceClickListener {
+                val directions =
+                    SettingsFragmentDirections.actionSettingsFragmentToTorLogsFragment()
+                requireView().findNavController().navigate(directions)
+                true
+            }
+        }
+    }
+
     @VisibleForTesting
     internal fun setupCookieBannerPreference() {
-        FxNimbus.features.cookieBanners.recordExposure()
+        // FxNimbus.features.cookieBanners.recordExposure()
         if (context?.settings()?.shouldShowCookieBannerUI == false) return
         with(requirePreference<SwitchPreference>(R.string.pref_key_cookie_banner_private_mode)) {
             isVisible = context.settings().shouldShowCookieBannerUI
@@ -745,6 +840,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     @VisibleForTesting
+    internal fun setupSecurityLevelPreference() {
+        val securityLevelPreference =
+            requirePreference<Preference>(R.string.pref_key_tor_security_level_settings)
+        securityLevelPreference.summary = context?.settings()?.torSecurityLevel()?.let {
+            when (it) {
+                SecurityLevel.STANDARD -> getString(R.string.tor_security_level_standard_option)
+                SecurityLevel.SAFER -> getString(R.string.tor_security_level_safer_option)
+                SecurityLevel.SAFEST -> getString(R.string.tor_security_level_safest_option)
+            }
+        }
+    }
+
+    @VisibleForTesting
     internal fun setupHttpsOnlyPreferences() {
         val httpsOnlyPreference =
             requirePreference<Preference>(R.string.pref_key_https_only_settings)
@@ -776,5 +884,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         private const val SCROLL_INDICATOR_DELAY = 10L
         private const val FXA_SYNC_OVERRIDE_EXIT_DELAY = 2000L
         private const val AMO_COLLECTION_OVERRIDE_EXIT_DELAY = 3000L
+    }
+
+    override fun onBackPressed(): Boolean {
+        // If tor is already bootstrapped, skip going back to [TorConnectionAssistFragment] and instead go directly to [HomeFragment]
+        if (requireComponents.torController.isBootstrapped) {
+            val navController = findNavController()
+            if (navController.previousBackStackEntry?.destination?.id == R.id.torConnectionAssistFragment) {
+                navController.navigate(
+                    SettingsFragmentDirections.actionGlobalHomeFragment(),
+                )
+                return true
+            }
+        }
+        return false
     }
 }

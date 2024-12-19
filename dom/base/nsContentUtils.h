@@ -407,6 +407,10 @@ class nsContentUtils {
       bool aSetOuterWidth, bool aSetOuterHeight, int32_t* aOutputWidth,
       int32_t* aOutputHeight);
 
+  // Tell if we actually want to round size of new windows for RFP,
+  // depending on letterboxing status and user's preference.
+  static bool ShouldRoundWindowSizeForResistingFingerprinting();
+
   /**
    * Returns the parent node of aChild crossing document boundaries, but skips
    * any cross-process parent frames and continues with the nearest in-process
@@ -3155,6 +3159,11 @@ class nsContentUtils {
    * https://fetch.spec.whatwg.org/#concept-response-https-state
    */
   static bool HttpsStateIsModern(Document* aDocument);
+
+  /**
+   * Returns true of the document's URI is a .onion
+   */
+  static bool DocumentHasOnionURI(Document* aDocument);
 
   /**
    * Returns true if the channel is for top-level window and is over secure

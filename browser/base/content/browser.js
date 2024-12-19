@@ -39,7 +39,7 @@ ChromeUtils.defineESModuleGetters(this, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
-  isProductURL: "chrome://global/content/shopping/ShoppingProduct.mjs",
+  // Removed isProductURL from ShoppingProduct.mjs. tor-browser#42831.
   LightweightThemeConsumer:
     "resource://gre/modules/LightweightThemeConsumer.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
@@ -49,6 +49,7 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabPagePreloading: "resource:///modules/NewTabPagePreloading.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  OnionLocationParent: "resource:///modules/OnionLocationParent.sys.mjs",
   OpenInTabsUtils: "resource:///modules/OpenInTabsUtils.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
@@ -67,13 +68,12 @@ ChromeUtils.defineESModuleGetters(this, {
   ReportBrokenSite: "resource:///modules/ReportBrokenSite.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
-  SaveToPocket: "chrome://pocket/content/SaveToPocket.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
   SearchUIUtils: "resource:///modules/SearchUIUtils.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
-  ShoppingSidebarParent: "resource:///actors/ShoppingSidebarParent.sys.mjs",
-  ShoppingSidebarManager: "resource:///actors/ShoppingSidebarParent.sys.mjs",
+  // Removed ShoppingSidebarParent and ShoppingSidebarManager.
+  // tor-browser#42831.
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
@@ -83,6 +83,11 @@ ChromeUtils.defineESModuleGetters(this, {
   TabsSetupFlowManager:
     "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectStage: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
+  TorDomainIsolator: "resource://gre/modules/TorDomainIsolator.sys.mjs",
+  TorUIUtils: "resource:///modules/TorUIUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   UITour: "resource:///modules/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
@@ -249,6 +254,21 @@ XPCOMUtils.defineLazyScriptGetter(
 );
 XPCOMUtils.defineLazyScriptGetter(
   this,
+  ["SecurityLevelButton"],
+  "chrome://browser/content/securitylevel/securityLevel.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["NewIdentityButton"],
+  "chrome://browser/content/newidentity.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["OnionAuthPrompt"],
+  "chrome://browser/content/onionservices/authPrompt.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
   "gEditItemOverlay",
   "chrome://browser/content/places/editBookmark.js"
 );
@@ -286,6 +306,21 @@ XPCOMUtils.defineLazyScriptGetter(
   this,
   "gProfiles",
   "chrome://browser/content/browser-profiles.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectUrlbarButton"],
+  "chrome://global/content/torconnect/torConnectUrlbarButton.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorConnectTitlebarStatus"],
+  "chrome://global/content/torconnect/torConnectTitlebarStatus.js"
+);
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  ["gTorCircuitPanel"],
+  "chrome://browser/content/torCircuitPanel.js"
 );
 
 // lazy service getters
@@ -711,6 +746,7 @@ async function gLazyFindCommand(cmd, ...args) {
 }
 
 var gPageIcons = {
+  "about:tor": "chrome://branding/content/icon32.png",
   "about:home": "chrome://branding/content/icon32.png",
   "about:newtab": "chrome://branding/content/icon32.png",
   "about:welcome": "chrome://branding/content/icon32.png",
@@ -718,6 +754,8 @@ var gPageIcons = {
 };
 
 var gInitialPages = [
+  "about:tor",
+  "about:torconnect",
   "about:blank",
   "about:home",
   "about:firefoxview",
@@ -3630,8 +3668,6 @@ var XULBrowserWindow = {
 
     SafeBrowsingNotificationBox.onLocationChange(aLocationURI);
 
-    SaveToPocket.onLocationChange(window);
-
     let originalURI;
     if (aRequest instanceof Ci.nsIChannel) {
       originalURI = aRequest.originalURI;
@@ -3677,6 +3713,7 @@ var XULBrowserWindow = {
     CFRPageActions.updatePageActions(gBrowser.selectedBrowser);
 
     AboutReaderParent.updateReaderButton(gBrowser.selectedBrowser);
+    OnionLocationParent.updateOnionLocationBadge(gBrowser.selectedBrowser);
     TranslationsParent.onLocationChange(gBrowser.selectedBrowser);
 
     PictureInPicture.updateUrlbarToggle(gBrowser.selectedBrowser);
@@ -4270,6 +4307,16 @@ var CombinedStopReload = {
 
 var TabsProgressListener = {
   onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+    // Clear OnionLocation UI
+    if (
+      aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
+      aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
+      aRequest &&
+      aWebProgress.isTopLevel
+    ) {
+      OnionLocationParent.onStateChange(aBrowser);
+    }
+
     // Collect telemetry data about tab load times.
     if (
       aWebProgress.isTopLevel &&
@@ -4330,10 +4377,6 @@ var TabsProgressListener = {
     if (!aWebProgress.isTopLevel) {
       return;
     }
-
-    // Some shops use pushState to move between individual products, so
-    // the shopping code needs to be told about all of these.
-    ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI, aFlags);
 
     // Filter out location changes caused by anchor navigation
     // or history.push/pop/replaceState.
@@ -6794,15 +6837,34 @@ var gPrivateBrowsingUI = {
     }
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      // Adjust the New Window menu entries
-      let newWindow = document.getElementById("menu_newNavigator");
-      let newPrivateWindow = document.getElementById("menu_newPrivateWindow");
-      if (newWindow && newPrivateWindow) {
-        newPrivateWindow.hidden = true;
-        newWindow.label = newPrivateWindow.label;
-        newWindow.accessKey = newPrivateWindow.accessKey;
-        newWindow.command = newPrivateWindow.command;
-      }
+      let hideNewWindowItem = (windowItem, privateWindowItem) => {
+        // In permanent browsing mode command "cmd_newNavigator" should act the
+        // same as "Tools:PrivateBrowsing".
+        // So we hide the redundant private window item. But we also rename the
+        // "new window" item to be "new private window".
+        // NOTE: We choose to hide privateWindowItem rather than windowItem so
+        // that we still show the "key" for "cmd_newNavigator" (Ctrl+N) rather
+        // than (Ctrl+Shift+P).
+        privateWindowItem.hidden = true;
+        windowItem.setAttribute(
+          "data-l10n-id",
+          privateWindowItem.getAttribute("data-l10n-id")
+        );
+      };
+
+      // Adjust the File menu items.
+      hideNewWindowItem(
+        document.getElementById("menu_newNavigator"),
+        document.getElementById("menu_newPrivateWindow")
+      );
+      // Adjust the App menu items.
+      hideNewWindowItem(
+        PanelMultiView.getViewNode(document, "appMenu-new-window-button2"),
+        PanelMultiView.getViewNode(
+          document,
+          "appMenu-new-private-window-button2"
+        )
+      );
     }
   },
 };
@@ -8072,6 +8134,11 @@ var FirefoxViewHandler = {
     }
   },
   openTab(section) {
+    if (AppConstants.BASE_BROWSER_VERSION) {
+      // about:firefoxview is disabled. tor-browser#42037.
+      return;
+    }
+
     if (!CustomizableUI.getPlacementOfWidget(this.BUTTON_ID)) {
       CustomizableUI.addWidgetToArea(
         this.BUTTON_ID,

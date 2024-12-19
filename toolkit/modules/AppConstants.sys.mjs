@@ -360,6 +360,8 @@ export var AppConstants = Object.freeze({
   MOZ_WIDGET_TOOLKIT: "@MOZ_WIDGET_TOOLKIT@",
   ANDROID_PACKAGE_NAME: "@ANDROID_PACKAGE_NAME@",
 
+  BASE_BROWSER_VERSION: "@BASE_BROWSER_VERSION@",
+
   DEBUG_JS_MODULES: "@DEBUG_JS_MODULES@",
 
   MOZ_BING_API_CLIENTID: "@MOZ_BING_API_CLIENTID@",
@@ -421,11 +423,11 @@ export var AppConstants = Object.freeze({
 #ifdef MOZ_THUNDERBIRD
     "https://thunderbird-settings.thunderbird.net/v1",
 #else
-    "https://firefox.settings.services.mozilla.com/v1",
+    "",
 #endif
 
   REMOTE_SETTINGS_VERIFY_SIGNATURE:
-#ifdef MOZ_THUNDERBIRD
+#if defined(MOZ_THUNDERBIRD) || defined(BASE_BROWSER_VERSION)
     false,
 #else
     true,
@@ -478,6 +480,13 @@ export var AppConstants = Object.freeze({
 
   MOZ_SELECTABLE_PROFILES:
 #ifdef MOZ_SELECTABLE_PROFILES
+    true,
+#else
+    false,
+#endif
+
+  BASE_BROWSER_UPDATE:
+#ifdef BASE_BROWSER_UPDATE
     true,
 #else
     false,

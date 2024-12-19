@@ -135,8 +135,10 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::IS_SECURE_CHROME_UI},
+#ifndef BASE_BROWSER_VERSION
     {"mozilla", "chrome://global/content/mozilla.html",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT},
+#endif
 #if !defined(ANDROID) && !defined(XP_WIN)
     {"webauthn", "chrome://global/content/aboutWebauthn.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
@@ -181,25 +183,36 @@ static const RedirEntry kRedirMap[] = {
     {"windows-messages", "chrome://global/content/aboutWindowsMessages.html",
      nsIAboutModule::ALLOW_SCRIPT},
 #endif
-#ifndef MOZ_GLEAN_ANDROID
+#ifdef MOZ_TELEMETRY_REPORTING
+#  ifndef MOZ_GLEAN_ANDROID
     {"glean", "chrome://global/content/aboutGlean.html",
-#  if !defined(NIGHTLY_BUILD) && defined(MOZILLA_OFFICIAL)
+#    if !defined(NIGHTLY_BUILD) && defined(MOZILLA_OFFICIAL)
      nsIAboutModule::HIDE_FROM_ABOUTABOUT |
-#  endif
+#    endif
          nsIAboutModule::ALLOW_SCRIPT},
-#endif
+#  endif
     {"telemetry", "chrome://global/content/aboutTelemetry.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
+#endif
+    {"torconnect", "chrome://global/content/torconnect/aboutTorConnect.html",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_CAN_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT |
+         nsIAboutModule::IS_SECURE_CHROME_UI},
     {"translations", "chrome://global/content/translations/translations.html",
      nsIAboutModule::ALLOW_SCRIPT |
          nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+#ifndef BASE_BROWSER_VERSION
     {"url-classifier", "chrome://global/content/aboutUrlClassifier.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
+#endif
+#ifdef MOZ_WEBRTC
     {"webrtc", "chrome://global/content/aboutwebrtc/aboutWebrtc.html",
      nsIAboutModule::ALLOW_SCRIPT},
+#endif
     {"crashparent", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"crashcontent", "about:blank",
      nsIAboutModule::HIDE_FROM_ABOUTABOUT |
@@ -207,7 +220,11 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::URI_CAN_LOAD_IN_CHILD |
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
     {"crashgpu", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT},
-    {"crashextensions", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT}};
+    {"crashextensions", "about:blank", nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+    {"tor", "chrome://browser/content/abouttor/aboutTor.html",
+     nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
+         nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI}};
 static const int kRedirTotal = mozilla::ArrayLength(kRedirMap);
 
 NS_IMETHODIMP

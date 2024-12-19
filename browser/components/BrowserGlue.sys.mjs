@@ -8,12 +8,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AWToolbarButton: "resource:///modules/aboutwelcome/AWToolbarUtils.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
-  ASRouterDefaultConfig:
-    "resource:///modules/asrouter/ASRouterDefaultConfig.sys.mjs",
-  ASRouterNewTabHook: "resource:///modules/asrouter/ASRouterNewTabHook.sys.mjs",
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
@@ -38,6 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DoHController: "resource:///modules/DoHController.sys.mjs",
   DownloadsViewableInternally:
     "resource:///modules/DownloadsViewableInternally.sys.mjs",
+  DragDropFilter: "resource://gre/modules/DragDropFilter.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
   FeatureGate: "resource://featuregates/FeatureGate.sys.mjs",
@@ -55,6 +52,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   Normandy: "resource://normandy/Normandy.sys.mjs",
+  OnionAliasStore: "resource:///modules/OnionAliasStore.sys.mjs",
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
   OsEnvironment: "resource://gre/modules/OsEnvironment.sys.mjs",
@@ -72,8 +70,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PluginManager: "resource:///actors/PluginParent.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.sys.mjs",
-  PublicSuffixList:
-    "resource://gre/modules/netwerk-dns/PublicSuffixList.sys.mjs",
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
   RFPHelper: "resource://gre/modules/RFPHelper.sys.mjs",
   RemoteSecuritySettings:
@@ -83,7 +79,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SandboxUtils: "resource://gre/modules/SandboxUtils.sys.mjs",
-  SaveToPocket: "chrome://pocket/content/SaveToPocket.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
   SearchSERPCategorization: "resource:///modules/SearchSERPTelemetry.sys.mjs",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.sys.mjs",
@@ -91,13 +86,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   ShellService: "resource:///modules/ShellService.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
-  ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
+  // Removed ShoppingUtils. tor-browser#42831.
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   TRRRacer: "resource:///modules/TRRPerformance.sys.mjs",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
   TabUnloader: "resource:///modules/TabUnloader.sys.mjs",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
+  TorConnect: "resource://gre/modules/TorConnect.sys.mjs",
+  TorConnectTopics: "resource://gre/modules/TorConnect.sys.mjs",
+  TorProviderBuilder: "resource://gre/modules/TorProviderBuilder.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
@@ -106,6 +104,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.sys.mjs",
+  checkHomepageOverride: "resource:///modules/HomepageOverride.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
@@ -172,6 +171,166 @@ let gThisInstanceIsLaunchOnLogin = false;
 // Whether this launch was initiated by a taskbar tab shortcut. A launch from
 // a taskbar tab shortcut will contain the "taskbar-tab" flag.
 let gThisInstanceIsTaskbarTab = false;
+
+// Empty clipboard content from private windows on exit
+// (tor-browser#42154)
+const ClipboardPrivacy = {
+  _lastClipboardHash: null,
+  _globalActivation: false,
+  _isPrivateClipboard: false,
+  _hasher: null,
+  _shuttingDown: false,
+
+  _createTransferable() {
+    const trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+      Ci.nsITransferable
+    );
+    trans.init(null);
+    return trans;
+  },
+  _computeClipboardHash() {
+    const flavors = ["text/x-moz-url", "text/plain"];
+    if (
+      !Services.clipboard.hasDataMatchingFlavors(
+        flavors,
+        Ci.nsIClipboard.kGlobalClipboard
+      )
+    ) {
+      return null;
+    }
+    const trans = this._createTransferable();
+    flavors.forEach(trans.addDataFlavor);
+    try {
+      Services.clipboard.getData(trans, Ci.nsIClipboard.kGlobalClipboard);
+      const clipboardContent = {};
+      trans.getAnyTransferData({}, clipboardContent);
+      const { data } = clipboardContent.value.QueryInterface(
+        Ci.nsISupportsString
+      );
+      const bytes = new TextEncoder().encode(data);
+      const hasher = (this._hasher ||= Cc[
+        "@mozilla.org/security/hash;1"
+      ].createInstance(Ci.nsICryptoHash));
+      hasher.init(hasher.SHA256);
+      hasher.update(bytes, bytes.length);
+      return hasher.finish(true);
+    } catch (e) {}
+    return null;
+  },
+
+  startup() {
+    this._lastClipboardHash = this._computeClipboardHash();
+
+    // Here we track changes in active window / application,
+    // by filtering focus events and window closures.
+    const handleActivation = (win, activation) => {
+      if (activation) {
+        if (!this._globalActivation) {
+          // focus changed within this window, bail out.
+          return;
+        }
+        this._globalActivation = false;
+      } else if (!Services.focus.activeWindow) {
+        // focus is leaving this window:
+        // let's track whether it remains within the browser.
+        lazy.setTimeout(() => {
+          this._globalActivation = !Services.focus.activeWindow;
+        }, 100);
+      }
+
+      const checkClipboardContent = () => {
+        const clipboardHash = this._computeClipboardHash();
+        if (clipboardHash !== this._lastClipboardHash) {
+          this._isPrivateClipboard =
+            !activation &&
+            (lazy.PrivateBrowsingUtils.permanentPrivateBrowsing ||
+              lazy.PrivateBrowsingUtils.isWindowPrivate(win));
+          this._lastClipboardHash = clipboardHash;
+          lazy.log.debug(
+            `Clipboard changed: private ${this._isPrivateClipboard}, hash ${clipboardHash}.`
+          );
+        }
+      };
+
+      if (win.closed) {
+        checkClipboardContent();
+      } else {
+        // defer clipboard access on DOM events to work-around tor-browser#42306
+        lazy.setTimeout(checkClipboardContent, 0);
+      }
+    };
+    const focusListener = e =>
+      e.isTrusted && handleActivation(e.currentTarget, e.type === "focusin");
+    const initWindow = win => {
+      for (const e of ["focusin", "focusout"]) {
+        win.addEventListener(e, focusListener);
+      }
+    };
+    for (const w of Services.ww.getWindowEnumerator()) {
+      initWindow(w);
+    }
+    Services.ww.registerNotification((win, event) => {
+      switch (event) {
+        case "domwindowopened":
+          initWindow(win);
+          break;
+        case "domwindowclosed":
+          handleActivation(win, false);
+          if (
+            this._isPrivateClipboard &&
+            lazy.PrivateBrowsingUtils.isWindowPrivate(win) &&
+            (this._shuttingDown ||
+              !Array.from(Services.ww.getWindowEnumerator()).find(
+                w =>
+                  lazy.PrivateBrowsingUtils.isWindowPrivate(w) &&
+                  // We need to filter out the HIDDEN WebExtensions window,
+                  // which might be private as well but is not UI-relevant.
+                  !w.location.href.startsWith("chrome://extensions/")
+              ))
+          ) {
+            // no more private windows, empty private content if needed
+            this.emptyPrivate();
+          }
+      }
+    });
+
+    lazy.AsyncShutdown.quitApplicationGranted.addBlocker(
+      "ClipboardPrivacy: removing private data",
+      () => {
+        this._shuttingDown = true;
+        this.emptyPrivate();
+      }
+    );
+  },
+  emptyPrivate() {
+    if (
+      this._isPrivateClipboard &&
+      !Services.prefs.getBoolPref(
+        "browser.privatebrowsing.preserveClipboard",
+        false
+      ) &&
+      this._lastClipboardHash === this._computeClipboardHash()
+    ) {
+      // nsIClipboard.emptyClipboard() does nothing in Wayland:
+      // we'll set an empty string as a work-around.
+      const trans = this._createTransferable();
+      const flavor = "text/plain";
+      trans.addDataFlavor(flavor);
+      const emptyString = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+      emptyString.data = "";
+      trans.setTransferData(flavor, emptyString);
+      const { clipboard } = Services,
+        { kGlobalClipboard } = clipboard;
+      clipboard.setData(trans, null, kGlobalClipboard);
+      clipboard.emptyClipboard(kGlobalClipboard);
+      this._lastClipboardHash = null;
+      this._isPrivateClipboard = false;
+      lazy.log.info("Private clipboard emptied.");
+    }
+  },
+};
 
 /**
  * Fission-compatible JSProcess implementations.
@@ -293,52 +452,6 @@ let JSWINDOWACTORS = {
     matches: ["about:messagepreview", "about:messagepreview?*"],
   },
 
-  AboutNewTab: {
-    parent: {
-      esModuleURI: "resource:///actors/AboutNewTabParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/AboutNewTabChild.sys.mjs",
-      events: {
-        DOMDocElementInserted: {},
-        DOMContentLoaded: {},
-        load: { capture: true },
-        unload: { capture: true },
-        pageshow: {},
-        visibilitychange: {},
-      },
-    },
-    // The wildcard on about:newtab is for the # parameter
-    // that is used for the newtab devtools. The wildcard for about:home
-    // is similar, and also allows for falling back to loading the
-    // about:home document dynamically if an attempt is made to load
-    // about:home?jscache from the AboutHomeStartupCache as a top-level
-    // load.
-    matches: ["about:home*", "about:welcome", "about:newtab*"],
-    remoteTypes: ["privilegedabout"],
-  },
-
-  AboutPocket: {
-    parent: {
-      esModuleURI: "resource:///actors/AboutPocketParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/AboutPocketChild.sys.mjs",
-
-      events: {
-        DOMDocElementInserted: { capture: true },
-      },
-    },
-
-    remoteTypes: ["privilegedabout"],
-    matches: [
-      "about:pocket-saved*",
-      "about:pocket-signup*",
-      "about:pocket-home*",
-      "about:pocket-style-guide*",
-    ],
-  },
-
   AboutPrivateBrowsing: {
     parent: {
       esModuleURI: "resource:///actors/AboutPrivateBrowsingParent.sys.mjs",
@@ -400,19 +513,24 @@ let JSWINDOWACTORS = {
     matches: ["about:tabcrashed*"],
   },
 
-  AboutWelcomeShopping: {
+  AboutTor: {
     parent: {
-      esModuleURI: "resource:///actors/AboutWelcomeParent.sys.mjs",
+      esModuleURI: "resource:///actors/AboutTorParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/AboutWelcomeChild.sys.mjs",
+      esModuleURI: "resource:///actors/AboutTorChild.sys.mjs",
+
       events: {
-        Update: {},
+        DOMContentLoaded: {},
+        L10nMutationsFinished: {},
+        SubmitSearchOnionize: { wantUntrusted: true },
       },
     },
-    matches: ["about:shoppingsidebar"],
-    remoteTypes: ["privilegedabout"],
+
+    matches: ["about:tor"],
   },
+
+  // Removed AboutWelcomeShopping. tor-browser#42831.
 
   AboutWelcome: {
     parent: {
@@ -553,6 +671,24 @@ let JSWINDOWACTORS = {
     },
 
     messageManagerGroups: ["browsers"],
+
+    allFrames: true,
+  },
+
+  CryptoSafety: {
+    parent: {
+      esModuleURI: "resource:///actors/CryptoSafetyParent.sys.mjs",
+    },
+
+    child: {
+      esModuleURI: "resource:///actors/CryptoSafetyChild.sys.mjs",
+      group: "browsers",
+      events: {
+        copy: { mozSystemGroup: true },
+        cut: { mozSystemGroup: true },
+      },
+    },
+
     allFrames: true,
   },
 
@@ -647,6 +783,19 @@ let JSWINDOWACTORS = {
       },
     },
 
+    messageManagerGroups: ["browsers"],
+  },
+
+  OnionLocation: {
+    parent: {
+      esModuleURI: "resource:///modules/OnionLocationParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///modules/OnionLocationChild.sys.mjs",
+      events: {
+        pageshow: { mozSystemGroup: true },
+      },
+    },
     messageManagerGroups: ["browsers"],
   },
 
@@ -745,6 +894,19 @@ let JSWINDOWACTORS = {
     enablePreference: "accessibility.blockautorefresh",
   },
 
+  Rulesets: {
+    parent: {
+      esModuleURI: "resource:///modules/RulesetsParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource:///modules/RulesetsChild.sys.mjs",
+      events: {
+        DOMWindowCreated: {},
+      },
+    },
+    matches: ["about:rulesets*"],
+  },
+
   ScreenshotsComponent: {
     parent: {
       esModuleURI: "resource:///modules/ScreenshotsUtils.sys.mjs",
@@ -809,27 +971,7 @@ let JSWINDOWACTORS = {
     matches: ["about:studies*"],
   },
 
-  ShoppingSidebar: {
-    parent: {
-      esModuleURI: "resource:///actors/ShoppingSidebarParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/ShoppingSidebarChild.sys.mjs",
-      events: {
-        ContentReady: { wantUntrusted: true },
-        PolledRequestMade: { wantUntrusted: true },
-        // This is added so the actor instantiates immediately and makes
-        // methods available to the page js on load.
-        DOMDocElementInserted: {},
-        ReportProductAvailable: { wantUntrusted: true },
-        AdClicked: { wantUntrusted: true },
-        AdImpression: { wantUntrusted: true },
-        DisableShopping: { wantUntrusted: true },
-      },
-    },
-    matches: ["about:shoppingsidebar"],
-    remoteTypes: ["privilegedabout"],
-  },
+  // Removed ShoppingSidebar. tor-browser#42831.
 
   SpeechDispatcher: {
     parent: {
@@ -843,28 +985,6 @@ let JSWINDOWACTORS = {
 
     messageManagerGroups: ["browsers"],
     allFrames: true,
-  },
-
-  ASRouter: {
-    parent: {
-      esModuleURI: "resource:///actors/ASRouterParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource:///actors/ASRouterChild.sys.mjs",
-      events: {
-        // This is added so the actor instantiates immediately and makes
-        // methods available to the page js on load.
-        DOMDocElementInserted: {},
-      },
-    },
-    matches: [
-      "about:asrouter*",
-      "about:home*",
-      "about:newtab*",
-      "about:welcome*",
-      "about:privatebrowsing*",
-    ],
-    remoteTypes: ["privilegedabout"],
   },
 
   SwitchDocumentDirection: {
@@ -1476,6 +1596,13 @@ BrowserGlue.prototype = {
     // handle any UI migration
     this._migrateUI();
 
+    // Base Browser-specific version of _migrateUI.
+    this._migrateUIBB();
+
+    // Handle any TBB-specific migration before showing the UI. Keep after
+    // _migrateUI to make sure this._isNewProfile has been defined.
+    this._migrateUITBB();
+
     if (!Services.prefs.prefHasUserValue(PREF_PDFJS_ISDEFAULT_CACHE_STATE)) {
       lazy.PdfJs.checkIsDefault(this._isNewProfile);
     }
@@ -1501,9 +1628,9 @@ BrowserGlue.prototype = {
       lazy.Normandy.init();
     }
 
-    lazy.SaveToPocket.init();
-
     lazy.ResetPBMPanel.init();
+
+    lazy.checkHomepageOverride();
 
     AboutHomeStartupCache.init();
 
@@ -1725,6 +1852,11 @@ BrowserGlue.prototype = {
       return;
     }
 
+    // We don't want to mess up with RFP new window / letterboxing machinery.
+    if (Services.prefs.getBoolPref("privacy.resistFingerprinting", false)) {
+      return;
+    }
+
     let store = Services.xulStore;
     let getValue = attr =>
       store.getValue(AppConstants.BROWSER_CHROME_URL, "main-window", attr);
@@ -1842,8 +1974,6 @@ BrowserGlue.prototype = {
 
   // the first browser window has finished initializing
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
-    lazy.AboutNewTab.init();
-
     lazy.TabCrashHandler.init();
 
     lazy.ProcessHangMonitor.init();
@@ -1894,6 +2024,12 @@ BrowserGlue.prototype = {
     lazy.PageActions.init();
 
     lazy.DoHController.init();
+
+    lazy.DragDropFilter.init();
+
+    lazy.TorProviderBuilder.firstWindowLoaded();
+
+    ClipboardPrivacy.startup();
 
     this._firstWindowTelemetry(aWindow);
     this._firstWindowLoaded();
@@ -2205,10 +2341,12 @@ BrowserGlue.prototype = {
       () => lazy.PageDataService.uninit(),
       () => lazy.PageThumbs.uninit(),
       () => lazy.NewTabUtils.uninit(),
-      () => lazy.Normandy.uninit(),
+      () => {
+        if (AppConstants.MOZ_NORMANDY) {
+          lazy.Normandy.uninit();
+        }
+      },
       () => lazy.RFPHelper.uninit(),
-      () => lazy.ShoppingUtils.uninit(),
-      () => lazy.ASRouterNewTabHook.destroy(),
       () => {
         if (AppConstants.MOZ_UPDATER) {
           lazy.UpdateListener.reset();
@@ -2219,6 +2357,7 @@ BrowserGlue.prototype = {
         // can perform at-shutdown tasks later in shutdown.
         Services.fog;
       },
+      () => lazy.OnionAliasStore.uninit(),
     ];
 
     for (let task of tasks) {
@@ -2299,19 +2438,21 @@ BrowserGlue.prototype = {
     // There is no pref for this add-on because it shouldn't be disabled.
     const ID = "addons-search-detection@mozilla.com";
 
-    let addon = await lazy.AddonManager.getAddonByID(ID);
+    try {
+      let addon = await lazy.AddonManager.getAddonByID(ID);
 
-    // first time install of addon and install on firefox update
-    addon =
-      (await lazy.AddonManager.maybeInstallBuiltinAddon(
-        ID,
-        "2.0.0",
-        "resource://builtin-addons/search-detection/"
-      )) || addon;
+      // first time install of addon and install on firefox update
+      addon =
+        (await lazy.AddonManager.maybeInstallBuiltinAddon(
+          ID,
+          "2.0.0",
+          "resource://builtin-addons/search-detection/"
+        )) || addon;
 
-    if (!addon.isActive) {
-      addon.enable();
-    }
+      if (addon && !addon.isActive) {
+        addon.enable();
+      }
+    } catch (e) {}
   },
 
   _monitorHTTPSOnlyPref() {
@@ -2542,8 +2683,6 @@ BrowserGlue.prototype = {
 
     this._monitorWebcompatReporterPref();
     this._monitorHTTPSOnlyPref();
-    this._monitorIonPref();
-    this._monitorIonStudies();
     this._setupSearchDetection();
 
     this._monitorGPCPref();
@@ -2965,6 +3104,30 @@ BrowserGlue.prototype = {
       },
 
       {
+        task: () => {
+          if (!lazy.TorConnect.shouldShowTorConnect) {
+            // we will take this path when the user is using the legacy tor launcher or
+            // when Tor Browser didn't launch its own tor.
+            lazy.OnionAliasStore.init();
+          } else {
+            // this path is taken when using about:torconnect, we wait to init
+            // after we are bootstrapped and connected to tor
+            const topic = lazy.TorConnectTopics.BootstrapComplete;
+            let bootstrapObserver = {
+              observe(aSubject, aTopic) {
+                if (aTopic === topic) {
+                  lazy.OnionAliasStore.init();
+                  // we only need to init once, so remove ourselves as an obvserver
+                  Services.obs.removeObserver(this, topic);
+                }
+              },
+            };
+            Services.obs.addObserver(bootstrapObserver, topic);
+          }
+        },
+      },
+
+      {
         name: "TabUnloader.init",
         task: () => {
           lazy.TabUnloader.init();
@@ -3078,13 +3241,6 @@ BrowserGlue.prototype = {
       },
 
       {
-        name: "ASRouterNewTabHook.createInstance",
-        task: () => {
-          lazy.ASRouterNewTabHook.createInstance(lazy.ASRouterDefaultConfig());
-        },
-      },
-
-      {
         name: "BackgroundUpdate",
         condition: AppConstants.MOZ_UPDATE_AGENT,
         task: async () => {
@@ -3170,13 +3326,6 @@ BrowserGlue.prototype = {
           ),
         task: async () => {
           await lazy.DAPTelemetrySender.startup();
-        },
-      },
-
-      {
-        name: "ShoppingUtils.init",
-        task: () => {
-          lazy.ShoppingUtils.init();
         },
       },
 
@@ -3299,12 +3448,13 @@ BrowserGlue.prototype = {
         this._addBreachesSyncHandler();
       }.bind(this),
 
-      function PublicSuffixListInit() {
-        lazy.PublicSuffixList.init();
-      },
-
       function RemoteSecuritySettingsInit() {
         lazy.RemoteSecuritySettings.init();
+      },
+
+      function RemoteSettingsPollChanges() {
+        // Support clients that use the "sync" event or "remote-settings:changes-poll-end".
+        lazy.RemoteSettings.pollChanges({ trigger: "timer" });
       },
 
       function BrowserUsageTelemetryReportProfileCount() {
@@ -4611,6 +4761,150 @@ BrowserGlue.prototype = {
 
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
+  },
+
+  _migrateUIBB() {
+    // Version 1: 13.0a3. Reset layout.css.prefers-color-scheme.content-override
+    //            for tor-browser#41739.
+    // Version 2: 14.0a5: Reset the privacy tracking headers preferences since
+    //            the UI is hidden. tor-browser#42777.
+    //            Also, do not set
+    //            dom.security.https_only_mode_send_http_background_request in
+    //            the security level anymore (tor-browser#42149).
+    //            Also, reset security.xfocsp.errorReporting.automatic since we
+    //            hid its neterror checkbox. tor-browser#42653.
+    // Version 3: 14.0a7: Reset general.smoothScroll. tor-browser#42070.
+    const MIGRATION_VERSION = 3;
+    const MIGRATION_PREF = "basebrowser.migration.version";
+    // We do not care whether this is a new or old profile, since in version 1
+    // we just quickly clear a user preference, which should not do anything to
+    // new profiles.
+    // Shall we ever raise the version number and have a watershed, we can add
+    // a check easily (any version > 0 will be an old profile).
+    const currentVersion = Services.prefs.getIntPref(MIGRATION_PREF, 0);
+    if (currentVersion < 1) {
+      Services.prefs.clearUserPref(
+        "layout.css.prefers-color-scheme.content-override"
+      );
+    }
+    if (currentVersion < 2) {
+      for (const prefName of [
+        "privacy.globalprivacycontrol.enabled",
+        "privacy.donottrackheader.enabled",
+        // Telemetry preference for if the user changed the value.
+        "privacy.globalprivacycontrol.was_ever_enabled",
+        // The next two preferences have no corresponding UI, but are related.
+        "privacy.globalprivacycontrol.functionality.enabled",
+        "privacy.globalprivacycontrol.pbmode.enabled",
+        "dom.security.https_only_mode_send_http_background_request",
+        "security.xfocsp.errorReporting.automatic",
+      ]) {
+        Services.prefs.clearUserPref(prefName);
+      }
+    }
+    if (currentVersion < 3) {
+      Services.prefs.clearUserPref("general.smoothScroll");
+    }
+    Services.prefs.setIntPref(MIGRATION_PREF, MIGRATION_VERSION);
+  },
+
+  // Use this method for any TBB migration that can be run just before showing
+  // the UI.
+  // Anything that critically needs to be migrated earlier should not use this.
+  _migrateUITBB() {
+    // Version 1: Tor Browser 12.0. We use it to remove langpacks, after the
+    //            migration to packaged locales.
+    // Version 2: Tor Browser 13.0/13.0a1: tor-browser#41845. Also, removed some
+    //            torbutton preferences that are not used anymore.
+    // Version 3: Tor Browser 13.0.7/13.5a3: Remove blockchair
+    //            (tor-browser#42283).
+    // Version 4: Tor Browser 14.0a4 (2024-09-02): Remove Twitter, Yahoo and
+    //            YouTube search engines (tor-browser#41835).
+    // Version 5: Tor Browser 14.0a5: Clear user preference for CFR settings
+    //            since we hid the UI (tor-browser#43118).
+    const TBB_MIGRATION_VERSION = 5;
+    const MIGRATION_PREF = "torbrowser.migration.version";
+
+    // If we decide to force updating users to pass through any version
+    // following 12.0, we can remove this check, and check only whether
+    // MIGRATION_PREF has a user value, like Mozilla does.
+    if (this._isNewProfile) {
+      // Do not migrate fresh profiles
+      Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
+      return;
+    } else if (this._isNewProfile === undefined) {
+      // If this happens, check if upstream updated their function and do not
+      // set this member anymore!
+      console.error("_migrateUITBB: this._isNewProfile is undefined.");
+    }
+
+    const currentVersion = Services.prefs.getIntPref(MIGRATION_PREF, 0);
+    const removeLangpacks = async () => {
+      for (const addon of await AddonManager.getAddonsByTypes(["locale"])) {
+        await addon.uninstall();
+      }
+    };
+    if (currentVersion < 1) {
+      removeLangpacks().catch(err => {
+        console.error("Could not remove langpacks", err);
+      });
+    }
+    if (currentVersion < 2) {
+      const prefToClear = [
+        // tor-browser#41845: We were forcing these value by check the value of
+        // automatic PBM. We decided not to change
+        "browser.cache.disk.enable",
+        "places.history.enabled",
+        "security.nocertdb",
+        "permissions.memory_only",
+        // Old torbutton preferences not used anymore.
+        "extensions.torbutton.loglevel",
+        "extensions.torbutton.logmethod",
+        "extensions.torbutton.pref_fixup_version",
+        "extensions.torbutton.resize_new_windows",
+        "extensions.torbutton.startup",
+        "extensions.torlauncher.prompt_for_locale",
+        "extensions.torlauncher.loglevel",
+        "extensions.torlauncher.logmethod",
+        "extensions.torlauncher.torrc_fixup_version",
+      ];
+      for (const pref of prefToClear) {
+        if (Services.prefs.prefHasUserValue(pref)) {
+          Services.prefs.clearUserPref(pref);
+        }
+      }
+    }
+    const dropAddons = async list => {
+      for (const id of list) {
+        try {
+          const engine = await lazy.AddonManager.getAddonByID(id);
+          await engine?.uninstall();
+        } catch {}
+      }
+    };
+    if (currentVersion < 3) {
+      dropAddons([
+        "blockchair@search.mozilla.org",
+        "blockchair-onion@search.mozilla.org",
+      ]);
+    }
+    if (currentVersion < 4) {
+      dropAddons([
+        "twitter@search.mozilla.org",
+        "yahoo@search.mozilla.org",
+        "youtube@search.mozilla.org",
+      ]);
+    }
+    if (currentVersion < 5) {
+      for (const pref of [
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons",
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
+      ]) {
+        Services.prefs.clearUserPref(pref);
+      }
+    }
+
+    Services.prefs.setIntPref(MIGRATION_PREF, TBB_MIGRATION_VERSION);
   },
 
   async _showUpgradeDialog() {
@@ -6218,12 +6512,8 @@ export var AboutHomeStartupCache = {
       return { pageInputStream: null, scriptInputStream: null };
     }
 
-    let state = lazy.AboutNewTab.activityStream.store.getState();
-    return new Promise(resolve => {
-      this._cacheDeferred = resolve;
-      this.log.trace("Parent is requesting cache streams.");
-      this._procManager.sendAsyncMessage(this.CACHE_REQUEST_MESSAGE, { state });
-    });
+    this.log.error("Activity Stream is disabled.");
+    return { pageInputStream: null, scriptInputStream: null };
   },
 
   /**

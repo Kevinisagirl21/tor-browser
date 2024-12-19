@@ -60,6 +60,12 @@
   <link rel="stylesheet" href="chrome://browser/skin/places/tree-icons.css" />
   <link rel="stylesheet" href="chrome://browser/skin/places/editBookmark.css" />
 
+  <link rel="stylesheet" href="chrome://browser/content/securitylevel/securityLevelPanel.css" />
+  <link rel="stylesheet" href="chrome://browser/content/securitylevel/securityLevelButton.css" />
+  <link rel="stylesheet" href="chrome://browser/content/torCircuitPanel.css" />
+  <link rel="stylesheet" href="chrome://global/content/torconnect/torConnectTitlebarStatus.css" />
+  <link rel="stylesheet" href="chrome://browser/content/onionservices/onionservices.css" />
+
   <link rel="localization" href="branding/brand.ftl"/>
   <link rel="localization" href="browser/allTabsMenu.ftl"/>
   <link rel="localization" href="browser/appmenu.ftl"/>
@@ -86,6 +92,8 @@
   <link rel="localization" href="toolkit/global/contextual-identity.ftl"/>
   <link rel="localization" href="toolkit/global/textActions.ftl"/>
   <link rel="localization" href="toolkit/printing/printUI.ftl"/>
+  <link rel="localization" href="toolkit/global/base-browser.ftl"/>
+  <link rel="localization" href="toolkit/global/tor-browser.ftl"/>
   <!-- Untranslated FTL files -->
   <link rel="localization" href="preview/enUS-searchFeatures.ftl" />
   <link rel="localization" href="preview/interventions.ftl" />
@@ -123,7 +131,8 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/places/places-menupopup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/autocomplete-popup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
-  Services.scriptloader.loadSubScript("chrome://browser/content/shopping/shopping-sidebar.js", this);
+  // Removed shopping-sidebar.js. tor-browser#42831.
+  Services.scriptloader.loadSubScript("chrome://browser/content/languageNotification.js", this);
 
   window.onload = gBrowserInit.onLoad.bind(gBrowserInit);
   window.onunload = gBrowserInit.onUnload.bind(gBrowserInit);
