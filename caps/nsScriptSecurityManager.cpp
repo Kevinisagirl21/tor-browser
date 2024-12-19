@@ -1044,6 +1044,38 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
         }
       }
 
+      // Limit remote access to content accessible resources
+      bool sourceIsRemote = false;
+      nsCOMPtr<nsINetUtil> netUtil = do_GetNetUtil();
+      rv = netUtil->ProtocolHasFlags(aSourceURI,
+                                     nsIProtocolHandler::ALLOWS_PROXY,
+                                     &sourceIsRemote);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (sourceIsRemote) {
+        nsAutoCString spec;
+        rv = aTargetURI->GetAsciiSpec(spec);
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (!StringBeginsWith(spec, "resource://content-accessible/"_ns) &&
+            (!StringBeginsWith(spec, "chrome://global/skin/"_ns) ||
+             StringBeginsWith(spec, "chrome://global/skin/icons/onion-"_ns) ||
+             StringBeginsWith(spec, "chrome://global/skin/icons/tor-"_ns) ||
+             StringBeginsWith(spec, "chrome://global/skin/onion-"_ns) ||
+             StringBeginsWith(spec, "chrome://global/skin/tor-"_ns)) &&
+            (!StringBeginsWith(spec, "chrome://global/content/"_ns) ||
+             StringBeginsWith(spec, "chrome://global/content/lox/"_ns) ||
+             StringBeginsWith(spec, "chrome://global/content/search/"_ns) ||
+             StringBeginsWith(spec,
+                              "chrome://global/content/torconnect/"_ns)) &&
+            !StringBeginsWith(spec,
+                              "chrome://browser/content/screenshots/"_ns) &&
+            !StringBeginsWith(spec,
+                              "resource://devtools-highlighter-styles/"_ns)) {
+          ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
+                      aInnerWindowID);
+          return NS_ERROR_DOM_BAD_URI;
+        }
+      }
+
       if (targetScheme.EqualsLiteral("resource")) {
         if (StaticPrefs::security_all_resource_uri_content_accessible()) {
           return NS_OK;
