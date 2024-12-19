@@ -346,7 +346,7 @@ const gBridgeGrid = {
 
     Services.obs.addObserver(this, TorProviderTopics.BridgeChanged);
 
-    this._grid.classList.add("grid-active");
+    this._grid.hidden = false;
 
     this._updateConnectedBridge();
   },
@@ -363,7 +363,7 @@ const gBridgeGrid = {
 
     this._forceCloseRowMenus();
 
-    this._grid.classList.remove("grid-active");
+    this._grid.hidden = true;
 
     Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
   },
@@ -1023,7 +1023,7 @@ const gBuiltinBridgesArea = {
 
     Services.obs.addObserver(this, TorProviderTopics.BridgeChanged);
 
-    this._area.classList.add("built-in-active");
+    this._area.hidden = false;
 
     this._updateBridgeIds();
     this._updateConnectedBridge();
@@ -1038,7 +1038,7 @@ const gBuiltinBridgesArea = {
     }
     this._active = false;
 
-    this._area.classList.remove("built-in-active");
+    this._area.hidden = true;
 
     Services.obs.removeObserver(this, TorProviderTopics.BridgeChanged);
   },
@@ -1243,11 +1243,19 @@ const gLoxStatus = {
    */
   _detailsArea: null,
   /**
-   * The day counter for the next unlock.
+   * The list items showing the next unlocks.
    *
-   * @type {Element?}
+   * @type {?Object<string, Element>}
    */
-  _nextUnlockCounterEl: null,
+  _nextUnlockItems: null,
+  /**
+   * The day counter headings for the next unlock.
+   *
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
+   */
+  _nextUnlockCounterEls: null,
   /**
    * Shows the number of remaining invites.
    *
@@ -1266,6 +1274,12 @@ const gLoxStatus = {
    * @type {Element?}
    */
   _unlockAlert: null,
+  /**
+   * The list items showing the unlocks.
+   *
+   * @type {?Object<string, Element>}
+   */
+  _unlockItems: null,
   /**
    * The alert title.
    *
@@ -1296,8 +1310,19 @@ const gLoxStatus = {
 
     this._area = document.getElementById("tor-bridges-lox-status");
     this._detailsArea = document.getElementById("tor-bridges-lox-details");
-    this._nextUnlockCounterEl = document.getElementById(
-      "tor-bridges-lox-next-unlock-counter"
+    this._nextUnlockItems = {
+      gainBridges: document.getElementById(
+        "tor-bridges-lox-next-unlock-gain-bridges"
+      ),
+      firstInvites: document.getElementById(
+        "tor-bridges-lox-next-unlock-first-invites"
+      ),
+      moreInvites: document.getElementById(
+        "tor-bridges-lox-next-unlock-more-invites"
+      ),
+    };
+    this._nextUnlockCounterEls = Array.from(
+      document.querySelectorAll(".tor-bridges-lox-next-unlock-counter")
     );
     this._remainingInvitesEl = document.getElementById(
       "tor-bridges-lox-remaining-invites"
@@ -1306,6 +1331,15 @@ const gLoxStatus = {
       "tor-bridges-lox-show-invites-button"
     );
     this._unlockAlert = document.getElementById("tor-bridges-lox-unlock-alert");
+    this._unlockItems = {
+      gainBridges: document.getElementById(
+        "tor-bridges-lox-unlock-alert-gain-bridges"
+      ),
+      newBridges: document.getElementById(
+        "tor-bridges-lox-unlock-alert-new-bridges"
+      ),
+      invites: document.getElementById("tor-bridges-lox-unlock-alert-invites"),
+    };
     this._unlockAlertTitle = document.getElementById(
       "tor-bridge-unlock-alert-title"
     );
@@ -1404,6 +1438,7 @@ const gLoxStatus = {
       return;
     }
     this._loxId = loxId;
+    this._area.hidden = !loxId;
     // We unset _nextUnlock to ensure the areas no longer use the old value for
     // the new loxId.
     this._updateNextUnlock(true);
@@ -1518,8 +1553,8 @@ const gLoxStatus = {
       // Uninitialized or no Lox source.
       // NOTE: This area may already be hidden by the change in Lox source,
       // but we clean up for the next non-empty id.
-      this._area.classList.remove("show-unlock-alert");
-      this._area.classList.remove("show-next-unlock");
+      this._unlockAlert.hidden = true;
+      this._detailsArea.hidden = true;
       return;
     }
 
@@ -1529,8 +1564,8 @@ const gLoxStatus = {
 
     const pendingEvents = this._pendingEvents;
     const showAlert = !!pendingEvents.length;
-    this._area.classList.toggle("show-unlock-alert", showAlert);
-    this._area.classList.toggle("show-next-unlock", !showAlert);
+    this._unlockAlert.hidden = !showAlert;
+    this._detailsArea.hidden = showAlert;
 
     if (showAlert) {
       // At level 0 and level 1, we do not have any invites.
@@ -1567,6 +1602,7 @@ const gLoxStatus = {
           blockage = true;
         }
       }
+
       let alertTitleId;
       if (levelUp && !blockage) {
         alertTitleId = "tor-bridges-lox-upgrade";
@@ -1585,9 +1621,9 @@ const gLoxStatus = {
         "lox-unlock-upgrade",
         levelUp && !blockage
       );
-      this._unlockAlert.classList.toggle("lox-unlock-new-bridges", blockage);
-      this._unlockAlert.classList.toggle("lox-unlock-gain-bridges", bridgeGain);
-      this._unlockAlert.classList.toggle("lox-unlock-invites", showInvites);
+      this._unlockItems.gainBridges.hidden = !bridgeGain;
+      this._unlockItems.newBridges.hidden = !blockage;
+      this._unlockItems.invites.hidden = !showInvites;
     } else {
       // Show next unlock.
       // Number of days until the next unlock, rounded up.
@@ -1598,29 +1634,42 @@ const gLoxStatus = {
             (24 * 60 * 60 * 1000)
         )
       );
-      document.l10n.setAttributes(
-        this._nextUnlockCounterEl,
-        "tor-bridges-lox-days-until-unlock",
-        { numDays }
-      );
+      for (const counterEl of this._nextUnlockCounterEls) {
+        document.l10n.setAttributes(
+          counterEl,
+          "tor-bridges-lox-days-until-unlock",
+          { numDays }
+        );
+      }
 
       // Gain 2 bridges from level 0 to 1. After that gain invites.
-      const bridgeGain = this._nextUnlock.nextLevel === 1;
-      const firstInvites = this._nextUnlock.nextLevel === 2;
-      const moreInvites = this._nextUnlock.nextLevel > 2;
-
-      this._detailsArea.classList.toggle("lox-next-gain-bridges", bridgeGain);
-      this._detailsArea.classList.toggle(
-        "lox-next-first-invites",
-        firstInvites
-      );
-      this._detailsArea.classList.toggle("lox-next-more-invites", moreInvites);
+      this._nextUnlockItems.gainBridges.hidden =
+        this._nextUnlock.nextLevel !== 1;
+      this._nextUnlockItems.firstInvites.hidden =
+        this._nextUnlock.nextLevel !== 2;
+      this._nextUnlockItems.moreInvites.hidden =
+        this._nextUnlock.nextLevel <= 2;
     }
 
     if (alertHadFocus && !showAlert) {
       // Alert has become hidden, move focus back up to the now revealed details
       // area.
-      this._nextUnlockCounterEl.focus();
+      // NOTE: We have two headings: one shown during a search and one shown
+      // otherwise. We focus the heading that is currently visible.
+      // See tor-browser#43320.
+      // TODO: It might be better if we could use the # named anchor to
+      // re-orient the screen reader position instead of using tabIndex=-1, but
+      // about:preferences currently uses the anchor for showing categories
+      // only. See bugzilla bug 1799153.
+      if (
+        this._nextUnlockCounterEls[0].checkVisibility({
+          visibilityProperty: true,
+        })
+      ) {
+        this._nextUnlockCounterEls[0].focus();
+      } else {
+        this._nextUnlockCounterEls[1].focus();
+      }
     } else if (detailsHadFocus && showAlert) {
       this._unlockAlertButton.focus();
     }
@@ -1642,21 +1691,21 @@ const gLoxStatus = {
       hasInvites = this._haveExistingInvites || !!this._remainingInvites;
     }
 
-    if (!hasInvites) {
-      if (
-        this._remainingInvitesEl.contains(document.activeElement) ||
-        this._invitesButton.contains(document.activeElement)
-      ) {
-        // About to loose focus.
-        // Unexpected for the lox level to loose all invites.
-        // Move to the top of the details area, which should be visible if we
-        // just had focus.
-        this._nextUnlockCounterEl.focus();
-      }
+    if (
+      !hasInvites &&
+      (this._remainingInvitesEl.contains(document.activeElement) ||
+        this._invitesButton.contains(document.activeElement))
+    ) {
+      // About to loose focus.
+      // Unexpected for the lox level to loose all invites.
+      // Move to the top of the details area, which should be visible if we
+      // just had focus.
+      this._nextUnlockCounterEl.focus();
     }
     // Hide the invite elements if we have no historic invites or a way of
     // creating new ones.
-    this._detailsArea.classList.toggle("lox-has-invites", hasInvites);
+    this._remainingInvitesEl.hidden = !hasInvites;
+    this._invitesButton.hidden = !hasInvites;
 
     if (hasInvites) {
       document.l10n.setAttributes(
@@ -1691,17 +1740,27 @@ const gBridgeSettings = {
    */
   _bridgesEl: null,
   /**
-   * The heading for the bridge settings.
+   * The area for sharing bridge addresses.
    *
    * @type {Element?}
    */
-  _bridgesSettingsHeading: null,
+  _shareEl: null,
   /**
-   * The current bridges heading, at the start of the area.
+   * The two headings for the bridge settings.
+   *
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
+   */
+  _bridgesSettingsHeadings: null,
+  /**
+   * The two headings for the current bridges, at the start of the area.
+   *
+   * One heading is shown during a search, the other is shown otherwise.
    *
    * @type {Element?}
    */
-  _currentBridgesHeading: null,
+  _currentBridgesHeadings: null,
   /**
    * The area for showing no bridges.
    *
@@ -1709,17 +1768,25 @@ const gBridgeSettings = {
    */
   _noBridgesEl: null,
   /**
-   * The heading element for changing bridges.
+   * The heading elements for changing bridges.
    *
-   * @type {Element?}
+   * One heading is shown during a search, the other is shown otherwise.
+   *
+   * @type {?Element[]}
    */
-  _changeHeadingEl: null,
+  _changeHeadingEls: null,
   /**
    * The button for user to provide a bridge address or share code.
    *
    * @type {Element?}
    */
   _userProvideButton: null,
+  /**
+   * A map from the bridge source to its corresponding label.
+   *
+   * @type {?Map<number, Element>}
+   */
+  _sourceLabels: null,
 
   /**
    * Initialize the bridge settings.
@@ -1727,15 +1794,33 @@ const gBridgeSettings = {
   init() {
     gBridgesNotification.init();
 
-    this._bridgesSettingsHeading = document.getElementById(
-      "torPreferences-bridges-header"
+    this._bridgesSettingsHeadings = Array.from(
+      document.querySelectorAll(".tor-bridges-subcategory-heading")
     );
-    this._currentBridgesHeading = document.getElementById(
-      "tor-bridges-current-heading"
+    this._currentBridgesHeadings = Array.from(
+      document.querySelectorAll(".tor-bridges-current-heading")
     );
     this._bridgesEl = document.getElementById("tor-bridges-current");
     this._noBridgesEl = document.getElementById("tor-bridges-none");
     this._groupEl = document.getElementById("torPreferences-bridges-group");
+
+    this._sourceLabels = new Map([
+      [
+        TorBridgeSource.BuiltIn,
+        document.getElementById("tor-bridges-built-in-label"),
+      ],
+      [
+        TorBridgeSource.UserProvided,
+        document.getElementById("tor-bridges-user-label"),
+      ],
+      [
+        TorBridgeSource.BridgeDB,
+        document.getElementById("tor-bridges-requested-label"),
+      ],
+      [TorBridgeSource.Lox, document.getElementById("tor-bridges-lox-label")],
+    ]);
+    this._shareEl = document.getElementById("tor-bridges-share");
+
     this._toggleButton = document.getElementById("tor-bridges-enabled-toggle");
     // Initially disabled whilst TorSettings may not be initialized.
     this._toggleButton.disabled = true;
@@ -1749,8 +1834,8 @@ const gBridgeSettings = {
       });
     });
 
-    this._changeHeadingEl = document.getElementById(
-      "tor-bridges-change-heading"
+    this._changeHeadingEls = Array.from(
+      document.querySelectorAll(".tor-bridges-change-heading")
     );
     this._userProvideButton = document.getElementById(
       "tor-bridges-open-user-provide-dialog-button"
@@ -1855,6 +1940,12 @@ const gBridgeSettings = {
    * @type {integer?}
    */
   _bridgeSource: null,
+  /**
+   * Whether the user is encouraged to share their bridge addresses.
+   *
+   * @type {boolean}
+   */
+  _canShare: false,
 
   /**
    * Update _bridgeSource.
@@ -1876,22 +1967,15 @@ const gBridgeSettings = {
       this._bridgesEl.contains(document.activeElement) ||
       this._noBridgesEl.contains(document.activeElement);
 
-    this._bridgesEl.classList.toggle(
-      "source-built-in",
-      bridgeSource === TorBridgeSource.BuiltIn
-    );
-    this._bridgesEl.classList.toggle(
-      "source-user",
-      bridgeSource === TorBridgeSource.UserProvided
-    );
-    this._bridgesEl.classList.toggle(
-      "source-requested",
-      bridgeSource === TorBridgeSource.BridgeDB
-    );
-    this._bridgesEl.classList.toggle(
-      "source-lox",
-      bridgeSource === TorBridgeSource.Lox
-    );
+    for (const [source, labelEl] of this._sourceLabels.entries()) {
+      labelEl.hidden = source !== bridgeSource;
+    }
+
+    this._canShare =
+      bridgeSource === TorBridgeSource.UserProvided ||
+      bridgeSource === TorBridgeSource.BridgeDB;
+
+    this._shareEl.hidden = !this._canShare;
 
     // Force the menu to close whenever the source changes.
     // NOTE: If the menu had focus then hadFocus will be true, and focus will be
@@ -1937,15 +2021,18 @@ const gBridgeSettings = {
     // Add classes to show or hide the "no bridges" and "Your bridges" sections.
     // NOTE: Before haveBridges is set, neither class is added, so both sections
     // and hidden.
-    this._groupEl.classList.toggle("no-bridges", !haveBridges);
-    this._groupEl.classList.toggle("have-bridges", haveBridges);
+    this._groupEl.classList.add("bridges-initialized");
+    this._bridgesEl.hidden = !haveBridges;
+    this._noBridgesEl.hidden = haveBridges;
 
-    document.l10n.setAttributes(
-      this._changeHeadingEl,
-      haveBridges
-        ? "tor-bridges-replace-bridges-heading"
-        : "tor-bridges-add-bridges-heading"
-    );
+    for (const headingEl of this._changeHeadingEls) {
+      document.l10n.setAttributes(
+        headingEl,
+        haveBridges
+          ? "tor-bridges-replace-bridges-heading"
+          : "tor-bridges-add-bridges-heading"
+      );
+    }
     document.l10n.setAttributes(
       this._userProvideButton,
       haveBridges ? "tor-bridges-replace-button" : "tor-bridges-add-new-button"
@@ -1964,17 +2051,27 @@ const gBridgeSettings = {
     }
 
     // Make sure we have the latest value for _haveBridges.
-    // We also ensure that the _currentBridgesHeading element is visible before
+    // We also ensure that the _currentBridgesHeadings element is visible before
     // we focus it.
     this._updateHaveBridges();
-    if (this._haveBridges) {
-      // Move focus to the start of the area, which is the heading.
-      // It has tabindex="-1" so should be focusable, even though it is not part
-      // of the usual tab navigation.
-      this._currentBridgesHeading.focus();
+
+    // Move focus to the start of the relevant section, which is a heading.
+    // They have tabindex="-1" so should be focusable, even though they are not
+    // part of the usual tab navigation.
+    // NOTE: We have two headings: one shown during a search and one shown
+    // otherwise. We focus the heading that is currently visible.
+    // See tor-browser#43320.
+    // TODO: It might be better if we could use the # named anchor to
+    // re-orient the screen reader position instead of using tabIndex=-1, but
+    // about:preferences currently uses the anchor for showing categories
+    // only. See bugzilla bug 1799153.
+    const focusHeadings = this._haveBridges
+      ? this._currentBridgesHeadings // The heading above the new bridges.
+      : this._bridgesSettingsHeadings; // The top of the bridge settings.
+    if (focusHeadings[0].checkVisibility({ visibilityProperty: true })) {
+      focusHeadings[0].focus();
     } else {
-      // Move focus to the top of the bridge settings.
-      this._bridgesSettingsHeading.focus();
+      focusHeadings[1].focus();
     }
   },
 
@@ -2126,10 +2223,7 @@ const gBridgeSettings = {
       });
 
     this._bridgesMenu.addEventListener("showing", () => {
-      const canShare =
-        this._bridgeSource === TorBridgeSource.UserProvided ||
-        this._bridgeSource === TorBridgeSource.BridgeDB;
-      qrItem.hidden = !canShare || !this._canQRBridges;
+      qrItem.hidden = !this._canShare || !this._canQRBridges;
       editItem.hidden = this._bridgeSource !== TorBridgeSource.UserProvided;
     });
 

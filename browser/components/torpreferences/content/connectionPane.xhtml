@@ -97,8 +97,8 @@
   <!-- Bridges -->
   <hbox class="subcategory" data-category="paneConnection" hidden="true">
     <html:h1
-      id="torPreferences-bridges-header"
-      class="tor-focusable-heading"
+      id="tor-bridges-subcategory-heading-non-search"
+      class="tor-bridges-subcategory-heading tor-focusable-heading"
       tabindex="-1"
       data-l10n-id="tor-bridges-heading"
     ></html:h1>
@@ -107,7 +107,22 @@
     id="torPreferences-bridges-group"
     data-category="paneConnection"
     hidden="true"
+    aria-labelledby="tor-bridges-subcategory-heading-non-search"
   >
+    <!-- Add a search-header that only appears in search results as a substitute
+       - for the hidden h1 element. See tor-browser#43320.
+       - NOTE: Usually the first xul:label will act as the accessible name for
+       - a xul:groubbox element *if* it is not hidden. Since the search-header
+       - is sometimes hidden we need an explicit aria-labelledby anyway.
+       - However, we keep the wrapper xul:label for styling consistency with the
+       - other settings. -->
+    <label class="search-header" hidden="true">
+      <html:h2
+        class="tor-bridges-subcategory-heading tor-focusable-heading"
+        tabindex="-1"
+        data-l10n-id="tor-bridges-heading"
+      ></html:h2>
+    </label>
     <description class="description-deemphasized" flex="1">
       <html:span data-l10n-id="tor-bridges-overview"></html:span>
       <label
@@ -164,8 +179,13 @@
        - See https://github.com/WICG/proposals/issues/112
        -->
     <!-- NOTE: This area is hidden by default, and is only shown temporarily
-       - when a notification is added. -->
-    <html:div id="tor-bridges-update-area" hidden="hidden">
+       - when a notification is added. It should never match with search
+       - queries. -->
+    <html:div
+      id="tor-bridges-update-area"
+      hidden="hidden"
+      data-hidden-from-search="true"
+    >
       <!-- NOTE: This first span's text content will *not* be read out as part
          - of the notification because it does not have an aria-live
          - attribute. Instead it is just here to give context to the following
@@ -182,18 +202,33 @@
         aria-live="polite"
       ></html:span>
     </html:div>
-    <html:div id="tor-bridges-none">
+    <html:div id="tor-bridges-none" hidden="hidden">
       <html:img id="tor-bridges-none-icon" alt="" />
       <html:div data-l10n-id="tor-bridges-none-added"></html:div>
     </html:div>
-    <html:div id="tor-bridges-current">
+    <html:div id="tor-bridges-current" hidden="hidden">
       <html:div id="tor-bridges-current-header-bar">
         <html:h2
-          id="tor-bridges-current-heading"
-          class="tor-focusable-heading"
+          id="tor-bridges-current-heading-non-search"
+          class="tor-bridges-current-heading tor-focusable-heading tor-small-heading tor-non-search-heading"
           tabindex="-1"
           data-l10n-id="tor-bridges-your-bridges"
         ></html:h2>
+        <!-- Add a duplicate search heading.
+           - In a search result the heading h1.tor-bridges-subcategory-heading
+           - will be hidden, and the h2.tor-bridges-subcategory-heading
+           - will be visible.
+           - As such, all headings below h2.tor-bridges-subcategory-heading also
+           - need to shift one lower in heading level to preseve the correct
+           - hierarchy of - heading levels.
+           - In this case we hide the <h2> heading and show the duplicate <h3>
+           - heading instead.
+           - See tor-browser#43320. -->
+        <html:h3
+          class="tor-bridges-current-heading tor-focusable-heading tor-small-heading tor-search-heading"
+          tabindex="-1"
+          data-l10n-id="tor-bridges-your-bridges"
+        ></html:h3>
         <html:span
           id="tor-bridges-user-label"
           class="tor-bridges-source-label"
@@ -221,7 +256,10 @@
           aria-controls="tor-bridges-all-options-menu"
           data-l10n-id="tor-bridges-options-button"
         ></html:button>
-        <html:panel-list id="tor-bridges-all-options-menu">
+        <html:panel-list
+          id="tor-bridges-all-options-menu"
+          data-hidden-from-search="true"
+        >
           <html:panel-item
             id="tor-bridges-options-qr-all-menu-item"
             data-l10n-attrs="accesskey"
@@ -244,7 +282,7 @@
           ></html:panel-item>
         </html:panel-list>
       </html:div>
-      <html:div id="tor-bridges-built-in-display">
+      <html:div id="tor-bridges-built-in-display" hidden="hidden">
         <html:div id="tor-bridges-built-in-type-name"></html:div>
         <html:div
           id="tor-bridges-built-in-connected"
@@ -261,7 +299,8 @@
         id="tor-bridges-grid-display"
         class="tor-bridges-grid"
         role="grid"
-        aria-labelledby="tor-bridges-current-heading"
+        aria-labelledby="tor-bridges-current-heading-non-search"
+        hidden="hidden"
       ></html:div>
       <html:template id="tor-bridges-grid-row-template">
         <html:div class="tor-bridges-grid-row" role="row">
@@ -297,7 +336,10 @@
                 aria-expanded="false"
                 data-l10n-id="tor-bridges-individual-bridge-options-button"
               ></html:button>
-              <html:panel-list class="tor-bridges-individual-options-menu">
+              <html:panel-list
+                class="tor-bridges-individual-options-menu"
+                data-hidden-from-search="true"
+              >
                 <html:panel-item
                   class="tor-bridges-options-qr-one-menu-item"
                   data-l10n-attrs="accesskey"
@@ -318,11 +360,20 @@
           </html:span>
         </html:div>
       </html:template>
-      <html:div id="tor-bridges-share" class="tor-bridges-details-box">
+      <html:div
+        id="tor-bridges-share"
+        class="tor-bridges-details-box"
+        hidden="hidden"
+      >
         <html:h3
-          id="tor-bridges-share-heading"
+          class="tor-bridges-share-heading tor-small-heading tor-non-search-heading"
           data-l10n-id="tor-bridges-share-heading"
         ></html:h3>
+        <!-- Add a duplicate search heading. See tor-browser#43320. -->
+        <html:h4
+          class="tor-bridges-share-heading tor-small-heading tor-search-heading"
+          data-l10n-id="tor-bridges-share-heading"
+        ></html:h4>
         <html:span
           id="tor-bridges-share-description"
           data-l10n-id="tor-bridges-share-description"
@@ -336,68 +387,84 @@
           data-l10n-id="tor-bridges-qr-addresses-button"
         ></html:button>
       </html:div>
-      <html:div id="tor-bridges-lox-status">
+      <html:div id="tor-bridges-lox-status" hidden="hidden">
         <html:div data-l10n-id="tor-bridges-lox-description"></html:div>
         <html:div
           id="tor-bridges-lox-details"
           class="tor-bridges-details-box tor-bridges-lox-box"
+          hidden="hidden"
         >
           <html:img alt="" class="tor-bridges-lox-image-inner" />
           <html:img alt="" class="tor-bridges-lox-image-outer" />
           <html:h3
-            id="tor-bridges-lox-next-unlock-counter"
-            class="tor-bridges-lox-intro tor-focusable-heading"
+            class="tor-bridges-lox-next-unlock-counter tor-small-heading tor-bridges-lox-intro tor-focusable-heading tor-non-search-heading"
             tabindex="-1"
           ></html:h3>
+          <!-- Add a duplicate search heading. See tor-browser#43320. -->
+          <html:h4
+            class="tor-bridges-lox-next-unlock-counter tor-small-heading tor-bridges-lox-intro tor-focusable-heading tor-search-heading"
+            tabindex="-1"
+          ></html:h4>
           <html:ul class="tor-bridges-lox-list">
             <html:li
               id="tor-bridges-lox-next-unlock-gain-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-unlock-two-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-next-unlock-first-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
               data-l10n-id="tor-bridges-lox-unlock-first-invites"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-next-unlock-more-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
               data-l10n-id="tor-bridges-lox-unlock-more-invites"
+              hidden="hidden"
             ></html:li>
           </html:ul>
-          <html:div id="tor-bridges-lox-remaining-invites"></html:div>
+          <html:div
+            id="tor-bridges-lox-remaining-invites"
+            hidden="hidden"
+          ></html:div>
           <html:button
             id="tor-bridges-lox-show-invites-button"
             class="tor-bridges-lox-button"
             data-l10n-id="tor-bridges-lox-show-invites-button"
+            hidden="hidden"
           ></html:button>
         </html:div>
         <html:div
           id="tor-bridges-lox-unlock-alert"
           role="alert"
           class="tor-bridges-details-box tor-bridges-lox-box"
+          hidden="hidden"
         >
           <html:img alt="" class="tor-bridges-lox-image-inner" />
           <html:img alt="" class="tor-bridges-lox-image-outer" />
           <html:div
             id="tor-bridge-unlock-alert-title"
-            class="tor-bridges-lox-intro"
+            class="tor-small-heading tor-bridges-lox-intro"
           ></html:div>
           <html:ul class="tor-bridges-lox-list">
             <html:li
               id="tor-bridges-lox-unlock-alert-gain-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-gained-two-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-unlock-alert-new-bridges"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-bridge"
               data-l10n-id="tor-bridges-lox-new-bridges"
+              hidden="hidden"
             ></html:li>
             <html:li
               id="tor-bridges-lox-unlock-alert-invites"
               class="tor-bridges-lox-list-item tor-bridges-lox-list-item-invite"
+              hidden="hidden"
             ></html:li>
           </html:ul>
           <html:button
@@ -408,7 +475,14 @@
         </html:div>
       </html:div>
     </html:div>
-    <html:h2 id="tor-bridges-change-heading"></html:h2>
+    <html:h2
+      class="tor-bridges-change-heading tor-medium-heading tor-non-search-heading"
+    ></html:h2>
+    <!-- Add a duplicate search heading. See tor-browser#43320.
+       - This has the same content, but a smaller font. -->
+    <html:h3
+      class="tor-bridges-change-heading tor-small-heading tor-search-heading"
+    ></html:h3>
     <hbox align="center">
       <description
         flex="1"
@@ -428,9 +502,15 @@
       ></html:button>
     </hbox>
     <html:h3
-      id="tor-bridges-provider-heading"
+      class="tor-bridges-provider-heading tor-medium-heading tor-non-search-heading"
       data-l10n-id="tor-bridges-find-more-heading"
     ></html:h3>
+    <!-- Add a duplicate search heading. See tor-browser#43320.
+       - This has the same content, but a smaller font. -->
+    <html:h4
+      class="tor-bridges-provider-heading tor-small-heading tor-search-heading"
+      data-l10n-id="tor-bridges-find-more-heading"
+    ></html:h4>
     <description
       data-l10n-id="tor-bridges-find-more-description"
       class="description-deemphasized"
@@ -511,15 +591,29 @@
 
   <!-- Advanced -->
   <hbox class="subcategory" data-category="paneConnection" hidden="true">
-    <html:h1 data-l10n-id="tor-advanced-settings-heading"></html:h1>
+    <html:h1
+      id="tor-advanced-subcategory-heading-non-search"
+      data-l10n-id="tor-advanced-settings-heading"
+    ></html:h1>
   </hbox>
   <groupbox
     id="torPreferences-advanced-group"
     data-category="paneConnection"
     hidden="true"
+    aria-labelledby="tor-advanced-subcategory-heading-non-search"
   >
+    <!-- Add a search-header that only appears in search results as a substitute
+       - for the hidden h1 element. See tor-browser#43320.
+       - NOTE: Usually the first xul:label will act as the accessible name for
+       - a xul:groubbox element *if* it is not hidden. Since the search-header
+       - is sometimes hidden we need an explicit aria-labelledby anyway.
+       - However, we keep the wrapper xul:label for styling consistency with the
+       - other settings. -->
+    <label class="search-header" hidden="true">
+      <html:h2 data-l10n-id="tor-advanced-settings-heading"></html:h2>
+    </label>
     <hbox align="center">
-      <label data-l10n-id="tor-advanced-settings-description" flex="1" />
+      <description data-l10n-id="tor-advanced-settings-description" flex="1" />
       <html:button
         id="torPreferences-advanced-button"
         class="accessory-button"
@@ -527,7 +621,7 @@
       ></html:button>
     </hbox>
     <hbox align="center" data-subcategory="viewlogs">
-      <label data-l10n-id="tor-view-log-description" flex="1" />
+      <description data-l10n-id="tor-view-log-description" flex="1" />
       <html:button
         id="torPreferences-buttonTorLogs"
         class="accessory-button"
