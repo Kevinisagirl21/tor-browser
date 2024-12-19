@@ -1,15 +1,26 @@
 #include "nsISupports.idl"
 
 [scriptable, uuid(2e4ccfe4-4119-433d-92df-4e84cef81ae8)]
-interface ILoxPromise : nsISupports {
-    void resolve(in ACString value);
-    void reject(in ACString error);
+interface ILoxCallback : nsISupports {
+    const unsigned long UNKNOWN = 0;
+    const unsigned long REQUEST_FAILED = 1;
+    const unsigned long UNREACHABLE_AUTHORITY = 2;
+    void onSuccess(in ACString value);
+    void onError(in unsigned long type, in ACString error);
+};
+
+[scriptable, uuid(cf31cde7-d354-4458-ae56-44330bda84dc)]
+interface ILoxRequestHandler : nsISupports {
+    const unsigned long NO_ERROR = 0;
+    const unsigned long REQUEST_FAILED = 1;
+    const unsigned long UNREACHABLE = 2;
+    void handle(in unsigned long status, in ACString response);
 };
 
 [scriptable, uuid(3855b9c2-2358-4135-a35c-f95d4f4f2069)]
 interface ILoxServiceHelper : nsISupports {
     void runRequest(in ACString procedure, in ACString request,
-                    in ILoxPromise promise);
+                    in ILoxRequestHandler handler);
     void store(in ACString data);
 };
 
@@ -25,6 +36,5 @@ interface ILoxService : nsISupports {
     unsigned long getRemainingInviteCount(in ACString loxId);
     ACString getEventData();
 
-    void redeemInvite(in ACString invite, in ILoxPromise promise);
-    void generateInvite(in ACString loxId, in ILoxPromise promise);
+    void redeemInvite(in ACString invite, in ILoxCallback callback);
 };

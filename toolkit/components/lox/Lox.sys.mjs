@@ -1163,10 +1163,16 @@ class LoxImpl {
     return JSON.stringify(jsonResponse);
   }
 
-  runRequest(procedure, request, receiver) {
+  runRequest(procedure, request, handler) {
     this.#makeRequest(procedure, request ? request : null)
-      .then(val => receiver.resolve(val))
-      .catch(e => receiver.reject(e.message));
+      .then(val => handler.handle(Ci.ILoxRequestHandler.NO_ERROR, val))
+      .catch(e => {
+        if (e instanceof LoxError && e.code === LoxError.LoxServerUnreachable) {
+          handler.handle(Ci.ILoxRequestHandler.UNREACHABLE, e.message);
+        } else {
+          handler.handle(Ci.ILoxRequestHandler.REQUEST_FAILED, e.message);
+        }
+      });
   }
 
   store(_data) {}

@@ -7,7 +7,10 @@ use nserror::{
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 use xpcom::{
-    interfaces::{nsIObserver, nsISupports, nsITimer, ILoxPromise, ILoxService, ILoxServiceHelper},
+    interfaces::{
+        nsIObserver, nsISupports, nsITimer, ILoxCallback, ILoxRequestHandler, ILoxService,
+        ILoxServiceHelper,
+    },
     RefPtr,
 };
 
@@ -29,87 +32,50 @@ fn json_from_string(data: &nsACString) -> Result<JsonValue, nsresult> {
     serde_json::from_slice(&data[..]).map_err(|_| NS_ERROR_CANNOT_CONVERT_DATA)
 }
 
-/**
- * Use this function to pass a promise over XPCOM call boundaries.
- * The pointer must be used, or this will be a memory leak!
- */
-#[must_use]
-fn promise_ptr(promise: RefPtr<ILoxPromise>) -> *const ILoxPromise {
-    let mut ptr: *const ILoxPromise = null();
-    promise.forget(&mut ptr);
-    ptr
+#[xpcom(implement(ILoxRequestHandler), atomic)]
+struct LoxRequestHandler {
+    handler: RefCell<Option<Box<dyn FnOnce(&nsACString) -> Result<(), nsresult>>>>,
+    callback: RefPtr<ILoxCallback>,
 }
 
-/**
- * An implementation of ILoxPromise to be used from Rust.
- * It can be chained to another ILoxPromise, which can be implemented either in
- * Rust or in JavaScript.
- */
-#[xpcom(implement(ILoxPromise), atomic)]
-struct LoxPromiseRust {
-    resolve_handler: RefCell<Option<Box<dyn FnOnce(&nsACString) -> ()>>>,
-    reject_handler: RefCell<Option<Box<dyn FnOnce(&nsACString) -> ()>>>,
-}
-
-impl LoxPromiseRust {
-    /**
-     * Create a new promise with an error handler.
-     */
+impl LoxRequestHandler {
     fn new(
-        resolve: Box<dyn FnOnce(&nsACString) -> ()>,
-        reject: Box<dyn FnOnce(&nsACString) -> ()>,
-    ) -> RefPtr<LoxPromiseRust> {
-        LoxPromiseRust::allocate(InitLoxPromiseRust {
-            resolve_handler: RefCell::new(Some(resolve)),
-            reject_handler: RefCell::new(Some(reject)),
+        handler: Box<dyn FnOnce(&nsACString) -> Result<(), nsresult>>,
+        callback: RefPtr<ILoxCallback>,
+    ) -> RefPtr<LoxRequestHandler> {
+        LoxRequestHandler::allocate(InitLoxRequestHandler {
+            handler: RefCell::new(Some(handler)),
+            callback,
         })
     }
 
-    /**
-     * Create a promise that propagates the error to another promise.
-     * When successful, though, it is responsibility of the owner to resolve the
-     * promise that was passed as an argument to this one.
-     */
-    fn new_chained(
-        resolve: Box<dyn FnOnce(&nsACString) -> ()>,
-        promise: RefPtr<ILoxPromise>,
-    ) -> RefPtr<LoxPromiseRust> {
-        LoxPromiseRust::allocate(InitLoxPromiseRust {
-            resolve_handler: RefCell::new(Some(resolve)),
-            reject_handler: RefCell::new(Some(Box::new(move |error: &nsACString| unsafe {
-                promise.Reject(error);
-            }))),
-        })
+    fn leak(&self) -> *const ILoxRequestHandler {
+        let mut ptr = null();
+        RefPtr::new(self.coerce::<ILoxRequestHandler>()).forget(&mut ptr);
+        ptr
     }
 
-    xpcom_method!(resolve => Resolve(response: *const nsACString));
-    unsafe fn resolve(&self, response: &nsACString) -> Result<(), nsresult> {
-        Self::consume_and_call(&self.resolve_handler, response)
-    }
-
-    xpcom_method!(reject => Reject(error: *const nsACString));
-    unsafe fn reject(&self, error: &nsACString) -> Result<(), nsresult> {
-        Self::consume_and_call(&self.reject_handler, error)
-    }
-
-    /**
-     * Cast this promise to a generic ILoxPromise.
-     */
-    fn as_promise(&self) -> RefPtr<ILoxPromise> {
-        RefPtr::new(self.coerce::<ILoxPromise>())
-    }
-
-    fn consume_and_call(
-        cell: &RefCell<Option<Box<dyn FnOnce(&nsACString) -> ()>>>,
-        s: &nsACString,
-    ) -> Result<(), nsresult> {
-        match cell.try_borrow_mut().map_err(|_| NS_ERROR_FAILURE)?.take() {
-            Some(f) => {
-                (f)(s);
-                Ok(())
-            }
-            None => Err(NS_ERROR_NOT_AVAILABLE),
+    xpcom_method!(handle => Handle(status: u32, response: *const nsACString));
+    fn handle(&self, status: u32, response: &nsACString) -> Result<(), nsresult> {
+        match status {
+            ILoxRequestHandler::NO_ERROR => {
+                match self.handler.try_borrow_mut().map_err(|_| NS_ERROR_FAILURE)?.take() {
+                    Some(f) => {
+                        (f)(response)
+                    }
+                    None => Err(NS_ERROR_NOT_AVAILABLE),
+                }
+            },
+            ILoxRequestHandler::REQUEST_FAILED => self.call_error(ILoxCallback::REQUEST_FAILED, response),
+            ILoxRequestHandler::UNREACHABLE => self.call_error(ILoxCallback::UNREACHABLE_AUTHORITY, response),
+            _ => self.call_error(ILoxCallback::UNKNOWN, &nsCString::from(format!("Unknown response status {}", status))),
         }
+    }
+
+    fn call_error(&self, error_code: u32, message: &nsACString) -> Result<(), nsresult> {
+        unsafe {
+            self.callback.OnError(error_code, &*message)
+        }.to_result()
     }
 }
 
@@ -121,7 +87,7 @@ struct LoxData {
     pub_keys: Option<PubKeys>,
 }
 
-#[xpcom(implement(ILoxService, nsIObserver), atomic)]
+#[xpcom(implement(ILoxService), atomic)]
 struct LoxService {
     // xpcom stuff usually is non-mut, so use RefCell for now...
     // Maybe a better idea is to have a single RefCell for a single struct,
@@ -129,7 +95,6 @@ struct LoxService {
     // It might even be a Rc<RefCell> if we want to implement the timer observer
     // separately.
     helper: RefCell<Option<RefPtr<ILoxServiceHelper>>>,
-    timer: RefCell<Option<RefPtr<nsITimer>>>,
     data: RefCell<LoxData>,
 }
 
@@ -137,35 +102,8 @@ impl LoxService {
     fn new() -> RefPtr<LoxService> {
         LoxService::allocate(InitLoxService {
             helper: RefCell::new(None),
-            timer: RefCell::new(None),
             data: RefCell::new(LoxData::default()),
         })
-    }
-
-    xpcom_method!(observe => Observe(_subject: *const nsISupports, topic: *const c_char, _data: *const u16));
-    unsafe fn observe(
-        &self,
-        _subject: Option<&nsISupports>,
-        topic: *const c_char,
-        _data: *const u16,
-    ) -> Result<(), nsresult> {
-        let topic = CStr::from_ptr(topic);
-        if topic == cstr!("timer-callback") {
-            return self.make_request(
-                "timer-thing",
-                "",
-                LoxPromiseRust::new(
-                    Box::new(|val| {
-                        println!("Got a value from JS! {}", val);
-                    }),
-                    Box::new(|err| {
-                        println!("Got an error from JS {}", err);
-                    }),
-                )
-                .as_promise(),
-            );
-        }
-        Ok(())
     }
 
     xpcom_method!(initialize => Initialize(helper: *const ILoxServiceHelper, data: *const nsACString));
@@ -184,25 +122,12 @@ impl LoxService {
         // Be sure the data has been deserialized before saving the helper.
         *h = Some(helper);
 
-        // We do not care that much of this timer for now, so do not do anything
-        // if its creation fails.
-        match xpcom::create_instance::<nsITimer>(cstr!("@mozilla.org/timer;1")) {
-            Some(timer) => {
-                let mut observer: *const nsIObserver = null();
-                RefPtr::new(self.coerce::<nsIObserver>()).forget(&mut observer);
-                unsafe { timer.Init(observer, 2000, 0) };
-                // FIXME: This might panic!
-                self.timer.replace(Some(timer));
-            }
-            None => println!("Could not create the timer!"),
-        };
-
         Ok(())
     }
 
     xpcom_method!(uninitialize => Uninitialize());
     fn uninitialize(&self) -> Result<(), nsresult> {
-        let rv = match self.helper.try_borrow_mut() {
+        match self.helper.try_borrow_mut() {
             Ok(mut runner) => {
                 if let Some(r) = runner.as_ref() {
                     // TODO: Actually serialize the data.
@@ -213,11 +138,7 @@ impl LoxService {
                 Ok(())
             }
             Err(_) => Err(NS_ERROR_NOT_AVAILABLE),
-        };
-        if let Ok(mut timer) = self.timer.try_borrow_mut() {
-            *timer = None;
         }
-        rv
     }
 
     xpcom_method!(get_bridges => GetBridges(lox_id: *const nsACString) -> ThinVec<nsCString>);
@@ -295,10 +216,10 @@ impl LoxService {
         Ok(nsCString::from("[]"))
     }
 
-    xpcom_method!(redeem_invite => RedeemInvite(invite: *const nsACString, promise: *const ILoxPromise));
-    fn redeem_invite(&self, invite: &nsACString, promise: &ILoxPromise) -> Result<(), nsresult> {
+    xpcom_method!(redeem_invite => RedeemInvite(invite: *const nsACString, callback: *const ILoxCallback));
+    fn redeem_invite(&self, invite: &nsACString, callback: &ILoxCallback) -> Result<(), nsresult> {
         let self_ref = RefPtr::new(self);
-        let promise_ref = RefPtr::new(promise);
+        let callback_ref = RefPtr::new(callback);
         let invite: Invite =
             serde_json::from_value(json_from_string(invite)?).map_err(|_| NS_ERROR_INVALID_ARG)?;
         let token = validate(&invite.invite).map_err(|_| NS_ERROR_INVALID_ARG)?;
@@ -310,29 +231,8 @@ impl LoxService {
         self.make_request(
             "openreq",
             &request,
-            LoxPromiseRust::new_chained(
-                Box::new(
-                    move |response_str| match serde_json::from_slice(&response_str[..]) {
-                        Ok(response) => match self_ref.handle_new_credential(state, response) {
-                            Ok(id) => {
-                                let _ = self_ref.store();
-                                let id = nsCString::from(id);
-                                unsafe { promise_ref.Resolve(&*id) };
-                            }
-                            Err(e) => {
-                                let e = nsCString::from(e);
-                                unsafe { promise_ref.Reject(&*e) };
-                            }
-                        },
-                        Err(e) => {
-                            let e = nsCString::from(e.to_string());
-                            unsafe { promise_ref.Reject(&*e) };
-                        }
-                    },
-                ),
-                RefPtr::new(promise),
-            )
-            .as_promise(),
+            RefPtr::new(callback),
+            Box::new(|_val| { Ok(()) }),
         )
     }
 
@@ -364,23 +264,6 @@ impl LoxService {
         Ok(id)
     }
 
-    xpcom_method!(generate_invite => GenerateInvite(lox_id: *const nsACString, promise: *const ILoxPromise));
-    fn generate_invite(&self, lox_id: &nsACString, promise: &ILoxPromise) -> Result<(), nsresult> {
-        let promise_ptr = RefPtr::new(promise);
-        self.make_request(
-            "pubkeys",
-            "",
-            LoxPromiseRust::new_chained(
-                Box::new(move |val| {
-                    // TODO: Actually do something with the value we received from the network.
-                    unsafe { promise_ptr.Resolve(&*val) };
-                }),
-                RefPtr::new(promise),
-            )
-            .as_promise(),
-        )
-    }
-
     fn read<T, F: FnOnce(&LoxData) -> Result<T, nsresult>>(&self, f: F) -> Result<T, nsresult> {
         let data = self
             .data
@@ -393,17 +276,19 @@ impl LoxService {
         &self,
         procedure: &str,
         request: &str,
-        promise: RefPtr<ILoxPromise>,
+        callback: RefPtr<ILoxCallback>,
+        request_handler: Box<dyn FnOnce(&nsACString) -> Result<(), nsresult>>,
     ) -> Result<(), nsresult> {
         let procedure = nsCString::from(procedure);
         let request = nsCString::from(request);
-        self.helper(move |h| {
-            unsafe { h.RunRequest(&*procedure, &*request, promise_ptr(promise)) }.to_result()
+        let handler = LoxRequestHandler::new(request_handler, callback);
+        self.with_helper(move |h| {
+            unsafe { h.RunRequest(&*procedure, &*request, handler.leak()) }.to_result()
         })
     }
 
     fn store(&self) -> Result<(), nsresult> {
-        self.helper(|h| {
+        self.with_helper(|h| {
             self.read(move |data| {
                 let data = serde_json::to_string(data).map_err(|_| NS_ERROR_FAILURE)?;
                 let data = nsCString::from(data);
@@ -412,7 +297,7 @@ impl LoxService {
         })
     }
 
-    fn helper<F: FnOnce(RefPtr<ILoxServiceHelper>) -> Result<(), nsresult>>(
+    fn with_helper<F: FnOnce(RefPtr<ILoxServiceHelper>) -> Result<(), nsresult>>(
         &self,
         f: F,
     ) -> Result<(), nsresult> {
